@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
+import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
 
 interface WeeklyWorkout {
   day: string;
+  date?: string;
   type: string;
   title: string;
   durationMin: number;
@@ -26,6 +28,10 @@ interface WeeklyPlan {
 // next time this rider opens the dashboard on this device, until they
 // generate a new one or a new week starts.
 const STORAGE_KEY = "zwiftWeeklyPlan";
+// Zwift's API has no birthdate field, so age (used to lean toward extra
+// recovery for older riders) only ever comes from the rider typing it in
+// here - stored the same pragmatic way as the plan itself, in localStorage.
+const AGE_STORAGE_KEY = "zwiftRiderAge";
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -59,6 +65,7 @@ export default function WeeklyPlan() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
+  const [age, setAge] = useState<string>("");
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -66,13 +73,34 @@ export default function WeeklyPlan() {
       setPlan(cached);
       setStale(cached.weekOf !== currentWeekOf());
     }
+    try {
+      const savedAge = window.localStorage.getItem(AGE_STORAGE_KEY);
+      if (savedAge) setAge(savedAge);
+    } catch {
+      // localStorage unavailable - age input just starts blank.
+    }
   }, []);
+
+  function handleAgeChange(value: string) {
+    setAge(value);
+    try {
+      if (value) window.localStorage.setItem(AGE_STORAGE_KEY, value);
+      else window.localStorage.removeItem(AGE_STORAGE_KEY);
+    } catch {
+      // Non-fatal - age just won't persist across reloads in this case.
+    }
+  }
 
   async function handleGenerate() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ai/weekly-plan", { method: "POST" });
+      const ageYears = age ? Number(age) : undefined;
+      const res = await fetch("/api/ai/weekly-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ageYears }),
+      });
       const data = await res.json();
       if (data.ok) {
         setPlan(data.plan);
@@ -93,6 +121,27 @@ export default function WeeklyPlan() {
     }
   }
 
+  // Turns one of the AI's planned sessions into a real, structured Zwift
+  // workout file (.zwo) - warmup ramp, the actual interval/steady-state
+  // blocks, cooldown ramp - instead of just a text description, and
+  // downloads it named by the date it's planned for. A browser app can't
+  // write straight into Zwift's local Workouts folder, so this is a
+  // one-time manual drop-in until Zwift's Training Connections API is
+  // approved (see the note below the plan).
+  function handleDownloadZwo(w: WeeklyWorkout) {
+    const xml = generateZwoXml(w);
+    const filename = zwoFileName(w.date, w.title);
+    const blob = new Blob([xml], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
@@ -100,19 +149,33 @@ export default function WeeklyPlan() {
           <IconCalendar size={16} />
           Weekly training plan
         </h2>
-        <button
-          type="button"
-          className="btn"
-          style={{ width: "auto", padding: "8px 18px" }}
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading
-            ? "Building your plan..."
-            : plan
-              ? "Regenerate this week's plan"
-              : "Generate this week's plan"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted)" }}>
+            Age (optional)
+            <input
+              type="number"
+              min={1}
+              max={110}
+              value={age}
+              onChange={(e) => handleAgeChange(e.target.value)}
+              placeholder="years"
+              style={{ width: 56, padding: "4px 6px", fontSize: 12.5 }}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn"
+            style={{ width: "auto", padding: "8px 18px" }}
+            onClick={handleGenerate}
+            disabled={loading}
+          >
+            {loading
+              ? "Building your plan..."
+              : plan
+                ? "Regenerate this week's plan"
+                : "Generate this week's plan"}
+          </button>
+        </div>
       </div>
 
       {stale && plan && !loading && (
@@ -146,7 +209,8 @@ export default function WeeklyPlan() {
                     <IconBolt size={13} />
                   </div>
                   <div className="label" style={{ margin: 0 }}>
-                    {w.day} - {w.type}
+                    {w.day}
+                    {w.date ? ` (${w.date})` : ""} - {w.type}
                   </div>
                 </div>
                 <div className="value" style={{ fontSize: 16 }}>{w.title}</div>
@@ -157,14 +221,27 @@ export default function WeeklyPlan() {
                 <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, lineHeight: 1.5 }}>
                   {w.description}
                 </div>
+                {!isRestDay(w.type) && (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ width: "auto", padding: "5px 12px", fontSize: 11.5, marginTop: 10 }}
+                    onClick={() => handleDownloadZwo(w)}
+                  >
+                    Download .zwo
+                  </button>
+                )}
               </div>
             ))}
           </div>
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
-            This plan is saved in your browser, not in your real Zwift account yet -
-            pushing it to sync on your Zwift devices needs Zwift&apos;s official Training
-            Connections API, which is still pending their approval.
+            Each session above can be downloaded as a real Zwift workout file (.zwo) - drop
+            it into your Documents/Zwift/Workouts/&lt;your Zwift ID&gt; folder and it shows
+            up in Zwift&apos;s own workout list, ready to ride. This plan itself is saved in
+            your browser, not pushed to your Zwift account automatically yet - true
+            auto-sync needs Zwift&apos;s official Training Connections API, which is still
+            pending their approval.
           </div>
         </>
       )}

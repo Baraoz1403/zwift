@@ -117,6 +117,8 @@ export async function generateInsights(params: {
 export interface WeeklyWorkout {
   /** Monday..Sunday */
   day: string;
+  /** ISO date (YYYY-MM-DD) this session actually falls on in the upcoming week. */
+  date?: string;
   /** e.g. "Endurance", "Sweet Spot", "Intervals", "Recovery", "Rest" */
   type: string;
   title: string;
@@ -136,26 +138,50 @@ export interface WeeklyPlan {
 const WEEKLY_PLAN_SYSTEM_PROMPT =
   "You are a cycling coach building a personalized one-week Zwift training " +
   "plan for a rider, based on their recent ride history (avgWatts, " +
-  "avgHeartRate, distanceKm, durationMin, elevationM per ride) and their " +
-  "FTP/weight/level. Some rides may include an hrFlag field: 'low' means " +
-  "that ride's heart rate was unusually low for the power produced compared " +
-  "to the rider's own recent rides (possible fatigue, illness, or a sensor " +
-  "issue); 'high' means the opposite. Treat one or more recent hrFlag rides " +
-  "as a real signal to build a lighter week (more recovery/endurance, less " +
-  "high intensity) and mention this reasoning briefly in the summary. " +
-  "Design 4-6 sessions across the week (a mix of endurance, intervals/sweet " +
-  "spot, and at least one rest or easy recovery day) that reflect the " +
-  "rider's current fitness and recent training load - harder if they look " +
-  "under-trained/improving with room to push, lighter if there are signs of " +
-  "fatigue (rising heart rate at similar power, very high recent frequency, " +
-  "or an hrFlag ride). " +
+  "avgHeartRate, distanceKm, durationMin, elevationM, date per ride) and " +
+  "their FTP/weight/level/ageYears. The input also includes weekOfMonday " +
+  "(YYYY-MM-DD, the Monday of the upcoming week this plan covers) - use it " +
+  "to compute each workout's real calendar date (Monday=weekOfMonday, " +
+  "Tuesday=weekOfMonday+1, etc). Use the rides' dates to work out their " +
+  "real recent training frequency and load over the last 2-3 weeks - do " +
+  "NOT default to a workout every day or assume a fixed number of " +
+  "sessions. The number of sessions this week (anywhere from 2 to 6) must " +
+  "reflect how often they've actually been riding: a rider averaging 3 " +
+  "rides/week recently should get roughly that, not suddenly 6; only " +
+  "progress total weekly volume by about 5-10% when recent rides show " +
+  "stable or improving form, and pull back (fewer and/or easier sessions) " +
+  "when there are signs of fatigue. " +
+  "Apply standard periodization, the same way published cycling plans " +
+  "(e.g. TrainingPeaks, polarized/80-20 training) structure a week: cap " +
+  "high-intensity sessions (intervals/sweet spot/threshold) at 2-3 for a " +
+  "recreational rider, never schedule two hard sessions on consecutive " +
+  "days, and place an easy endurance or full rest day immediately after " +
+  "the hardest session of the week. The rest of the week's volume should " +
+  "be easy/endurance riding (roughly 80% easy, 20% hard, as a guideline). " +
+  "If ageYears is provided and is 40 or above, lean toward an extra " +
+  "recovery day between hard sessions, since recovery generally slows with " +
+  "age. Some rides may include an hrFlag field: 'low' means that ride's " +
+  "heart rate was unusually low for the power produced compared to the " +
+  "rider's own recent rides (possible fatigue, illness, or a sensor " +
+  "issue); 'high' means the opposite. Treat one or more recent hrFlag " +
+  "rides as a real signal to build a lighter week (fewer/easier sessions, " +
+  "more recovery, less high intensity) and mention this reasoning briefly " +
+  "in the summary. Each planned session should also make sense in " +
+  "relation to the others in the week (e.g. a long endurance ride " +
+  "followed by a rest day, then a moderate session before the next hard " +
+  "effort) rather than a random unconnected list - briefly note the " +
+  "week's overall shape/logic in the summary. " +
   "Respond with ONLY valid JSON (no markdown, no code fences, no " +
   "commentary) matching exactly this shape: " +
-  '{"summary": string (<=2 sentences, plain prose), "workouts": [{"day": ' +
-  'string (Monday..Sunday), "type": string, "title": string, "durationMin": ' +
-  'number, "targetPowerPctFtp": string (e.g. "65-75%", omit/empty for rest ' +
-  'days), "description": string (1-3 sentences, the actual session ' +
-  "structure)}]}";
+  '{"summary": string (<=3 sentences, plain prose, mention the week\'s ' +
+  'overall structure/reasoning), "workouts": [{"day": string ' +
+  '(Monday..Sunday), "date": string (YYYY-MM-DD, the actual calendar date ' +
+  'for that day in the upcoming week), "type": string, "title": string, ' +
+  '"durationMin": number, "targetPowerPctFtp": string (e.g. "65-75%", ' +
+  'omit/empty for rest days), "description": string (1-3 sentences, the ' +
+  "actual session structure)}] (include only the days that should have a " +
+  "session - 2 to 6 entries total, do not pad it out to 7 just to fill " +
+  "every day)}";
 
 export async function generateWeeklyPlan(params: {
   firstName?: string;
@@ -163,6 +189,9 @@ export async function generateWeeklyPlan(params: {
   weightKg?: number;
   cyclingLevel?: number;
   runLevel?: number;
+  /** Rider's age in years, if they've chosen to provide it - not exposed by
+   *  the Zwift API, so this only arrives when the rider enters it manually. */
+  ageYears?: number;
   rides: RideSummary[];
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -172,12 +201,24 @@ export async function generateWeeklyPlan(params: {
     );
   }
 
+  // Monday of the week this plan covers (UTC) - computed up front and handed
+  // to the model so it can fill in each workout's real calendar "date"
+  // instead of guessing what date "Wednesday" falls on.
+  const now0 = new Date();
+  const dow0 = now0.getUTCDay();
+  const diffToMonday0 = dow0 === 0 ? -6 : 1 - dow0;
+  const monday0 = new Date(now0);
+  monday0.setUTCDate(now0.getUTCDate() + diffToMonday0);
+  const weekOfMonday = monday0.toISOString().slice(0, 10);
+
   const userContent = JSON.stringify({
     rider: params.firstName ?? "Rider",
     ftpWatts: params.ftp ?? null,
     weightKg: params.weightKg ?? null,
+    ageYears: params.ageYears ?? null,
     cyclingLevel: params.cyclingLevel ?? null,
     runLevel: params.runLevel ?? null,
+    weekOfMonday,
     rides: params.rides,
   });
 
@@ -232,17 +273,8 @@ export async function generateWeeklyPlan(params: {
     throw new AiInsightsError("AI response was missing the expected weekly plan structure.");
   }
 
-  // Monday of the current week (UTC) - a stable "week of" label that doesn't
-  // depend on exactly when during the week the plan happens to be generated.
-  const now = new Date();
-  const dow = now.getUTCDay(); // 0=Sun..6=Sat
-  const diffToMonday = dow === 0 ? -6 : 1 - dow;
-  const monday = new Date(now);
-  monday.setUTCDate(now.getUTCDate() + diffToMonday);
-  const weekOf = monday.toISOString().slice(0, 10);
-
   return {
-    weekOf,
+    weekOf: weekOfMonday,
     summary: typeof obj.summary === "string" ? obj.summary : "",
     workouts: obj.workouts as WeeklyWorkout[],
   };

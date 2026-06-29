@@ -9,7 +9,20 @@ import { generateWeeklyPlan, AiInsightsError, RideSummary } from "@/lib/ai";
 // Mirrors app/api/ai/insights/route.ts (same auth, same data-gathering
 // pattern) but calls generateWeeklyPlan instead of generateInsights, and
 // returns a structured weekly workout plan rather than free-text analysis.
-export async function POST(_req: NextRequest) {
+export async function POST(req: NextRequest) {
+  // ageYears is optional and never required - Zwift's API doesn't expose a
+  // birthdate, so this only arrives if the rider chose to type it in on the
+  // weekly-plan card (see app/dashboard/weekly-plan.tsx).
+  let ageYears: number | undefined;
+  try {
+    const body = await req.json();
+    if (typeof body?.ageYears === "number" && body.ageYears > 0) {
+      ageYears = body.ageYears;
+    }
+  } catch {
+    // No/invalid JSON body - fine, ageYears just stays undefined.
+  }
+
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!raw) {
@@ -71,6 +84,7 @@ export async function POST(_req: NextRequest) {
         profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
       runLevel:
         profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
+      ageYears,
       rides,
     });
 
