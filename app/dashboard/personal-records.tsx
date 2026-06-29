@@ -126,6 +126,19 @@ export default function PersonalRecords({
 
       <div className="record-grid">
         <div className="record-card">
+          <div className="record-icon c-blue">
+            <IconClock size={20} />
+          </div>
+          <div>
+            <div className="label">Total time on the bike</div>
+            <div className="value">
+              <CountUp value={r.totalTimeMs / 3600000} format={(n) => `${n.toFixed(0)} h`} />
+            </div>
+            <div className="sub">all rides combined</div>
+          </div>
+        </div>
+
+        <div className="record-card">
           <div className="record-icon c-orange">
             <IconDistance size={20} />
           </div>
@@ -135,6 +148,19 @@ export default function PersonalRecords({
               <CountUp value={r.totalDistanceM / 1000} format={(n) => `${n.toFixed(0)} km`} />
             </div>
             <div className="sub">{r.totalRides} rides logged</div>
+          </div>
+        </div>
+
+        <div className="record-card">
+          <div className="record-icon c-green">
+            <IconMountain size={20} />
+          </div>
+          <div>
+            <div className="label">Total elevation</div>
+            <div className="value">
+              <CountUp value={r.totalElevationM} format={(n) => `${n.toFixed(0)} m`} />
+            </div>
+            <div className="sub">{(r.totalElevationM / 8849).toFixed(1)}x Everest</div>
           </div>
         </div>
 
@@ -155,32 +181,6 @@ export default function PersonalRecords({
           </div>
         </div>
 
-        <div className="record-card">
-          <div className="record-icon c-blue">
-            <IconClock size={20} />
-          </div>
-          <div>
-            <div className="label">Total time on the bike</div>
-            <div className="value">
-              <CountUp value={r.totalTimeMs / 3600000} format={(n) => `${n.toFixed(0)} h`} />
-            </div>
-            <div className="sub">all rides combined</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-green">
-            <IconMountain size={20} />
-          </div>
-          <div>
-            <div className="label">Total elevation</div>
-            <div className="value">
-              <CountUp value={r.totalElevationM} format={(n) => `${n.toFixed(0)} m`} />
-            </div>
-            <div className="sub">{(r.totalElevationM / 8849).toFixed(1)}x Everest</div>
-          </div>
-        </div>
-
         {r.longestDistance && (
           <div className="record-card">
             <div className="record-icon c-pink">
@@ -193,23 +193,6 @@ export default function PersonalRecords({
               </div>
               <div className="sub">
                 {truncateName(r.longestDistance.activity.name)} • {formatDate(r.longestDistance.activity.startDate)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {r.highestAvgPower && (
-          <div className="record-card">
-            <div className="record-icon c-amber">
-              <IconBolt size={20} />
-            </div>
-            <div>
-              <div className="label">Highest avg power</div>
-              <div className="value">
-                <CountUp value={r.highestAvgPower.watts} format={(n) => `${n.toFixed(0)} W`} />
-              </div>
-              <div className="sub">
-                {truncateName(r.highestAvgPower.activity.name)} • {formatDate(r.highestAvgPower.activity.startDate)}
               </div>
             </div>
           </div>
@@ -233,21 +216,6 @@ export default function PersonalRecords({
         )}
 
         <div className="record-card">
-          <div className="record-icon c-orange">
-            <IconFlame size={20} />
-          </div>
-          <div>
-            <div className="label">Longest streak</div>
-            <div className="value">
-              <CountUp value={r.longestStreakDays} format={(n) => `${n.toFixed(0)} days`} />
-            </div>
-            <div className="sub">
-              {r.currentStreakDays > 0 ? `current streak: ${r.currentStreakDays} days` : "no active streak right now"}
-            </div>
-          </div>
-        </div>
-
-        <div className="record-card">
           <div className="record-icon c-red">
             <IconHeart size={20} />
           </div>
@@ -267,6 +235,38 @@ export default function PersonalRecords({
             </div>
           </div>
         </div>
+
+        <div className="record-card">
+          <div className="record-icon c-orange">
+            <IconFlame size={20} />
+          </div>
+          <div>
+            <div className="label">Longest streak</div>
+            <div className="value">
+              <CountUp value={r.longestStreakDays} format={(n) => `${n.toFixed(0)} days`} />
+            </div>
+            <div className="sub">
+              {r.currentStreakDays > 0 ? `current streak: ${r.currentStreakDays} days` : "no active streak right now"}
+            </div>
+          </div>
+        </div>
+
+        {r.highestAvgPower && (
+          <div className="record-card">
+            <div className="record-icon c-amber">
+              <IconBolt size={20} />
+            </div>
+            <div>
+              <div className="label">Highest avg power</div>
+              <div className="value">
+                <CountUp value={r.highestAvgPower.watts} format={(n) => `${n.toFixed(0)} W`} />
+              </div>
+              <div className="sub">
+                {truncateName(r.highestAvgPower.activity.name)} • {formatDate(r.highestAvgPower.activity.startDate)}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

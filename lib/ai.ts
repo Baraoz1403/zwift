@@ -151,8 +151,17 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "progress total weekly volume by about 5-10% when recent rides show " +
   "stable or improving form, and pull back (fewer and/or easier sessions) " +
   "when there are signs of fatigue. " +
+  "Use session types/structures matching Zwift's own official plans (FTP " +
+  "Builder, Build Me Up, Zwift Academy) and workout categories: " +
+  "'Endurance'/'Foundation' (long steady Zone 1-2 ride), 'Tempo' (steady " +
+  "Zone 3 block), 'Threshold' (repeated 5-8min efforts at/near FTP), " +
+  "'Sweet Spot' (repeated 8-15min efforts at 88-94% FTP), 'VO2' (short " +
+  "2-3min near-max efforts), 'Intermittent' (short 30s on/30s off bursts), " +
+  "'Strength' (5-8x 15s near-maximal sprints with long recovery), " +
+  "'Recovery' (very easy spin), or 'Rest' (no ride) - pick whichever " +
+  "matches each day's role rather than inventing new labels. " +
   "Apply standard periodization, the same way published cycling plans " +
-  "(e.g. TrainingPeaks, polarized/80-20 training) structure a week: cap " +
+  "structure a week: cap " +
   "high-intensity sessions (intervals/sweet spot/threshold) at 2-3 for a " +
   "recreational rider, never schedule two hard sessions on consecutive " +
   "days, and place an easy endurance or full rest day immediately after " +

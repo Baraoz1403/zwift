@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
+import { generateZwoXml, zwoFileName, isRestDay, ZwoBlock } from "@/lib/zwo";
+import WorkoutEditor from "./workout-editor";
 
 interface WeeklyWorkout {
   day: string;
@@ -66,6 +67,9 @@ export default function WeeklyPlan() {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [age, setAge] = useState<string>("");
+  // Which workout card (by index) currently has its in-app block editor
+  // open - only one at a time, so opening another closes the previous one.
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -127,9 +131,11 @@ export default function WeeklyPlan() {
   // downloads it named by the date it's planned for. A browser app can't
   // write straight into Zwift's local Workouts folder, so this is a
   // one-time manual drop-in until Zwift's Training Connections API is
-  // approved (see the note below the plan).
-  function handleDownloadZwo(w: WeeklyWorkout) {
-    const xml = generateZwoXml(w);
+  // approved (see the note below the plan). `blocks`, when provided, comes
+  // from the in-app workout editor (the rider's own tweaks) instead of the
+  // AI's untouched suggestion.
+  function handleDownloadZwo(w: WeeklyWorkout, blocks?: ZwoBlock[]) {
+    const xml = generateZwoXml(w, blocks);
     const filename = zwoFileName(w.date, w.title);
     const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
@@ -222,14 +228,29 @@ export default function WeeklyPlan() {
                   {w.description}
                 </div>
                 {!isRestDay(w.type) && (
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ width: "auto", padding: "5px 12px", fontSize: 11.5, marginTop: 10 }}
-                    onClick={() => handleDownloadZwo(w)}
-                  >
-                    Download .zwo
-                  </button>
+                  <>
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ width: "auto", padding: "5px 12px", fontSize: 11.5 }}
+                        onClick={() => handleDownloadZwo(w)}
+                      >
+                        Download .zwo
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ width: "auto", padding: "5px 12px", fontSize: 11.5, opacity: 0.8 }}
+                        onClick={() => setEditingIndex(editingIndex === i ? null : i)}
+                      >
+                        {editingIndex === i ? "Close editor" : "Edit workout"}
+                      </button>
+                    </div>
+                    {editingIndex === i && (
+                      <WorkoutEditor workout={w} onDownload={(blocks) => handleDownloadZwo(w, blocks)} />
+                    )}
+                  </>
                 )}
               </div>
             ))}
@@ -237,11 +258,11 @@ export default function WeeklyPlan() {
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
             Each session above can be downloaded as a real Zwift workout file (.zwo) - drop
-            it into your Documents/Zwift/Workouts/&lt;your Zwift ID&gt; folder and it shows
-            up in Zwift&apos;s own workout list, ready to ride. This plan itself is saved in
-            your browser, not pushed to your Zwift account automatically yet - true
-            auto-sync needs Zwift&apos;s official Training Connections API, which is still
-            pending their approval.
+            it into your Documents/Zwift/Workouts/&lt;your Zwift ID&gt; folder, then open
+            Zwift on that computer once. Zwift uploads custom workouts placed there to your
+            account automatically, so they then sync to your phone and any other device too
+            - no separate step needed beyond opening Zwift once after adding the file. This
+            plan itself (the weekly text/structure) is saved in your browser only.
           </div>
         </>
       )}
