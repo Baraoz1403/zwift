@@ -39,6 +39,19 @@ export default function AiInsights() {
     return () => window.removeEventListener("open-ai-insights", handler);
   }, []);
 
+  // Kick the analysis off as soon as the dashboard itself loads, instead of
+  // waiting for the header button to be clicked - clicking "AI Insights"
+  // used to be the moment the request started, so it always felt like a
+  // dead pause ("the system starts thinking"). Starting it in the
+  // background on mount means it's usually already done (or close to it) by
+  // the time anyone actually looks at the panel.
+  useEffect(() => {
+    if (!loadingRef.current && !textRef.current) {
+      handleClick();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleClick() {
     setLoading(true);
     setError(null);

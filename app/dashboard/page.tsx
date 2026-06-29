@@ -19,6 +19,7 @@ import ActivityCharts from "./activity-chart";
 import RidesTable from "./rides-table";
 import AiInsights from "./ai-insights";
 import AiInsightsLink from "./ai-insights-link";
+import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import TrendComparison from "./trend-comparison";
@@ -97,6 +98,26 @@ export default async function DashboardPage() {
   const runLevel =
     profile?.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : null;
 
+  // Zwift's profile API doesn't expose a "FTP last changed on" field, so
+  // there's no real date to attach to that number directly. The most
+  // honest, useful date to show next to FTP/VO2max (which is derived from
+  // FTP) is the date of the rider's most recent ride - it tells you how
+  // fresh the underlying data behind these numbers actually is.
+  const lastRideDate = activities.reduce<string | null>((latest, a) => {
+    if (!a.startDate) return latest;
+    if (!latest || new Date(a.startDate).getTime() > new Date(latest).getTime()) {
+      return a.startDate;
+    }
+    return latest;
+  }, null);
+  const lastRideDateLabel = lastRideDate
+    ? new Date(lastRideDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+
   // Rare edge case: session had no athleteId, so activities couldn't be
   // requested in parallel above - now that the profile (and its real id)
   // has arrived, fetch them in this fallback path.
@@ -159,6 +180,11 @@ export default async function DashboardPage() {
               <div className="label" style={{ margin: 0 }}>FTP</div>
             </div>
             <div className="value">{profile.ftp ?? "n/a"}</div>
+            {lastRideDateLabel && (
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+                as of {lastRideDateLabel}
+              </div>
+            )}
           </div>
           <div className="stat-card">
             <div className="stat-card-head">
@@ -168,6 +194,11 @@ export default async function DashboardPage() {
               <div className="label" style={{ margin: 0 }}>VO2max (est.)</div>
             </div>
             <div className="value">{vo2max != null ? vo2max.toFixed(1) : "n/a"}</div>
+            {lastRideDateLabel && (
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+                as of {lastRideDateLabel}
+              </div>
+            )}
           </div>
           <div className="stat-card">
             <div className="stat-card-head">
@@ -234,6 +265,10 @@ export default async function DashboardPage() {
 
           <div className="section fade-in" id="ai-insights" style={{ scrollMarginTop: 24 }}>
             <AiInsights />
+          </div>
+
+          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
+            <WeeklyPlan />
           </div>
 
           <div className="section fade-in">

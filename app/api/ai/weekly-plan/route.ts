@@ -4,8 +4,11 @@ import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift";
 import { parseFitRecords } from "@/lib/fit-parser";
 import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies } from "@/lib/stats";
-import { generateInsights, AiInsightsError, RideSummary } from "@/lib/ai";
+import { generateWeeklyPlan, AiInsightsError, RideSummary } from "@/lib/ai";
 
+// Mirrors app/api/ai/insights/route.ts (same auth, same data-gathering
+// pattern) but calls generateWeeklyPlan instead of generateInsights, and
+// returns a structured weekly workout plan rather than free-text analysis.
 export async function POST(_req: NextRequest) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -29,17 +32,8 @@ export async function POST(_req: NextRequest) {
     }
 
     const activities = await fetchActivities(session.accessToken, athleteId);
-
-    // Same last-20-rides selection the dashboard charts use, so the AI's
-    // ride window matches what's already visible on screen.
     const recentActivities = selectChartActivities(activities);
 
-    // Heart rate isn't on the activity list itself - it only exists inside
-    // each ride's FIT file, so it has to be downloaded and parsed per ride,
-    // same as the dashboard's "Highest avg heart rate" record card and the
-    // combined trend chart. Bounded concurrency for the same reason noted in
-    // lib/stats.ts (mapWithConcurrency): avoids firing ~20 large downloads
-    // at once.
     const hrResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
       const buf = await fetchActivityFit(a);
       const fitRecords = parseFitRecords(buf);
@@ -60,20 +54,16 @@ export async function POST(_req: NextRequest) {
       avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
     }));
 
-    // Flag rides where heart rate looks like a statistical outlier for the
-    // power produced that day (e.g. "couldn't get the heart rate up") so the
-    // AI calls these out specifically rather than only describing the
-    // general trend.
     const hrFlags = flagHeartRateAnomalies(rides);
     for (const [index, direction] of hrFlags) {
       rides[index].hrFlag = direction;
     }
 
     if (rides.length === 0) {
-      return NextResponse.json({ ok: false, error: "Not enough ride history yet for insights." });
+      return NextResponse.json({ ok: false, error: "Not enough ride history yet to build a plan." });
     }
 
-    const insight = await generateInsights({
+    const plan = await generateWeeklyPlan({
       firstName: profile.firstName,
       ftp: profile.ftp,
       weightKg: profile.weight ? profile.weight / 1000 : undefined,
@@ -84,11 +74,14 @@ export async function POST(_req: NextRequest) {
       rides,
     });
 
-    return NextResponse.json({ ok: true, insight });
+    return NextResponse.json({ ok: true, plan });
   } catch (e) {
     if (e instanceof AiInsightsError) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 200 });
     }
-    return NextResponse.json({ ok: false, error: "Unexpected error generating insights." }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Unexpected error generating the weekly plan." },
+      { status: 500 }
+    );
   }
 }

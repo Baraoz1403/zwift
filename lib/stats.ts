@@ -54,6 +54,45 @@ export function setCachedFitExtras(activity: ZwiftActivity, extra: ChartExtra): 
   fitExtrasCache.set(key, extra);
 }
 
+/**
+ * Flags rides whose heart-rate-to-power ratio is a statistical outlier
+ * against the rider's own recent baseline - e.g. "couldn't get the heart
+ * rate up" on a ride with otherwise normal power output, which is an early
+ * signal worth surfacing (possible fatigue, illness, or a sensor issue) but
+ * easy to miss just by eyeballing power/heart-rate numbers ride to ride.
+ * "low" means heart rate stayed unusually low for the power produced that
+ * day; "high" means the opposite (heart rate unusually elevated for that
+ * power, e.g. early fatigue/heat/dehydration).
+ */
+export function flagHeartRateAnomalies(
+  rides: { avgWatts?: number | null; avgHeartRate?: number | null }[],
+  thresholdStdDevs = 1.25
+): Map<number, "low" | "high"> {
+  const ratios: { index: number; ratio: number }[] = [];
+  rides.forEach((r, i) => {
+    if (r.avgWatts && r.avgWatts > 0 && r.avgHeartRate && r.avgHeartRate > 0) {
+      ratios.push({ index: i, ratio: r.avgHeartRate / r.avgWatts });
+    }
+  });
+
+  const flags = new Map<number, "low" | "high">();
+  // Need a handful of rides with both watts and heart rate to have any real
+  // baseline - fewer than that and "outlier" wouldn't mean much.
+  if (ratios.length < 4) return flags;
+
+  const mean = ratios.reduce((s, r) => s + r.ratio, 0) / ratios.length;
+  const variance = ratios.reduce((s, r) => s + (r.ratio - mean) ** 2, 0) / ratios.length;
+  const stdDev = Math.sqrt(variance);
+  if (stdDev === 0) return flags;
+
+  for (const { index, ratio } of ratios) {
+    const z = (ratio - mean) / stdDev;
+    if (z <= -thresholdStdDevs) flags.set(index, "low");
+    else if (z >= thresholdStdDevs) flags.set(index, "high");
+  }
+  return flags;
+}
+
 export function selectChartActivities(activities: ZwiftActivity[], count = 30): ZwiftActivity[] {
   return [...activities]
     .filter((a) => a.startDate)

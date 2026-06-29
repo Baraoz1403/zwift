@@ -18,10 +18,20 @@ export default function AiInsightsLink() {
     <a
       href="#ai-insights"
       className="btn"
-      style={{ width: "auto", padding: "10px 22px", display: "inline-flex", alignItems: "center", gap: 7 }}
+      style={{
+        width: "auto",
+        padding: "7px 16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: "#000",
+        color: "#fff",
+        fontWeight: 400,
+        fontSize: 13,
+      }}
       onClick={() => window.dispatchEvent(new Event("open-ai-insights"))}
     >
-      <IconBolt size={15} />
+      <IconBolt size={13} />
       AI Insights
     </a>
   );
