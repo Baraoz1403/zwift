@@ -291,7 +291,7 @@ export default function ActivityCharts({
   // whatever the server pre-fetched for the default 30-ride window so
   // picking "30" never needs a network round trip.
   const [extrasByCount, setExtrasByCount] = useState<Record<number, ChartExtra[]>>(() =>
-    extras ? { 30: extras } : {}
+    (extras ? { 30: extras } : {}) as Record<number, ChartExtra[]>
   );
   const [loadingCount, setLoadingCount] = useState<number | null>(null);
 
