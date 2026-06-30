@@ -145,7 +145,7 @@ export default function TrainingProfileCard() {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
         {/* Goal */}
         <div className="field" style={{ margin: 0 }}>
           <label>Main training goal</label>
