@@ -366,7 +366,7 @@ export default function ActivityCharts({
 
   const series: TrendSeries[] = [
     { key: "distance", label: "Distance", color: "#2f8fe0", unit: "km", values: distances },
-    { key: "power", label: "Avg power", color: "#2f8fe0", unit: "W", values: power },
+    { key: "power", label: "Avg power", color: "#f07020", unit: "W", values: power },
     { key: "heartRate", label: "Avg heart rate", color: "#ff4d6d", unit: "bpm", values: avgHeartRate },
     { key: "cadence", label: "Avg cadence", color: "#1a9e52", unit: "rpm", values: avgCadence },
   ];

@@ -257,6 +257,31 @@ export default function WeeklyPlan() {
         </div>
       </div>
 
+      {/* "How it works" — always visible, builds trust before first generate */}
+      {!loading && (
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "6px 20px",
+          alignItems: "center",
+          marginTop: 10,
+          marginBottom: 4,
+          fontSize: 11.5,
+          color: "var(--muted)",
+          lineHeight: 1.5,
+        }}>
+          <span>🧠 Built from your actual ride history</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>📊 Training load &amp; freshness (CTL / TSB)</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>📅 Mesocycle position</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>🎯 Your goals &amp; schedule</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>🔁 Last week's adherence</span>
+        </div>
+      )}
+
       {stale && plan && !loading && (
         <div className="notice" style={{ marginTop: 4, marginBottom: 12 }}>
           This plan is from the week of {plan.weekOf} - generate a new one for the current week.

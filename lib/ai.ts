@@ -271,8 +271,12 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "week's overall shape/logic in the summary. " +
   "Respond with ONLY valid JSON (no markdown, no code fences, no " +
   "commentary) matching exactly this shape: " +
-  '{"summary": string (<=3 sentences, plain prose, mention the week\'s ' +
-  'overall structure/reasoning), "workouts": [{"day": string ' +
+  '{"summary": string (2-3 sentences. ALWAYS open by naming the specific ' +
+  'signals that drove this plan, e.g. "Based on 4 rides last week, a ' +
+  'neutral TSB of -3, and your Base phase week 1, this week..." — ' +
+  'the rider must immediately see WHY this plan was built for them ' +
+  'personally, not for a generic athlete. Then describe the week shape.), ' +
+  '"workouts": [{"day": string ' +
   '(Monday..Sunday), "date": string (YYYY-MM-DD, the actual calendar date ' +
   'for that day in the upcoming week), "type": string, "title": string, ' +
   '"durationMin": number, "targetPowerPctFtp": string (e.g. "65-75%", ' +
