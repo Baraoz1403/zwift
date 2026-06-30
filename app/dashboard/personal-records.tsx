@@ -183,7 +183,7 @@ export default function PersonalRecords({
 
         {r.longestDistance && (
           <div className="record-card">
-            <div className="record-icon c-pink">
+            <div className="record-icon c-neutral">
               <IconTrophy size={20} />
             </div>
             <div>

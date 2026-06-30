@@ -90,7 +90,17 @@ export default function AiInsights() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>AI Insights</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <h2 style={{ fontSize: 16, margin: 0 }}>AI Insights</h2>
+          <button
+            className="btn"
+            style={{ width: "auto", padding: "7px 18px", fontSize: 13 }}
+            onClick={handleClick}
+            disabled={loading}
+          >
+            {loading ? "Analyzing..." : "Get AI insights on my recent training"}
+          </button>
+        </div>
         <button
           type="button"
           className="btn-secondary btn"
@@ -101,15 +111,6 @@ export default function AiInsights() {
           ✕ Close
         </button>
       </div>
-
-      <button
-        className="btn"
-        style={{ width: "auto", padding: "10px 20px" }}
-        onClick={handleClick}
-        disabled={loading}
-      >
-        {loading ? "Analyzing..." : "Get AI insights on my recent training"}
-      </button>
 
       {error && (
         <div className="notice" style={{ marginTop: 12 }}>
