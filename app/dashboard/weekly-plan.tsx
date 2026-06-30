@@ -259,7 +259,7 @@ export default function WeeklyPlan() {
                   <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
                     <button
                       type="button"
-                      className="btn"
+                      className="btn btn-secondary"
                       style={{ width: "auto", padding: "5px 18px", fontSize: 11.5 }}
                       onClick={() => handleDownloadZwo(w)}
                     >

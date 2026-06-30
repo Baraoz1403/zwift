@@ -340,6 +340,7 @@ export async function generateWeeklyPlan(params: {
           sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
           sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
           eventDate: params.riderProfile.eventDate ?? null,
+          ageYears: params.riderProfile.ageYears ?? null,
           notes: params.riderProfile.notes ?? null,
         }
       : null,
