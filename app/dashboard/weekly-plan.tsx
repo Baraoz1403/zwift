@@ -30,10 +30,6 @@ interface WeeklyPlan {
 // next time this rider opens the dashboard on this device, until they
 // generate a new one or a new week starts.
 const STORAGE_KEY = "zwiftWeeklyPlan";
-// Zwift's API has no birthdate field, so age (used to lean toward extra
-// recovery for older riders) only ever comes from the rider typing it in
-// here - stored the same pragmatic way as the plan itself, in localStorage.
-const AGE_STORAGE_KEY = "zwiftRiderAge";
 // The rider's macro-cycle position (lib/periodization.ts) - which week of a
 // recurring 4-week mesocycle this is. Persisted the same pragmatic way as
 // everything else here (no DB yet): kept in this browser, sent back to the
@@ -93,7 +89,6 @@ export default function WeeklyPlan() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
-  const [age, setAge] = useState<string>("");
   const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
 
   useEffect(() => {
@@ -106,29 +101,12 @@ export default function WeeklyPlan() {
     if (cachedCycle) {
       setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
-    try {
-      const savedAge = window.localStorage.getItem(AGE_STORAGE_KEY);
-      if (savedAge) setAge(savedAge);
-    } catch {
-      // localStorage unavailable - age input just starts blank.
-    }
   }, []);
-
-  function handleAgeChange(value: string) {
-    setAge(value);
-    try {
-      if (value) window.localStorage.setItem(AGE_STORAGE_KEY, value);
-      else window.localStorage.removeItem(AGE_STORAGE_KEY);
-    } catch {
-      // Non-fatal - age just won't persist across reloads in this case.
-    }
-  }
 
   async function handleGenerate() {
     setLoading(true);
     setError(null);
     try {
-      const ageYears = age ? Number(age) : undefined;
       const macroCycle = loadCachedCycle();
       // Only hand over the cached plan as "last week's plan" when it's
       // genuinely from an earlier week - re-rolling this week's own plan a
@@ -145,7 +123,7 @@ export default function WeeklyPlan() {
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ageYears, macroCycle, previousPlan, riderProfile }),
+        body: JSON.stringify({ macroCycle, previousPlan, riderProfile }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -217,18 +195,6 @@ export default function WeeklyPlan() {
           )}
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted)" }}>
-            Age (optional)
-            <input
-              type="number"
-              min={1}
-              max={110}
-              value={age}
-              onChange={(e) => handleAgeChange(e.target.value)}
-              placeholder="years"
-              style={{ width: 56, padding: "4px 6px", fontSize: 12.5 }}
-            />
-          </label>
           <button
             type="button"
             className="btn"
