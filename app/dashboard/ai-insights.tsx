@@ -75,7 +75,7 @@ export default function AiInsights() {
   if (!open) {
     return (
       <div style={{ marginTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h2 style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 7 }}><IconBolt size={15} /> AI Insights</h2>
+        <div className="section-title" style={{ margin: 0 }}><IconBolt size={14} /> AI Insights</div>
         <button
           type="button"
           className="btn-secondary btn"
@@ -91,7 +91,7 @@ export default function AiInsights() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <h2 style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 7 }}><IconBolt size={15} /> AI Insights</h2>
+        <div className="section-title" style={{ margin: 0 }}><IconBolt size={14} /> AI Insights</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             className="btn"

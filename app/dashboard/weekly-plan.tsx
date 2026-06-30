@@ -175,7 +175,7 @@ export default function WeeklyPlan() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="section-title" style={{ margin: 0, justifyContent: "space-between" }}>
           <IconCalendar size={16} />
           Weekly training plan
           {cycleInfo && (
@@ -193,7 +193,7 @@ export default function WeeklyPlan() {
               {cycleInfo.phase} · week {cycleInfo.weekInMesocycle}/4
             </span>
           )}
-        </h2>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <button
             type="button"

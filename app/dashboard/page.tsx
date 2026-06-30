@@ -25,7 +25,7 @@ import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import TrendComparison from "./trend-comparison";
 import TrainingProfileCard from "./training-profile";
-import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun } from "./icons";
+import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun, IconTrend, IconList, IconTrophy } from "./icons";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -254,7 +254,7 @@ export default async function DashboardPage() {
                   <PersonalRecords activities={clientActivities} bestHeartRate={null} />
                 </div>
                 <div className="section fade-in">
-                  <div className="section-title">Performance trends</div>
+                  <div className="section-title"><IconTrend size={14} /> Performance trends</div>
                   <div className="notice">Crunching your recent rides for heart rate/cadence…</div>
                 </div>
               </>
@@ -264,7 +264,7 @@ export default async function DashboardPage() {
           </Suspense>
 
           <div className="section fade-in">
-            <div className="section-title">Rides</div>
+            <div className="section-title"><IconList size={14} /> Rides</div>
             <RidesTable activities={clientActivities} />
           </div>
 
@@ -288,7 +288,7 @@ export default async function DashboardPage() {
 
       {activitiesError && (
         <div className="section fade-in">
-          <div className="section-title">Rides</div>
+          <div className="section-title"><IconList size={14} /> Rides</div>
           <div className="notice">
             Ride history couldn&apos;t be loaded right now ({activitiesError}).
           </div>
@@ -384,7 +384,7 @@ async function ChartDataSection({
       </div>
 
       <div className="section fade-in">
-        <div className="section-title">Performance trends</div>
+        <div className="section-title"><IconTrend size={14} /> Performance trends</div>
         <ActivityCharts activities={clientActivities} extras={chartExtras} />
       </div>
       </>

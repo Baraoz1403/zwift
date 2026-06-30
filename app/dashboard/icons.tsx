@@ -152,3 +152,25 @@ export function IconArrowDown({ size = 14, className }: IconProps) {
     </svg>
   );
 }
+
+export function IconTrend({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
+}
+
+export function IconList({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
