@@ -24,7 +24,7 @@ export default function AiInsightsLink() {
         display: "inline-flex",
         alignItems: "center",
         gap: 6,
-        background: "#000",
+        background: "var(--accent)",
         color: "#fff",
         fontWeight: 400,
         fontSize: 13,
