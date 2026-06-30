@@ -8,6 +8,7 @@ import { generateWeeklyPlan, AiInsightsError, RideSummary, WeeklyWorkout } from 
 import { computeTrainingLoad } from "@/lib/training-load";
 import { advanceMacroCycle, getPhaseForWeekIndex, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
 import { computeAdherence } from "@/lib/adherence";
+import type { RiderTrainingProfile } from "@/lib/rider-profile";
 
 // Mirrors app/api/ai/insights/route.ts (same auth, same data-gathering
 // pattern) but calls generateWeeklyPlan instead of generateInsights, and
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
   let ageYears: number | undefined;
   let incomingCycle: MacroCycleState | null = null;
   let previousPlan: { weekOf: string; workouts: WeeklyWorkout[] } | null = null;
+  let riderProfile: RiderTrainingProfile | undefined;
   try {
     const body = await req.json();
     if (typeof body?.ageYears === "number" && body.ageYears > 0) {
@@ -44,6 +46,9 @@ export async function POST(req: NextRequest) {
       Array.isArray(body.previousPlan.workouts)
     ) {
       previousPlan = { weekOf: body.previousPlan.weekOf, workouts: body.previousPlan.workouts };
+    }
+    if (body?.riderProfile && typeof body.riderProfile === "object") {
+      riderProfile = body.riderProfile as RiderTrainingProfile;
     }
   } catch {
     // No/invalid JSON body - fine, these all just stay unset.
@@ -131,6 +136,7 @@ export async function POST(req: NextRequest) {
       trainingLoad,
       cycle,
       lastWeekAdherence,
+      riderProfile,
     });
 
     return NextResponse.json({ ok: true, plan, macroCycle, cycle });

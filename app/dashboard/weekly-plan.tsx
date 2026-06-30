@@ -134,10 +134,18 @@ export default function WeeklyPlan() {
       // genuinely from an earlier week - re-rolling this week's own plan a
       // few times shouldn't compare it against itself.
       const previousPlan = plan && stale ? plan : null;
+      // Read the rider's training profile (goal, days/week, session length)
+      // set in the TrainingProfileCard and pass it straight through to the
+      // plan generator - no transformation needed here.
+      let riderProfile = null;
+      try {
+        const raw = window.localStorage.getItem("zwiftRiderProfile");
+        if (raw) riderProfile = JSON.parse(raw);
+      } catch {}
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ageYears, macroCycle, previousPlan }),
+        body: JSON.stringify({ ageYears, macroCycle, previousPlan, riderProfile }),
       });
       const data = await res.json();
       if (data.ok) {

@@ -24,6 +24,7 @@ import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import TrendComparison from "./trend-comparison";
+import TrainingProfileCard from "./training-profile";
 import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun } from "./icons";
 
 export default async function DashboardPage() {
@@ -233,6 +234,8 @@ export default async function DashboardPage() {
           </div>
         </div>
       )}
+
+      <TrainingProfileCard />
 
       {profileError && (
         <div className="notice" style={{ marginTop: 16 }}>

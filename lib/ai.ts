@@ -10,6 +10,8 @@
 import type { TrainingLoadSummary } from "./training-load";
 import { mondayOfCurrentWeek, type PhaseInfo } from "./periodization";
 import type { AdherenceSummary } from "./adherence";
+import type { RiderTrainingProfile } from "./rider-profile";
+import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES } from "./rider-profile";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -198,6 +200,26 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "encouraging, not punitive - missing a session is data, not a failure. " +
   "Absent/null lastWeekAdherence just means there's nothing to compare yet " +
   "(first plan, or regenerating the same week) - proceed normally. " +
+  "The input may also include a riderProfile object - {goal, daysPerWeek, " +
+  "sessionLengthLabel, sessionLengthMinutes, eventDate, notes} - containing " +
+  "the rider's own stated training intent. When present, use it as a strong " +
+  "personalisation signal: (1) treat daysPerWeek as the rider's target " +
+  "weekly session count - use it as the primary driver of how many sessions " +
+  "to schedule, treating ridesLast7Days as a reality-check (if they've " +
+  "been riding far fewer days than stated, don't suddenly jump up to " +
+  "daysPerWeek in one week - step toward it gradually over 2-3 weeks); " +
+  "(2) cap every planned session at sessionLengthMinutes - never schedule a " +
+  "session longer than this value; " +
+  "(3) let goal colour session type emphasis: 'Increase FTP' -> more " +
+  "threshold/sweet-spot blocks; 'Lose weight / body composition' -> more " +
+  "moderate-duration aerobic rides; 'Prepare for an event' -> build toward " +
+  "event-specific demands and check eventDate to judge how close the event " +
+  "is; 'General fitness' or 'Fun/enjoyment' -> balanced variety; " +
+  "(4) if eventDate is present and within 4 weeks, note it in the summary " +
+  "and shift toward a taper (cut volume, keep race-pace intensity); " +
+  "(5) if notes is present and non-empty, read it for extra rider context " +
+  "(injuries, preferences, schedule constraints) and adjust accordingly. " +
+  "Absent/null riderProfile means no profile set - proceed normally. " +
   "Use session types/structures matching Zwift's own official plans (FTP " +
   "Builder, Build Me Up, Zwift Academy) and workout categories: " +
   "'Endurance'/'Foundation' (long steady Zone 1-2 ride), 'Tempo' (steady " +
@@ -260,6 +282,10 @@ export async function generateWeeklyPlan(params: {
    *  cached plan against what the rider actually rode - absent on this
    *  rider's first-ever plan, or when generating again within the same week. */
   lastWeekAdherence?: AdherenceSummary;
+  /** The rider's stated training profile (goal, available days, session
+   *  length, optional target event date, free notes) - absent if the rider
+   *  hasn't filled in the profile card yet. */
+  riderProfile?: RiderTrainingProfile;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -300,6 +326,16 @@ export async function generateWeeklyPlan(params: {
           completedSessions: params.lastWeekAdherence.completedSessions,
           missedSessions: params.lastWeekAdherence.missedSessions,
           notes: params.lastWeekAdherence.notes,
+        }
+      : null,
+    riderProfile: params.riderProfile
+      ? {
+          goal: GOAL_LABELS[params.riderProfile.goal],
+          daysPerWeek: params.riderProfile.daysPerWeek,
+          sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
+          sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
+          eventDate: params.riderProfile.eventDate ?? null,
+          notes: params.riderProfile.notes ?? null,
         }
       : null,
     runLevel: params.runLevel ?? null,
