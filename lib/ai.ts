@@ -282,8 +282,15 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "cool-down. Always state the exact intervals/blocks with durations and " +
   "%FTP targets. Never write a vague description like 'steady ride' or " +
   "'endurance ride' alone - riders need to know what to actually DO.)}] (include only the days that should have a " +
-  "session - 2 to 6 entries total, do not pad it out to 7 just to fill " +
-  "every day)}";
+  "session - HARD LIMIT: return between 2 and 6 workouts maximum. " +
+  "NEVER return 7. A full week has 7 days but rest/recovery days are " +
+  "implicit - do not include them as entries. If you reach 7 sessions " +
+  "drop the least important one. " +
+  "INTERVAL QUALITY: at least 1 session per week must be a genuine " +
+  "interval workout (Threshold, Sweet Spot, VO2, or Intermittent) with " +
+  "specific rep structure (e.g. 4×5 min at 95-105% FTP, 3 min recovery). " +
+  "Even in Base phase, 1 hard session with intervals is required. " +
+  "Riders should feel challenged and engaged, not bored.)}";
 
 export async function generateWeeklyPlan(params: {
   firstName?: string;
