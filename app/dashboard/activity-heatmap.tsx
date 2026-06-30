@@ -64,36 +64,28 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
 
   return (
     <div>
-      <div className="section-title">
-        <IconCalendar size={16} />
-        Ride activity
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
-        <div className="trend-tabs">
-          {PERIODS.map((p, i) => (
-            <button
-              key={p.label}
-              type="button"
-              className={`trend-tab ${i === periodIdx ? "active" : ""}`}
-              onClick={() => setPeriodIdx(i)}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <span style={{ color: "var(--muted)", fontSize: 12.5, fontWeight: 500 }}>
-          {activeDays} active day{activeDays === 1 ? "" : "s"} in the last {period.label}
+      <div className="section-title" style={{ justifyContent: "space-between" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <IconCalendar size={16} />
+          Ride activity
         </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 500, color: "var(--muted)", textTransform: "none", letterSpacing: "normal" }}>
+            {activeDays} active day{activeDays === 1 ? "" : "s"} in the last {period.label}
+          </span>
+          <div className="trend-tabs" style={{ marginBottom: 0 }}>
+            {PERIODS.map((p, i) => (
+              <button
+                key={p.label}
+                type="button"
+                className={`trend-tab ${i === periodIdx ? "active" : ""}`}
+                onClick={() => setPeriodIdx(i)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="heatmap-wrap">

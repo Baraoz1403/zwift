@@ -5,8 +5,10 @@ import {
   type RiderTrainingProfile,
   type TrainingGoal,
   type SessionLength,
+  type Sport,
   GOAL_LABELS,
   SESSION_LENGTH_LABELS,
+  SPORT_LABELS,
 } from "@/lib/rider-profile";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 
@@ -38,6 +40,7 @@ const DEFAULT: RiderTrainingProfile = {
   goal: "fitness",
   daysPerWeek: 3,
   sessionLength: "60",
+  sport: "cycling",
 };
 
 export default function TrainingProfileCard() {
@@ -84,6 +87,11 @@ export default function TrainingProfileCard() {
             <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
               {SESSION_LENGTH_LABELS[profile.sessionLength]}
             </span>
+            {profile.sport && profile.sport !== "cycling" && (
+              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                {SPORT_LABELS[profile.sport]}
+              </span>
+            )}
             {profile.eventDate && (
               <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
                 Event: {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -126,8 +134,15 @@ export default function TrainingProfileCard() {
   // ── Edit form ──────────────────────────────────────────────────────────────
   return (
     <div className="stat-card" style={{ marginTop: 20, padding: "20px 24px" }}>
-      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 18, color: "var(--text)" }}>
-        {profile ? "Edit your training profile" : "Set up your training profile"}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 4 }}>
+          {profile ? "Edit your training profile" : "Welcome — let's personalize your plan"}
+        </div>
+        {!profile && (
+          <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 }}>
+            Tell me about your goals and schedule so I can build a training plan that actually fits your life.
+          </div>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
@@ -170,6 +185,21 @@ export default function TrainingProfileCard() {
             onChange={e => setDraft(d => ({ ...d, sessionLength: e.target.value as SessionLength }))}
           >
             {(Object.entries(SESSION_LENGTH_LABELS) as [SessionLength, string][]).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sport */}
+        <div className="field" style={{ margin: 0 }}>
+          <label>Primary discipline</label>
+          <select
+            className="select"
+            style={{ width: "100%" }}
+            value={draft.sport ?? "cycling"}
+            onChange={e => setDraft(d => ({ ...d, sport: e.target.value as Sport }))}
+          >
+            {(Object.entries(SPORT_LABELS) as [Sport, string][]).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
           </select>

@@ -10,14 +10,22 @@
 
 export type TrainingGoal = "fitness" | "ftp" | "weight" | "event" | "fun";
 export type SessionLength = "45" | "60" | "90" | "90plus";
+export type Sport = "cycling" | "running" | "both";
 
 export interface RiderTrainingProfile {
   goal: TrainingGoal;
   daysPerWeek: number;       // 1-7
   sessionLength: SessionLength;
+  sport?: Sport;             // preferred discipline, optional (defaults to cycling)
   eventDate?: string;        // ISO date, optional
   notes?: string;            // free text, optional
 }
+
+export const SPORT_LABELS: Record<Sport, string> = {
+  cycling: "Cycling",
+  running: "Running",
+  both:    "Cycling & Running",
+};
 
 export const GOAL_LABELS: Record<TrainingGoal, string> = {
   fitness: "Improve overall fitness",

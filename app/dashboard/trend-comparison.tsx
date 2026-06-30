@@ -37,15 +37,16 @@ export default function TrendComparison({ activities }: { activities: ZwiftActiv
 
   return (
     <div>
-      <div className="section-title">Trend comparison</div>
-
-      <div className="trend-tabs">
-        <button className={`trend-tab ${period === "week" ? "active" : ""}`} onClick={() => setPeriod("week")}>
-          Week vs week
-        </button>
-        <button className={`trend-tab ${period === "month" ? "active" : ""}`} onClick={() => setPeriod("month")}>
-          Month vs month
-        </button>
+      <div className="section-title" style={{ justifyContent: "space-between" }}>
+        Trend comparison
+        <div className="trend-tabs" style={{ marginBottom: 0 }}>
+          <button className={`trend-tab ${period === "week" ? "active" : ""}`} onClick={() => setPeriod("week")}>
+            Week vs week
+          </button>
+          <button className={`trend-tab ${period === "month" ? "active" : ""}`} onClick={() => setPeriod("month")}>
+            Month vs month
+          </button>
+        </div>
       </div>
 
       <div className="trend-card">

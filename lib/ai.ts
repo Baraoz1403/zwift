@@ -11,7 +11,7 @@ import type { TrainingLoadSummary } from "./training-load";
 import { mondayOfCurrentWeek, type PhaseInfo } from "./periodization";
 import type { AdherenceSummary } from "./adherence";
 import type { RiderTrainingProfile } from "./rider-profile";
-import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES } from "./rider-profile";
+import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS } from "./rider-profile";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -200,7 +200,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "encouraging, not punitive - missing a session is data, not a failure. " +
   "Absent/null lastWeekAdherence just means there's nothing to compare yet " +
   "(first plan, or regenerating the same week) - proceed normally. " +
-  "The input may also include a riderProfile object - {goal, daysPerWeek, " +
+  "The input may also include a riderProfile object - {sport, goal, daysPerWeek, " +
   "sessionLengthLabel, sessionLengthMinutes, eventDate, notes} - containing " +
   "the rider's own stated training intent. When present, use it as a strong " +
   "personalisation signal: (1) treat daysPerWeek as the rider's target " +
@@ -219,6 +219,10 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "and shift toward a taper (cut volume, keep race-pace intensity); " +
   "(5) if notes is present and non-empty, read it for extra rider context " +
   "(injuries, preferences, schedule constraints) and adjust accordingly. " +
+  "The sport field tells you the rider's primary discipline: 'Cycling' " +
+  "means plan only cycling sessions (Zwift rides); 'Running' means plan " +
+  "only running sessions; 'Cycling & Running' means mix both. Never " +
+  "mix sports unless sport is 'Cycling & Running'. " +
   "Absent/null riderProfile means no profile set - proceed normally. " +
   "Use session types/structures matching Zwift's own official plans (FTP " +
   "Builder, Build Me Up, Zwift Academy) and workout categories: " +
@@ -330,6 +334,7 @@ export async function generateWeeklyPlan(params: {
       : null,
     riderProfile: params.riderProfile
       ? {
+          sport: SPORT_LABELS[params.riderProfile.sport ?? "cycling"],
           goal: GOAL_LABELS[params.riderProfile.goal],
           daysPerWeek: params.riderProfile.daysPerWeek,
           sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
