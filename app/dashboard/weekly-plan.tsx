@@ -252,7 +252,7 @@ export default function WeeklyPlan() {
                   {w.durationMin} min
                   {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, lineHeight: 1.5, flexGrow: 1 }}>
+                <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
                   {w.description}
                 </div>
                 {!isRestDay(w.type) && (

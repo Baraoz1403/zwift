@@ -734,6 +734,16 @@ a:hover {
   padding: 16px 20px;
   color: var(--muted);
   font-size: 14px;
+  text-align: justify;
+  hyphens: auto;
+  line-height: 1.65;
+}
+
+/* Prose text inside cards — descriptions, summaries, etc. */
+.card-desc {
+  text-align: justify;
+  hyphens: auto;
+  line-height: 1.55;
 }
 
 /* ---------- Footer ---------- */
