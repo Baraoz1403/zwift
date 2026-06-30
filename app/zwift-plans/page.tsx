@@ -33,9 +33,9 @@ export default function ZwiftPlansPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: "40px auto", padding: "0 24px", fontFamily: "inherit" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 20 }}>Zwift API — Workout / Plan Endpoints</h1>
+      <h1 style={{ fontSize: 20, marginBottom: 20 }}>Zwift API - Workout / Plan Endpoints</h1>
       <p style={{ fontSize: 13, color: "#5b6168", marginBottom: 16 }}>
-        You must be <a href="/login" style={{ color: "#ff6600" }}>logged in</a> first. Then click below to probe Zwift&apos;s API for training plan endpoints.
+        You must be logged in first. Then click below to probe Zwift API for training plan endpoints.
       </p>
       <button
         onClick={runProbe}
@@ -47,9 +47,7 @@ export default function ZwiftPlansPage() {
 
       {error && (
         <div style={{ padding: 14, borderRadius: 10, background: "#fef2f2", border: "1px solid #fca5a5", color: "#dc2626", marginBottom: 16, fontSize: 13 }}>
-          {error === "Not logged in" ? (
-            <>Not logged in — <a href="/login" style={{ color: "#dc2626", fontWeight: 700 }}>log in here</a> first, then come back.</>
-          ) : error}
+          {error === "Not logged in" ? "Not logged in - go to /login first, then come back." : error}
         </div>
       )}
 
