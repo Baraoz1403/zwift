@@ -123,6 +123,19 @@ export async function POST(req: NextRequest) {
         ? computeAdherence(previousPlan, rides, profile.ftp)
         : undefined;
 
+    // Derive age from Zwift profile's dateOfBirth if available (preferred over
+    // the rider typing their age manually, which we've now removed from the UI).
+    let resolvedAge = ageYears; // fallback: body param (kept for compatibility)
+    if (!resolvedAge && profile.dateOfBirth) {
+      const dob = new Date(profile.dateOfBirth);
+      const now = new Date();
+      const years = now.getUTCFullYear() - dob.getUTCFullYear();
+      const hadBirthday =
+        now.getUTCMonth() > dob.getUTCMonth() ||
+        (now.getUTCMonth() === dob.getUTCMonth() && now.getUTCDate() >= dob.getUTCDate());
+      resolvedAge = hadBirthday ? years : years - 1;
+    }
+
     const plan = await generateWeeklyPlan({
       firstName: profile.firstName,
       ftp: profile.ftp,
@@ -131,7 +144,7 @@ export async function POST(req: NextRequest) {
         profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
       runLevel:
         profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
-      ageYears,
+      ageYears: resolvedAge,
       rides,
       trainingLoad,
       cycle,

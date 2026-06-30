@@ -108,6 +108,9 @@ export interface ZwiftProfile {
   // ~3200-3299) - divide by 100 and floor to get the displayed level number.
   achievementLevel?: number;
   runAchievementLevel?: number;
+  /** ISO date string (YYYY-MM-DD) if Zwift returns it - not always present.
+   *  Used to auto-derive ageYears without the rider having to type it in. */
+  dateOfBirth?: string;
   [key: string]: unknown;
 }
 

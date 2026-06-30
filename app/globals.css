@@ -411,6 +411,11 @@ a:hover {
    feeling lively while every card still shares the same white/black shell.
    .stat-card-icon (header stat cards) shares the same palette so the two
    icon-badge styles look like one consistent system. */
+.record-icon.c-neutral,
+.stat-card-icon.c-neutral {
+  background: rgba(20, 23, 26, 0.07);
+  color: var(--accent);
+}
 .record-icon.c-orange,
 .stat-card-icon.c-orange {
   background: linear-gradient(135deg, rgba(255, 102, 0, 0.3), rgba(255, 102, 0, 0.08));

@@ -126,7 +126,7 @@ export default function PersonalRecords({
 
       <div className="record-grid">
         <div className="record-card">
-          <div className="record-icon c-blue">
+          <div className="record-icon c-neutral">
             <IconClock size={20} />
           </div>
           <div>
@@ -139,7 +139,7 @@ export default function PersonalRecords({
         </div>
 
         <div className="record-card">
-          <div className="record-icon c-orange">
+          <div className="record-icon c-neutral">
             <IconDistance size={20} />
           </div>
           <div>
@@ -152,7 +152,7 @@ export default function PersonalRecords({
         </div>
 
         <div className="record-card">
-          <div className="record-icon c-green">
+          <div className="record-icon c-neutral">
             <IconMountain size={20} />
           </div>
           <div>
@@ -165,7 +165,7 @@ export default function PersonalRecords({
         </div>
 
         <div className="record-card">
-          <div className="record-icon c-purple">
+          <div className="record-icon c-neutral">
             <IconFlame size={20} />
           </div>
           <div>
@@ -200,7 +200,7 @@ export default function PersonalRecords({
 
         {r.biggestClimb && (
           <div className="record-card">
-            <div className="record-icon c-teal">
+            <div className="record-icon c-neutral">
               <IconMountain size={20} />
             </div>
             <div>
@@ -216,7 +216,7 @@ export default function PersonalRecords({
         )}
 
         <div className="record-card">
-          <div className="record-icon c-red">
+          <div className="record-icon c-neutral">
             <IconHeart size={20} />
           </div>
           <div>
@@ -237,7 +237,7 @@ export default function PersonalRecords({
         </div>
 
         <div className="record-card">
-          <div className="record-icon c-orange">
+          <div className="record-icon c-neutral">
             <IconFlame size={20} />
           </div>
           <div>
@@ -253,7 +253,7 @@ export default function PersonalRecords({
 
         {r.highestAvgPower && (
           <div className="record-card">
-            <div className="record-icon c-amber">
+            <div className="record-icon c-neutral">
               <IconBolt size={20} />
             </div>
             <div>
