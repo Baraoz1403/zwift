@@ -92,6 +92,11 @@ export default function TrainingProfileCard() {
                 {SPORT_LABELS[profile.sport]}
               </span>
             )}
+            {profile.ageYears && (
+              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                Age {profile.ageYears}
+              </span>
+            )}
             {profile.eventDate && (
               <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
                 Event: {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -145,7 +150,7 @@ export default function TrainingProfileCard() {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         {/* Goal */}
         <div className="field" style={{ margin: 0 }}>
           <label>Main training goal</label>
@@ -213,6 +218,20 @@ export default function TrainingProfileCard() {
             style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}
             value={draft.eventDate ?? ""}
             onChange={e => setDraft(d => ({ ...d, eventDate: e.target.value || undefined }))}
+          />
+        </div>
+
+        {/* Age */}
+        <div className="field" style={{ margin: 0 }}>
+          <label>Age (optional)</label>
+          <input
+            type="number"
+            min={10}
+            max={100}
+            placeholder="e.g. 42"
+            style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: 13 }}
+            value={draft.ageYears ?? ""}
+            onChange={e => setDraft(d => ({ ...d, ageYears: e.target.value ? Number(e.target.value) : undefined }))}
           />
         </div>
       </div>

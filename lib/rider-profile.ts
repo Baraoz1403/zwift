@@ -17,6 +17,7 @@ export interface RiderTrainingProfile {
   daysPerWeek: number;       // 1-7
   sessionLength: SessionLength;
   sport?: Sport;             // preferred discipline, optional (defaults to cycling)
+  ageYears?: number;         // rider age, optional (auto-derived from Zwift if available)
   eventDate?: string;        // ISO date, optional
   notes?: string;            // free text, optional
 }

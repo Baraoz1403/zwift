@@ -123,9 +123,12 @@ export async function POST(req: NextRequest) {
         ? computeAdherence(previousPlan, rides, profile.ftp)
         : undefined;
 
-    // Derive age from Zwift profile's dateOfBirth if available (preferred over
-    // the rider typing their age manually, which we've now removed from the UI).
-    let resolvedAge = ageYears; // fallback: body param (kept for compatibility)
+    // Age priority: (1) Zwift dateOfBirth auto-derived, (2) rider-entered
+    // in the training profile card, (3) body param (legacy compatibility).
+    let resolvedAge = ageYears;
+    if (!resolvedAge && riderProfile?.ageYears) {
+      resolvedAge = riderProfile.ageYears;
+    }
     if (!resolvedAge && profile.dateOfBirth) {
       const dob = new Date(profile.dateOfBirth);
       const now = new Date();
