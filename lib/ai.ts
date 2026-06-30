@@ -246,6 +246,10 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "FTP goal weeks 5+: add Threshold Development (4-8min Z4 intervals). " +
   "Weight/fitness goal: prioritize long Z2 Foundation blocks (fat-burning), " +
   "add Tempo for caloric burn, keep Strength for metabolism. " +
+  "IMPORTANT: even for weight/fitness goals, always include at least 1 " +
+  "structured session per week (Tempo or Sweet Spot) - a week of pure " +
+  "Z2 rides is monotonous and less effective for adaptation. Vary the " +
+  "stimulus: one hard-ish day makes the easy days actually count. " +
   "Event goal: 4+ weeks out = volume; 2-3 weeks out = Sweet Spot/Threshold; " +
   "1 week out = taper (cut volume 40-50%, keep one short sharp effort). " +
   "(5) Session count cap: max 2-3 hard (Threshold/VO2/Sweet Spot/ " +
@@ -272,8 +276,12 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   '(Monday..Sunday), "date": string (YYYY-MM-DD, the actual calendar date ' +
   'for that day in the upcoming week), "type": string, "title": string, ' +
   '"durationMin": number, "targetPowerPctFtp": string (e.g. "65-75%", ' +
-  'omit/empty for rest days), "description": string (1-3 sentences, the ' +
-  "actual session structure)}] (include only the days that should have a " +
+  'omit/empty for rest days), "description": string (2-3 sentences ' +
+  "describing the CONCRETE session structure in this format: warm-up → " +
+  "main set (e.g. 3×8 min at 88-94% FTP, 3 min easy between) → " +
+  "cool-down. Always state the exact intervals/blocks with durations and " +
+  "%FTP targets. Never write a vague description like 'steady ride' or " +
+  "'endurance ride' alone - riders need to know what to actually DO.)}] (include only the days that should have a " +
   "session - 2 to 6 entries total, do not pad it out to 7 just to fill " +
   "every day)}";
 
