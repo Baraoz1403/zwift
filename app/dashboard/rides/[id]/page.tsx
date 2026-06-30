@@ -143,7 +143,7 @@ export default function RideDetailPage() {
                 elapsedMs={elapsedMs}
                 elevationM={elevationSeries}
                 series={[
-                  { key: "hr", label: "Heart rate", color: "#ff6600", unit: "bpm", values: heartRateSeries },
+                  { key: "hr", label: "Heart rate", color: "#2f8fe0", unit: "bpm", values: heartRateSeries },
                   { key: "cadence", label: "Cadence", color: "#22c55e", unit: "rpm", values: cadenceSeries },
                   { key: "power", label: "Power", color: "#2f8fe0", unit: "W", values: powerSeries },
                 ]}

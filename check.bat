@@ -90,6 +90,40 @@ if not errorlevel 1 (
     echo   OK
 )
 
+
+:: -----------------------------------------------
+:: 5. Design consistency checks
+:: -----------------------------------------------
+echo [5/5] Checking design consistency...
+
+:: Hardcoded orange accent in TSX files (should be var(--accent))
+findstr /R /C:"#ff6600" /C:"#FF6600" app\dashboard\*.tsx >nul 2>&1
+if not errorlevel 1 (
+    echo   WARN: Hardcoded #ff6600 found in a component - use var^(--accent^) instead.
+    echo         ^(Run: findstr /R "#ff6600" app\dashboard\*.tsx to locate^)
+    set ERRORS=1
+) else (
+    echo   OK
+)
+
+:: border-left used as accent bar (should be section-title::before)
+findstr /R /C:"border-left.*accent" /C:"border-left.*#2f8fe0" /C:"border-left.*#ff6600" app\dashboard\*.tsx >nul 2>&1
+if not errorlevel 1 (
+    echo   WARN: Manual border-left accent bar found - use .section-title class instead.
+    set ERRORS=1
+) else (
+    echo   OK
+)
+
+:: Inline background color that should be a CSS variable
+findstr /R /C:"background:.*#14171a" /C:"background:.*#f4f5f7" app\dashboard\*.tsx >nul 2>&1
+if not errorlevel 1 (
+    echo   WARN: Hardcoded background color found - use var^(--bg^) or var^(--text^) instead.
+    set ERRORS=1
+) else (
+    echo   OK
+)
+
 :: -----------------------------------------------
 :: Result
 :: -----------------------------------------------

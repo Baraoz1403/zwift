@@ -75,6 +75,51 @@ function loadCachedCycle(): MacroCycleState | null {
   }
 }
 
+const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+// Always display exactly 6 cards — trim excess (remove rest days first),
+// or pad with rest days when the AI returns fewer sessions.
+function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
+  let workouts = [...plan.workouts].sort(
+    (a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day)
+  );
+
+  // Trim to 6: remove rest days first, then drop from the end
+  while (workouts.length > 6) {
+    const restIdx = workouts.findIndex(w => isRestDay(w.type));
+    if (restIdx >= 0) {
+      workouts.splice(restIdx, 1);
+    } else {
+      workouts.pop();
+    }
+  }
+
+  // Pad to 6: add rest days for the lowest-priority missing weekdays
+  if (workouts.length < 6) {
+    const usedDays = new Set(workouts.map(w => w.day));
+    for (const day of WEEK_DAYS) {
+      if (workouts.length >= 6) break;
+      if (!usedDays.has(day)) {
+        const dayIndex = WEEK_DAYS.indexOf(day);
+        const base = new Date(plan.weekOf + "T00:00:00Z");
+        base.setUTCDate(base.getUTCDate() + dayIndex);
+        workouts.push({
+          day,
+          date: base.toISOString().slice(0, 10),
+          type: "Rest",
+          title: "Rest Day",
+          durationMin: 0,
+          description: "Active recovery — light walking or stretching is fine.",
+        });
+        usedDays.add(day);
+      }
+    }
+    workouts.sort((a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day));
+  }
+
+  return { ...plan, workouts };
+}
+
 function currentWeekOf(): string {
   const now = new Date();
   const dow = now.getUTCDay();
@@ -94,7 +139,7 @@ export default function WeeklyPlan() {
   useEffect(() => {
     const cached = loadCachedPlan();
     if (cached) {
-      setPlan(cached);
+      setPlan(normalizeToSix(cached));
       setStale(cached.weekOf !== currentWeekOf());
     }
     const cachedCycle = loadCachedCycle();
@@ -127,11 +172,12 @@ export default function WeeklyPlan() {
       });
       const data = await res.json();
       if (data.ok) {
-        setPlan(data.plan);
+        const normalizedPlan = normalizeToSix(data.plan);
+        setPlan(normalizedPlan);
         setStale(false);
         setCycleInfo(data.cycle ?? null);
         try {
-          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data.plan));
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
             window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(data.macroCycle));
           }

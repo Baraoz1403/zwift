@@ -282,10 +282,11 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "cool-down. Always state the exact intervals/blocks with durations and " +
   "%FTP targets. Never write a vague description like 'steady ride' or " +
   "'endurance ride' alone - riders need to know what to actually DO.)}] (include only the days that should have a " +
-  "session - HARD LIMIT: return between 2 and 6 workouts maximum. " +
-  "NEVER return 7. A full week has 7 days but rest/recovery days are " +
-  "implicit - do not include them as entries. If you reach 7 sessions " +
-  "drop the least important one. " +
+  "session - HARD LIMIT: always return EXACTLY 6 entries, no more, no less. " +
+  "Include actual training sessions for riding/running days, and use " +
+  "type='Rest', title='Rest Day', durationMin=0 for the remaining days " +
+  "until you have 6 total. The UI displays a fixed 6-card grid - " +
+  "returning fewer breaks the layout. " +
   "INTERVAL QUALITY: at least 1 session per week must be a genuine " +
   "interval workout (Threshold, Sweet Spot, VO2, or Intermittent) with " +
   "specific rep structure (e.g. 4×5 min at 95-105% FTP, 3 min recovery). " +

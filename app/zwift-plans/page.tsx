@@ -40,7 +40,7 @@ export default function ZwiftPlansPage() {
       <button
         onClick={runProbe}
         disabled={loading}
-        style={{ padding: "10px 24px", background: "#ff6600", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", marginBottom: 24 }}
+        style={{ padding: "10px 24px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 8, fontWeight: 700, cursor: "pointer", marginBottom: 24 }}
       >
         {loading ? "Probing..." : "Probe Zwift API"}
       </button>

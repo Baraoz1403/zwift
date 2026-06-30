@@ -28,7 +28,7 @@ export default function DashboardFooter() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M11 2L4 10h5l-2 6 9-9h-5l2-7z" fill="#ff6600" />
+              <path d="M11 2L4 10h5l-2 6 9-9h-5l2-7z" fill="currentColor" />
             </svg>
             <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 14 }}>
               Zwift Dashboard
