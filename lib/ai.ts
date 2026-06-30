@@ -7,6 +7,10 @@
  * date/sport/distance/duration/avg power/elevation).
  */
 
+import type { TrainingLoadSummary } from "./training-load";
+import { mondayOfCurrentWeek, type PhaseInfo } from "./periodization";
+import type { AdherenceSummary } from "./adherence";
+
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
 
@@ -142,15 +146,58 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "their FTP/weight/level/ageYears. The input also includes weekOfMonday " +
   "(YYYY-MM-DD, the Monday of the upcoming week this plan covers) - use it " +
   "to compute each workout's real calendar date (Monday=weekOfMonday, " +
-  "Tuesday=weekOfMonday+1, etc). Use the rides' dates to work out their " +
-  "real recent training frequency and load over the last 2-3 weeks - do " +
-  "NOT default to a workout every day or assume a fixed number of " +
-  "sessions. The number of sessions this week (anywhere from 2 to 6) must " +
-  "reflect how often they've actually been riding: a rider averaging 3 " +
-  "rides/week recently should get roughly that, not suddenly 6; only " +
-  "progress total weekly volume by about 5-10% when recent rides show " +
-  "stable or improving form, and pull back (fewer and/or easier sessions) " +
-  "when there are signs of fatigue. " +
+  "Tuesday=weekOfMonday+1, etc). The input also includes a trainingLoad " +
+  "object - {ctl, atl, tsb, freshness, ridesLast7Days, ridesPrior7Days} - " +
+  "computed directly from the rider's ride history (a simplified version " +
+  "of the standard cycling ATL/CTL/TSB training-load model: ctl is " +
+  "longer-window 'fitness', atl is short-window recent 'fatigue', tsb = " +
+  "ctl - atl is the freshness balance). Treat this object as the " +
+  "authoritative signal for how fresh or fatigued the rider currently is " +
+  "and how often they've actually been riding lately - do not re-derive " +
+  "frequency or fatigue yourself from the raw ride list, and do not " +
+  "default to a workout every day or a fixed session count. Base this " +
+  "week's session COUNT (anywhere from 2 to 6) primarily on " +
+  "ridesLast7Days/ridesPrior7Days, rounded to a sensible number - a rider " +
+  "whose ridesLast7Days is around 3 should get roughly that, not suddenly " +
+  "6. When freshness is 'fatigued' or tsb is clearly negative, build a " +
+  "lighter week (fewer and/or easier sessions, more recovery) and say so " +
+  "briefly in the summary. When freshness is 'fresh' (clearly positive " +
+  "tsb) and recent rides otherwise look stable or improving, a normal " +
+  "5-10% progression in total weekly volume is appropriate. When " +
+  "freshness is 'neutral', hold this week's volume roughly steady. " +
+  "The input also includes a cycle object - {phase, weekInMesocycle} - " +
+  "tracking where this week sits in a recurring 4-week mesocycle: 'Base' " +
+  "(early mesocycle, building aerobic foundation), 'Build' (later " +
+  "mesocycles, progressive overload), or 'Recovery' (the scheduled lighter " +
+  "4th week of the mesocycle). When phase is 'Recovery', this week's plan " +
+  "MUST be a deliberately reduced-load week - cut total weekly volume by " +
+  "roughly 40-60% versus this rider's recent normal week while keeping a " +
+  "small amount of intensity (not a total off week) - regardless of how " +
+  "fresh trainingLoad says they are - and the summary must say this is a " +
+  "scheduled recovery week. Otherwise, use phase only as light supporting " +
+  "context alongside trainingLoad: an early 'Build' week can lean into " +
+  "progression a bit more confidently than a later one, and 'Base' weeks " +
+  "should lean toward easy endurance riding plus a small amount of " +
+  "genuinely hard work with little time at in-between threshold/sweet-spot " +
+  "intensity, while 'Build' weeks can bring in more threshold/sweet-spot " +
+  "sessions alongside the endurance and hard intervals. " +
+  "trainingLoad/ridesLast7Days remain the primary drivers of this week's " +
+  "actual content. " +
+  "The input may also include a lastWeekAdherence object - " +
+  "{plannedSessions, completedSessions, missedSessions, notes} - comparing " +
+  "last week's plan against what the rider actually rode (notes are short, " +
+  "specific call-outs, e.g. a particular day's session not completed, " +
+  "completed much shorter than planned, completed at the wrong intensity, " +
+  "or rode on a scheduled rest day). When present, use it as real feedback " +
+  "on whether last week's plan actually fit this rider: if a hard session " +
+  "type was repeatedly missed or cut short, that's a signal it was too " +
+  "ambitious - ease that specific session type back this week rather than " +
+  "repeating the same miss. If everything was completed as planned (or " +
+  "more), that supports the normal progression. Briefly acknowledge any " +
+  "clear pattern from lastWeekAdherence in the summary, but stay " +
+  "encouraging, not punitive - missing a session is data, not a failure. " +
+  "Absent/null lastWeekAdherence just means there's nothing to compare yet " +
+  "(first plan, or regenerating the same week) - proceed normally. " +
   "Use session types/structures matching Zwift's own official plans (FTP " +
   "Builder, Build Me Up, Zwift Academy) and workout categories: " +
   "'Endurance'/'Foundation' (long steady Zone 1-2 ride), 'Tempo' (steady " +
@@ -202,6 +249,17 @@ export async function generateWeeklyPlan(params: {
    *  the Zwift API, so this only arrives when the rider enters it manually. */
   ageYears?: number;
   rides: RideSummary[];
+  /** Computed once in code (lib/training-load.ts) from `rides` + `ftp` -
+   *  the authoritative freshness/frequency signal, see WEEKLY_PLAN_SYSTEM_PROMPT. */
+  trainingLoad?: TrainingLoadSummary;
+  /** Computed once in code (lib/periodization.ts) from the rider's stored
+   *  macro-cycle position - which mesocycle week this is, see
+   *  WEEKLY_PLAN_SYSTEM_PROMPT. */
+  cycle?: PhaseInfo;
+  /** Computed once in code (lib/adherence.ts) by comparing last week's
+   *  cached plan against what the rider actually rode - absent on this
+   *  rider's first-ever plan, or when generating again within the same week. */
+  lastWeekAdherence?: AdherenceSummary;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -212,13 +270,10 @@ export async function generateWeeklyPlan(params: {
 
   // Monday of the week this plan covers (UTC) - computed up front and handed
   // to the model so it can fill in each workout's real calendar "date"
-  // instead of guessing what date "Wednesday" falls on.
-  const now0 = new Date();
-  const dow0 = now0.getUTCDay();
-  const diffToMonday0 = dow0 === 0 ? -6 : 1 - dow0;
-  const monday0 = new Date(now0);
-  monday0.setUTCDate(now0.getUTCDate() + diffToMonday0);
-  const weekOfMonday = monday0.toISOString().slice(0, 10);
+  // instead of guessing what date "Wednesday" falls on. Shared with
+  // lib/periodization.ts so the cached plan's weekOf, the macro-cycle
+  // pointer, and this prompt's date math never drift apart.
+  const weekOfMonday = mondayOfCurrentWeek();
 
   const userContent = JSON.stringify({
     rider: params.firstName ?? "Rider",
@@ -226,6 +281,27 @@ export async function generateWeeklyPlan(params: {
     weightKg: params.weightKg ?? null,
     ageYears: params.ageYears ?? null,
     cyclingLevel: params.cyclingLevel ?? null,
+    trainingLoad: params.trainingLoad
+      ? {
+          ctl: params.trainingLoad.ctl,
+          atl: params.trainingLoad.atl,
+          tsb: params.trainingLoad.tsb,
+          freshness: params.trainingLoad.freshness,
+          ridesLast7Days: params.trainingLoad.ridesLast7Days,
+          ridesPrior7Days: params.trainingLoad.ridesPrior7Days,
+        }
+      : null,
+    cycle: params.cycle
+      ? { phase: params.cycle.phase, weekInMesocycle: params.cycle.weekInMesocycle }
+      : null,
+    lastWeekAdherence: params.lastWeekAdherence
+      ? {
+          plannedSessions: params.lastWeekAdherence.plannedSessions,
+          completedSessions: params.lastWeekAdherence.completedSessions,
+          missedSessions: params.lastWeekAdherence.missedSessions,
+          notes: params.lastWeekAdherence.notes,
+        }
+      : null,
     runLevel: params.runLevel ?? null,
     weekOfMonday,
     rides: params.rides,

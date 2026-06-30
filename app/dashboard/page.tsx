@@ -15,6 +15,7 @@ import {
 } from "@/lib/stats";
 import Link from "next/link";
 import LogoutButton from "./logout-button";
+import DashboardFooter from "./footer";
 import ActivityCharts from "./activity-chart";
 import RidesTable from "./rides-table";
 import AiInsights from "./ai-insights";
@@ -290,10 +291,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="notice" style={{ marginTop: 24 }}>
-        Event/race comparisons will appear here in a future milestone.{" "}
-        <Link href="/dashboard/diagnostics">Run a data-availability test →</Link>
-      </div>
+      <DashboardFooter />
     </div>
   );
 }

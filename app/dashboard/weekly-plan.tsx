@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
+import { getPhaseForWeekIndex } from "@/lib/periodization";
 import WorkoutThumbnail from "./workout-thumbnail";
 
 interface WeeklyWorkout {
@@ -33,6 +34,12 @@ const STORAGE_KEY = "zwiftWeeklyPlan";
 // recovery for older riders) only ever comes from the rider typing it in
 // here - stored the same pragmatic way as the plan itself, in localStorage.
 const AGE_STORAGE_KEY = "zwiftRiderAge";
+// The rider's macro-cycle position (lib/periodization.ts) - which week of a
+// recurring 4-week mesocycle this is. Persisted the same pragmatic way as
+// everything else here (no DB yet): kept in this browser, sent back to the
+// API on every generate so the server can advance it and tell the AI where
+// "this week" sits in the cycle, instead of planning each week in isolation.
+const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -47,6 +54,26 @@ function loadCachedPlan(): WeeklyPlan | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as WeeklyPlan;
+  } catch {
+    return null;
+  }
+}
+
+interface MacroCycleState {
+  weekIndex: number;
+  lastWeekOf: string;
+}
+
+interface PhaseInfo {
+  phase: "Base" | "Build" | "Recovery";
+  weekInMesocycle: number;
+}
+
+function loadCachedCycle(): MacroCycleState | null {
+  try {
+    const raw = window.localStorage.getItem(CYCLE_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as MacroCycleState;
   } catch {
     return null;
   }
@@ -67,12 +94,17 @@ export default function WeeklyPlan() {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [age, setAge] = useState<string>("");
+  const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
 
   useEffect(() => {
     const cached = loadCachedPlan();
     if (cached) {
       setPlan(cached);
       setStale(cached.weekOf !== currentWeekOf());
+    }
+    const cachedCycle = loadCachedCycle();
+    if (cachedCycle) {
+      setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
     try {
       const savedAge = window.localStorage.getItem(AGE_STORAGE_KEY);
@@ -97,17 +129,26 @@ export default function WeeklyPlan() {
     setError(null);
     try {
       const ageYears = age ? Number(age) : undefined;
+      const macroCycle = loadCachedCycle();
+      // Only hand over the cached plan as "last week's plan" when it's
+      // genuinely from an earlier week - re-rolling this week's own plan a
+      // few times shouldn't compare it against itself.
+      const previousPlan = plan && stale ? plan : null;
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ageYears }),
+        body: JSON.stringify({ ageYears, macroCycle, previousPlan }),
       });
       const data = await res.json();
       if (data.ok) {
         setPlan(data.plan);
         setStale(false);
+        setCycleInfo(data.cycle ?? null);
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data.plan));
+          if (data.macroCycle) {
+            window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(data.macroCycle));
+          }
         } catch {
           // localStorage can fail (private mode, quota) - the plan still
           // renders for this session even if it won't persist across reloads.
@@ -151,6 +192,21 @@ export default function WeeklyPlan() {
         <h2 style={{ fontSize: 16, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
           <IconCalendar size={16} />
           Weekly training plan
+          {cycleInfo && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--muted)",
+                background: "var(--surface-2, rgba(0,0,0,0.05))",
+                borderRadius: 999,
+                padding: "2px 9px",
+              }}
+              title="Position in your recurring 4-week training mesocycle"
+            >
+              {cycleInfo.phase} · week {cycleInfo.weekInMesocycle}/4
+            </span>
+          )}
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--muted)" }}>

@@ -34,6 +34,16 @@ summarized principles, not copied text from any specific commercial plan.
   frequency (from their own ride history), not a fixed template - a rider
   averaging 3 rides/week shouldn't suddenly be given 6.
 
+## Related notes in this folder
+- recovery-week.md - detail on how a recovery week should actually be
+  structured (volume cut %, common failure mode).
+- intensity-distribution.md - the polarized/pyramidal question behind the
+  80-20 guideline above, and how the mix should shift Base vs. Build.
+- vo2max-protocols.md - structure for the hardest session type mentioned
+  above (interval length, recovery ratio).
+- ftp-testing.md - how/when the FTP this whole prompt's % targets are
+  built on should be re-tested.
+
 ## Sources consulted (June 2026)
 - [How to Structure a Cycling Training Week](https://roadcyclingacademy.com/how-to-structure-a-cycling-training-week/)
 - [Periodization for Cycling: Structured FTP Training Plans](https://ftpzonecalculator.com/guides/periodization-ftp-training/)
