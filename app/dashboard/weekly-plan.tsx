@@ -270,7 +270,7 @@ export default function WeeklyPlan() {
 
           <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => (
-              <div className="stat-card" key={i}>
+              <div className="stat-card" key={i} style={{ display: "flex", flexDirection: "column" }}>
                 {!isRestDay(w.type) && <WorkoutThumbnail workout={w} />}
                 <div className="stat-card-head" style={{ marginTop: 10 }}>
                   <div className={`stat-card-icon ${colorForType(w.type)}`}>
@@ -286,15 +286,15 @@ export default function WeeklyPlan() {
                   {w.durationMin} min
                   {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, lineHeight: 1.5, flexGrow: 1 }}>
                   {w.description}
                 </div>
                 {!isRestDay(w.type) && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
                     <button
                       type="button"
                       className="btn"
-                      style={{ width: "auto", padding: "5px 12px", fontSize: 11.5 }}
+                      style={{ width: "auto", padding: "5px 18px", fontSize: 11.5 }}
                       onClick={() => handleDownloadZwo(w)}
                     >
                       Download .zwo
