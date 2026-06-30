@@ -283,6 +283,12 @@ a:hover {
 }
 
 .stat-card:hover {
+  box-shadow: 0 6px 18px rgba(255, 102, 0, 0.08), var(--shadow);
+  border-color: rgba(255, 102, 0, 0.2);
+}
+
+/* Only cards that are genuinely clickable (ride rows) get the lift */
+.stat-card.clickable:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 26px rgba(255, 102, 0, 0.1), var(--shadow-hover);
   border-color: rgba(255, 102, 0, 0.3);

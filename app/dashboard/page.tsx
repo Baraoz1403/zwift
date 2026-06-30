@@ -247,6 +247,16 @@ export default async function DashboardPage() {
 
       {!activitiesError && activities.length > 0 && (
         <>
+          {/* ── Most actionable: today’s plan + AI coaching ── */}
+          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
+            <WeeklyPlan />
+          </div>
+
+          <div className="section fade-in" id="ai-insights" style={{ scrollMarginTop: 24 }}>
+            <AiInsights />
+          </div>
+
+          {/* ── Stats & history ── */}
           <Suspense
             fallback={
               <>
@@ -268,20 +278,8 @@ export default async function DashboardPage() {
             <RidesTable activities={clientActivities} />
           </div>
 
-          <div className="section fade-in" id="ai-insights" style={{ scrollMarginTop: 24 }}>
-            <AiInsights />
-          </div>
-
-          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
-            <WeeklyPlan />
-          </div>
-
           <div className="section fade-in">
             <ActivityHeatmap activities={clientActivities} />
-          </div>
-
-          <div className="section fade-in">
-            <TrendComparison activities={clientActivities} />
           </div>
         </>
       )}
