@@ -352,7 +352,7 @@ a:hover {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent) 0%, #ff9040 60%, rgba(255,144,64,0.3) 100%);
+  background: var(--accent);
   border-radius: var(--radius) var(--radius) 0 0;
 }
 

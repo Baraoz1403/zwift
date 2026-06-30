@@ -90,8 +90,8 @@ export default function AiInsights() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <h2 style={{ fontSize: 16, margin: 0 }}>AI Insights</h2>
+        <h2 style={{ fontSize: 16, margin: 0 }}>AI Insights</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
             className="btn"
             style={{ width: "auto", padding: "7px 18px", fontSize: 13 }}
@@ -100,16 +100,16 @@ export default function AiInsights() {
           >
             {loading ? "Analyzing..." : "Get AI insights on my recent training"}
           </button>
+          <button
+            type="button"
+            className="btn-secondary btn"
+            style={{ width: "auto", padding: "6px 14px" }}
+            onClick={() => setOpen(false)}
+            aria-label="Close AI Insights"
+          >
+            ✕ Close
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn-secondary btn"
-          style={{ width: "auto", padding: "6px 14px" }}
-          onClick={() => setOpen(false)}
-          aria-label="Close AI Insights"
-        >
-          ✕ Close
-        </button>
       </div>
 
       {error && (
