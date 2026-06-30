@@ -263,6 +263,14 @@ a:hover {
   gap: 16px;
 }
 
+/* The weekly-plan workout cards need much more room than the compact
+   header stats (a bar-graph thumbnail, description, two buttons) - a
+   wider minimum so 2-6 AI-planned sessions read like a small gallery of
+   Zwift-style workout cards instead of squeezing into 6 equal columns. */
+.workout-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
 .stat-card {
   background: var(--panel);
   backdrop-filter: blur(14px);

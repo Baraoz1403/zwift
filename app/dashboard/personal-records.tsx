@@ -97,7 +97,7 @@ export default function PersonalRecords({
       >
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <IconTrophy size={16} />
-          Personal records
+          Personal statistics
         </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

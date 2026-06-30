@@ -1,0 +1,7 @@
+Hi, thank you for the quick reply!
+
+Yes, please route this to a member of the Zwift team - I'd appreciate the chance to have my use case properly reviewed.
+
+For context, in case it helps: I've built a personalized training dashboard (web app) that connects to a rider's own Zwift activity data, analyzes ride history (power, heart rate, etc.), and generates structured weekly workout plans tailored to that rider. Right now riders download the generated workouts as standard .zwo files and manually place them in their Documents/Zwift/Workouts folder. I'm hoping to learn whether there's any official path (a developer program, partnership process, or Training Connections-style integration) that would let these AI-generated workouts sync directly into a rider's Zwift account instead of requiring that manual step.
+
+Happy to share more details about the project if useful. Thanks again for your help - Ride On!

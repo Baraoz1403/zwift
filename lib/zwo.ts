@@ -66,6 +66,64 @@ export function zoneForPowerFraction(frac: number) {
   return POWER_ZONES.find((z) => frac <= z.maxPct) ?? POWER_ZONES[POWER_ZONES.length - 1];
 }
 
+/** Power (as a fraction of FTP) at a given second into the workout - walks
+ *  the block list, interpolating across a ramp or picking on/off for an
+ *  interval set. Used to draw a Zwift-style bar-graph thumbnail without
+ *  needing every individual second of the file. */
+function powerAtTime(blocks: ZwoBlock[], t: number): number {
+  let elapsed = 0;
+  for (const b of blocks) {
+    const dur = blockDurationSec(b);
+    if (t < elapsed + dur || b === blocks[blocks.length - 1]) {
+      const local = Math.max(0, t - elapsed);
+      switch (b.kind) {
+        case "Warmup":
+        case "Cooldown": {
+          const frac = dur > 0 ? Math.min(1, local / dur) : 0;
+          return b.powerLow + (b.powerHigh - b.powerLow) * frac;
+        }
+        case "SteadyState":
+          return b.power;
+        case "IntervalsT": {
+          const cycle = b.onDuration + b.offDuration || 1;
+          const posInCycle = local % cycle;
+          return posInCycle < b.onDuration ? b.onPower : b.offPower;
+        }
+      }
+    }
+    elapsed += dur;
+  }
+  return 0.6;
+}
+
+/** Resamples a workout's power profile into a fixed number of evenly-spaced
+ *  buckets (default 40) - exactly what a small bar-graph thumbnail needs,
+ *  regardless of whether the underlying workout is 20 minutes or 2 hours. */
+export function sampleWorkoutPower(blocks: ZwoBlock[], steps = 40): number[] {
+  const total = blocks.reduce((s, b) => s + blockDurationSec(b), 0) || 1;
+  const samples: number[] = [];
+  for (let i = 0; i < steps; i++) {
+    samples.push(powerAtTime(blocks, ((i + 0.5) / steps) * total));
+  }
+  return samples;
+}
+
+/** Coarse 0-5 "how hard is this session" score, the same idea as the
+ *  Effort rating Zwift shows on its own workout-library cards - derived
+ *  from the session's type/category (already standardized to Zwift's own
+ *  vocabulary, see generateDefaultBlocks above) rather than fabricating a
+ *  precise number from a single avgPower figure. */
+export function effortForType(type: string): number {
+  const t = type.toLowerCase();
+  if (t.includes("rest")) return 0;
+  if (t.includes("recover")) return 1;
+  if (t.includes("endurance") || t.includes("foundation")) return 2;
+  if (t.includes("tempo")) return 3;
+  if (t.includes("sweet") || t.includes("strength") || t.includes("intermittent")) return 4;
+  if (t.includes("threshold") || t.includes("vo2") || t.includes("interval")) return 5;
+  return 3;
+}
+
 /** Total duration of one block, in seconds - for IntervalsT this is the
  *  whole repeated set, not just one rep. Used both to size the preview bar
  *  and to validate the workout's overall length. */

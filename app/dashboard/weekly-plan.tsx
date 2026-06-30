@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay, ZwoBlock } from "@/lib/zwo";
-import WorkoutEditor from "./workout-editor";
+import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
+import WorkoutThumbnail from "./workout-thumbnail";
 
 interface WeeklyWorkout {
   day: string;
@@ -67,9 +67,6 @@ export default function WeeklyPlan() {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [age, setAge] = useState<string>("");
-  // Which workout card (by index) currently has its in-app block editor
-  // open - only one at a time, so opening another closes the previous one.
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -128,14 +125,14 @@ export default function WeeklyPlan() {
   // Turns one of the AI's planned sessions into a real, structured Zwift
   // workout file (.zwo) - warmup ramp, the actual interval/steady-state
   // blocks, cooldown ramp - instead of just a text description, and
-  // downloads it named by the date it's planned for. A browser app can't
-  // write straight into Zwift's local Workouts folder, so this is a
-  // one-time manual drop-in until Zwift's Training Connections API is
-  // approved (see the note below the plan). `blocks`, when provided, comes
-  // from the in-app workout editor (the rider's own tweaks) instead of the
-  // AI's untouched suggestion.
-  function handleDownloadZwo(w: WeeklyWorkout, blocks?: ZwoBlock[]) {
-    const xml = generateZwoXml(w, blocks);
+  // downloads it named by the date it's planned for. The AI's own block
+  // structure (lib/zwo.ts) is used as-is - the rider receives a finished,
+  // ready-to-ride file, not a half-built one they need to assemble
+  // themselves. A browser app can't write straight into Zwift's local
+  // Workouts folder, so this is a one-time manual drop-in until Zwift's
+  // Training Connections API is approved (see the note below the plan).
+  function handleDownloadZwo(w: WeeklyWorkout) {
+    const xml = generateZwoXml(w);
     const filename = zwoFileName(w.date, w.title);
     const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
@@ -207,10 +204,11 @@ export default function WeeklyPlan() {
             </div>
           )}
 
-          <div className="stat-grid stat-grid-compact">
+          <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => (
               <div className="stat-card" key={i}>
-                <div className="stat-card-head">
+                {!isRestDay(w.type) && <WorkoutThumbnail workout={w} />}
+                <div className="stat-card-head" style={{ marginTop: 10 }}>
                   <div className={`stat-card-icon ${colorForType(w.type)}`}>
                     <IconBolt size={13} />
                   </div>
@@ -228,29 +226,16 @@ export default function WeeklyPlan() {
                   {w.description}
                 </div>
                 {!isRestDay(w.type) && (
-                  <>
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ width: "auto", padding: "5px 12px", fontSize: 11.5 }}
-                        onClick={() => handleDownloadZwo(w)}
-                      >
-                        Download .zwo
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ width: "auto", padding: "5px 12px", fontSize: 11.5, opacity: 0.8 }}
-                        onClick={() => setEditingIndex(editingIndex === i ? null : i)}
-                      >
-                        {editingIndex === i ? "Close editor" : "Edit workout"}
-                      </button>
-                    </div>
-                    {editingIndex === i && (
-                      <WorkoutEditor workout={w} onDownload={(blocks) => handleDownloadZwo(w, blocks)} />
-                    )}
-                  </>
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ width: "auto", padding: "5px 12px", fontSize: 11.5 }}
+                      onClick={() => handleDownloadZwo(w)}
+                    >
+                      Download .zwo
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
