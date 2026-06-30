@@ -175,7 +175,7 @@ export default function WeeklyPlan() {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-        <div className="section-title" style={{ margin: 0, justifyContent: "space-between" }}>
+        <div className="section-title" style={{ margin: 0 }}>
           <IconCalendar size={16} />
           Weekly training plan
           {cycleInfo && (

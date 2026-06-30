@@ -3,14 +3,14 @@ html {
 }
 
 :root {
-  --bg: #f4f5f7;
+  --bg: #ffffff;
   /* Zwift's own marketing-site palette: light warm-grey page background so
      white cards "pop" off the surface (much stronger visual hierarchy than
      white-on-white), orange as the one primary accent (buttons, key numbers,
      the one CTA per screen, and links), black/near-black for text and headings. */
   --bg-glow: none;
-  --panel: #ffffff;
-  --panel-solid: #ffffff;
+  --panel: #f4f5f7;
+  --panel-solid: #f4f5f7;
   --text: #14171a;
   --muted: #5b6168;
   --accent: #ff6600;
