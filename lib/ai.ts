@@ -11,7 +11,7 @@ import type { TrainingLoadSummary } from "./training-load";
 import { mondayOfCurrentWeek, type PhaseInfo } from "./periodization";
 import type { AdherenceSummary } from "./adherence";
 import type { RiderTrainingProfile } from "./rider-profile";
-import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS } from "./rider-profile";
+import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS, DAYS_RANGE_MID } from "./rider-profile";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -346,9 +346,15 @@ export async function generateWeeklyPlan(params: {
       : null,
     riderProfile: params.riderProfile
       ? {
-          sport: SPORT_LABELS[params.riderProfile.sport ?? "cycling"],
-          goal: GOAL_LABELS[params.riderProfile.goal],
-          daysPerWeek: params.riderProfile.daysPerWeek,
+          sports: (params.riderProfile.sports ?? (params.riderProfile.sport ? [params.riderProfile.sport] : ["cycling"]))
+            .map(s => SPORT_LABELS[s])
+            .join(" + "),
+          goals: (params.riderProfile.goals ?? (params.riderProfile.goal ? [params.riderProfile.goal] : ["fitness"]))
+            .map(g => GOAL_LABELS[g])
+            .join(", "),
+          daysPerWeek: params.riderProfile.daysRange
+            ? DAYS_RANGE_MID[params.riderProfile.daysRange]
+            : (params.riderProfile.daysPerWeek ?? null),
           sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
           sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
           eventDate: params.riderProfile.eventDate ?? null,
