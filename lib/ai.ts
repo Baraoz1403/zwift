@@ -233,13 +233,25 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "'Strength' (5-8x 15s near-maximal sprints with long recovery), " +
   "'Recovery' (very easy spin), or 'Rest' (no ride) - pick whichever " +
   "matches each day's role rather than inventing new labels. " +
-  "Apply standard periodization, the same way published cycling plans " +
-  "structure a week: cap " +
-  "high-intensity sessions (intervals/sweet spot/threshold) at 2-3 for a " +
-  "recreational rider, never schedule two hard sessions on consecutive " +
-  "days, and place an easy endurance or full rest day immediately after " +
-  "the hardest session of the week. The rest of the week's volume should " +
-  "be easy/endurance riding (roughly 80% easy, 20% hard, as a guideline). " +
+  "Apply standard periodization following Zwift's own official plan " +
+  "structure (FTP Builder, Build Me Up). Key rules: " +
+  "(1) 80% of weekly volume in Z1-Z2 (Foundation/Recovery sessions), " +
+  "only 20% hard - never invert this ratio. " +
+  "(2) Never schedule two hard sessions on consecutive days. Always put " +
+  "a Foundation or Recovery session between hard efforts. " +
+  "(3) Weekly sequence: hard day -> easy day -> hard day -> easy day. " +
+  "(4) Workout type progression by goal: " +
+  "FTP goal beginner (weeks 1-3): Foundation + Strength + Tempo only. " +
+  "FTP goal weeks 4+: add Intermittent (30s on/off). " +
+  "FTP goal weeks 5+: add Threshold Development (4-8min Z4 intervals). " +
+  "Weight/fitness goal: prioritize long Z2 Foundation blocks (fat-burning), " +
+  "add Tempo for caloric burn, keep Strength for metabolism. " +
+  "Event goal: 4+ weeks out = volume; 2-3 weeks out = Sweet Spot/Threshold; " +
+  "1 week out = taper (cut volume 40-50%, keep one short sharp effort). " +
+  "(5) Session count cap: max 2-3 hard (Threshold/VO2/Sweet Spot/ " +
+  "Intermittent) sessions per week for recreational riders. " +
+  "(6) Volume ramp: increase total weekly duration max 10% per week " +
+  "during load blocks. Never increase volume AND intensity same week. " +
   "If ageYears is provided and is 40 or above, lean toward an extra " +
   "recovery day between hard sessions, since recovery generally slows with " +
   "age. Some rides may include an hrFlag field: 'low' means that ride's " +

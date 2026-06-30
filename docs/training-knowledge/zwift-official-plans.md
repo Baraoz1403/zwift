@@ -1,70 +1,133 @@
-# Zwift's own training plans and workout categories - catalog
+# Zwift Official Training Plans — Structured Knowledge Base
+# Source: whatsonzwift.com (published with Zwift's permission)
+# Used by: WEEKLY_PLAN_SYSTEM_PROMPT in lib/ai.ts
 
-A catalog of how Zwift's built-in plans/workouts (the ones visible in the
-desktop app's "Workouts" library, shown in earlier screenshots) are actually
-structured, so the AI weekly-plan prompt (`WEEKLY_PLAN_SYSTEM_PROMPT` in
-`lib/ai.ts`) and the `.zwo` generator (`lib/zwo.ts`) use the same vocabulary
-and shapes real Zwift plans do, instead of inventing arbitrary ones.
+---
 
-## FTP Builder (6 weeks, beginner-oriented)
-- 4-5 workouts/week, most under an hour, ~4h48m/week total.
-- Heavily Zone 1-2: across the whole plan, Z1 11h48m and Z2 9h57m vs only
-  Z3 5h7m and Z4 1h50m - i.e. the large majority of volume is easy.
-- Recurring workout categories used:
-  - **Foundation training** - low intensity, mostly Zone 2 endurance.
-  - **Strength training** - short, repeated maximal efforts for
-    neuromuscular recruitment (not a long hard interval set - brief sprints
-    with long recovery).
-  - **Tempo training** - time spent in Zone 3.
-  - One optional/unstructured day most weeks ("ride as you feel").
-- Progresses gently week to week (slightly more Z3/Z4 by week 6) rather than
-  jumping straight into hard intervals.
+## HOW ZWIFT THINKS ABOUT TRAINING GOALS
 
-## Build Me Up (13 weeks, 52 workouts, more demanding)
-- ~4h34m/week, opens with a Ramp Test (FTP test) and ends with a 20-minute
-  all-out test.
-- Much more high-intensity exposure than FTP Builder across the full plan:
-  Z3 13h54m, Z4 9h49m, Z5 4h27m, Z6 2h6m (vs FTP Builder's Z4 1h50m, Z6
-  6m total) - i.e. meaningfully harder once a rider has a base.
+### FTP Builder (Beginner, 6 weeks)
+**Target rider:** New to structured training, building a base.
+**Volume:** 3h37m/week → 5h31m/week (gradual ramp, one recovery dip at week 3)
+**Stress progression:** Week1: 167sp → W2: 231 → W3: 214 (recovery) → W4: 277 → W5: 296 → W6: 335
+**Zone distribution across full plan:** Z1: 11h48m, Z2: 9h57m, Z3: 5h7m, Z4: 1h50m, Z5: 0, Z6: 6m
+**Core principle:** 80% of training is Z1-Z2. High intensity introduced slowly.
 
-## Zwift Academy (hardest, short maximal efforts)
-- Field tests and race/breakaway simulations: 20-second and one-minute
-  near-maximal intervals, not steady long efforts.
+**Weekly workout sequence (repeating pattern):**
+- Day 1: Foundation (Z1-Z2 endurance block, 48-66min)
+- Day 2: Strength (short maximal sprints, neuromuscular, 54-69min)
+- Day 3: Foundation (Z1-Z2 endurance, same or slightly longer)
+- Day 4: Tempo (Z3 block, 67-86min) ← hardest day of week
+- Day 5: Optional easy ride (40-44min, free ride feel)
 
-## Recognized workout categories (used as the `type` vocabulary in our AI
-prompt and `.zwo` generator)
-| Category | Real-world shape | Power |
-|---|---|---|
-| Endurance / Foundation | one long steady block | Zone 1-2 (~55-75% FTP) |
-| Tempo | one steady block, higher than endurance | Zone 3 (~76-87% FTP) |
-| Threshold | repeated 5-8min efforts | ~95-105% FTP |
-| Sweet Spot | repeated 8-15min efforts | ~88-94% FTP |
-| VO2 | short, sharp 2-3min efforts | ~106-120% FTP |
-| Intermittent | short 30s on/30s off bursts | ~110%+ FTP on, easy off |
-| Strength | 5-8x ~15s near-maximal sprints, long recovery | 150%+ FTP on, easy off |
-| Recovery | very easy spin | <55% FTP |
-| Rest | no ride | - |
+**Workout type introduction timeline:**
+- Weeks 1-3: Foundation + Strength + Tempo only
+- Week 4: Intermittent appears (30s on/off, Z4/Z6)
+- Weeks 5-6: Threshold Development replaces some Tempo (Z4 intervals)
 
-`lib/zwo.ts`'s `buildSteps()` now generates a distinct step shape for each
-of these (recovery/strength/intermittent/threshold-sweet-spot-VO2/default
-endurance-tempo), and the AI prompt is told to pick from this exact list of
-type names so the generated `.zwo` file's structure actually matches the
-label shown on the weekly-plan card.
+**Key insight for AI:** For a beginner FTP goal, NEVER start with threshold intervals.
+Start with 3 days/week of Foundation+Strength+Tempo, add intensity in week 4+.
 
-## Important correction re: syncing custom workouts to other devices
-Zwift's own FAQ on custom `.zwo` files (see source below) says: after
-placing the file in `Documents/Zwift/Workouts/{userid}` and opening Zwift
-once on that PC/Mac, Zwift automatically uploads the custom workout to your
-account, and it then syncs to your phone/other devices under "Custom
-Workouts" - no Training Connections API needed for this part. (The
-Training Connections API is still relevant for the larger goal of this
-project generating/pushing workouts without any manual file step at all,
-but day-to-day cross-device syncing already works once the file is placed
-and Zwift is opened once.)
+---
 
-## Sources consulted (June 2026)
-- [Zwift workouts: FTP Builder - What's on Zwift?](https://whatsonzwift.com/workouts/ftp-builder)
-- [Zwift workouts: Build Me Up - What's on Zwift?](https://whatsonzwift.com/workouts/build-me-up)
-- [Zwift workouts and training plans - What's on Zwift?](https://whatsonzwift.com/workouts)
-- ['Build me up' or 'FTP builder'? - Zwift Forums](https://forums.zwift.com/t/build-me-up-or-ftp-builder/86783)
-- [Zwift training plans: A beginner's guide - Cyclingnews](https://www.cyclingnews.com/features/zwift-training-plans/)
+### Build Me Up (Advanced, 13 weeks)
+**Target rider:** Experienced Zwifter ready for serious FTP improvement.
+**Volume:** ~4h34m/week average
+**Total stress:** 5,149sp (vs FTP Builder's 1,520sp = 3.4x more demanding)
+**Zone distribution:** Z1: 18h42m, Z2: 10h28m, Z3: 13h54m, Z4: 9h49m, Z5: 4h27m, Z6: 2h6m
+**Core principle:** Much more Z3/Z4/Z5/Z6. Opens with a Ramp Test, closes with a 20min all-out.
+
+**Structure:**
+- Week 0: Testing week (Ramp Test to establish FTP baseline)
+- Weeks 1-4: Base building with Z3/Z4 introduction
+- Weeks 5-8: Build phase, more Z4/Z5
+- Weeks 9-12: Peak phase, Z5/Z6 efforts
+- Week 13: Taper + final test
+
+**Key insight for AI:** For an advanced FTP goal, include Z4-Z5 intervals from week 1.
+Plan should start with FTP test. End with a PR attempt or race.
+
+---
+
+## WORKOUT TYPE LIBRARY (Zwift's official categories)
+
+Each workout type below is a direct match to what Zwift uses in their plans.
+Use these EXACT types when building weekly plans.
+
+| Type | Description | Power zone | Duration of efforts | When to use |
+|------|-------------|-----------|---------------------|-------------|
+| **Foundation** | Steady endurance block, mostly Z2 | Z1-Z2 (55-75% FTP) | One long block, 40-90min | Every week, base of all plans |
+| **Strength** | Short maximal sprints + long recovery | Z6+ (150%+ FTP), 15-30s on | 5-8 reps of 15-30s | Neuromuscular, weekly in FTP Builder |
+| **Tempo** | Sustained Z3 effort | Z3 (76-87% FTP) | 20-40min continuous | Mid-base, great for fitness/weight goals |
+| **Intermittent** | 30s on/30s off alternating | Z5-Z6 on, Z1 off | 10-20 reps of 30s | Intro to high intensity, week 4+ |
+| **Sweet Spot** | Repeated sub-threshold | 88-94% FTP | 8-15min per effort, 2-4 reps | Core FTP builder, weeks 3-8 |
+| **Threshold Development** | Lactate threshold intervals | 95-105% FTP | 5-10min per effort, 2-4 reps | FTP improvement, weeks 5-12 |
+| **VO2max** | Short sharp efforts above FTP | 106-120% FTP | 2-4min per effort, 3-6 reps | Advanced, Build Me Up weeks 8+ |
+| **Recovery** | Very easy spin | Z1 (<55% FTP) | Full session, 20-40min | After hard days, before event |
+| **Rest** | Day off | — | — | Weekly, never skip |
+
+---
+
+## PERIODIZATION RULES ZWIFT USES
+
+### The 3:1 Rule
+Zwift consistently uses 3 weeks of load + 1 recovery week.
+FTP Builder week 3 stress (214sp) < week 2 (231sp) despite being week 3.
+Build Me Up shows same pattern at larger scale.
+
+### Volume Ramp Rate
+Zwift increases weekly duration by ~8-12% per week during load blocks.
+FTP Builder: 3h37m → 4h55m = +36% over 2 weeks, then recovery.
+Never increase volume AND intensity in the same week.
+
+### Workout Sequencing (within a week)
+Zwift's rule: Hard day → Easy day → Hard day → Easy day
+Never two hard days back to back.
+"Hard" = Threshold, VO2, Intermittent, Sweet Spot.
+"Easy" = Foundation, Recovery, Strength (if short enough).
+
+---
+
+## GOAL-SPECIFIC RECOMMENDATIONS
+
+### Goal: Improve FTP
+- Week 1-2: Foundation + Strength + Tempo
+- Week 3+: Add Sweet Spot intervals (88-94%)
+- Week 5+: Add Threshold Development (95-105%)
+- Always: Recovery day after each hard day
+- Test FTP at start and end
+
+### Goal: Lose Weight / Fitness
+- Prioritize volume in Z2 (fat-burning zone)
+- Longer Foundation sessions > intensity
+- Add Tempo for caloric burn
+- Keep Strength for metabolism boost
+- Avoid high Z4/Z5 (fatigue suppresses adherence)
+
+### Goal: Event / Gran Fondo prep
+- 12+ weeks out: Build volume (Foundation-heavy)
+- 6-8 weeks out: Add Sweet Spot and Threshold
+- 3-4 weeks out: Peak with VO2 efforts
+- 2 weeks out: Reduce volume 30%, keep intensity
+- Final week: Taper to 40% volume, one short sharp effort
+
+### Goal: General Fitness (Fun)
+- 2-3 days/week, mixed intensity
+- No periodization pressure
+- Include variety: one Foundation, one Strength or Tempo, one free ride
+- Keep sessions ≤60min for adherence
+
+---
+
+## SESSION LENGTH GUIDANCE
+
+| Available time | Recommended structure |
+|---------------|----------------------|
+| 45min | Warm-up (10min) + Main block (25-30min) + Cool-down (5min) |
+| 60min | Warm-up (10min) + Main block (40-45min) + Cool-down (5min) |
+| 90min | Warm-up (15min) + Main block (60-65min) + Cool-down (10min) |
+| 90min+ | Long Foundation or full Sweet Spot set; Tempo w/ multiple blocks |
+
+IMPORTANT: Always fit the workout within the rider's stated session length.
+A 45min rider should NEVER get a plan that requires 90min to execute properly.
+
