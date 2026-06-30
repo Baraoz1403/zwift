@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
@@ -257,28 +257,100 @@ export default function WeeklyPlan() {
         </div>
       </div>
 
-      {/* "How it works" — always visible, builds trust before first generate */}
+      {/* AI signal cards — always visible, symmetric 5-column grid */}
       {!loading && (
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "6px 20px",
-          alignItems: "center",
-          marginTop: 10,
-          marginBottom: 4,
-          fontSize: 11.5,
-          color: "var(--muted)",
-          lineHeight: 1.5,
-        }}>
-          <span>🧠 Built from your actual ride history</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>📊 Training load &amp; freshness (CTL / TSB)</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>📅 Mesocycle position</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>🎯 Your goals &amp; schedule</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>🔁 Last week's adherence</span>
+        <div style={{ marginTop: 14, marginBottom: 4 }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            marginBottom: 9,
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            color: "var(--accent)",
+          }}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z" fill="currentColor"/>
+            </svg>
+            AI-generated · reads 5 signals from your training data
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 8,
+          }}>
+            {([
+              {
+                label: "Ride history",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <polyline points="2,15 7,9 11,12 15,6 18,8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+              },
+              {
+                label: "Training load & freshness",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M10 10V6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"/>
+                    <path d="M10 10L13.5 12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+                  </svg>
+                ),
+              },
+              {
+                label: "Mesocycle phase",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+                    <path d="M2 9h16" stroke="currentColor" strokeWidth="1.4"/>
+                    <path d="M7 2v4M13 2v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+                    <circle cx="7" cy="13" r="1.1" fill="currentColor"/>
+                    <circle cx="10" cy="13" r="1.1" fill="currentColor"/>
+                  </svg>
+                ),
+              },
+              {
+                label: "Goals & schedule",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.6"/>
+                    <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="1.4"/>
+                    <circle cx="10" cy="10" r="1.3" fill="currentColor"/>
+                  </svg>
+                ),
+              },
+              {
+                label: "Last week's adherence",
+                icon: (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 10.5L8.5 15L16.5 6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+              },
+            ] as { label: string; icon: ReactNode }[]).map(({ label, icon }) => (
+              <div key={label} style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                padding: "13px 10px 11px",
+                borderRadius: 12,
+                border: "1px solid var(--border)",
+                background: "rgba(47,143,224,0.04)",
+                fontSize: 11.5,
+                color: "var(--muted)",
+                fontWeight: 500,
+                textAlign: "center",
+                lineHeight: 1.3,
+              }}>
+                <span style={{ color: "var(--accent)", opacity: 0.8 }}>{icon}</span>
+                {label}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -79,13 +79,14 @@ function CombinedTrendChart({ series, labels }: { series: TrendSeries[]; labels:
   const width = 700;
   const height = 240;
   const padding = 34;
+  const leftPad = 46; // wider left margin for Y-axis labels
   const n = labels.length;
 
   if (n === 0) {
     return <div className="notice">Not enough ride data yet to draw graphs.</div>;
   }
 
-  const xFor = (i: number) => (n === 1 ? width / 2 : padding + (i / (n - 1)) * (width - padding * 2));
+  const xFor = (i: number) => (n === 1 ? width / 2 : leftPad + (i / (n - 1)) * (width - leftPad - padding));
   const tickIdx = Array.from(new Set([0, Math.floor((n - 1) / 3), Math.floor(((n - 1) * 2) / 3), n - 1]));
 
   const stats = series.map((s) => ({ s, ...buildPath(s.values, xFor, height, padding) }));
@@ -102,7 +103,7 @@ function CombinedTrendChart({ series, labels }: { series: TrendSeries[]; labels:
 
   const tooltipWidth = 158;
   const hoverX = hoverIdx != null ? xFor(hoverIdx) : 0;
-  const tooltipX = Math.min(Math.max(hoverX + 8, padding), width - padding - tooltipWidth);
+  const tooltipX = Math.min(Math.max(hoverX + 8, leftPad), width - padding - tooltipWidth);
   const visibleStatsAtHover = hoverIdx != null ? stats.filter((st) => visible[st.s.key] && st.hasData) : [];
 
   return (
@@ -156,7 +157,25 @@ function CombinedTrendChart({ series, labels }: { series: TrendSeries[]; labels:
             structure to read the shape of each line. */}
         {[0, 0.25, 0.5, 0.75, 1].map((f) => {
           const y = height - padding - f * (height - padding * 2);
-          return <line key={f} x1={padding} y1={y} x2={width - padding} y2={y} stroke="rgba(20,23,26,0.08)" />;
+          return <line key={f} x1={leftPad} y1={y} x2={width - padding} y2={y} stroke="rgba(20,23,26,0.08)" />;
+        })}
+
+        {/* Y-axis labels — always visible, show relative scale 0-100% */}
+        {[0, 0.25, 0.5, 0.75, 1].map((f) => {
+          const y = height - padding - f * (height - padding * 2);
+          const pct = Math.round(f * 100);
+          return (
+            <text
+              key={f}
+              x={leftPad - 5}
+              y={y + 3.5}
+              fill="rgba(20,23,26,0.35)"
+              fontSize="9"
+              textAnchor="end"
+            >
+              {pct === 0 ? "min" : pct === 100 ? "max" : `${pct}%`}
+            </text>
+          );
         })}
 
         {stats.map(({ s, path }) => {
