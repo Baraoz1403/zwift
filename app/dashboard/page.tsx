@@ -137,6 +137,7 @@ export default async function DashboardPage() {
   const clientActivities = activities.map(toClientActivity);
 
   return (
+    <>
     <div className="dashboard">
       <div className="dashboard-header fade-in">
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifySelf: "start" }}>
@@ -291,8 +292,9 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <DashboardFooter />
     </div>
+    <DashboardFooter />
+    </>
   );
 }
 
@@ -382,6 +384,6 @@ async function ChartDataSection({
         <div className="section-title">Performance trends</div>
         <ActivityCharts activities={clientActivities} extras={chartExtras} />
       </div>
-    </>
+      </>
   );
 }

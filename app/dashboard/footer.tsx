@@ -6,7 +6,7 @@ export default function DashboardFooter() {
   return (
     <footer
       style={{
-        marginTop: 48,
+        marginTop: 0,
         borderTop: "3px solid var(--accent)",
         background: "var(--accent-2)",
         color: "rgba(255,255,255,0.55)",
