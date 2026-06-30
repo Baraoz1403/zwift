@@ -1,6 +1,17 @@
 @echo off
 cd /d "%~dp0"
-echo Updating the live site...
+
+:: Run pre-deploy checks first
+call check.bat
+if errorlevel 1 (
+    echo.
+    echo Deploy aborted. Fix the issues above before pushing.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Deploying...
 git add .
 git commit -m "Update site"
 git push
