@@ -101,25 +101,26 @@ export default async function DashboardPage() {
   const runLevel =
     profile?.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : null;
 
-  // Zwift's profile API doesn't expose a "FTP last changed on" field, so
-  // there's no real date to attach to that number directly. The most
-  // honest, useful date to show next to FTP/VO2max (which is derived from
-  // FTP) is the date of the rider's most recent ride - it tells you how
-  // fresh the underlying data behind these numbers actually is.
-  const lastRideDate = activities.reduce<string | null>((latest, a) => {
-    if (!a.startDate) return latest;
-    if (!latest || new Date(a.startDate).getTime() > new Date(latest).getTime()) {
-      return a.startDate;
-    }
-    return latest;
-  }, null);
-  const lastRideDateLabel = lastRideDate
-    ? new Date(lastRideDate).toLocaleDateString("en-US", {
+  // Look for the most recent FTP/Ramp test ride to find an honest "as of" date.
+  // Zwift's profile API doesn't expose when FTP was last changed, so we search
+  // ride names for known test patterns. If none found, we show "from Zwift profile"
+  // without a date rather than misleadingly showing today's date.
+  const ftpTestRide = activities
+    .filter(a => {
+      const name = (a.name ?? "").toLowerCase();
+      return name.includes("ramp") || name.includes("ftp test") || name.includes("ftp-test");
+    })
+    .sort((a, b) =>
+      new Date(b.startDate ?? 0).getTime() - new Date(a.startDate ?? 0).getTime()
+    )[0] ?? null;
+
+  const ftpDateLabel = ftpTestRide?.startDate
+    ? new Date(ftpTestRide.startDate).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
-    : null;
+    : null; // null = show "from Zwift profile" instead
 
   // Rare edge case: session had no athleteId, so activities couldn't be
   // requested in parallel above - now that the profile (and its real id)

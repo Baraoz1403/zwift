@@ -28,7 +28,7 @@ export default function WorkoutThumbnail({ workout }: { workout: ZwoWorkoutInput
   const effort = effortForType(workout.type);
 
   return (
-    <div>
+    <div style={{ margin: "-20px -20px 0 -20px" }}>
       <div
         style={{
           display: "flex",
@@ -36,7 +36,6 @@ export default function WorkoutThumbnail({ workout }: { workout: ZwoWorkoutInput
           gap: 1,
           height: 60,
           padding: "8px 6px 0",
-          borderRadius: 10,
           background: "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
@@ -59,8 +58,9 @@ export default function WorkoutThumbnail({ workout }: { workout: ZwoWorkoutInput
           justifyContent: "space-between",
           alignItems: "center",
           fontSize: 11,
-          padding: "5px 1px 0",
+          padding: "6px 20px 4px",
           color: "var(--muted)",
+          borderBottom: "1px solid var(--border)",
         }}
       >
         <span>{workout.durationMin} min</span>
