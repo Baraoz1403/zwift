@@ -219,6 +219,7 @@ export default function TrainingProfileCard() {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 24,
+          minHeight: 88,
         }}>
           {/* Left: section-title + sub */}
           <div style={{ flex: 1, minWidth: 0 }}>

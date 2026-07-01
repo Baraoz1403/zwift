@@ -189,7 +189,7 @@ export default function WeeklyPlan() {
   }
 
   return (
-    <div style={{ marginTop: 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* Today's note — rider tells the AI how they feel before generating */}
       {!loading && (
@@ -197,7 +197,7 @@ export default function WeeklyPlan() {
           display: "flex", alignItems: noteOpen ? "flex-start" : "center",
           flexDirection: noteOpen ? "column" : "row",
           justifyContent: "space-between",
-          gap: 20, padding: "20px 22px", marginTop: 20, marginBottom: 4,
+          gap: 20, padding: "20px 22px", marginTop: 0, marginBottom: 0, minHeight: 88,
         }}>
           {/* Header row — always visible */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
@@ -291,7 +291,8 @@ export default function WeeklyPlan() {
         justifyContent: "space-between",
         gap: 20,
         padding: "20px 22px",
-        marginBottom: 24,
+        marginBottom: 0,
+        minHeight: 88,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="section-title" style={{ margin: "0 0 8px 0" }}>

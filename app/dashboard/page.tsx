@@ -270,7 +270,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <TrainingProfileCard />
+      <div style={{ marginBottom: 0 }}><TrainingProfileCard /></div>
 
       {profileError && (
         <div className="notice" style={{ marginTop: 16 }}>
@@ -283,7 +283,7 @@ export default async function DashboardPage() {
       {!activitiesError && activities.length > 0 && (
         <>
           {/* ── Most actionable: today’s plan + AI coaching ── */}
-          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
+          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
             <WeeklyPlan />
           </div>
 
