@@ -212,7 +212,7 @@ export default function WeeklyPlan() {
                 <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
                   {riderNote
                     ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 60 ? riderNote.slice(0, 60) + "…" : riderNote}</span>
-                    : "How's your body today? A quick check-in helps your AI coach fine-tune the session intensity — because no two days are the same."}
+                    : "How are you feeling today? Your AI coach adapts the session to your readiness."}
                 </div>
               )}
             </div>
@@ -352,7 +352,7 @@ export default function WeeklyPlan() {
           {plan.summary && (
             <div style={{ marginTop: 16, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
-                <div className="card-eyebrow">
+                <div className="section-title" style={{ margin: 0 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
                   </svg>

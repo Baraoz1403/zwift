@@ -49,15 +49,6 @@ const SIGNALS = [
       </svg>
     ),
   },
-  {
-    label: "HR analysis",
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-        <path d="M10 17s-7-4.35-7-9a5 5 0 0 1 7-4.58A5 5 0 0 1 17 8c0 4.65-7 9-7 9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-        <path d="M4 10h2.5l1.5-2 2 4 1.5-2H16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-  },
 ];
 
 export default function SignalChips() {

@@ -205,17 +205,6 @@ export default async function DashboardPage() {
           <SignalChips />
           <div className="stat-card">
             <div className="stat-card-head">
-              <div className="stat-card-icon c-blue">
-                <IconUser size={13} />
-              </div>
-              <div className="label" style={{ margin: 0 }}>Name</div>
-            </div>
-            <div className="value" style={{ fontSize: 18 }}>
-              {profile.firstName ?? "?"} {profile.lastName ?? ""}
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-head">
               <div className="stat-card-icon c-amber">
                 <IconBolt size={13} />
               </div>

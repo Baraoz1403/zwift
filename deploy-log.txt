@@ -1969,3 +1969,39 @@ Wed 07/01/2026 15:38:32.30
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/training-profile.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/weekly-plan.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+[main aa32607] Auto deploy Wed 07/01/2026 15:38:32.69
+ 4 files changed, 43 insertions(+), 5 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   906c9f6..aa32607  main -> main
+Wed 07/01/2026 15:38:35.33 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Wed 07/01/2026 17:15:47.25 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
