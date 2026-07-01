@@ -135,6 +135,7 @@ export default function WeeklyPlan() {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -369,11 +370,43 @@ export default function WeeklyPlan() {
       {plan && (
         <>
           {plan.summary && (
-            <div
-              className="notice"
-              style={{ marginTop: 4, marginBottom: 14, color: "var(--text)", lineHeight: 1.6 }}
-            >
-              {plan.summary}
+            <div style={{ marginTop: 12, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--muted)" }}>
+                  Plan rationale
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSummaryOpen(v => !v)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "5px 14px",
+                    borderRadius: 999,
+                    border: "1px solid var(--border)",
+                    background: "rgba(47,143,224,0.05)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "var(--accent)",
+                    cursor: "pointer",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {summaryOpen ? "Hide" : "Show"}
+                  <svg
+                    width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                  >
+                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              {summaryOpen && (
+                <div className="notice" style={{ color: "var(--text)", lineHeight: 1.6 }}>
+                  {plan.summary}
+                </div>
+              )}
             </div>
           )}
 

@@ -3,19 +3,49 @@
 import { useEffect, useRef, useState } from "react";
 import { IconBolt } from "./icons";
 
+// Reusable toggle pill — same visual language as the AI signal cards
+function TogglePill({ open, onToggle, label }: { open: boolean; onToggle: () => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "5px 14px",
+        borderRadius: 999,
+        border: "1px solid var(--border)",
+        background: "rgba(47,143,224,0.05)",
+        fontSize: 12,
+        fontWeight: 600,
+        color: "var(--accent)",
+        cursor: "pointer",
+        letterSpacing: "0.01em",
+        transition: "background 0.15s",
+      }}
+    >
+      {label ?? (open ? "Hide" : "Show")}
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 10 10"
+        fill="none"
+        style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+      >
+        <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}
+
 export default function AiInsights() {
-  // Open by default (the user wants this visible without an extra click),
-  // with a close button to collapse it - and a small "AI Insights" bar left
-  // behind when collapsed so it's still easy to reopen.
-  const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Text panel closed by default — opens automatically when user triggers analysis
+  const [textOpen, setTextOpen] = useState(false);
 
-  // Mirrors of loading/text for the event handler below to read without
-  // needing them in its effect's dependency array (a changing-length deps
-  // array on the same useEffect call across renders is what React was
-  // warning about - this keeps that array permanently empty).
   const loadingRef = useRef(loading);
   const textRef = useRef(text);
   useEffect(() => {
@@ -23,37 +53,28 @@ export default function AiInsights() {
     textRef.current = text;
   }, [loading, text]);
 
-  // The header's AI Insights button (ai-insights-link.tsx) dispatches this
-  // event on every click. Landing here should show the actual analysis text
-  // already readable, not just an open panel with a "Get insights" button
-  // still waiting to be pressed - so this also kicks off the fetch
-  // automatically (once; it won't re-fetch on every click if we already
-  // have a result, only retries if there was no result yet or it errored).
+  // Header button event: open the text panel and fetch if needed
   useEffect(() => {
     const handler = () => {
-      setOpen(true);
+      setTextOpen(true);
       if (!loadingRef.current && !textRef.current) {
-        handleClick();
+        handleClick(true);
       }
     };
     window.addEventListener("open-ai-insights", handler);
     return () => window.removeEventListener("open-ai-insights", handler);
   }, []);
 
-  // Kick the analysis off as soon as the dashboard itself loads, instead of
-  // waiting for the header button to be clicked - clicking "AI Insights"
-  // used to be the moment the request started, so it always felt like a
-  // dead pause ("the system starts thinking"). Starting it in the
-  // background on mount means it's usually already done (or close to it) by
-  // the time anyone actually looks at the panel.
+  // Background pre-fetch on mount — does NOT auto-open the panel
   useEffect(() => {
     if (!loadingRef.current && !textRef.current) {
-      handleClick();
+      handleClick(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleClick() {
+  async function handleClick(openPanel = true) {
+    if (openPanel) setTextOpen(true);
     setLoading(true);
     setError(null);
     setText(null);
@@ -72,66 +93,58 @@ export default function AiInsights() {
     }
   }
 
-  if (!open) {
-    return (
-      <div style={{ marginTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div className="section-title" style={{ margin: 0 }}><IconBolt size={14} /> AI Insights</div>
-        <button
-          type="button"
-          className="btn-secondary btn"
-          style={{ width: "auto", padding: "6px 14px" }}
-          onClick={() => setOpen(true)}
-        >
-          Show
-        </button>
-      </div>
-    );
-  }
+  const hasContent = !!(text || error || loading);
 
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div className="section-title" style={{ margin: 0 }}><IconBolt size={14} /> AI Insights</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Section header — always visible */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div className="section-title" style={{ margin: 0 }}>
+          <IconBolt size={14} /> AI Insights
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             className="btn"
             style={{ width: "auto", padding: "7px 18px", fontSize: 13 }}
-            onClick={handleClick}
+            onClick={() => handleClick(true)}
             disabled={loading}
           >
-            {loading ? "Analyzing..." : "Get AI insights on my recent training"}
+            {loading ? "Analyzing…" : text ? "Re-analyze" : "Get AI insights"}
           </button>
-          <button
-            type="button"
-            className="btn-secondary btn"
-            style={{ width: "auto", padding: "6px 14px" }}
-            onClick={() => setOpen(false)}
-            aria-label="Close AI Insights"
-          >
-            ✕ Close
-          </button>
+          {hasContent && (
+            <TogglePill open={textOpen} onToggle={() => setTextOpen(v => !v)} />
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="notice" style={{ marginTop: 12 }}>
-          {error}
-        </div>
-      )}
-
-      {text && (
-        <div
-          className="notice"
-          style={{
-            marginTop: 12,
-            color: "var(--text)",
-            whiteSpace: "pre-wrap",
-            textAlign: "justify",
-            lineHeight: 1.6,
-          }}
-        >
-          {text}
-        </div>
+      {/* Collapsible content */}
+      {textOpen && (
+        <>
+          {error && (
+            <div className="notice" style={{ marginTop: 4 }}>
+              {error}
+            </div>
+          )}
+          {loading && (
+            <div className="notice" style={{ marginTop: 4, color: "var(--muted)", fontStyle: "italic" }}>
+              Analyzing your recent training…
+            </div>
+          )}
+          {text && !loading && (
+            <div
+              className="notice"
+              style={{
+                marginTop: 4,
+                color: "var(--text)",
+                whiteSpace: "pre-wrap",
+                textAlign: "justify",
+                lineHeight: 1.6,
+              }}
+            >
+              {text}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
