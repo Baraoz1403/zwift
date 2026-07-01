@@ -282,6 +282,41 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      {/* Training profile section header */}
+      <div style={{
+        marginTop: 48,
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 32,
+        paddingBottom: 18,
+        borderBottom: "1px solid var(--border)",
+      }}>
+        <div style={{ flexShrink: 0 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+            textTransform: "uppercase", color: "var(--accent)",
+            display: "flex", alignItems: "center", gap: 6, marginBottom: 7,
+          }}>
+            <IconUser size={11} />
+            Training Profile
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.4px", lineHeight: 1.15 }}>
+            Personalize your AI coach
+          </div>
+        </div>
+        <p style={{
+          margin: "6px 0 0 0",
+          fontSize: 13,
+          color: "var(--muted)",
+          lineHeight: 1.65,
+          maxWidth: 420,
+          textAlign: "right",
+        }}>
+          Set your goals, weekly schedule, and session length — the AI reads this every time it builds your plan, so every session is calibrated to your life, not a generic template.
+        </p>
+      </div>
+
       <TrainingProfileCard />
 
       {profileError && (

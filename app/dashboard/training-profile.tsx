@@ -155,7 +155,7 @@ function SelectCards<T extends string>({
             style={{
               position: "relative",
               padding: "12px 14px 11px",
-              borderRadius: 12,
+              borderRadius: 6,
               border: `1.5px solid ${active ? "var(--accent)" : "var(--border)"}`,
               background: active ? "rgba(47,143,224,0.07)" : "var(--panel-solid)",
               color: active ? "var(--accent)" : "var(--muted)",
@@ -259,7 +259,7 @@ export default function TrainingProfileCard() {
               {goals.map(g => (
                 <div key={g} style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "5px 12px 5px 9px", borderRadius: 9,
+                  padding: "5px 12px 5px 9px", borderRadius: 6,
                   border: "1px solid rgba(47,143,224,0.22)",
                   background: "rgba(47,143,224,0.05)",
                   fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
@@ -285,7 +285,7 @@ export default function TrainingProfileCard() {
                 <span key={i} style={{
                   fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
                   background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
-                  borderRadius: 7, padding: "3px 9px",
+                  borderRadius: 5, padding: "3px 9px",
                 }}>
                   {label}
                 </span>
@@ -294,7 +294,7 @@ export default function TrainingProfileCard() {
                 <span style={{
                   fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
                   background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                  borderRadius: 7, padding: "3px 9px",
+                  borderRadius: 5, padding: "3px 9px",
                 }}>
                   {phaseLabel}
                 </span>
@@ -303,7 +303,7 @@ export default function TrainingProfileCard() {
                 <span style={{
                   fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
                   background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                  borderRadius: 7, padding: "3px 9px",
+                  borderRadius: 5, padding: "3px 9px",
                 }}>
                   🎯 {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
@@ -415,7 +415,7 @@ export default function TrainingProfileCard() {
             <FieldLabel>Age (optional)</FieldLabel>
             <input
               type="number" min={10} max={100} placeholder="e.g. 42"
-              style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: 13, outline: "none" }}
+              style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
               value={draft.ageYears ?? ""}
               onChange={e => setDraft(d => ({ ...d, ageYears: e.target.value ? Number(e.target.value) : undefined }))}
             />
@@ -428,7 +428,7 @@ export default function TrainingProfileCard() {
             <FieldLabel>Target event date</FieldLabel>
             <input
               type="date"
-              style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)", fontSize: 13, outline: "none" }}
+              style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
               value={draft.eventDate ?? ""}
               onChange={e => setDraft(d => ({ ...d, eventDate: e.target.value || undefined }))}
             />
@@ -441,7 +441,7 @@ export default function TrainingProfileCard() {
           <textarea
             rows={2}
             placeholder='e.g. "Can only ride mornings, bad knee — avoid high-cadence sprints"'
-            style={{ width: "100%", padding: "10px 12px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 10, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
+            style={{ width: "100%", padding: "10px 12px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
             value={draft.notes ?? ""}
             onChange={e => setDraft(d => ({ ...d, notes: e.target.value || undefined }))}
           />

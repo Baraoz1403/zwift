@@ -21,7 +21,7 @@ html {
   --border: rgba(20, 23, 26, 0.1);
   --border-strong: rgba(20, 23, 26, 0.2);
   --danger: #d6362a;
-  --radius: 16px;
+  --radius: 8px;
   --shadow: 0 1px 3px rgba(20, 23, 26, 0.07), 0 4px 14px rgba(20, 23, 26, 0.05);
   --shadow-hover: 0 4px 8px rgba(20, 23, 26, 0.08), 0 12px 28px rgba(20, 23, 26, 0.1);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -128,7 +128,7 @@ a:hover {
   padding: 10px 12px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   color: var(--text);
   font-size: 14px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -145,7 +145,7 @@ a:hover {
   padding: 11px;
   background: var(--accent);
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   color: white;
   font-weight: 600;
   font-size: 14px;
@@ -416,7 +416,7 @@ a:hover {
   width: 42px;
   height: 42px;
   flex: none;
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,7 +484,7 @@ a:hover {
   width: 22px;
   height: 22px;
   flex: none;
-  border-radius: 7px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -623,14 +623,14 @@ a:hover {
   display: inline-flex;
   background: rgba(20, 23, 26, 0.04);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 3px;
   margin-bottom: 16px;
 }
 
 .trend-tab {
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -711,7 +711,7 @@ a:hover {
   font-size: 12.5px;
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   white-space: nowrap;
 }
 
@@ -740,7 +740,7 @@ a:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--accent);
   border: none;
   color: white;
@@ -753,7 +753,7 @@ a:hover {
   padding: 8px 10px;
   background: var(--panel-solid);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text);
   font-size: 13px;
   transition: border-color 0.15s ease;
@@ -823,7 +823,7 @@ tbody tr:hover {
   gap: 10px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 6px;
   padding: 12px 14px;
   color: var(--text);
   text-decoration: none;
@@ -843,7 +843,7 @@ tbody tr:hover {
   width: 32px;
   height: 32px;
   flex: none;
-  border-radius: 10px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -937,7 +937,7 @@ tbody tr:hover {
   align-items: center;
   gap: 7px;
   padding: 9px 18px;
-  border-radius: 10px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none !important;
@@ -984,7 +984,7 @@ tbody tr:hover {
   text-transform: uppercase;
   color: var(--accent);
   border: 1px solid rgba(47, 143, 224, 0.28);
-  border-radius: 999px;
+  border-radius: 6px;
   padding: 3px 10px;
   background: rgba(47, 143, 224, 0.07);
   margin-bottom: 9px;
@@ -997,7 +997,7 @@ tbody tr:hover {
   align-items: center;
   gap: 7px;
   padding: 9px 15px;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: rgba(47, 143, 224, 0.04);
   font-size: 12.5px;

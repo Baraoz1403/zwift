@@ -22,19 +22,7 @@ interface WeeklyPlan {
   workouts: WeeklyWorkout[];
 }
 
-// The app has no database (every other feature here is either live Zwift
-// data or a per-process in-memory cache), so "upload the plan to the
-// account on the site" - the actual ask - means persisting it somewhere
-// that survives reloads without needing a backend yet. localStorage, keyed
-// per browser, does exactly that: once generated, the plan is still there
-// next time this rider opens the dashboard on this device, until they
-// generate a new one or a new week starts.
 const STORAGE_KEY = "zwiftWeeklyPlan";
-// The rider's macro-cycle position (lib/periodization.ts) - which week of a
-// recurring 4-week mesocycle this is. Persisted the same pragmatic way as
-// everything else here (no DB yet): kept in this browser, sent back to the
-// API on every generate so the server can advance it and tell the AI where
-// "this week" sits in the cycle, instead of planning each week in isolation.
 const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
 
 function colorForType(type: string): string {
@@ -77,14 +65,11 @@ function loadCachedCycle(): MacroCycleState | null {
 
 const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-// Always display exactly 6 cards — trim excess (remove rest days first),
-// or pad with rest days when the AI returns fewer sessions.
 function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
   let workouts = [...plan.workouts].sort(
     (a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day)
   );
 
-  // Trim to 6: remove rest days first, then drop from the end
   while (workouts.length > 6) {
     const restIdx = workouts.findIndex(w => isRestDay(w.type));
     if (restIdx >= 0) {
@@ -94,7 +79,6 @@ function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
     }
   }
 
-  // Pad to 6: add rest days for the lowest-priority missing weekdays
   if (workouts.length < 6) {
     const usedDays = new Set(workouts.map(w => w.day));
     for (const day of WEEK_DAYS) {
@@ -155,13 +139,7 @@ export default function WeeklyPlan() {
     setError(null);
     try {
       const macroCycle = loadCachedCycle();
-      // Only hand over the cached plan as "last week's plan" when it's
-      // genuinely from an earlier week - re-rolling this week's own plan a
-      // few times shouldn't compare it against itself.
       const previousPlan = plan && stale ? plan : null;
-      // Read the rider's training profile (goal, days/week, session length)
-      // set in the TrainingProfileCard and pass it straight through to the
-      // plan generator - no transformation needed here.
       let riderProfile = null;
       try {
         const raw = window.localStorage.getItem("zwiftRiderProfile");
@@ -184,10 +162,7 @@ export default function WeeklyPlan() {
           if (data.macroCycle) {
             window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(data.macroCycle));
           }
-        } catch {
-          // localStorage can fail (private mode, quota) - the plan still
-          // renders for this session even if it won't persist across reloads.
-        }
+        } catch {}
       } else {
         setError(data.error ?? "Could not generate a weekly plan.");
       }
@@ -198,15 +173,6 @@ export default function WeeklyPlan() {
     }
   }
 
-  // Turns one of the AI's planned sessions into a real, structured Zwift
-  // workout file (.zwo) - warmup ramp, the actual interval/steady-state
-  // blocks, cooldown ramp - instead of just a text description, and
-  // downloads it named by the date it's planned for. The AI's own block
-  // structure (lib/zwo.ts) is used as-is - the rider receives a finished,
-  // ready-to-ride file, not a half-built one they need to assemble
-  // themselves. A browser app can't write straight into Zwift's local
-  // Workouts folder, so this is a one-time manual drop-in until Zwift's
-  // Training Connections API is approved (see the note below the plan).
   function handleDownloadZwo(w: WeeklyWorkout) {
     const xml = generateZwoXml(w);
     const filename = zwoFileName(w.date, w.title);
@@ -234,7 +200,7 @@ export default function WeeklyPlan() {
                 fontWeight: 600,
                 color: "var(--muted)",
                 background: "var(--surface-2, rgba(0,0,0,0.05))",
-                borderRadius: 999,
+                borderRadius: 6,
                 padding: "2px 9px",
               }}
               title="Position in your recurring 4-week training mesocycle"
@@ -337,7 +303,7 @@ export default function WeeklyPlan() {
                 alignItems: "center",
                 gap: 8,
                 padding: "13px 10px 11px",
-                borderRadius: 12,
+                borderRadius: 8,
                 border: "1px solid var(--border)",
                 background: "rgba(47,143,224,0.04)",
                 fontSize: 11.5,
@@ -371,7 +337,7 @@ export default function WeeklyPlan() {
                 onClick={() => setRiderNote(prev => prev === label ? "" : label)}
                 style={{
                   padding: "4px 13px",
-                  borderRadius: 999,
+                  borderRadius: 6,
                   border: `1px solid ${riderNote === label ? "var(--accent)" : "var(--border)"}`,
                   background: riderNote === label ? "rgba(47,143,224,0.10)" : "rgba(47,143,224,0.03)",
                   fontSize: 12,
@@ -394,7 +360,7 @@ export default function WeeklyPlan() {
               width: "100%",
               resize: "vertical",
               padding: "10px 13px",
-              borderRadius: 10,
+              borderRadius: 6,
               border: "1px solid var(--border)",
               background: "rgba(47,143,224,0.03)",
               fontSize: 13,
@@ -409,7 +375,7 @@ export default function WeeklyPlan() {
       )}
 
       {stale && plan && !loading && (
-        <div className="notice" style={{ marginTop: 4, marginBottom: 12 }}>
+        <div className="notice" style={{ marginTop: 16, marginBottom: 12 }}>
           This plan is from the week of {plan.weekOf} - generate a new one for the current week.
         </div>
       )}
@@ -446,7 +412,7 @@ export default function WeeklyPlan() {
                       alignItems: "center",
                       gap: 5,
                       padding: "5px 14px",
-                      borderRadius: 999,
+                      borderRadius: 6,
                       border: "1px solid var(--border)",
                       background: "rgba(47,143,224,0.05)",
                       fontSize: 12,
