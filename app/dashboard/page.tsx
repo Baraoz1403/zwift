@@ -141,29 +141,39 @@ export default async function DashboardPage() {
     <>
     <div className="dashboard">
       <div className="dashboard-header fade-in">
-        {/* LEFT: Brand identity + greeting + tagline */}
-        <div style={{ justifySelf: "start" }}>
-          <div style={{ marginBottom: 10 }}>
-            <span className="ai-product-badge">
-              <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor">
-                <path d="M5 0L6.2 3.8H10L7.1 6.1L8.1 10L5 7.8L1.9 10L2.9 6.1L0 3.8H3.8L5 0Z"/>
-              </svg>
+        {/* LEFT: icon tile + identity + greeting + tagline */}
+        <div style={{ justifySelf: "start", display: "flex", gap: 16, alignItems: "flex-start" }}>
+          {/* Blue product tile */}
+          <div style={{
+            width: 50, height: 50, borderRadius: 14, flexShrink: 0, marginTop: 3,
+            background: "var(--accent)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(47,143,224,0.35)",
+          }}>
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="white">
+              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+            </svg>
+          </div>
+
+          {/* Text stack */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 5 }}>
               AI Training Coach
-            </span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: "-0.4px" }}>
-              {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Training Coach"}
-            </h1>
-            {records && records.currentStreakDays > 1 && (
-              <span className="streak-badge">
-                <IconFlame size={14} />
-                {records.currentStreakDays} day streak
-              </span>
-            )}
-          </div>
-          <div style={{ fontSize: 13.5, fontWeight: 500, color: "var(--muted)", lineHeight: 1.45 }}>
-            Your rides, analyzed. Your next week, planned by AI.
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, letterSpacing: "-0.6px", lineHeight: 1 }}>
+                {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
+              </h1>
+              {records && records.currentStreakDays > 1 && (
+                <span className="streak-badge">
+                  <IconFlame size={14} />
+                  {records.currentStreakDays} day streak
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
+              Train smarter, every week — powered by your ride data.
+            </div>
           </div>
         </div>
 

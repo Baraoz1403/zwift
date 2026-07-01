@@ -558,16 +558,16 @@ a:hover {
 }
 
 .heatmap-cell.lvl-1 {
-  background: #ffdcb3;
+  background: rgba(47, 143, 224, 0.22);
 }
 .heatmap-cell.lvl-2 {
-  background: #ffb066;
+  background: rgba(47, 143, 224, 0.48);
 }
 .heatmap-cell.lvl-3 {
-  background: var(--accent);
+  background: rgba(47, 143, 224, 0.74);
 }
 .heatmap-cell.lvl-4 {
-  background: #d6362a;
+  background: var(--accent);
 }
 
 .heatmap-legend {

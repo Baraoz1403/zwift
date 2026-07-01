@@ -246,44 +246,85 @@ export default function TrainingProfileCard() {
 
   // ── Collapsed ──────────────────────────────────────────────────────────────
   if (!editing && profile) {
+    const goals = profile.goals ?? [profile.goal ?? "fitness"];
+    const sports = profile.sports ?? [profile.sport ?? "cycling"];
+
     return (
-      <div className="stat-card" style={{ marginTop: 20, padding: "16px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>
-              {(profile.goals ?? [profile.goal ?? "fitness"]).map(g => GOAL_LABELS[g]).join(" · ")}
-            </span>
-            <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-              {DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"]}
-            </span>
-            <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-              {SESSION_LENGTH_LABELS[profile.sessionLength]}
-            </span>
-            {(profile.sports ?? [profile.sport ?? "cycling"]).filter(s => s !== "cycling").length > 0 && (
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                {(profile.sports ?? []).map(s => SPORT_LABELS[s]).join(" + ")}
-              </span>
-            )}
-            {profile.ageYears && (
-              <span style={{ fontSize: 12.5, color: "var(--muted)" }}>Age {profile.ageYears}</span>
-            )}
-            {profile.eventDate && (
-              <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
-                Event: {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              </span>
-            )}
-            {phaseLabel && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", background: "rgba(20,23,26,0.06)", borderRadius: 999, padding: "2px 9px" }}>
-                {phaseLabel}
-              </span>
-            )}
+      <div className="stat-card" style={{ marginTop: 20, padding: "18px 22px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Goal chips with icons */}
+            <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 11 }}>
+              {goals.map(g => (
+                <div key={g} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "5px 12px 5px 9px", borderRadius: 9,
+                  border: "1px solid rgba(47,143,224,0.22)",
+                  background: "rgba(47,143,224,0.05)",
+                  fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
+                }}>
+                  <span style={{ opacity: 0.8, display: "flex", lineHeight: 0, transform: "scale(0.65)", transformOrigin: "center" }}>
+                    {GOAL_ICONS[g]}
+                  </span>
+                  {GOAL_LABELS[g]}
+                </div>
+              ))}
+            </div>
+
+            {/* Metadata tags */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              {[
+                DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"],
+                SESSION_LENGTH_LABELS[profile.sessionLength],
+                sports.length > 1 || sports[0] !== "cycling"
+                  ? sports.map(s => SPORT_LABELS[s]).join(" + ")
+                  : null,
+                profile.ageYears ? `Age ${profile.ageYears}` : null,
+              ].filter(Boolean).map((label, i) => (
+                <span key={i} style={{
+                  fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
+                  background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
+                  borderRadius: 7, padding: "3px 9px",
+                }}>
+                  {label}
+                </span>
+              ))}
+              {phaseLabel && (
+                <span style={{
+                  fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                  background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                  borderRadius: 7, padding: "3px 9px",
+                }}>
+                  {phaseLabel}
+                </span>
+              )}
+              {profile.eventDate && (
+                <span style={{
+                  fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                  background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                  borderRadius: 7, padding: "3px 9px",
+                }}>
+                  🎯 {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              )}
+            </div>
+
+            {/* Notes */}
             {profile.notes && (
-              <span style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic" }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 10, lineHeight: 1.5 }}>
                 &ldquo;{profile.notes}&rdquo;
-              </span>
+              </div>
             )}
           </div>
-          <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "5px 14px", fontSize: 12.5 }} onClick={() => { setDraft(profile); setEditing(true); }}>
+
+          {/* Edit — minimal text link */}
+          <button
+            type="button"
+            className="signout-btn"
+            style={{ flexShrink: 0, marginTop: 2 }}
+            onClick={() => { setDraft(profile); setEditing(true); }}
+          >
             Edit profile
           </button>
         </div>
