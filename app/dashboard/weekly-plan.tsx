@@ -191,15 +191,13 @@ export default function WeeklyPlan() {
     <div style={{ marginTop: 24 }}>
 
       {/* ── Compelling pitch block ──────────────────────────────────────── */}
-      <div style={{
+      <div className="stat-card" style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         gap: 20,
-        padding: "20px 24px",
-        borderRadius: 8,
-        background: "linear-gradient(100deg, rgba(47,143,224,0.07) 0%, rgba(47,143,224,0.02) 100%)",
-        border: "1.5px solid rgba(47,143,224,0.18)",
+        padding: "20px 22px",
+        borderTop: "3px solid var(--accent)",
         marginBottom: 24,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -225,31 +223,29 @@ export default function WeeklyPlan() {
           </div>
         </div>
 
-        {/* CTA — only when no plan yet */}
-        {!plan && (
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={loading}
-            style={{
-              flexShrink: 0,
-              display: "flex", alignItems: "center", gap: 7,
-              padding: "10px 20px", borderRadius: 7, border: "none",
-              background: loading ? "var(--muted)" : "var(--accent)",
-              color: "#fff", fontSize: 13, fontWeight: 700,
-              cursor: loading ? "default" : "pointer",
-              boxShadow: loading ? "none" : "0 2px 10px rgba(47,143,224,0.35)",
-              whiteSpace: "nowrap", transition: "opacity 0.15s",
-            }}
-          >
-            {loading ? "Building your plan…" : "Generate this week's plan"}
-            {!loading && (
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </button>
-        )}
+        {/* CTA — always visible */}
+        <button
+          type="button"
+          onClick={handleGenerate}
+          disabled={loading}
+          style={{
+            flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 7,
+            padding: "9px 18px", borderRadius: 7, border: "none",
+            background: loading ? "rgba(47,143,224,0.4)" : "var(--accent)",
+            color: "#fff", fontSize: 13, fontWeight: 700,
+            cursor: loading ? "default" : "pointer",
+            boxShadow: loading ? "none" : "0 2px 10px rgba(47,143,224,0.30)",
+            whiteSpace: "nowrap", transition: "opacity 0.15s",
+          }}
+        >
+          {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}
+          {!loading && (
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       {/* AI signal cards — always visible, symmetric 5-column grid */}
@@ -433,15 +429,6 @@ export default function WeeklyPlan() {
                   Plan rationale
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ width: "auto", padding: "5px 15px", fontSize: 12 }}
-                    onClick={handleGenerate}
-                    disabled={loading}
-                  >
-                    {loading ? "Building..." : "Regenerate"}
-                  </button>
                   <button
                     type="button"
                     onClick={() => setSummaryOpen(v => !v)}
