@@ -225,8 +225,9 @@ export default function WeeklyPlan() {
           disabled={loading}
           style={{
             flexShrink: 0,
-            display: "inline-flex", alignItems: "center", gap: 7,
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
             padding: "9px 15px", borderRadius: 6,
+            minWidth: 170,
             border: "1px solid var(--border)",
             background: "rgba(47,143,224,0.04)",
             color: "var(--muted)",
