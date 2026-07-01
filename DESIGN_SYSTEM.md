@@ -132,7 +132,8 @@ Never vary this height. Never use `border-left`. This ensures uniform visual rhy
 
 ## 7. Card Top Stripe
 
-All `.stat-card`, `.record-card`, `.trend-card` have a 3px accent-colored top stripe via `::before`.  
+All `.stat-card`, `.record-card`, `.trend-card` have a **2.5px** accent-colored top stripe via `::before`.
+Controlled by CSS variable `--strip-height: 2.5px` in `:root` — change ONLY this variable, never hardcode px values.  
 This is automatic — do not replicate it manually with a border or div.
 
 ---

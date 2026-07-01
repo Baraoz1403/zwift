@@ -230,8 +230,8 @@ export default function TrainingProfileCard() {
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
               {profile
-                ? "Goals, schedule, and discipline — all factored in every week."
-                : "4 quick questions. A plan that fits your life, goals, and schedule."}
+                ? "Your goals, availability, and fitness level — stored once, wired into every plan your AI coach builds."
+                : "Answer 4 questions once. Your AI coach learns your goals, schedule, and limits — and never forgets them."}
             </div>
           </div>
 
