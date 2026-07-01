@@ -210,11 +210,6 @@ a:hover {
   box-shadow: 0 1px 0 rgba(20,23,26,0.04);
 }
 
-@media (max-width: 640px) {
-  .dashboard-header {
-    grid-template-columns: 1fr;
-  }
-}
 
 .dashboard {
   position: relative;
@@ -349,7 +344,7 @@ a:hover {
    of auto-fit wrapping the 6th onto a new line, and the longer values
    ("28997.6 km", "571756 kcal") don't wrap to two lines inside their card. */
 .stat-grid-compact {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .stat-grid-compact .stat-card {
@@ -1054,3 +1049,71 @@ tbody tr:hover {
   background: rgba(47, 143, 224, 0.12);
   color: var(--accent);
 }
+
+/* ========================================================
+   MOBILE RESPONSIVENESS
+   ======================================================== */
+
+/* 3-column header cards (Personalised AI / Today's Note / Weekly Plan) */
+.header-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 860px) {
+  .header-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dashboard outer padding */
+@media (max-width: 640px) {
+  .dashboard {
+    padding: 0 14px;
+  }
+}
+
+/* Dashboard header bar: stack on mobile */
+@media (max-width: 760px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px 20px;
+    width: 100%;
+    margin-left: 0;
+  }
+  /* Right-side nav chips: wrap tightly */
+  .dashboard-header > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .header-nav-chip {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+}
+
+/* H1 size on small phones */
+@media (max-width: 480px) {
+  .dashboard-header h1 {
+    font-size: 24px !important;
+  }
+  /* Streak badge: keep but shrink */
+  .streak-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+}
+
+/* stat-grid-compact (5+5 AI signals + stat cards)
+   Desktop: 5 per row (2 rows of 5)
+   Tablet 900px: 3 per row
+   Mobile 520px: 2 per row  ← existing rules cover this */
+
+/* Workout cards: auto-fit minmax(260px) already collapses to 1 col on phone */
+
+/* Ride stats row: already has flex-wrap at 640px */

@@ -15,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Nicer typography than the system font stack. Loaded from a CDN at
             runtime (not an npm dependency) - if it fails to load for any
             reason, globals.css already falls back to the system font. */}

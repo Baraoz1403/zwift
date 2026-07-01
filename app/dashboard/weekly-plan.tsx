@@ -193,7 +193,7 @@ export default function WeeklyPlan() {
     <div>
 
       {/* ── 3-column header grid ────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div className="header-cards-grid">
 
         {/* Card 1: Training Profile */}
         <TrainingProfileCard />
