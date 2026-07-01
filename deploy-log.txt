@@ -2249,3 +2249,45 @@ Thu 07/02/2026  1:38:04.78
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/ai.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/power-zones-reference.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/running-training-plans.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/structured-plan-templates.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/sweet-spot-training.md', LF will be replaced by CRLF the next time Git touches it
+[main 2440c96] Auto deploy Thu 07/02/2026  1:38:05.14
+ 6 files changed, 585 insertions(+)
+ create mode 100644 docs/training-knowledge/power-zones-reference.md
+ create mode 100644 docs/training-knowledge/running-training-plans.md
+ create mode 100644 docs/training-knowledge/structured-plan-templates.md
+ create mode 100644 docs/training-knowledge/sweet-spot-training.md
+To https://github.com/Baraoz1403/zwift.git
+   00d61aa..2440c96  main -> main
+Thu 07/02/2026  1:38:06.85 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Thu 07/02/2026  1:41:00.66 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
