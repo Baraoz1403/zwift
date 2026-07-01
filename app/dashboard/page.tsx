@@ -13,7 +13,6 @@ import {
   setCachedFitExtras,
   type ChartExtra,
 } from "@/lib/stats";
-import Link from "next/link";
 import LogoutButton from "./logout-button";
 import DashboardFooter from "./footer";
 import ActivityCharts from "./activity-chart";
@@ -23,9 +22,8 @@ import AiInsightsLink from "./ai-insights-link";
 import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
-import TrendComparison from "./trend-comparison";
 import SignalChips from "./signal-chips";
-import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun, IconTrend, IconList, IconTrophy, IconCalendar } from "./icons";
+import { IconBolt, IconFlame, IconHeart, IconBike, IconRun, IconTrend, IconList, IconCalendar } from "./icons";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -120,6 +118,13 @@ export default async function DashboardPage() {
         year: "numeric",
       })
     : null; // null = show "from Zwift profile" instead
+
+  // Average cadence across rides that report it.
+  // Zwift's activity list API includes avgCadence on cycling rides.
+  const cadenceRides = activities.filter(a => a.avgCadence && (a.avgCadence as number) > 0);
+  const avgCadence = cadenceRides.length > 0
+    ? Math.round(cadenceRides.reduce((s, a) => s + (a.avgCadence as number), 0) / cadenceRides.length)
+    : null;
 
   // Rare edge case: session had no athleteId, so activities couldn't be
   // requested in parallel above - now that the profile (and its real id)
@@ -229,12 +234,16 @@ export default async function DashboardPage() {
           <div className="stat-card">
             <div className="stat-card-head">
               <div className="stat-card-icon c-teal">
-                <IconScale size={13} />
+                {/* Cadence / rotate icon */}
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
               </div>
-              <div className="label" style={{ margin: 0 }}>Weight</div>
+              <div className="label" style={{ margin: 0 }}>Avg cadence</div>
             </div>
-            <div className="value">
-              {profile.weight ? `${(profile.weight / 1000).toFixed(1)} kg` : "n/a"}
+            <div className="value">{avgCadence != null ? `${avgCadence} rpm` : "n/a"}</div>
+            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+              {cadenceRides.length > 0 ? `last ${cadenceRides.length} rides` : "from ride data"}
             </div>
           </div>
           <div className="stat-card">

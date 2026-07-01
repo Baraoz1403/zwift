@@ -185,6 +185,13 @@ export interface ZwiftActivity {
   avgWatts?: number;
   calories?: number;
   movingTimeInMs?: number;
+  // Cadence and heart rate may be present in the activity list response
+  // depending on the Zwift API version - accessed as typed fields here so
+  // the compiler knows about them, even though they come via [key: string].
+  avgCadence?: number;
+  avgHeartRate?: number;
+  fitFileBucket?: string;
+  fitFileKey?: string;
   [key: string]: unknown;
 }
 
