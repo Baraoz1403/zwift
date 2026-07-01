@@ -990,12 +990,46 @@ tbody tr:hover {
   margin-bottom: 9px;
 }
 
-/* ---------- Header divider ---------- */
+/* ---------- Header nav chips (match signal-card aesthetic) ---------- */
 
-.header-divider {
-  width: 1px;
-  height: 26px;
-  background: var(--border);
+.header-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(47, 143, 224, 0.04);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.header-nav-chip svg {
+  color: var(--accent);
+  opacity: 0.8;
   flex-shrink: 0;
-  margin: 0 2px;
+}
+
+.header-nav-chip:hover {
+  border-color: rgba(47, 143, 224, 0.28);
+  background: rgba(47, 143, 224, 0.09);
+  color: var(--text);
+  text-decoration: none !important;
+}
+
+.header-nav-chip.primary {
+  color: var(--accent);
+  border-color: rgba(47, 143, 224, 0.22);
+  font-weight: 600;
+}
+
+.header-nav-chip.primary:hover {
+  border-color: rgba(47, 143, 224, 0.45);
+  background: rgba(47, 143, 224, 0.12);
+  color: var(--accent);
 }

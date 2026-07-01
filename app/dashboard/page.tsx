@@ -167,20 +167,16 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* RIGHT: Segmented nav + Sign out */}
-        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 16 }}>
+        {/* RIGHT: Nav chips + Sign out */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 8 }}>
           {!activitiesError && activities.length > 0 && (
-            <div className="trend-tabs" style={{ marginBottom: 0 }}>
-              <a
-                href="#weekly-plan"
-                className="trend-tab"
-                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                <IconCalendar size={13} />
+            <>
+              <a href="#weekly-plan" className="header-nav-chip">
+                <IconCalendar size={15} />
                 Weekly Plan
               </a>
               <AiInsightsLink />
-            </div>
+            </>
           )}
           <LogoutButton />
         </div>

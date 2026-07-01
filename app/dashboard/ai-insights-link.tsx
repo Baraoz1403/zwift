@@ -6,8 +6,7 @@ export default function AiInsightsLink() {
   return (
     <a
       href="#ai-insights"
-      className="trend-tab active"
-      style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+      className="header-nav-chip primary"
       onClick={() => window.dispatchEvent(new Event("open-ai-insights"))}
     >
       <IconBolt size={13} />
