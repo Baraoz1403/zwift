@@ -25,6 +25,7 @@ import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import TrendComparison from "./trend-comparison";
 import TrainingProfileCard from "./training-profile";
+import SignalChips from "./signal-chips";
 import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun, IconTrend, IconList, IconTrophy, IconCalendar } from "./icons";
 
 export default async function DashboardPage() {
@@ -191,6 +192,8 @@ export default async function DashboardPage() {
           <LogoutButton />
         </div>
       </div>
+
+      <SignalChips />
 
       {profile && (
         <div className="stat-grid stat-grid-compact fade-in">
