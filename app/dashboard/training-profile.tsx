@@ -251,14 +251,16 @@ export default function TrainingProfileCard() {
           <button type="button" onClick={startEdit} style={{
             flexShrink: 0,
             display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px", borderRadius: 6, border: "none",
-            background: "var(--accent)", color: "#fff",
+            padding: "6px 14px", borderRadius: 6,
+            border: "1px solid rgba(47,143,224,0.35)",
+            background: "rgba(47,143,224,0.05)",
+            color: "var(--accent)",
             fontSize: 12, fontWeight: 600, cursor: "pointer",
             whiteSpace: "nowrap",
           }}>
             {profile ? "Update my profile" : "Set up my profile"}
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </div>

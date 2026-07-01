@@ -230,11 +230,13 @@ export default function WeeklyPlan() {
           style={{
             flexShrink: 0,
             display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px", borderRadius: 6, border: "none",
-            background: loading ? "rgba(47,143,224,0.4)" : "var(--accent)",
-            color: "#fff", fontSize: 12, fontWeight: 600,
+            padding: "6px 14px", borderRadius: 6,
+            border: loading ? "1px solid var(--border)" : "1px solid rgba(47,143,224,0.35)",
+            background: loading ? "rgba(20,23,26,0.03)" : "rgba(47,143,224,0.05)",
+            color: loading ? "var(--muted)" : "var(--accent)",
+            fontSize: 12, fontWeight: 600,
             cursor: loading ? "default" : "pointer",
-            whiteSpace: "nowrap", transition: "opacity 0.15s",
+            whiteSpace: "nowrap", transition: "all 0.15s",
           }}
         >
           {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}

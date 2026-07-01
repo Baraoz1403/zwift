@@ -77,10 +77,10 @@ a:hover {
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.35);
+    box-shadow: 0 0 0 0 rgba(47,143,224,0.35);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(255, 102, 0, 0);
+    box-shadow: 0 0 0 6px rgba(47,143,224,0);
   }
 }
 
@@ -137,7 +137,7 @@ a:hover {
 .field input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.18);
+  box-shadow: 0 0 0 3px rgba(47,143,224,0.18);
 }
 
 .btn {
@@ -151,12 +151,12 @@ a:hover {
   font-size: 14px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-  box-shadow: 0 4px 14px rgba(255, 102, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(47,143,224,0.25);
 }
 
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(255, 102, 0, 0.4);
+  box-shadow: 0 8px 20px rgba(47,143,224,0.22);
 }
 
 .btn:active:not(:disabled) {
@@ -286,13 +286,25 @@ a:hover {
 }
 
 .stat-card {
+  position: relative;
   background: var(--panel);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
-  border-top: 0.5px solid var(--accent);
+  border-top: none;
   border-radius: var(--radius);
   padding: 20px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleY(0.5);
+  transform-origin: top center;
 }
 
 .stat-card:hover {
@@ -303,8 +315,8 @@ a:hover {
 /* Only cards that are genuinely clickable (ride rows) get the lift */
 .stat-card.clickable:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 26px rgba(255, 102, 0, 0.1), var(--shadow-hover);
-  border-color: rgba(255, 102, 0, 0.3);
+  box-shadow: 0 12px 26px rgba(47,143,224,0.10), var(--shadow-hover);
+  border-color: rgba(47,143,224,0.22);
 }
 
 .stat-card .label {
@@ -396,21 +408,34 @@ a:hover {
 }
 
 .record-card {
+  position: relative;
   background: var(--panel);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
+  border-top: none;
   border-radius: var(--radius);
   padding: 18px;
   display: flex;
   align-items: center;
   gap: 14px;
+  overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
+.record-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleY(0.5);
+  transform-origin: top center;
+}
+
 .record-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-hover);
-  border-color: rgba(255, 102, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(47,143,224,0.10), var(--shadow);
+  border-color: rgba(47,143,224,0.22);
 }
 
 .record-icon {
@@ -421,7 +446,7 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(255, 102, 0, 0.18), rgba(20, 23, 26, 0.06));
+  background: linear-gradient(135deg, rgba(47,143,224,0.14), rgba(20,23,26,0.04));
   color: var(--accent);
 }
 
@@ -437,7 +462,7 @@ a:hover {
 }
 .record-icon.c-orange,
 .stat-card-icon.c-orange {
-  background: linear-gradient(135deg, rgba(255, 102, 0, 0.3), rgba(255, 102, 0, 0.08));
+  background: linear-gradient(135deg, rgba(47,143,224,0.25), rgba(47,143,224,0.08));
   color: #e85d00;
 }
 .record-icon.c-blue,
@@ -747,7 +772,7 @@ a:hover {
   color: white;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 4px 10px rgba(255, 102, 0, 0.25);
+  box-shadow: 0 4px 10px rgba(47,143,224,0.20);
 }
 
 .select {
@@ -835,7 +860,7 @@ tbody tr:hover {
 .ride-row:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
-  border-color: rgba(255, 102, 0, 0.35);
+  border-color: rgba(47,143,224,0.30);
   text-decoration: none;
   background: var(--panel-solid);
 }
@@ -848,7 +873,7 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(255, 102, 0, 0.2), rgba(255, 102, 0, 0.05));
+  background: linear-gradient(135deg, rgba(47,143,224,0.22), rgba(47,143,224,0.06));
   color: var(--accent);
 }
 
