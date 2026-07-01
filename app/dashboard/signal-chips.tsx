@@ -58,7 +58,7 @@ export default function SignalChips() {
       display: "flex",
       alignItems: "center",
       gap: 18,
-      marginBottom: 20,
+      marginBottom: 24,
     }}>
       {/* Left label */}
       <div style={{

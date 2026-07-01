@@ -209,7 +209,7 @@ export default function TrainingProfileCard() {
   }
 
   return (
-    <div className="section" style={{ marginTop: 36 }}>
+    <div className="section">
 
       {/* ── Profile card: thin blue top bar + white bg ─────────────────── */}
       {!editing && (

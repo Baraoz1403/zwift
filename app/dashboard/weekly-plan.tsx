@@ -188,7 +188,7 @@ export default function WeeklyPlan() {
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div style={{ marginTop: 0 }}>
 
       {/* ── Compelling pitch block ──────────────────────────────────────── */}
       <div className="stat-card" style={{

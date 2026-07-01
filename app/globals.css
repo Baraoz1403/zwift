@@ -202,7 +202,7 @@ a:hover {
   /* Stretch to full viewport width, same as the footer */
   width: 100vw;
   margin-left: calc(-50vw + 50%);
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   padding: 22px max(24px, calc((100vw - 1040px) / 2 + 24px));
   background: var(--panel);
   border-bottom: 1px solid var(--border);
@@ -268,7 +268,7 @@ a:hover {
 }
 
 .section {
-  margin-top: 52px;
+  margin-top: 24px;
 }
 
 .stat-grid {
