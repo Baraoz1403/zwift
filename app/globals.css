@@ -194,16 +194,16 @@ a:hover {
 }
 
 .dashboard-header {
-  /* 2-column grid: brand/identity left, nav actions right */
-  display: grid;
-  grid-template-columns: 1fr auto;
+  /* flex: brand/identity left, nav actions right */
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   /* Stretch to full viewport width, same as the footer */
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-bottom: 28px;
-  padding: 22px calc(50vw - 50% + 24px);
-  gap: 16px;
+  padding: 22px 24px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 0 rgba(20,23,26,0.04);

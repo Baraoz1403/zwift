@@ -142,7 +142,7 @@ export default async function DashboardPage() {
     <div className="dashboard">
       <div className="dashboard-header fade-in">
         {/* LEFT: icon tile + identity + greeting + tagline */}
-        <div style={{ justifySelf: "start", display: "flex", gap: 16, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           {/* Blue product tile */}
           <div style={{
             width: 50, height: 50, borderRadius: 14, flexShrink: 0, marginTop: 3,
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* RIGHT: Nav chips + Sign out */}
-        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {!activitiesError && activities.length > 0 && (
             <>
               <a href="#weekly-plan" className="header-nav-chip">
