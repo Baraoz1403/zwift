@@ -250,6 +250,17 @@ a:hover {
   position: relative;
 }
 
+.card-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .section-title::before {
   content: "";
   position: absolute;
@@ -297,7 +308,9 @@ a:hover {
   overflow: hidden;
 }
 
-.stat-card::before {
+.stat-card::before,
+.record-card::before,
+.trend-card::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0;
@@ -374,18 +387,7 @@ a:hover {
   overflow: hidden;
 }
 
-.stat-card::before,
-.record-card::before,
-.trend-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--accent);
-  border-radius: var(--radius) var(--radius) 0 0;
-}
+
 
 /* ---------- Record cards ---------- */
 
@@ -422,15 +424,7 @@ a:hover {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.record-card::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: var(--accent);
-  transform: scaleY(0.75);
-  transform-origin: top center;
-}
+
 
 .record-card:hover {
   transform: translateY(-2px);

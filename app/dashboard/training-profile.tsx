@@ -222,11 +222,7 @@ export default function TrainingProfileCard() {
         }}>
           {/* Left: eyebrow + headline + sub */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: "var(--accent)", marginBottom: 5,
-            }}>
+            <div className="card-eyebrow" style={{ marginBottom: 5 }}>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
                 <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
               </svg>

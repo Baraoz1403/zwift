@@ -61,18 +61,7 @@ export default function SignalChips() {
       marginBottom: 24,
     }}>
       {/* Left label */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        flexShrink: 0,
-        fontSize: 10,
-        fontWeight: 800,
-        letterSpacing: "0.09em",
-        textTransform: "uppercase",
-        color: "var(--accent)",
-        whiteSpace: "nowrap",
-      }}>
+      <div className="card-eyebrow" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
         <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
           <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
         </svg>

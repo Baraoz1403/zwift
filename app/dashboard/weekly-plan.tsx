@@ -201,11 +201,7 @@ export default function WeeklyPlan() {
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Eyebrow */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: "var(--accent)", marginBottom: 6,
-          }}>
+          <div className="card-eyebrow" style={{ marginBottom: 6 }}>
             <IconCalendar size={10} />
             {cycleInfo ? `${cycleInfo.phase} · Week ${cycleInfo.weekInMesocycle}/4` : "Weekly training plan"}
           </div>
@@ -244,7 +240,7 @@ export default function WeeklyPlan() {
           {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}
           {!loading && (
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
         </button>
@@ -253,7 +249,7 @@ export default function WeeklyPlan() {
       {/* Today's note — rider tells the AI how they feel before generating */}
       {!loading && (
         <div className="stat-card" style={{ marginTop: 20, marginBottom: 4, padding: "20px 22px" }}>
-          <div className="section-title" style={{ margin: "0 0 16px 0", fontSize: 12 }}>
+          <div className="card-eyebrow" style={{ marginBottom: 16 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
             </svg>
@@ -334,7 +330,7 @@ export default function WeeklyPlan() {
           {plan.summary && (
             <div style={{ marginTop: 16, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
-                <div className="section-title" style={{ margin: 0, fontSize: 12 }}>
+                <div className="card-eyebrow">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
                   </svg>
