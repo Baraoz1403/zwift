@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   type RiderTrainingProfile,
   type TrainingGoal,
@@ -114,6 +114,15 @@ function CheckIcon() {
   );
 }
 
+// ── Chevron icon ───────────────────────────────────────────────────────────
+function ChevronIcon({ up }: { up: boolean }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transition: "transform 0.2s ease", transform: up ? "rotate(180deg)" : "rotate(0deg)" }}>
+      <polyline points="2,4 6,8 10,4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 // ── SelectCards — replaces Toggle ──────────────────────────────────────────
 function SelectCards<T extends string>({
   options,
@@ -165,7 +174,6 @@ function SelectCards<T extends string>({
               boxShadow: active ? "0 0 0 3px rgba(47,143,224,0.12)" : "none",
             }}
           >
-            {/* Selected badge */}
             {active && (
               <div style={{
                 position: "absolute",
@@ -182,11 +190,9 @@ function SelectCards<T extends string>({
                 <CheckIcon />
               </div>
             )}
-            {/* Icon */}
             <div style={{ marginBottom: 7, opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }}>
               {icons[o]}
             </div>
-            {/* Label */}
             <div style={{
               fontSize: 12,
               fontWeight: active ? 700 : 500,
@@ -229,236 +235,282 @@ export default function TrainingProfileCard() {
   const [editing, setEditing]       = useState(false);
   const [draft, setDraft]           = useState<RiderTrainingProfile>(DEFAULT);
   const [phaseLabel, setPhaseLabel] = useState<string | null>(null);
+  const [open, setOpen]             = useState(false);
 
   useEffect(() => {
     const p = loadProfile();
     setProfile(p);
-    if (!p) setEditing(true);
+    if (!p) { setEditing(true); setOpen(true); }
     else setDraft(p);
     setPhaseLabel(loadPhaseLabel());
   }, []);
+
+  const toggle = useCallback(() => setOpen(v => !v), []);
 
   function handleSave() {
     saveProfile(draft);
     setProfile(draft);
     setEditing(false);
+    setOpen(false);
   }
 
-  // ── Collapsed ──────────────────────────────────────────────────────────────
-  if (!editing && profile) {
-    const goals = profile.goals ?? [profile.goal ?? "fitness"];
-    const sports = profile.sports ?? [profile.sport ?? "cycling"];
-
-    return (
-      <div className="stat-card" style={{ marginTop: 20, padding: "18px 22px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Goal chips with icons */}
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 11 }}>
-              {goals.map(g => (
-                <div key={g} style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "5px 12px 5px 9px", borderRadius: 6,
-                  border: "1px solid rgba(47,143,224,0.22)",
-                  background: "rgba(47,143,224,0.05)",
-                  fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
-                }}>
-                  <span style={{ opacity: 0.8, display: "flex", lineHeight: 0, transform: "scale(0.65)", transformOrigin: "center" }}>
-                    {GOAL_ICONS[g]}
-                  </span>
-                  {GOAL_LABELS[g]}
-                </div>
-              ))}
-            </div>
-
-            {/* Metadata tags */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              {[
-                DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"],
-                SESSION_LENGTH_LABELS[profile.sessionLength],
-                sports.length > 1 || sports[0] !== "cycling"
-                  ? sports.map(s => SPORT_LABELS[s]).join(" + ")
-                  : null,
-                profile.ageYears ? `Age ${profile.ageYears}` : null,
-              ].filter(Boolean).map((label, i) => (
-                <span key={i} style={{
-                  fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
-                  background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
-                  borderRadius: 5, padding: "3px 9px",
-                }}>
-                  {label}
-                </span>
-              ))}
-              {phaseLabel && (
-                <span style={{
-                  fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
-                  background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                  borderRadius: 5, padding: "3px 9px",
-                }}>
-                  {phaseLabel}
-                </span>
-              )}
-              {profile.eventDate && (
-                <span style={{
-                  fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
-                  background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                  borderRadius: 5, padding: "3px 9px",
-                }}>
-                  🎯 {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
-              )}
-            </div>
-
-            {/* Notes */}
-            {profile.notes && (
-              <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 10, lineHeight: 1.5 }}>
-                &ldquo;{profile.notes}&rdquo;
-              </div>
-            )}
-          </div>
-
-          {/* Edit — minimal text link */}
-          <button
-            type="button"
-            className="signout-btn"
-            style={{ flexShrink: 0, marginTop: 2 }}
-            onClick={() => { setDraft(profile); setEditing(true); }}
-          >
-            Edit profile
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Edit form ──────────────────────────────────────────────────────────────
   return (
-    <div className="stat-card" style={{ marginTop: 20, padding: "24px 28px" }}>
+    <div className="section" style={{ marginTop: 36 }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
-          {profile ? "Edit your training profile" : "Welcome — let’s personalise your plan"}
-        </div>
-        {!profile && (
+      {/* ── Section header — always visible ─────────────────────────────── */}
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 16,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="section-title" style={{ marginBottom: 4 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            AI Coach Profile
+          </div>
           <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-            Tell me about your goals and schedule so I can build a training plan that fits your life.
-          </div>
-        )}
-      </div>
-
-      <Divider />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 20 }}>
-
-        {/* Goals */}
-        <div>
-          <FieldLabel>Training goals — pick one or more</FieldLabel>
-          <SelectCards<TrainingGoal>
-            options={["fitness","ftp","weight","event","fun"]}
-            labels={GOAL_LABELS}
-            icons={GOAL_ICONS}
-            selected={draft.goals ?? [draft.goal ?? "fitness"]}
-            onChange={v => setDraft(d => ({ ...d, goals: v }))}
-          />
-        </div>
-
-        <Divider />
-
-        {/* Sport */}
-        <div>
-          <FieldLabel>Primary discipline — pick one or more</FieldLabel>
-          <SelectCards<Sport>
-            options={["cycling","running","both"]}
-            labels={SPORT_LABELS}
-            icons={SPORT_ICONS}
-            selected={draft.sports ?? [draft.sport ?? "cycling"]}
-            onChange={v => setDraft(d => ({ ...d, sports: v }))}
-            columns={3}
-          />
-        </div>
-
-        <Divider />
-
-        {/* Row: days / session / age */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
-          <div>
-            <FieldLabel>Days per week</FieldLabel>
-            <select
-              className="select"
-              style={{ width: "100%" }}
-              value={draft.daysRange ?? "3-4"}
-              onChange={e => setDraft(d => ({ ...d, daysRange: e.target.value as DaysRange }))}
-            >
-              {(["1-2","2-3","3-4","4-5","5-6"] as DaysRange[]).map(r => (
-                <option key={r} value={r}>{DAYS_RANGE_LABELS[r]}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <FieldLabel>Session length</FieldLabel>
-            <select
-              className="select"
-              style={{ width: "100%" }}
-              value={draft.sessionLength}
-              onChange={e => setDraft(d => ({ ...d, sessionLength: e.target.value as SessionLength }))}
-            >
-              {(Object.entries(SESSION_LENGTH_LABELS) as [SessionLength, string][]).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <FieldLabel>Age (optional)</FieldLabel>
-            <input
-              type="number" min={10} max={100} placeholder="e.g. 42"
-              style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
-              value={draft.ageYears ?? ""}
-              onChange={e => setDraft(d => ({ ...d, ageYears: e.target.value ? Number(e.target.value) : undefined }))}
-            />
+            {profile
+              ? "Your goals and schedule guide every weekly plan the AI builds for you."
+              : "Tell the AI your goals, schedule, and preferred sports — it personalises every training plan to fit your life."}
           </div>
         </div>
 
-        {/* Event date — only when "event" goal is selected */}
-        {(draft.goals ?? []).includes("event") && (
-          <div>
-            <FieldLabel>Target event date</FieldLabel>
-            <input
-              type="date"
-              style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
-              value={draft.eventDate ?? ""}
-              onChange={e => setDraft(d => ({ ...d, eventDate: e.target.value || undefined }))}
-            />
-          </div>
-        )}
-
-        {/* Notes */}
-        <div>
-          <FieldLabel>Anything else? (optional)</FieldLabel>
-          <textarea
-            rows={2}
-            placeholder='e.g. "Can only ride mornings, bad knee — avoid high-cadence sprints"'
-            style={{ width: "100%", padding: "10px 12px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
-            value={draft.notes ?? ""}
-            onChange={e => setDraft(d => ({ ...d, notes: e.target.value || undefined }))}
-          />
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
-        <button type="button" className="btn" style={{ width: "auto", padding: "9px 28px" }} onClick={handleSave}>
-          Save profile
+        {/* Toggle button */}
+        <button
+          type="button"
+          onClick={toggle}
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "7px 14px",
+            borderRadius: 6,
+            border: "1.5px solid var(--border)",
+            background: open ? "rgba(47,143,224,0.07)" : "var(--panel-solid)",
+            color: open ? "var(--accent)" : "var(--muted)",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            marginTop: 2,
+          }}
+        >
+          {open ? "Close" : (profile ? "Edit profile" : "Set up")}
+          <ChevronIcon up={open} />
         </button>
-        {profile && (
-          <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "9px 18px" }} onClick={() => setEditing(false)}>
-            Cancel
-          </button>
-        )}
       </div>
+
+      {/* ── Collapsible content ──────────────────────────────────────────── */}
+      {open && (
+        <>
+          {!editing && profile ? (
+            /* Collapsed chip view */
+            <div className="stat-card" style={{ marginTop: 16, padding: "18px 22px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Goal chips with icons */}
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 11 }}>
+                    {(profile.goals ?? [profile.goal ?? "fitness"]).map(g => (
+                      <div key={g} style={{
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        padding: "5px 12px 5px 9px", borderRadius: 6,
+                        border: "1px solid rgba(47,143,224,0.22)",
+                        background: "rgba(47,143,224,0.05)",
+                        fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
+                      }}>
+                        <span style={{ opacity: 0.8, display: "flex", lineHeight: 0, transform: "scale(0.65)", transformOrigin: "center" }}>
+                          {GOAL_ICONS[g]}
+                        </span>
+                        {GOAL_LABELS[g]}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Metadata tags */}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                    {[
+                      DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"],
+                      SESSION_LENGTH_LABELS[profile.sessionLength],
+                      (profile.sports ?? []).length > 1 || (profile.sports ?? ["cycling"])[0] !== "cycling"
+                        ? (profile.sports ?? []).map(s => SPORT_LABELS[s]).join(" + ")
+                        : null,
+                      profile.ageYears ? `Age ${profile.ageYears}` : null,
+                    ].filter(Boolean).map((label, i) => (
+                      <span key={i} style={{
+                        fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
+                        background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
+                        borderRadius: 5, padding: "3px 9px",
+                      }}>
+                        {label}
+                      </span>
+                    ))}
+                    {phaseLabel && (
+                      <span style={{
+                        fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                        background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                        borderRadius: 5, padding: "3px 9px",
+                      }}>
+                        {phaseLabel}
+                      </span>
+                    )}
+                    {profile.eventDate && (
+                      <span style={{
+                        fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                        background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                        borderRadius: 5, padding: "3px 9px",
+                      }}>
+                        {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+
+                  {profile.notes && (
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 10, lineHeight: 1.5 }}>
+                      &ldquo;{profile.notes}&rdquo;
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="signout-btn"
+                  style={{ flexShrink: 0, marginTop: 2 }}
+                  onClick={() => { setDraft(profile); setEditing(true); }}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Edit form */
+            <div className="stat-card" style={{ marginTop: 16, padding: "24px 28px" }}>
+
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
+                  {profile ? "Edit your training profile" : "Welcome — let’s personalise your plan"}
+                </div>
+                {!profile && (
+                  <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
+                    Tell me about your goals and schedule so I can build a training plan that fits your life.
+                  </div>
+                )}
+              </div>
+
+              <Divider />
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 20 }}>
+
+                <div>
+                  <FieldLabel>Training goals — pick one or more</FieldLabel>
+                  <SelectCards<TrainingGoal>
+                    options={["fitness","ftp","weight","event","fun"]}
+                    labels={GOAL_LABELS}
+                    icons={GOAL_ICONS}
+                    selected={draft.goals ?? [draft.goal ?? "fitness"]}
+                    onChange={v => setDraft(d => ({ ...d, goals: v }))}
+                  />
+                </div>
+
+                <Divider />
+
+                <div>
+                  <FieldLabel>Primary discipline — pick one or more</FieldLabel>
+                  <SelectCards<Sport>
+                    options={["cycling","running","both"]}
+                    labels={SPORT_LABELS}
+                    icons={SPORT_ICONS}
+                    selected={draft.sports ?? [draft.sport ?? "cycling"]}
+                    onChange={v => setDraft(d => ({ ...d, sports: v }))}
+                    columns={3}
+                  />
+                </div>
+
+                <Divider />
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+                  <div>
+                    <FieldLabel>Days per week</FieldLabel>
+                    <select
+                      className="select"
+                      style={{ width: "100%" }}
+                      value={draft.daysRange ?? "3-4"}
+                      onChange={e => setDraft(d => ({ ...d, daysRange: e.target.value as DaysRange }))}
+                    >
+                      {(["1-2","2-3","3-4","4-5","5-6"] as DaysRange[]).map(r => (
+                        <option key={r} value={r}>{DAYS_RANGE_LABELS[r]}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <FieldLabel>Session length</FieldLabel>
+                    <select
+                      className="select"
+                      style={{ width: "100%" }}
+                      value={draft.sessionLength}
+                      onChange={e => setDraft(d => ({ ...d, sessionLength: e.target.value as SessionLength }))}
+                    >
+                      {(Object.entries(SESSION_LENGTH_LABELS) as [SessionLength, string][]).map(([k, v]) => (
+                        <option key={k} value={k}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <FieldLabel>Age (optional)</FieldLabel>
+                    <input
+                      type="number" min={10} max={100} placeholder="e.g. 42"
+                      style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
+                      value={draft.ageYears ?? ""}
+                      onChange={e => setDraft(d => ({ ...d, ageYears: e.target.value ? Number(e.target.value) : undefined }))}
+                    />
+                  </div>
+                </div>
+
+                {(draft.goals ?? []).includes("event") && (
+                  <div>
+                    <FieldLabel>Target event date</FieldLabel>
+                    <input
+                      type="date"
+                      style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
+                      value={draft.eventDate ?? ""}
+                      onChange={e => setDraft(d => ({ ...d, eventDate: e.target.value || undefined }))}
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <FieldLabel>Anything else? (optional)</FieldLabel>
+                  <textarea
+                    rows={2}
+                    placeholder='e.g. "Can only ride mornings, bad knee — avoid high-cadence sprints"'
+                    style={{ width: "100%", padding: "10px 12px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
+                    value={draft.notes ?? ""}
+                    onChange={e => setDraft(d => ({ ...d, notes: e.target.value || undefined }))}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+                <button type="button" className="btn" style={{ width: "auto", padding: "9px 28px" }} onClick={handleSave}>
+                  Save profile
+                </button>
+                {profile && (
+                  <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "9px 18px" }} onClick={() => { setEditing(false); }}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

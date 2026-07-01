@@ -226,18 +226,23 @@ export default function WeeklyPlan() {
       {/* AI signal cards — always visible, symmetric 5-column grid */}
       {!loading && (
         <div style={{ marginTop: 20, marginBottom: 4 }}>
+          {/* Badge */}
           <div style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            gap: 5,
-            marginBottom: 9,
+            gap: 6,
+            marginBottom: 12,
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: "0.07em",
             textTransform: "uppercase",
             color: "var(--accent)",
+            background: "rgba(47,143,224,0.09)",
+            border: "1.5px solid rgba(47,143,224,0.28)",
+            borderRadius: 6,
+            padding: "5px 12px 5px 9px",
           }}>
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z" fill="currentColor"/>
             </svg>
             AI-generated · reads 5 signals from your training data
@@ -251,7 +256,7 @@ export default function WeeklyPlan() {
               {
                 label: "Ride history",
                 icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                     <polyline points="2,15 7,9 11,12 15,6 18,8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 ),
@@ -259,7 +264,7 @@ export default function WeeklyPlan() {
               {
                 label: "Training load & freshness",
                 icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                     <path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" strokeWidth="1.6"/>
                     <path d="M10 10V6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"/>
                     <path d="M10 10L13.5 12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
@@ -269,7 +274,7 @@ export default function WeeklyPlan() {
               {
                 label: "Mesocycle phase",
                 icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                     <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/>
                     <path d="M2 9h16" stroke="currentColor" strokeWidth="1.4"/>
                     <path d="M7 2v4M13 2v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
@@ -281,7 +286,7 @@ export default function WeeklyPlan() {
               {
                 label: "Goals & schedule",
                 icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.6"/>
                     <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="1.4"/>
                     <circle cx="10" cy="10" r="1.3" fill="currentColor"/>
@@ -291,7 +296,7 @@ export default function WeeklyPlan() {
               {
                 label: "Last week's adherence",
                 icon: (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                     <path d="M4 10.5L8.5 15L16.5 6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 ),
@@ -301,18 +306,19 @@ export default function WeeklyPlan() {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 8,
-                padding: "13px 10px 11px",
+                gap: 9,
+                padding: "16px 10px 13px",
                 borderRadius: 8,
-                border: "1px solid var(--border)",
-                background: "rgba(47,143,224,0.04)",
-                fontSize: 11.5,
-                color: "var(--muted)",
-                fontWeight: 500,
+                border: "1.5px solid rgba(47,143,224,0.30)",
+                background: "rgba(47,143,224,0.08)",
+                fontSize: 12,
+                color: "var(--text)",
+                fontWeight: 600,
                 textAlign: "center",
                 lineHeight: 1.3,
+                boxShadow: "0 1px 6px rgba(47,143,224,0.08)",
               }}>
-                <span style={{ color: "var(--accent)", opacity: 0.8 }}>{icon}</span>
+                <span style={{ color: "var(--accent)" }}>{icon}</span>
                 {label}
               </div>
             ))}
