@@ -211,121 +211,126 @@ export default function TrainingProfileCard() {
   return (
     <div className="section" style={{ marginTop: 36 }}>
 
-      {/* ── Compelling header — always visible ──────────────────────────── */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 20,
-        padding: "20px 24px",
-        borderRadius: 8,
-        background: "linear-gradient(100deg, rgba(47,143,224,0.07) 0%, rgba(47,143,224,0.02) 100%)",
-        border: "1.5px solid rgba(47,143,224,0.18)",
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-            textTransform: "uppercase", color: "var(--accent)", marginBottom: 6,
-          }}>
-            <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
-            </svg>
-            Personalised AI coaching
-          </div>
-          <div style={{
-            fontSize: 18, fontWeight: 800, color: "var(--text)",
-            lineHeight: 1.25, letterSpacing: "-0.3px", marginBottom: 6,
-          }}>
-            {profile
-              ? "Your coach knows you. Every plan is built around you."
-              : "The more your coach knows you, the better your plan."}
-          </div>
-          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
-            {profile
-              ? "Goals, schedule, and discipline — all factored in every week."
-              : "4 quick questions. A training plan that actually fits your life, goals, and schedule."}
-          </div>
-        </div>
+      {/* ── Merged card: header + chip summary ─────────────────────────── */}
+      {!editing && (
+        <div style={{
+          borderRadius: 8,
+          border: "1.5px solid rgba(47,143,224,0.20)",
+          overflow: "hidden",
+          background: "var(--panel-solid)",
+        }}>
 
-        {!editing && (
-          <button type="button" onClick={startEdit} style={{
-            flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "10px 20px", borderRadius: 7, border: "none",
-            background: "var(--accent)", color: "#fff",
-            fontSize: 13, fontWeight: 700, cursor: "pointer",
-            boxShadow: "0 2px 10px rgba(47,143,224,0.35)",
-            whiteSpace: "nowrap", transition: "opacity 0.15s",
+          {/* Header row with gradient */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 20,
+            padding: "18px 22px",
+            background: "linear-gradient(100deg, rgba(47,143,224,0.07) 0%, rgba(47,143,224,0.02) 100%)",
           }}>
-            {profile ? "Update my profile" : "Personalise my plan"}
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* ── Profile chip summary — always visible when profile exists ────── */}
-      {profile && !editing && (
-        <div className="stat-card" style={{ marginTop: 14, padding: "18px 22px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 11 }}>
-                {(profile.goals ?? [profile.goal ?? "fitness"]).map(g => (
-                  <div key={g} style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "5px 12px 5px 9px", borderRadius: 6,
-                    border: "1px solid rgba(47,143,224,0.22)",
-                    background: "rgba(47,143,224,0.05)",
-                    fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
-                  }}>
-                    <span style={{ opacity: 0.8, display: "flex", lineHeight: 0, transform: "scale(0.65)", transformOrigin: "center" }}>
-                      {GOAL_ICONS[g]}
-                    </span>
-                    {GOAL_LABELS[g]}
-                  </div>
-                ))}
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", color: "var(--accent)", marginBottom: 5,
+              }}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
+                </svg>
+                Personalised AI coaching
               </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                {[
-                  DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"],
-                  SESSION_LENGTH_LABELS[profile.sessionLength],
-                  (profile.sports ?? []).length > 1 || (profile.sports ?? ["cycling"])[0] !== "cycling"
-                    ? (profile.sports ?? []).map(s => SPORT_LABELS[s]).join(" + ")
-                    : null,
-                  profile.ageYears ? `Age ${profile.ageYears}` : null,
-                ].filter(Boolean).map((label, i) => (
-                  <span key={i} style={{
-                    fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
-                    background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
-                    borderRadius: 5, padding: "3px 9px",
-                  }}>{label}</span>
-                ))}
-                {phaseLabel && (
-                  <span style={{
-                    fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
-                    background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                    borderRadius: 5, padding: "3px 9px",
-                  }}>{phaseLabel}</span>
-                )}
-                {profile.eventDate && (
-                  <span style={{
-                    fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
-                    background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
-                    borderRadius: 5, padding: "3px 9px",
-                  }}>
-                    {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </span>
-                )}
+              <div style={{
+                fontSize: 17, fontWeight: 800, color: "var(--text)",
+                lineHeight: 1.25, letterSpacing: "-0.3px", marginBottom: 4,
+              }}>
+                {profile
+                  ? "Your coach knows you. Every plan is built around you."
+                  : "The more your coach knows you, the better your plan."}
               </div>
-              {profile.notes && (
-                <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 10, lineHeight: 1.5 }}>
-                  &ldquo;{profile.notes}&rdquo;
-                </div>
-              )}
+              <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
+                {profile
+                  ? "Goals, schedule, and discipline — all factored in every week."
+                  : "4 quick questions. A plan that fits your life, goals, and schedule."}
+              </div>
             </div>
+            <button type="button" onClick={startEdit} style={{
+              flexShrink: 0,
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 18px", borderRadius: 7, border: "none",
+              background: "var(--accent)", color: "#fff",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+              boxShadow: "0 2px 10px rgba(47,143,224,0.30)",
+              whiteSpace: "nowrap",
+            }}>
+              {profile ? "Update my profile" : "Set up my profile"}
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
+
+          {/* Chip summary — only when profile exists */}
+          {profile && (
+            <>
+              <div style={{ height: 1, background: "rgba(47,143,224,0.12)" }} />
+              <div style={{ padding: "16px 22px" }}>
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: 10 }}>
+                  {(profile.goals ?? [profile.goal ?? "fitness"]).map(g => (
+                    <div key={g} style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "5px 12px 5px 9px", borderRadius: 6,
+                      border: "1px solid rgba(47,143,224,0.22)",
+                      background: "rgba(47,143,224,0.05)",
+                      fontSize: 12.5, fontWeight: 600, color: "var(--accent)",
+                    }}>
+                      <span style={{ opacity: 0.8, display: "flex", lineHeight: 0, transform: "scale(0.65)", transformOrigin: "center" }}>
+                        {GOAL_ICONS[g]}
+                      </span>
+                      {GOAL_LABELS[g]}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                  {[
+                    DAYS_RANGE_LABELS[profile.daysRange ?? "3-4"],
+                    SESSION_LENGTH_LABELS[profile.sessionLength],
+                    (profile.sports ?? []).length > 1 || (profile.sports ?? ["cycling"])[0] !== "cycling"
+                      ? (profile.sports ?? []).map(s => SPORT_LABELS[s]).join(" + ")
+                      : null,
+                    profile.ageYears ? `Age ${profile.ageYears}` : null,
+                  ].filter(Boolean).map((label, i) => (
+                    <span key={i} style={{
+                      fontSize: 11.5, fontWeight: 500, color: "var(--muted)",
+                      background: "rgba(20,23,26,0.05)", border: "1px solid var(--border)",
+                      borderRadius: 5, padding: "3px 9px",
+                    }}>{label}</span>
+                  ))}
+                  {phaseLabel && (
+                    <span style={{
+                      fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                      background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                      borderRadius: 5, padding: "3px 9px",
+                    }}>{phaseLabel}</span>
+                  )}
+                  {profile.eventDate && (
+                    <span style={{
+                      fontSize: 11.5, fontWeight: 600, color: "var(--accent)",
+                      background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.22)",
+                      borderRadius: 5, padding: "3px 9px",
+                    }}>
+                      {new Date(profile.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
+                </div>
+                {profile.notes && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", marginTop: 10, lineHeight: 1.5 }}>
+                    &ldquo;{profile.notes}&rdquo;
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -359,12 +364,27 @@ export default function TrainingProfileCard() {
             <Divider />
 
             <div>
-              <FieldLabel>Primary discipline — pick one or more</FieldLabel>
+              <FieldLabel>Primary discipline</FieldLabel>
               <SelectCards<Sport>
                 options={["cycling","running","both"]}
                 labels={SPORT_LABELS} icons={SPORT_ICONS}
                 selected={draft.sports ?? [draft.sport ?? "cycling"]}
-                onChange={v => setDraft(d => ({ ...d, sports: v }))}
+                onChange={v => {
+                  let sports = v as Sport[];
+                  const prev = draft.sports ?? ["cycling"];
+                  const added = sports.filter(s => !prev.includes(s));
+                  if (added.includes("both")) {
+                    // clicked "Cycling & Running" → only that
+                    sports = ["both"];
+                  } else if (prev.includes("both") && added.length > 0) {
+                    // clicked individual while "both" was active → switch to that individual
+                    sports = sports.filter(s => s !== "both");
+                  } else if (sports.includes("cycling") && sports.includes("running")) {
+                    // both individuals selected → collapse to "both"
+                    sports = ["both"];
+                  }
+                  setDraft(d => ({ ...d, sports }));
+                }}
                 columns={3}
               />
             </div>
