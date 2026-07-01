@@ -203,7 +203,7 @@ a:hover {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-bottom: 28px;
-  padding: 22px 24px;
+  padding: 22px max(24px, calc((100vw - 1040px) / 2));
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 0 rgba(20,23,26,0.04);
