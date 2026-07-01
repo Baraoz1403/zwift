@@ -189,36 +189,65 @@ export default function WeeklyPlan() {
 
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-        <div className="section-title" style={{ margin: 0 }}>
-          <IconCalendar size={16} />
-          Weekly training plan
-          {cycleInfo && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--muted)",
-                background: "var(--surface-2, rgba(0,0,0,0.05))",
-                borderRadius: 6,
-                padding: "2px 9px",
-              }}
-              title="Position in your recurring 4-week training mesocycle"
-            >
-              {cycleInfo.phase} · week {cycleInfo.weekInMesocycle}/4
-            </span>
-          )}
+
+      {/* ── Compelling pitch block ──────────────────────────────────────── */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 20,
+        padding: "20px 24px",
+        borderRadius: 8,
+        background: "linear-gradient(100deg, rgba(47,143,224,0.07) 0%, rgba(47,143,224,0.02) 100%)",
+        border: "1.5px solid rgba(47,143,224,0.18)",
+        marginBottom: 24,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Eyebrow */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "var(--accent)", marginBottom: 6,
+          }}>
+            <IconCalendar size={10} />
+            {cycleInfo ? `${cycleInfo.phase} · Week ${cycleInfo.weekInMesocycle}/4` : "Weekly training plan"}
+          </div>
+          {/* Headline */}
+          <div style={{
+            fontSize: 18, fontWeight: 800, color: "var(--text)",
+            lineHeight: 1.25, letterSpacing: "-0.3px", marginBottom: 6,
+          }}>
+            A fresh plan every week — built around your data.
+          </div>
+          {/* Sub */}
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
+            Your AI coach reads ride history, training load, and goals to design a week that moves you forward.
+          </div>
         </div>
-        {/* Show generate button at top only when there is no plan yet */}
+
+        {/* CTA — only when no plan yet */}
         {!plan && (
           <button
             type="button"
-            className="btn"
-            style={{ width: "auto", padding: "8px 18px" }}
             onClick={handleGenerate}
             disabled={loading}
+            style={{
+              flexShrink: 0,
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "10px 20px", borderRadius: 7, border: "none",
+              background: loading ? "var(--muted)" : "var(--accent)",
+              color: "#fff", fontSize: 13, fontWeight: 700,
+              cursor: loading ? "default" : "pointer",
+              boxShadow: loading ? "none" : "0 2px 10px rgba(47,143,224,0.35)",
+              whiteSpace: "nowrap", transition: "opacity 0.15s",
+            }}
           >
-            {loading ? "Building your plan..." : "Generate this week's plan"}
+            {loading ? "Building your plan…" : "Generate this week's plan"}
+            {!loading && (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7h8M7 3l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
           </button>
         )}
       </div>
@@ -329,10 +358,10 @@ export default function WeeklyPlan() {
       {/* Today's note — rider tells the AI how they feel before generating */}
       {!loading && (
         <div style={{ marginTop: 24, marginBottom: 4 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.07em",
-            textTransform: "uppercase", color: "var(--muted)", marginBottom: 8,
-          }}>
+          <div className="section-title" style={{ margin: "0 0 10px 0", fontSize: 12 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
             Today&apos;s note
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
@@ -397,9 +426,12 @@ export default function WeeklyPlan() {
           {plan.summary && (
             <div style={{ marginTop: 16, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--muted)" }}>
+                <div className="section-title" style={{ margin: 0, fontSize: 12 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                  </svg>
                   Plan rationale
-                </span>
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
                     type="button"
