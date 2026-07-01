@@ -265,6 +265,23 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* Training profile section header */}
+      <div style={{ marginTop: 40 }}>
+        <div className="section-title" style={{ marginBottom: 4 }}>
+          <IconUser size={16} />
+          Your Training Profile
+        </div>
+        <p style={{
+          margin: "0 0 0 0",
+          fontSize: 13,
+          color: "var(--muted)",
+          lineHeight: 1.55,
+          maxWidth: 560,
+        }}>
+          Tell the AI your goals, weekly schedule, and session length — it reads this on every plan generation to build sessions that fit your life, not a generic template.
+        </p>
+      </div>
+
       <TrainingProfileCard />
 
       {profileError && (

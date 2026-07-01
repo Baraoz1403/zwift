@@ -322,6 +322,10 @@ export async function generateWeeklyPlan(params: {
    *  length, optional target event date, free notes) - absent if the rider
    *  hasn't filled in the profile card yet. */
   riderProfile?: RiderTrainingProfile;
+  /** Free-text note the rider typed before regenerating - how they feel
+   *  today (e.g. "tired legs", "feeling great", "sore back"). The plan
+   *  should take this into account when scheduling intensity. */
+  riderNote?: string;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -385,6 +389,7 @@ export async function generateWeeklyPlan(params: {
     runLevel: params.runLevel ?? null,
     weekOfMonday,
     rides: params.rides,
+    riderNote: params.riderNote ?? null,
   });
 
   let resp: Response;

@@ -136,6 +136,7 @@ export default function WeeklyPlan() {
   const [stale, setStale] = useState(false);
   const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [riderNote, setRiderNote] = useState("");
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -169,7 +170,7 @@ export default function WeeklyPlan() {
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ macroCycle, previousPlan, riderProfile }),
+        body: JSON.stringify({ macroCycle, previousPlan, riderProfile, riderNote: riderNote.trim() || undefined }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -177,6 +178,7 @@ export default function WeeklyPlan() {
         setPlan(normalizedPlan);
         setStale(false);
         setCycleInfo(data.cycle ?? null);
+        setRiderNote("");
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -241,7 +243,8 @@ export default function WeeklyPlan() {
             </span>
           )}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        {/* Show generate button at top only when there is no plan yet */}
+        {!plan && (
           <button
             type="button"
             className="btn"
@@ -249,18 +252,14 @@ export default function WeeklyPlan() {
             onClick={handleGenerate}
             disabled={loading}
           >
-            {loading
-              ? "Building your plan..."
-              : plan
-                ? "Regenerate this week's plan"
-                : "Generate this week's plan"}
+            {loading ? "Building your plan..." : "Generate this week's plan"}
           </button>
-        </div>
+        )}
       </div>
 
       {/* AI signal cards — always visible, symmetric 5-column grid */}
       {!loading && (
-        <div style={{ marginTop: 14, marginBottom: 4 }}>
+        <div style={{ marginTop: 20, marginBottom: 4 }}>
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -355,6 +354,60 @@ export default function WeeklyPlan() {
         </div>
       )}
 
+      {/* Today's note — rider tells the AI how they feel before generating */}
+      {!loading && (
+        <div style={{ marginTop: 24, marginBottom: 4 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.07em",
+            textTransform: "uppercase", color: "var(--muted)", marginBottom: 8,
+          }}>
+            Today&apos;s note
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+            {(["Feeling great", "Feeling OK", "Tired", "Very tired / sore"] as const).map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setRiderNote(prev => prev === label ? "" : label)}
+                style={{
+                  padding: "4px 13px",
+                  borderRadius: 999,
+                  border: `1px solid ${riderNote === label ? "var(--accent)" : "var(--border)"}`,
+                  background: riderNote === label ? "rgba(47,143,224,0.10)" : "rgba(47,143,224,0.03)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: riderNote === label ? "var(--accent)" : "var(--muted)",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            rows={2}
+            placeholder="How are you feeling today? (e.g. tired legs, great form, sore back...) — the AI will adjust your plan."
+            value={riderNote}
+            onChange={(e) => setRiderNote(e.target.value)}
+            style={{
+              width: "100%",
+              resize: "vertical",
+              padding: "10px 13px",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "rgba(47,143,224,0.03)",
+              fontSize: 13,
+              color: "var(--text)",
+              fontFamily: "inherit",
+              lineHeight: 1.5,
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+      )}
+
       {stale && plan && !loading && (
         <div className="notice" style={{ marginTop: 4, marginBottom: 12 }}>
           This plan is from the week of {plan.weekOf} - generate a new one for the current week.
@@ -370,37 +423,48 @@ export default function WeeklyPlan() {
       {plan && (
         <>
           {plan.summary && (
-            <div style={{ marginTop: 12, marginBottom: 14 }}>
+            <div style={{ marginTop: 16, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--muted)" }}>
                   Plan rationale
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setSummaryOpen(v => !v)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                    padding: "5px 14px",
-                    borderRadius: 999,
-                    border: "1px solid var(--border)",
-                    background: "rgba(47,143,224,0.05)",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "var(--accent)",
-                    cursor: "pointer",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {summaryOpen ? "Hide" : "Show"}
-                  <svg
-                    width="10" height="10" viewBox="0 0 10 10" fill="none"
-                    style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ width: "auto", padding: "5px 15px", fontSize: 12 }}
+                    onClick={handleGenerate}
+                    disabled={loading}
                   >
-                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
+                    {loading ? "Building..." : "Regenerate"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryOpen(v => !v)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      padding: "5px 14px",
+                      borderRadius: 999,
+                      border: "1px solid var(--border)",
+                      background: "rgba(47,143,224,0.05)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--accent)",
+                      cursor: "pointer",
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    {summaryOpen ? "Hide" : "Show"}
+                    <svg
+                      width="10" height="10" viewBox="0 0 10 10" fill="none"
+                      style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                    >
+                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               {summaryOpen && (
                 <div className="notice" style={{ color: "var(--text)", lineHeight: 1.6 }}>

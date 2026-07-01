@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
   let incomingCycle: MacroCycleState | null = null;
   let previousPlan: { weekOf: string; workouts: WeeklyWorkout[] } | null = null;
   let riderProfile: RiderTrainingProfile | undefined;
+  let riderNote: string | undefined;
   try {
     const body = await req.json();
     if (typeof body?.ageYears === "number" && body.ageYears > 0) {
@@ -49,6 +50,9 @@ export async function POST(req: NextRequest) {
     }
     if (body?.riderProfile && typeof body.riderProfile === "object") {
       riderProfile = body.riderProfile as RiderTrainingProfile;
+    }
+    if (typeof body?.riderNote === "string" && body.riderNote.trim()) {
+      riderNote = body.riderNote.trim();
     }
   } catch {
     // No/invalid JSON body - fine, these all just stay unset.
@@ -153,6 +157,7 @@ export async function POST(req: NextRequest) {
       cycle,
       lastWeekAdherence,
       riderProfile,
+      riderNote,
     });
 
     return NextResponse.json({ ok: true, plan, macroCycle, cycle });
