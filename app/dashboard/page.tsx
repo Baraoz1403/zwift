@@ -222,11 +222,9 @@ export default async function DashboardPage() {
               <div className="label" style={{ margin: 0 }}>FTP</div>
             </div>
             <div className="value">{profile.ftp ?? "n/a"}</div>
-            {lastRideDateLabel && (
-              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-                as of {lastRideDateLabel}
-              </div>
-            )}
+            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+              {ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}
+            </div>
           </div>
           <div className="stat-card">
             <div className="stat-card-head">
@@ -236,11 +234,9 @@ export default async function DashboardPage() {
               <div className="label" style={{ margin: 0 }}>VO2max (est.)</div>
             </div>
             <div className="value">{vo2max != null ? vo2max.toFixed(1) : "n/a"}</div>
-            {lastRideDateLabel && (
-              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-                as of {lastRideDateLabel}
-              </div>
-            )}
+            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+              {ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}
+            </div>
           </div>
           <div className="stat-card">
             <div className="stat-card-head">
