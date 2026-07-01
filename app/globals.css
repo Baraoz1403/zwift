@@ -302,7 +302,7 @@ a:hover {
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-top: 3px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   padding: 20px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
@@ -407,7 +407,7 @@ a:hover {
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-top: 3px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   padding: 18px;
   display: flex;
   align-items: center;
@@ -685,7 +685,7 @@ a:hover {
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-top: 3px solid var(--accent);
-  border-radius: var(--radius);
+  border-radius: 0 0 var(--radius) var(--radius);
   padding: 18px 20px;
 }
 
