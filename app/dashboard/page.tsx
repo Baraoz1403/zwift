@@ -25,7 +25,7 @@ import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import TrendComparison from "./trend-comparison";
 import TrainingProfileCard from "./training-profile";
-import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun, IconTrend, IconList, IconTrophy } from "./icons";
+import { IconBolt, IconFlame, IconUser, IconHeart, IconScale, IconBike, IconRun, IconTrend, IconList, IconTrophy, IconCalendar } from "./icons";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -141,23 +141,60 @@ export default async function DashboardPage() {
     <>
     <div className="dashboard">
       <div className="dashboard-header fade-in">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifySelf: "start" }}>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>
-            {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Zwift Dashboard"}
-          </h1>
-          {records && records.currentStreakDays > 1 && (
-            <span className="streak-badge">
-              <IconFlame size={14} />
-              {records.currentStreakDays} day streak
+        {/* LEFT: Brand identity + greeting + tagline */}
+        <div style={{ justifySelf: "start" }}>
+          <div style={{ marginBottom: 7 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "var(--accent)",
+              border: "1px solid rgba(47,143,224,0.25)",
+              borderRadius: 999, padding: "2px 9px",
+              background: "rgba(47,143,224,0.07)",
+            }}>
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M5 0L6.2 3.8H10L7.1 6.1L8.1 10L5 7.8L1.9 10L2.9 6.1L0 3.8H3.8L5 0Z"/>
+              </svg>
+              AI-Powered Training Coach
             </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>
+              {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Training Coach"}
+            </h1>
+            {records && records.currentStreakDays > 1 && (
+              <span className="streak-badge">
+                <IconFlame size={14} />
+                {records.currentStreakDays} day streak
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.4 }}>
+            Every ride analyzed. Every week planned by AI.
+          </div>
+        </div>
+
+        {/* RIGHT: Nav pills + Logout */}
+        <div style={{ justifySelf: "end", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {!activitiesError && activities.length > 0 && (
+            <>
+              <a
+                href="#weekly-plan"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "8px 16px", borderRadius: 10,
+                  border: "1px solid var(--border)",
+                  background: "rgba(47,143,224,0.05)",
+                  fontSize: 13, fontWeight: 600, color: "var(--accent)",
+                  textDecoration: "none", whiteSpace: "nowrap",
+                }}
+              >
+                <IconCalendar size={14} />
+                Weekly Plan
+              </a>
+              <AiInsightsLink />
+            </>
           )}
-        </div>
-
-        <div style={{ justifySelf: "center" }}>
-          {!activitiesError && activities.length > 0 && <AiInsightsLink />}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10, justifySelf: "end" }}>
           <LogoutButton />
         </div>
       </div>
