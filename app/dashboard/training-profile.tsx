@@ -209,56 +209,48 @@ export default function TrainingProfileCard() {
   }
 
   return (
-    <div className="section">
+    <>
 
       {/* ── Profile card: thin blue top bar + white bg ─────────────────── */}
       {!editing && (
         <div className="stat-card" style={{
           padding: "20px 22px",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 24,
-          minHeight: 88,
+          flexDirection: "column",
         }}>
-          {/* Left: section-title + sub */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="section-title" style={{ margin: "0 0 8px 0" }}>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
-              </svg>
-              Personalised AI coaching
-            </div>
-            <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-              {profile
-                ? "Your goals, availability, and fitness level — stored once, wired into every plan your AI coach builds."
-                : "Answer 4 questions once. Your AI coach learns your goals, schedule, and limits — and never forgets them."}
-            </div>
-          </div>
-
-          {/* Right: CTA button */}
-          <button type="button" onClick={startEdit} style={{
-            flexShrink: 0,
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-            padding: "9px 15px", borderRadius: 6,
-            minWidth: 170,
-            border: "1px solid var(--border)",
-            background: "rgba(47,143,224,0.04)",
-            color: "var(--muted)",
-            fontSize: 12.5, fontWeight: 500, cursor: "pointer",
-            whiteSpace: "nowrap", fontFamily: "inherit",
-          }}>
-            {profile ? "Update my profile" : "Set up my profile"}
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
             </svg>
-          </button>
+            Personalised AI coaching
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, flex: 1 }}>
+            {profile
+              ? "Your goals, availability, and fitness level — stored once, wired into every plan your AI coach builds."
+              : "Answer 4 questions once. Your AI coach learns your goals, schedule, and limits — and never forgets them."}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+            <button type="button" onClick={startEdit} style={{
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+              padding: "9px 20px", borderRadius: 6,
+              border: "1px solid var(--border)",
+              background: "rgba(47,143,224,0.04)",
+              color: "var(--muted)",
+              fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+              whiteSpace: "nowrap" as const, fontFamily: "inherit",
+            }}>
+              {profile ? "Update my profile" : "Set up my profile"}
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       )}
 
       {/* ── Edit form — only when editing ───────────────────────────────── */}
       {editing && (
-        <div className="stat-card" style={{ marginTop: 14, padding: "24px 28px" }}>
+        <div className="stat-card" style={{ padding: "24px 28px", gridColumn: "1 / -1" }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
               {profile ? "Edit your training profile" : "Welcome — let's personalise your plan"}
@@ -378,6 +370,6 @@ export default function TrainingProfileCard() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

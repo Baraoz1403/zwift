@@ -5,6 +5,7 @@ import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import WorkoutThumbnail from "./workout-thumbnail";
+import TrainingProfileCard from "./training-profile";
 
 interface WeeklyWorkout {
   day: string;
@@ -189,40 +190,80 @@ export default function WeeklyPlan() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div>
 
-      {/* Today's note — rider tells the AI how they feel before generating */}
-      {!loading && (
+      {/* ── 3-column header grid ────────────────────────────────────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+
+        {/* Card 1: Training Profile */}
+        <TrainingProfileCard />
+
+        {/* Card 2: Today's Note */}
         <div id="todays-note" className="stat-card" style={{
-          display: "flex", alignItems: noteOpen ? "flex-start" : "center",
-          flexDirection: noteOpen ? "column" : "row",
-          justifyContent: "space-between",
-          gap: 20, padding: "20px 22px", marginTop: 0, marginBottom: 0, minHeight: 88,
+          display: "flex", flexDirection: "column", padding: "20px 22px",
         }}>
-          {/* Header row — always visible */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-            <div style={{ flex: 1 }}>
-              <div className="section-title" style={{ margin: "0 0 6px 0" }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
-                Today&apos;s note
+          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            Today&apos;s note
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, flex: 1 }}>
+            {riderNote
+              ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 60 ? riderNote.slice(0, 60) + "…" : riderNote}</span>
+              : "How are you feeling today? Your AI coach adapts the session to your readiness."}
+          </div>
+
+          {/* Expanded content */}
+          {noteOpen && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                {(["Feeling great", "Feeling OK", "Tired", "Very tired / sore"] as const).map((label) => {
+                  const selected = riderNote === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setRiderNote(prev => prev === label ? "" : label)}
+                      style={{
+                        flex: "1 1 calc(50% - 4px)", padding: "9px 8px", borderRadius: 7,
+                        border: selected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+                        background: selected ? "rgba(47,143,224,0.09)" : "var(--panel)",
+                        fontSize: 12.5, fontWeight: selected ? 600 : 400,
+                        color: selected ? "var(--accent)" : "var(--text)",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        textAlign: "center" as const,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-              {!noteOpen && (
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
-                  {riderNote
-                    ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 60 ? riderNote.slice(0, 60) + "…" : riderNote}</span>
-                    : "How are you feeling today? Your AI coach adapts the session to your readiness."}
-                </div>
-              )}
+              <textarea
+                rows={2}
+                placeholder="More detail — e.g. tired legs, sore back, great form…"
+                value={typeof riderNote === "string" && !["Feeling great","Feeling OK","Tired","Very tired / sore"].includes(riderNote) ? riderNote : ""}
+                onChange={(e) => setRiderNote(e.target.value)}
+                style={{
+                  width: "100%", resize: "vertical", padding: "10px 13px",
+                  borderRadius: 6, border: "1px solid var(--border)",
+                  background: "rgba(20,23,26,0.02)", fontSize: 13,
+                  color: "var(--text)", fontFamily: "inherit", lineHeight: 1.5,
+                  outline: "none", boxSizing: "border-box" as const,
+                }}
+              />
             </div>
+          )}
+
+          {/* Button at bottom */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <button
               type="button"
               onClick={() => setNoteOpen(o => !o)}
               style={{
-                flexShrink: 0, marginLeft: 20,
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-                padding: "9px 15px", borderRadius: 6, minWidth: 170,
+                padding: "9px 20px", borderRadius: 6,
                 border: noteOpen ? "1.5px solid var(--accent)" : "1px solid var(--border)",
                 background: noteOpen ? "rgba(47,143,224,0.07)" : "rgba(47,143,224,0.04)",
                 color: noteOpen ? "var(--accent)" : "var(--muted)",
@@ -239,101 +280,50 @@ export default function WeeklyPlan() {
               )}
             </button>
           </div>
-
-          {/* Expanded content */}
-          {noteOpen && (
-            <div style={{ width: "100%", marginTop: 16 }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                {(["Feeling great", "Feeling OK", "Tired", "Very tired / sore"] as const).map((label) => {
-                  const selected = riderNote === label;
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => setRiderNote(prev => prev === label ? "" : label)}
-                      style={{
-                        flex: 1, padding: "9px 8px", borderRadius: 7,
-                        border: selected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
-                        background: selected ? "rgba(47,143,224,0.09)" : "var(--panel)",
-                        fontSize: 13, fontWeight: selected ? 600 : 400,
-                        color: selected ? "var(--accent)" : "var(--text)",
-                        cursor: "pointer", transition: "all 0.15s ease",
-                        textAlign: "center" as const, whiteSpace: "nowrap" as const,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              <textarea
-                rows={2}
-                placeholder="Add more detail — e.g. tired legs, great form, sore back… the AI will adjust your plan."
-                value={typeof riderNote === "string" && !["Feeling great","Feeling OK","Tired","Very tired / sore"].includes(riderNote) ? riderNote : ""}
-                onChange={(e) => setRiderNote(e.target.value)}
-                style={{
-                  width: "100%", resize: "vertical", padding: "10px 13px",
-                  borderRadius: 6, border: "1px solid var(--border)",
-                  background: "rgba(20,23,26,0.02)", fontSize: 13,
-                  color: "var(--text)", fontFamily: "inherit", lineHeight: 1.5,
-                  outline: "none", boxSizing: "border-box" as const,
-                }}
-              />
-            </div>
-          )}
         </div>
-      )}
 
-      {/* ── Compelling pitch block ──────────────────────────────────────── */}
-      <div className="stat-card" style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 20,
-        padding: "20px 22px",
-        marginBottom: 0,
-        minHeight: 88,
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Card 3: Weekly Training Plan */}
+        <div className="stat-card" style={{
+          display: "flex", flexDirection: "column", padding: "20px 22px",
+        }}>
           <div className="section-title" style={{ margin: "0 0 8px 0" }}>
             <IconCalendar size={13} />
             Weekly training plan
           </div>
-          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, flex: 1 }}>
             {cycleInfo
               ? `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4 — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
               : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
           </div>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+                padding: "9px 20px", borderRadius: 6,
+                border: "1px solid var(--border)",
+                background: "rgba(47,143,224,0.04)",
+                color: "var(--muted)",
+                fontSize: 12.5, fontWeight: 500,
+                cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.5 : 1,
+                whiteSpace: "nowrap" as const, fontFamily: "inherit",
+                transition: "opacity 0.15s",
+              }}
+            >
+              {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}
+              {!loading && (
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* CTA — always visible */}
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading}
-          style={{
-            flexShrink: 0,
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
-            padding: "9px 15px", borderRadius: 6,
-            minWidth: 170,
-            border: "1px solid var(--border)",
-            background: "rgba(47,143,224,0.04)",
-            color: "var(--muted)",
-            fontSize: 12.5, fontWeight: 500,
-            cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.5 : 1,
-            whiteSpace: "nowrap", fontFamily: "inherit",
-            transition: "opacity 0.15s",
-          }}
-        >
-          {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}
-          {!loading && (
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </button>
-      </div>
+      </div>{/* end 3-col grid */}
 
       {stale && plan && !loading && (
         <div className="notice" style={{ marginTop: 16, marginBottom: 12 }}>
