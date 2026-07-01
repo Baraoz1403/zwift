@@ -42,7 +42,7 @@ const SIGNALS = [
     ),
   },
   {
-    label: "Last week's adherence",
+    label: "Adherence",
     icon: (
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
         <path d="M4 10.5L8.5 15L16.5 6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>

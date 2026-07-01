@@ -301,26 +301,20 @@ a:hover {
   background: var(--panel);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
-  border-top: none;
+  border-top: 3px solid var(--accent);
   border-radius: var(--radius);
   padding: 20px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
 }
 
-.stat-card::before,
-.record-card::before,
-.trend-card::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--accent);
-}
+
 
 .stat-card:hover {
   box-shadow: 0 4px 14px rgba(47, 143, 224, 0.10), var(--shadow);
-  border-color: rgba(47, 143, 224, 0.22);
+  border-left-color: rgba(47, 143, 224, 0.22);
+  border-right-color: rgba(47, 143, 224, 0.22);
+  border-bottom-color: rgba(47, 143, 224, 0.22);
 }
 
 /* Only cards that are genuinely clickable (ride rows) get the lift */
@@ -412,7 +406,7 @@ a:hover {
   background: var(--panel);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
-  border-top: none;
+  border-top: 3px solid var(--accent);
   border-radius: var(--radius);
   padding: 18px;
   display: flex;
@@ -427,7 +421,9 @@ a:hover {
 .record-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(47,143,224,0.10), var(--shadow);
-  border-color: rgba(47,143,224,0.22);
+  border-left-color: rgba(47,143,224,0.22);
+  border-right-color: rgba(47,143,224,0.22);
+  border-bottom-color: rgba(47,143,224,0.22);
 }
 
 .record-icon {
@@ -688,6 +684,7 @@ a:hover {
   background: var(--panel);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
   border-radius: var(--radius);
   padding: 18px 20px;
 }
