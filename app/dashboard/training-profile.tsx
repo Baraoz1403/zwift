@@ -220,21 +220,13 @@ export default function TrainingProfileCard() {
           justifyContent: "space-between",
           gap: 24,
         }}>
-          {/* Left: eyebrow + headline + sub */}
+          {/* Left: section-title + sub */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="card-eyebrow" style={{ marginBottom: 5 }}>
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+            <div className="section-title" style={{ margin: "0 0 8px 0" }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
                 <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
               </svg>
               Personalised AI coaching
-            </div>
-            <div style={{
-              fontSize: 17, fontWeight: 800, color: "var(--text)",
-              lineHeight: 1.25, letterSpacing: "-0.3px", marginBottom: 5,
-            }}>
-              {profile
-                ? "Your coach knows you. Every plan is built around you."
-                : "The more your coach knows you, the better your plan."}
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
               {profile

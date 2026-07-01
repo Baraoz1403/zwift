@@ -6,7 +6,7 @@ export default function AiInsightsLink() {
   return (
     <a
       href="#ai-insights"
-      className="header-nav-chip primary"
+      className="header-nav-chip"
       onClick={() => window.dispatchEvent(new Event("open-ai-insights"))}
     >
       <IconBolt size={13} />

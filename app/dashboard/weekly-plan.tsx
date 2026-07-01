@@ -200,19 +200,10 @@ export default function WeeklyPlan() {
         marginBottom: 24,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Eyebrow */}
-          <div className="card-eyebrow" style={{ marginBottom: 6 }}>
-            <IconCalendar size={10} />
+          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
+            <IconCalendar size={13} />
             {cycleInfo ? `${cycleInfo.phase} · Week ${cycleInfo.weekInMesocycle}/4` : "Weekly training plan"}
           </div>
-          {/* Headline */}
-          <div style={{
-            fontSize: 18, fontWeight: 800, color: "var(--text)",
-            lineHeight: 1.25, letterSpacing: "-0.3px", marginBottom: 6,
-          }}>
-            A fresh plan every week — built around your data.
-          </div>
-          {/* Sub */}
           <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
             Your AI coach reads ride history, training load, and goals to design a week that moves you forward.
           </div>
@@ -249,7 +240,7 @@ export default function WeeklyPlan() {
 
       {/* Today's note — rider tells the AI how they feel before generating */}
       {!loading && (
-        <div className="stat-card" style={{ marginTop: 20, marginBottom: 4, padding: "20px 22px" }}>
+        <div id="todays-note" className="stat-card" style={{ marginTop: 20, marginBottom: 4, padding: "20px 22px" }}>
           <div className="card-eyebrow" style={{ marginBottom: 16 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
