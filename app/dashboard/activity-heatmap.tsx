@@ -90,20 +90,21 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
 
       <div className="heatmap-wrap">
         <div style={{ display: "flex" }}>
-          {/* Day-of-week labels, every other row (Mon/Wed/Fri) to match
-              the GitHub-style contribution graph this is modeled on -
-              labelling every row is too cramped at 13px cell height. */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginRight: 6, marginTop: 21 }}>
+          {/* LEFT sticky day labels */}
+          <div style={{
+            display: "flex", flexDirection: "column", gap: 4,
+            paddingRight: 6, marginTop: 21,
+            position: "sticky", left: 0, zIndex: 2,
+            background: "var(--bg)",
+          }}>
             {DAY_LABELS.map((label, i) => (
-              <div
-                key={label}
-                style={{ width: 28, height: 17, fontSize: 10.5, color: "var(--muted)", lineHeight: "17px" }}
-              >
+              <div key={label} style={{ width: 28, height: 17, fontSize: 10.5, color: "var(--muted)", lineHeight: "17px" }}>
                 {i % 2 === 1 ? label : ""}
               </div>
             ))}
           </div>
 
+          {/* Grid: month labels + cells */}
           <div>
             <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
               {weeks.map((_, weekIdx) => (
@@ -128,6 +129,20 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
                 return <div key={d.date} className={`heatmap-cell lvl-${level}`} title={title} />;
               })}
             </div>
+          </div>
+
+          {/* RIGHT sticky day labels */}
+          <div style={{
+            display: "flex", flexDirection: "column", gap: 4,
+            paddingLeft: 6, marginTop: 21,
+            position: "sticky", right: 0, zIndex: 2,
+            background: "var(--bg)",
+          }}>
+            {DAY_LABELS.map((label, i) => (
+              <div key={`r-${label}`} style={{ width: 28, height: 17, fontSize: 10.5, color: "var(--muted)", lineHeight: "17px" }}>
+                {i % 2 === 1 ? label : ""}
+              </div>
+            ))}
           </div>
         </div>
       </div>
