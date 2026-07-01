@@ -179,8 +179,32 @@ Always run `check.bat` before `deploy.bat`. It validates:
 
 ```
 check.bat     ← run first; exits with error if anything is wrong
-deploy.bat    ← calls check.bat automatically, then git add/commit/push
+deploy.bat    ← calls check.bat automatically, clears git lock files, commits, pushes
+deploy-log.txt ← every run appends a timestamped entry — check here if something fails
 ```
+
+---
+
+## 12. Post-Deploy Verification (Claude responsibility)
+
+**After every deploy or code change, Claude MUST proactively:**
+
+1. **Read `deploy-log.txt`** — check for lock file errors, commit failures, push failures.
+   Never assume SUCCESS without reading the log.
+
+2. **Check Vercel** via Chrome MCP:
+   `https://vercel.com/barak1403-9441s-projects/zwift/deployments`
+   Confirm the latest deployment is "Ready" and matches the expected commit message.
+
+3. **Report to user** — one line: what deployed, when, status. No need to ask user to check.
+
+**Known failure modes to watch for:**
+- `HEAD.lock` / `index.lock` exists → `deploy.bat` now auto-clears these on startup
+- `git commit` says "nothing to commit" → not a failure, just nothing new to push
+- `git push` returns "Everything up-to-date" after a failed commit → means commit was skipped
+- Vercel shows "Error" → click the deployment and read the build log
+
+**Rule:** Claude never says "run X and tell me what you see." Claude runs the check itself.
 
 ---
 
