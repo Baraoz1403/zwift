@@ -164,7 +164,7 @@ export default function RidesTable({ activities }: { activities: ZwiftActivity[]
         </div>
       </div>
 
-      <div className="stat-grid stat-grid-compact" style={{ marginBottom: 16 }}>
+      <div className="stat-grid stat-grid-6" style={{ marginBottom: 16 }}>
         <div className="stat-card">
           <div className="label">Rides</div>
           <div className="value">{summary.count}</div>
