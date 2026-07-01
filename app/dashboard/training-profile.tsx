@@ -250,11 +250,10 @@ export default function TrainingProfileCard() {
           {/* Right: CTA button */}
           <button type="button" onClick={startEdit} style={{
             flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 18px", borderRadius: 7, border: "none",
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "6px 14px", borderRadius: 6, border: "none",
             background: "var(--accent)", color: "#fff",
-            fontSize: 13, fontWeight: 700, cursor: "pointer",
-            boxShadow: "0 2px 10px rgba(47,143,224,0.30)",
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
             whiteSpace: "nowrap",
           }}>
             {profile ? "Update my profile" : "Set up my profile"}

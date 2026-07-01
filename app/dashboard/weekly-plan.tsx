@@ -229,12 +229,11 @@ export default function WeeklyPlan() {
           disabled={loading}
           style={{
             flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 18px", borderRadius: 7, border: "none",
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "6px 14px", borderRadius: 6, border: "none",
             background: loading ? "rgba(47,143,224,0.4)" : "var(--accent)",
-            color: "#fff", fontSize: 13, fontWeight: 700,
+            color: "#fff", fontSize: 12, fontWeight: 600,
             cursor: loading ? "default" : "pointer",
-            boxShadow: loading ? "none" : "0 2px 10px rgba(47,143,224,0.30)",
             whiteSpace: "nowrap", transition: "opacity 0.15s",
           }}
         >
