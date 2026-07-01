@@ -193,10 +193,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <SignalChips />
-
       {profile && (
         <div className="stat-grid stat-grid-compact fade-in">
+          <SignalChips />
           <div className="stat-card">
             <div className="stat-card-head">
               <div className="stat-card-icon c-blue">

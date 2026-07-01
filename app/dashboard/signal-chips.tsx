@@ -4,7 +4,7 @@ const SIGNALS = [
   {
     label: "Ride history",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
         <polyline points="2,15 7,9 11,12 15,6 18,8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
@@ -12,7 +12,7 @@ const SIGNALS = [
   {
     label: "Training load",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
         <path d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" stroke="currentColor" strokeWidth="1.6"/>
         <path d="M10 10V6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"/>
         <path d="M10 10L13.5 12.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
@@ -22,7 +22,7 @@ const SIGNALS = [
   {
     label: "Training phase",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
         <rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/>
         <path d="M2 9h16" stroke="currentColor" strokeWidth="1.4"/>
         <path d="M7 2v4M13 2v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
@@ -34,7 +34,7 @@ const SIGNALS = [
   {
     label: "Goals & schedule",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
         <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.6"/>
         <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="1.4"/>
         <circle cx="10" cy="10" r="1.3" fill="currentColor"/>
@@ -44,8 +44,17 @@ const SIGNALS = [
   {
     label: "Adherence",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
         <path d="M4 10.5L8.5 15L16.5 6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    label: "HR analysis",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+        <path d="M10 17s-7-4.35-7-9a5 5 0 0 1 7-4.58A5 5 0 0 1 17 8c0 4.65-7 9-7 9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
+        <path d="M4 10h2.5l1.5-2 2 4 1.5-2H16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
   },
@@ -53,54 +62,22 @@ const SIGNALS = [
 
 export default function SignalChips() {
   return (
-    <div className="stat-card" style={{
-      padding: "14px 22px",
-      display: "flex",
-      alignItems: "center",
-      gap: 18,
-      marginBottom: 24,
-    }}>
-      {/* Left label */}
-      <div className="card-eyebrow" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
-          <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
-        </svg>
-        AI reads 5 signals
-      </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 24, background: "var(--border)", flexShrink: 0 }} />
-
-      {/* 5 signal chips */}
-      <div style={{ display: "flex", gap: 8, flex: 1 }}>
-        {SIGNALS.map(({ label, icon }) => (
-          <div
-            key={label}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "7px 12px",
-              borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: "rgba(47,143,224,0.03)",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--text)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-            }}
-          >
-            <span style={{ color: "var(--accent)", flexShrink: 0, display: "flex" }}>
+    <>
+      {SIGNALS.map(({ label, icon }) => (
+        <div key={label} className="stat-card">
+          <div className="stat-card-head">
+            <div className="stat-card-icon c-blue">
               {icon}
-            </span>
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-              {label}
-            </span>
+            </div>
+            <div className="label" style={{ margin: 0, fontSize: 10, letterSpacing: "0.06em", color: "var(--accent)", fontWeight: 700 }}>
+              AI signal
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginTop: 4 }}>
+            {label}
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
