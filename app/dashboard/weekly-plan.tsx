@@ -197,7 +197,6 @@ export default function WeeklyPlan() {
         justifyContent: "space-between",
         gap: 20,
         padding: "20px 22px",
-        borderTop: "3px solid var(--accent)",
         marginBottom: 24,
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>

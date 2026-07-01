@@ -214,8 +214,6 @@ export default function TrainingProfileCard() {
       {/* ── Profile card: thin blue top bar + white bg ─────────────────── */}
       {!editing && (
         <div className="stat-card" style={{
-          borderTop: "3px solid var(--accent)",
-          borderRadius: 8,
           padding: "20px 22px",
           display: "flex",
           alignItems: "center",
