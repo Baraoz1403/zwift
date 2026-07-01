@@ -40,6 +40,7 @@ function TogglePill({ open, onToggle, label }: { open: boolean; onToggle: () => 
 }
 
 export default function AiInsights() {
+  const [visible, setVisible]   = useState(false);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export default function AiInsights() {
   // Header button event: open the text panel and fetch if needed
   useEffect(() => {
     const handler = () => {
+      setVisible(true);
       setTextOpen(true);
       if (!loadingRef.current && !textRef.current) {
         handleClick(true);
@@ -94,6 +96,8 @@ export default function AiInsights() {
   }
 
   const hasContent = !!(text || error || loading);
+
+  if (!visible) return null;
 
   return (
     <div style={{ marginTop: 24 }}>
