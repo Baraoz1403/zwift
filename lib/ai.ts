@@ -223,6 +223,23 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "means plan only cycling sessions (Zwift rides); 'Running' means plan " +
   "only running sessions; 'Cycling & Running' means mix both. Never " +
   "mix sports unless sport is 'Cycling & Running'. " +
+  "Running plan structure (apply when sport is 'Running' or 'Cycling & " +
+  "Running'): follow Hal Higdon-style progressive principles. " +
+  "(1) The long run is the anchor - always the slowest session " +
+  "(conversational easy, 60-70% HRmax), never raced; schedule it on " +
+  "Sunday or the last run day of the week. " +
+  "(2) Increase weekly running distance max 10% per week (the 10% rule " +
+  "- violating this is injury cause #1). " +
+  "(3) Cross-training days are Zwift cycling sessions at Z1-Z2: for " +
+  "10K and half-marathon goals, plan Foundation/Recovery Zwift rides on " +
+  "cross-train days (Wed/Sat). This perfectly fits 'Cycling & Running'. " +
+  "(4) Long run day = no Zwift cycling that day. " +
+  "(5) Running session count by goal: 5K goal = 3 runs/week; 10K goal " +
+  "= 3 runs + 2 cross-train; half marathon = 4 runs + 1-2 cross-train " +
+  "days. Never schedule more than 4 running sessions per week for novice " +
+  "or intermediate runners. " +
+  "(6) Running easy-day sessions are 'Easy Run' type, long run is " +
+  "'Long Run' type, tempo/harder runs are 'Tempo Run' type. " +
   "Absent/null riderProfile means no profile set - proceed normally. " +
   "Use session types/structures matching Zwift's own official plans (FTP " +
   "Builder, Build Me Up, Zwift Academy) and workout categories: " +
@@ -233,6 +250,10 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "'Strength' (5-8x 15s near-maximal sprints with long recovery), " +
   "'Recovery' (very easy spin), or 'Rest' (no ride) - pick whichever " +
   "matches each day's role rather than inventing new labels. " +
+  "POWER ZONE RULE: All power targets MUST use % FTP or Coggan zone " +
+  "names (Z1-Z7), never absolute watt values (not '200W' - FTP varies " +
+  "per rider). Sweet spot is sustained 10-30 min blocks at 84-97% FTP " +
+  "(NOT short sprint efforts). " +
   "Apply standard periodization following Zwift's own official plan " +
   "structure (FTP Builder, Build Me Up). Key rules: " +
   "(1) 80% of weekly volume in Z1-Z2 (Foundation/Recovery sessions), " +
