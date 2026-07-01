@@ -250,13 +250,13 @@ export default function TrainingProfileCard() {
           {/* Right: CTA button */}
           <button type="button" onClick={startEdit} style={{
             flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px", borderRadius: 6,
-            border: "1px solid rgba(47,143,224,0.35)",
-            background: "rgba(47,143,224,0.05)",
-            color: "var(--accent)",
-            fontSize: 12, fontWeight: 600, cursor: "pointer",
-            whiteSpace: "nowrap",
+            display: "inline-flex", alignItems: "center", gap: 7,
+            padding: "9px 15px", borderRadius: 6,
+            border: "1px solid var(--border)",
+            background: "rgba(47,143,224,0.04)",
+            color: "var(--muted)",
+            fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+            whiteSpace: "nowrap", fontFamily: "inherit",
           }}>
             {profile ? "Update my profile" : "Set up my profile"}
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">

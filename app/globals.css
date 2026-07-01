@@ -303,7 +303,7 @@ a:hover {
   top: 0; left: 0; right: 0;
   height: 1px;
   background: var(--accent);
-  transform: scaleY(0.5);
+  transform: scaleY(0.75);
   transform-origin: top center;
 }
 
@@ -428,7 +428,7 @@ a:hover {
   top: 0; left: 0; right: 0;
   height: 1px;
   background: var(--accent);
-  transform: scaleY(0.5);
+  transform: scaleY(0.75);
   transform-origin: top center;
 }
 
