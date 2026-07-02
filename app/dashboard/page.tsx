@@ -25,6 +25,7 @@ import ActivityHeatmap from "./activity-heatmap";
 import { IconBolt, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } from "./icons";
 import AvgCadenceCard from "./avg-cadence-card";
 import AvgHRCard from "./avg-hr-card";
+import HRAlertBanner from "./hr-alert-banner";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -309,6 +310,9 @@ export default async function DashboardPage() {
 
       {!activitiesError && activities.length > 0 && (
         <>
+          {/* HR anomaly banner — renders client-side after FIT file analysis */}
+          <HRAlertBanner />
+
           {/* ── Most actionable: today’s plan + AI coaching ── */}
           <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
             <WeeklyPlan />
