@@ -347,6 +347,31 @@ a:hover {
   grid-template-columns: repeat(5, 1fr);
 }
 
+/* Key stats row — 3 columns desktop (2 rows of 3 = 6 cards total) */
+.stat-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stat-grid-3 .stat-card {
+  padding: 14px 16px;
+}
+
+.stat-grid-3 .label {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.stat-grid-3 .value {
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .stat-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* Rides summary row — always 6 columns */
 .stat-grid-6 {
   grid-template-columns: repeat(6, 1fr);

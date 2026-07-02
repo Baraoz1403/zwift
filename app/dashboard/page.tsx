@@ -22,7 +22,6 @@ import AiInsightsLink from "./ai-insights-link";
 import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
-import SignalChips from "./signal-chips";
 import { IconBolt, IconFlame, IconHeart, IconBike, IconRun, IconTrend, IconList, IconCalendar } from "./icons";
 
 export default async function DashboardPage() {
@@ -119,11 +118,20 @@ export default async function DashboardPage() {
       })
     : null; // null = show "from Zwift profile" instead
 
-  // Average cadence across rides that report it.
-  // Zwift's activity list API includes avgCadence on cycling rides.
-  const cadenceRides = activities.filter(a => a.avgCadence && (a.avgCadence as number) > 0);
+  // Average cadence and average watts — both computed from the last 10 rides
+  // that report the respective field (activities are most-recent-first).
+  const cadenceRides = activities
+    .filter(a => a.avgCadence && (a.avgCadence as number) > 0)
+    .slice(0, 10);
   const avgCadence = cadenceRides.length > 0
     ? Math.round(cadenceRides.reduce((s, a) => s + (a.avgCadence as number), 0) / cadenceRides.length)
+    : null;
+
+  const wattsRides = activities
+    .filter(a => a.avgWatts && (a.avgWatts as number) > 0)
+    .slice(0, 10);
+  const avgWatts10 = wattsRides.length > 0
+    ? Math.round(wattsRides.reduce((s, a) => s + (a.avgWatts as number), 0) / wattsRides.length)
     : null;
 
   // Rare edge case: session had no athleteId, so activities couldn't be
@@ -205,8 +213,8 @@ export default async function DashboardPage() {
       </div>
 
       {profile && (
-        <div className="stat-grid stat-grid-compact fade-in">
-          <SignalChips />
+        <div className="stat-grid stat-grid-3 fade-in">
+          {/* Row 1: FTP · VO2max · Avg cadence */}
           <div className="stat-card">
             <div className="stat-card-head">
               <div className="stat-card-icon c-amber">
@@ -234,7 +242,6 @@ export default async function DashboardPage() {
           <div className="stat-card">
             <div className="stat-card-head">
               <div className="stat-card-icon c-teal">
-                {/* Cadence / rotate icon */}
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                 </svg>
@@ -246,6 +253,7 @@ export default async function DashboardPage() {
               {cadenceRides.length > 0 ? `last ${cadenceRides.length} rides` : "from ride data"}
             </div>
           </div>
+          {/* Row 2: Level cycling · Level running · Avg watts */}
           <div className="stat-card">
             <div className="stat-card-head">
               <div className="stat-card-icon c-orange">
@@ -263,6 +271,18 @@ export default async function DashboardPage() {
               <div className="label" style={{ margin: 0 }}>Level (running)</div>
             </div>
             <div className="value">{runLevel ?? "n/a"}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-head">
+              <div className="stat-card-icon c-blue">
+                <IconTrend size={13} />
+              </div>
+              <div className="label" style={{ margin: 0 }}>Avg watts</div>
+            </div>
+            <div className="value">{avgWatts10 != null ? `${avgWatts10} W` : "n/a"}</div>
+            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+              {wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from ride data"}
+            </div>
           </div>
         </div>
       )}
