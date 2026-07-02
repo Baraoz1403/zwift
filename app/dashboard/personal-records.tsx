@@ -5,7 +5,7 @@ import type { ZwiftActivity } from "@/lib/zwift";
 import { computeRecords, selectChartActivities } from "@/lib/stats";
 import { IconBolt, IconClock, IconDistance, IconFlame, IconHeart, IconMountain, IconTrophy } from "./icons";
 
-const RECORD_WINDOW_OPTIONS = [30, 60, 90] as const;
+const RECORD_WINDOW_OPTIONS = [30, 60, 90, 120] as const;
 
 /** Animates from 0 up to `value` once, on mount - a bit of polish so the
  * record cards feel alive instead of just appearing with static numbers. */
@@ -65,9 +65,9 @@ export default function PersonalRecords({
   // most-recent-N slice the Performance trends chart uses (lib/stats.ts),
   // applied here without any FIT-file fetching since none of these records
   // need second-by-second data.
-  const [windowSize, setWindowSize] = useState<number | "max">(30);
+  const [windowSize, setWindowSize] = useState<number>(30);
   const windowed = useMemo(
-    () => (windowSize === "max" ? activities : selectChartActivities(activities, windowSize)),
+    () => selectChartActivities(activities, windowSize),
     [activities, windowSize]
   );
 
@@ -113,13 +113,6 @@ export default function PersonalRecords({
                 {n}
               </button>
             ))}
-            <button
-              type="button"
-              className={`trend-tab ${windowSize === "max" ? "active" : ""}`}
-              onClick={() => setWindowSize("max")}
-            >
-              Max
-            </button>
           </div>
         </div>
       </div>

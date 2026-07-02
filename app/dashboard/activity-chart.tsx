@@ -392,9 +392,6 @@ export default function ActivityCharts({
 
   return (
     <div>
-      {/* Both selectors share one row - ride-count on the left, sport filter
-          on the right - so the two controls read as one toolbar instead of
-          two stacked, unrelated rows. Wraps gracefully on narrow screens. */}
       <div
         style={{
           display: "flex",
@@ -405,9 +402,35 @@ export default function ActivityCharts({
           marginBottom: 16,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "nowrap", overflowX: "auto" }}>
-          <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600, flexShrink: 0 }}>Last</span>
-          <div className="trend-tabs" style={{ flexShrink: 0 }}>
+        {/* Sport filter — left side, only when multiple sports exist */}
+        <div>
+          {sports.length > 1 && (
+            <div className="trend-tabs">
+              <button
+                type="button"
+                className={`trend-tab ${sportFilter === "all" ? "active" : ""}`}
+                onClick={() => setSportFilter("all")}
+              >
+                All
+              </button>
+              {sports.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`trend-tab ${sportFilter === s ? "active" : ""}`}
+                  onClick={() => setSportFilter(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Ride-count selector — right side, matches Personal Statistics layout */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+          <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
+          <div className="trend-tabs">
             {RIDE_COUNT_OPTIONS.map((n) => (
               <button
                 key={n}
@@ -419,35 +442,12 @@ export default function ActivityCharts({
               </button>
             ))}
           </div>
-          <span style={{ fontSize: 12.5, color: "var(--muted)", flexShrink: 0 }}>rides</span>
           {extrasLoading && (
-            <span style={{ fontSize: 11.5, color: "var(--muted)", flexShrink: 0 }}>
-              loading heart rate/cadence…
+            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
+              loading…
             </span>
           )}
         </div>
-
-        {sports.length > 1 && (
-          <div className="trend-tabs">
-            <button
-              type="button"
-              className={`trend-tab ${sportFilter === "all" ? "active" : ""}`}
-              onClick={() => setSportFilter("all")}
-            >
-              All
-            </button>
-            {sports.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`trend-tab ${sportFilter === s ? "active" : ""}`}
-                onClick={() => setSportFilter(s)}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {filtered.length === 0 ? (
