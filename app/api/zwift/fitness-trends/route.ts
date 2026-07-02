@@ -62,16 +62,33 @@ export async function GET(_req: NextRequest) {
       ? ftp
       : Math.max(1, ...activities.map(a => (a.avgWatts as number) || 0));
 
-    // Build daily TSS map: date string → total TSS for that day
+    // Build daily TSS map: date string → total TSS for that day.
+    // Prefer Zwift's own per-activity trainingLoad field (the same number
+    // Zwift Companion uses to build the Training Score) over our watts proxy.
     const dailyTss: Record<string, number> = {};
     for (const a of activities) {
       if (!a.startDate) continue;
       const dateKey = (a.startDate as string).slice(0, 10);
-      const durationHours = ((a.movingTimeInMs as number) || 0) / 3600000;
-      const watts = (a.avgWatts as number) || 0;
-      if (!durationHours || !watts) continue;
-      const intensityFactor = watts / referenceWatts;
-      const tss = durationHours * intensityFactor * intensityFactor * 100;
+
+      // Zwift stores its own training load per activity under one of these fields.
+      // Using it means our CTL (= Training Score) matches Companion exactly.
+      const zwiftLoad =
+        (a.trainingLoad as number) ||
+        (a.activityTrainingLoad as number) ||
+        0;
+
+      let tss: number;
+      if (zwiftLoad > 0) {
+        tss = zwiftLoad;
+      } else {
+        // Fallback proxy when Zwift doesn't include a trainingLoad value
+        const durationHours = ((a.movingTimeInMs as number) || 0) / 3600000;
+        const watts = (a.avgWatts as number) || 0;
+        if (!durationHours || !watts) continue;
+        const intensityFactor = watts / referenceWatts;
+        tss = durationHours * intensityFactor * intensityFactor * 100;
+      }
+
       dailyTss[dateKey] = (dailyTss[dateKey] ?? 0) + tss;
     }
 
