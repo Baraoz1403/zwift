@@ -55,7 +55,7 @@ export default function FitnessStatusChip() {
         fontSize: 12,
       }}
     >
-      {/* Left: colored dot + "Training Score" label + number */}
+      {/* Left: dot + number */}
       <div style={{
         display: "flex", alignItems: "center", gap: 5,
         padding: "4px 9px 4px 8px",
@@ -66,22 +66,23 @@ export default function FitnessStatusChip() {
           background: color, flexShrink: 0,
           boxShadow: `0 0 5px ${color}80`,
         }} />
-        <span style={{ fontWeight: 500, color, opacity: 0.75, fontSize: 11 }}>
-          Training Score
-        </span>
-        <span style={{ fontWeight: 800, color, letterSpacing: "-0.3px" }}>
+        <span style={{ fontWeight: 800, color, letterSpacing: "-0.3px", fontSize: 13 }}>
           {score}
         </span>
       </div>
 
-      {/* Right: status label */}
+      {/* Right: label stack — "Training Score" above status */}
       <div style={{
-        padding: "4px 10px",
-        fontWeight: 600, color,
-        letterSpacing: "0.01em",
-        opacity: 0.85,
+        display: "flex", flexDirection: "column",
+        padding: "3px 10px",
+        lineHeight: 1.2,
       }}>
-        {label}
+        <span style={{ fontSize: 9.5, fontWeight: 600, color, opacity: 0.6, letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
+          Training Score
+        </span>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color }}>
+          {label}
+        </span>
       </div>
     </div>
   );
