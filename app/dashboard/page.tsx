@@ -26,6 +26,7 @@ import { IconBolt, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } fro
 import AvgCadenceCard from "./avg-cadence-card";
 import AvgHRCard from "./avg-hr-card";
 import HRAlertBanner from "./hr-alert-banner";
+import FitnessTrendsChart from "./fitness-trends-chart";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -312,6 +313,15 @@ export default async function DashboardPage() {
         <>
           {/* HR anomaly banner — renders client-side after FIT file analysis */}
           <HRAlertBanner />
+
+          {/* ── Fitness trends (CTL / ATL / TSB) ── */}
+          <div className="section fade-in">
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              <IconBolt size={14} />
+              Training Status
+            </div>
+            <FitnessTrendsChart />
+          </div>
 
           {/* ── Most actionable: today’s plan + AI coaching ── */}
           <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>

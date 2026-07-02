@@ -21,14 +21,22 @@ import {
 
 const SAMPLES = 40;
 
-export default function WorkoutThumbnail({ workout }: { workout: ZwoWorkoutInput }) {
+export default function WorkoutThumbnail({
+  workout,
+  flush = false,
+}: {
+  workout: ZwoWorkoutInput;
+  /** When true, don't apply the -20px bleed margin. Use inside containers
+   *  that already have padding:0 / overflow:hidden (completed-ride cards). */
+  flush?: boolean;
+}) {
   const blocks = generateDefaultBlocks(workout);
   const powers = sampleWorkoutPower(blocks, SAMPLES);
   const maxPower = Math.max(1.2, ...powers);
   const effort = effortForType(workout.type);
 
   return (
-    <div style={{ margin: "-20px -20px 0 -20px" }}>
+    <div style={flush ? undefined : { margin: "-20px -20px 0 -20px" }}>
       <div
         style={{
           display: "flex",

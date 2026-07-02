@@ -506,55 +506,53 @@ export default function WeeklyPlan() {
                       padding: 0, overflow: "hidden",
                     }}
                   >
-                    {/* Green "done" banner */}
-                    <div style={{
-                      background: "rgba(26,143,76,0.10)",
-                      borderBottom: "1px solid rgba(26,143,76,0.18)",
-                      padding: "7px 16px",
-                      display: "flex", alignItems: "center", gap: 7,
-                    }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#1a8f4c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#1a8f4c", letterSpacing: "0.02em" }}>
-                        Ride done
-                      </span>
+                    {/* Thumbnail — full-bleed, "flush" skips the -20px margin */}
+                    <div style={{ position: "relative" }}>
+                      <WorkoutThumbnail workout={w} flush />
+                      {/* "Ride done" pill badge overlaid on the thumbnail */}
+                      <div style={{
+                        position: "absolute", top: 8, left: 10,
+                        background: "rgba(26,143,76,0.88)",
+                        color: "#fff",
+                        fontSize: 10, fontWeight: 700,
+                        padding: "2.5px 8px",
+                        borderRadius: 20,
+                        display: "flex", alignItems: "center", gap: 4,
+                        letterSpacing: "0.06em",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none"
+                          stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        DONE
+                      </div>
                     </div>
 
-                    {/* Workout bar graph — same thumbnail shown on planned workouts */}
-                    <WorkoutThumbnail workout={w} />
-
-                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
-                      {/* Planned label (small, muted) */}
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, lineHeight: 1.4 }}>
-                        Planned: <span style={{ fontStyle: "italic" }}>{w.title}</span>
-                      </div>
-
-                      {/* Actual ride header */}
-                      <div className="stat-card-head">
-                        <div className="stat-card-icon c-green">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                          </svg>
-                        </div>
-                        <div className="label" style={{ margin: 0 }}>
-                          {w.day}{w.date ? ` (${w.date})` : ""}
-                        </div>
-                      </div>
-
-                      {/* Ride name */}
-                      <div className="value" style={{ fontSize: 15, lineHeight: 1.3 }}>
+                    {/* Card body */}
+                    <div style={{ padding: "12px 16px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      {/* Actual ride name — most prominent */}
+                      <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.3, marginBottom: 3 }}>
                         {actual.name}
                       </div>
-
-                      {/* Stats row */}
+                      {/* Day + date */}
+                      <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>
+                        {w.day}{w.date ? ` · ${w.date}` : ""}
+                      </div>
+                      {/* Stats */}
                       {stats && (
-                        <div style={{ fontSize: 12, opacity: 0.75, marginTop: 5 }}>
+                        <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8 }}>
                           {stats}
                         </div>
                       )}
+                      {/* "Planned" footnote — bottom of card */}
+                      <div style={{
+                        marginTop: "auto", paddingTop: 10,
+                        borderTop: "1px solid var(--border)",
+                        fontSize: 10.5, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.4,
+                      }}>
+                        Planned: {w.title}
+                      </div>
                     </div>
                   </div>
                 );
