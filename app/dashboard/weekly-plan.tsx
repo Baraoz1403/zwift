@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
@@ -15,6 +15,24 @@ interface WeeklyWorkout {
   durationMin: number;
   targetPowerPctFtp?: string;
   description: string;
+}
+
+/** Actual Zwift ride detected for a planned workout day */
+interface ActualRide {
+  name: string;
+  startDate: string;
+  durationInSeconds: number;
+  distanceInMeters: number;
+  avgWatts: number | null;
+  avgHeartRate: number | null;
+  sport: string;
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m} min`;
 }
 
 interface WeeklyPlan {
@@ -123,6 +141,8 @@ export default function WeeklyPlan() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [riderNote, setRiderNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
+  // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
+  const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
   useEffect(() => {
     const cached = loadCachedPlan();
@@ -134,6 +154,36 @@ export default function WeeklyPlan() {
     if (cachedCycle) {
       setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
+
+    // Fetch this week's actual Zwift rides to detect completed workouts
+    const weekStart = currentWeekOf();
+    const weekEndMs = new Date(weekStart + "T00:00:00Z").getTime() + 7 * 86400 * 1000;
+    fetch("/api/zwift/activities")
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !Array.isArray(data.activities)) return;
+        const map = new Map<string, ActualRide>();
+        for (const a of data.activities as Record<string, unknown>[]) {
+          const startDate = a.startDate as string | undefined;
+          if (!startDate) continue;
+          const ts = new Date(startDate).getTime();
+          if (ts < new Date(weekStart + "T00:00:00Z").getTime() || ts >= weekEndMs) continue;
+          const dateKey = startDate.slice(0, 10);
+          if (!map.has(dateKey)) {
+            map.set(dateKey, {
+              name: (a.name as string) ?? "Zwift Ride",
+              startDate,
+              durationInSeconds: (a.durationInSeconds as number) ?? 0,
+              distanceInMeters: (a.distanceInMeters as number) ?? 0,
+              avgWatts: (a.avgWatts as number | null) ?? null,
+              avgHeartRate: (a.avgHeartRate as number | null) ?? null,
+              sport: (a.sport as string) ?? "CYCLING",
+            });
+          }
+        }
+        setWeekActivities(map);
+      })
+      .catch(() => {});
   }, []);
 
   async function handleGenerate() {
@@ -386,40 +436,118 @@ export default function WeeklyPlan() {
           )}
 
           <div className="stat-grid workout-grid">
-            {plan.workouts.map((w, i) => (
-              <div className="stat-card" key={i} style={{ display: "flex", flexDirection: "column" }}>
-                {!isRestDay(w.type) && <WorkoutThumbnail workout={w} />}
-                <div className="stat-card-head" style={{ marginTop: 10 }}>
-                  <div className={`stat-card-icon ${colorForType(w.type)}`}>
-                    <IconBolt size={13} />
+            {plan.workouts.map((w, i) => {
+              const actual = w.date ? weekActivities.get(w.date) : undefined;
+
+              // ── Completed: actual ride found for this day ──
+              if (actual && !isRestDay(w.type)) {
+                const distKm = actual.distanceInMeters > 0
+                  ? (actual.distanceInMeters / 1000).toFixed(1) + " km"
+                  : null;
+                const stats = [
+                  actual.durationInSeconds > 0 ? formatDuration(actual.durationInSeconds) : null,
+                  distKm,
+                  actual.avgWatts ? `${Math.round(actual.avgWatts)} W` : null,
+                  actual.avgHeartRate ? `${Math.round(actual.avgHeartRate)} bpm` : null,
+                ].filter(Boolean).join(" · ");
+
+                return (
+                  <div
+                    key={i}
+                    className="stat-card"
+                    style={{
+                      display: "flex", flexDirection: "column",
+                      border: "1.5px solid rgba(26,143,76,0.35)",
+                      padding: 0, overflow: "hidden",
+                    }}
+                  >
+                    {/* Green "done" banner */}
+                    <div style={{
+                      background: "rgba(26,143,76,0.10)",
+                      borderBottom: "1px solid rgba(26,143,76,0.18)",
+                      padding: "7px 16px",
+                      display: "flex", alignItems: "center", gap: 7,
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="#1a8f4c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#1a8f4c", letterSpacing: "0.02em" }}>
+                        Ride done
+                      </span>
+                    </div>
+
+                    <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      {/* Planned label (small, muted) */}
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, lineHeight: 1.4 }}>
+                        Planned: <span style={{ fontStyle: "italic" }}>{w.title}</span>
+                      </div>
+
+                      {/* Actual ride header */}
+                      <div className="stat-card-head">
+                        <div className="stat-card-icon c-green">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                          </svg>
+                        </div>
+                        <div className="label" style={{ margin: 0 }}>
+                          {w.day}{w.date ? ` (${w.date})` : ""}
+                        </div>
+                      </div>
+
+                      {/* Ride name */}
+                      <div className="value" style={{ fontSize: 15, lineHeight: 1.3 }}>
+                        {actual.name}
+                      </div>
+
+                      {/* Stats row */}
+                      {stats && (
+                        <div style={{ fontSize: 12, opacity: 0.75, marginTop: 5 }}>
+                          {stats}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="label" style={{ margin: 0 }}>
-                    {w.day}
-                    {w.date ? ` (${w.date})` : ""} - {w.type}
+                );
+              }
+
+              // ── Planned: no ride done yet ──
+              return (
+                <div className="stat-card" key={i} style={{ display: "flex", flexDirection: "column" }}>
+                  {!isRestDay(w.type) && <WorkoutThumbnail workout={w} />}
+                  <div className="stat-card-head" style={{ marginTop: 10 }}>
+                    <div className={`stat-card-icon ${colorForType(w.type)}`}>
+                      <IconBolt size={13} />
+                    </div>
+                    <div className="label" style={{ margin: 0 }}>
+                      {w.day}
+                      {w.date ? ` (${w.date})` : ""} - {w.type}
+                    </div>
                   </div>
-                </div>
-                <div className="value" style={{ fontSize: 16 }}>{w.title}</div>
-                <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
-                  {w.durationMin} min
-                  {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
-                </div>
-                <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
-                  {w.description}
-                </div>
-                {!isRestDay(w.type) && (
-                  <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ width: "auto", padding: "5px 18px", fontSize: 11.5 }}
-                      onClick={() => handleDownloadZwo(w)}
-                    >
-                      Download .zwo
-                    </button>
+                  <div className="value" style={{ fontSize: 16 }}>{w.title}</div>
+                  <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
+                    {w.durationMin} min
+                    {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
+                    {w.description}
+                  </div>
+                  {!isRestDay(w.type) && (
+                    <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ width: "auto", padding: "5px 18px", fontSize: 11.5 }}
+                        onClick={() => handleDownloadZwo(w)}
+                      >
+                        Download .zwo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>

@@ -7,8 +7,12 @@ import { useEffect, useState } from "react";
  * page loads. Cadence is not included in Zwift's activity list API summary —
  * it only exists inside each ride's FIT file — so this card loads async
  * rather than blocking the initial page render.
+ *
+ * asItem=true  → renders just the inner content (padding div), for use inside
+ *                a rubric card alongside other stats.
+ * asItem=false → renders as a standalone stat-card (default).
  */
-export default function AvgCadenceCard() {
+export default function AvgCadenceCard({ asItem = false }: { asItem?: boolean }) {
   const [cadence, setCadence] = useState<number | null>(null);
   const [rideCount, setRideCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -31,8 +35,8 @@ export default function AvgCadenceCard() {
       .finally(() => setLoading(false));
   }, []);
 
-  return (
-    <div className="stat-card">
+  const inner = (
+    <>
       <div className="stat-card-head">
         <div className="stat-card-icon c-teal">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -41,7 +45,7 @@ export default function AvgCadenceCard() {
         </div>
         <div className="label" style={{ margin: 0 }}>Avg cadence</div>
       </div>
-      <div className="value">
+      <div className="value" style={asItem ? { fontSize: 19 } : undefined}>
         {loading
           ? <span style={{ opacity: 0.35, fontSize: 14 }}>loading…</span>
           : cadence != null ? `${cadence} rpm` : "n/a"}
@@ -49,6 +53,12 @@ export default function AvgCadenceCard() {
       <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
         {loading ? "" : rideCount > 0 ? `last ${rideCount} rides` : "from FIT data"}
       </div>
-    </div>
+    </>
   );
+
+  if (asItem) {
+    return <div style={{ padding: "14px 16px" }}>{inner}</div>;
+  }
+
+  return <div className="stat-card">{inner}</div>;
 }
