@@ -3232,3 +3232,40 @@ Thu 07/02/2026 22:44:04.53
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/dashboard/fitness-status-chip.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/debug-fields/route.ts', LF will be replaced by CRLF the next time Git touches it
+[main 44d30a7] Auto deploy Thu 07/02/2026 22:44:04.89
+ 4 files changed, 111 insertions(+), 29 deletions(-)
+ create mode 100644 app/api/zwift/debug-fields/route.ts
+To https://github.com/Baraoz1403/zwift.git
+   c5fd781..44d30a7  main -> main
+Thu 07/02/2026 22:44:06.66 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Thu 07/02/2026 22:49:32.08 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

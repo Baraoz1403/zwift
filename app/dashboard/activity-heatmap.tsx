@@ -1,15 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import type { ZwiftActivity } from "@/lib/zwift";
 import { buildHeatmap } from "@/lib/stats";
 import { IconCalendar } from "./icons";
 
-const PERIODS = [
-  { label: "3 months", days: 91 },
-  { label: "6 months", days: 182 },
-  { label: "1 year", days: 365 },
-] as const;
+const PERIOD_DAYS = 365;
 
 function formatDuration(ms: number): string {
   if (!ms) return "0m";
@@ -28,10 +23,7 @@ function formatDuration(ms: number): string {
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function ActivityHeatmap({ activities }: { activities: ZwiftActivity[] }) {
-  const [periodIdx, setPeriodIdx] = useState(2); // default: 1 year
-  const period = PERIODS[periodIdx];
-
-  const days = buildHeatmap(activities, period.days);
+  const days = buildHeatmap(activities, PERIOD_DAYS);
   const maxDistance = Math.max(1, ...days.map((d) => d.distanceM));
 
   // Pad the front so column 1 / row 1 lines up with a real Sunday.
@@ -69,23 +61,9 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
           <IconCalendar size={16} />
           Ride activity
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 500, color: "var(--muted)", textTransform: "none", letterSpacing: "normal" }}>
-            {activeDays} active day{activeDays === 1 ? "" : "s"} in the last {period.label}
-          </span>
-          <div className="trend-tabs" style={{ marginBottom: 0 }}>
-            {PERIODS.map((p, i) => (
-              <button
-                key={p.label}
-                type="button"
-                className={`trend-tab ${i === periodIdx ? "active" : ""}`}
-                onClick={() => setPeriodIdx(i)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <span style={{ fontSize: 11.5, fontWeight: 500, color: "var(--muted)", textTransform: "none", letterSpacing: "normal" }}>
+          {activeDays} active day{activeDays === 1 ? "" : "s"} in the last year
+        </span>
       </div>
 
       <div className="heatmap-wrap">

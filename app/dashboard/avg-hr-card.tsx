@@ -38,13 +38,16 @@ export default function AvgHRCard({ mode }: { mode: "row" | "chip" }) {
     if (loading || hr == null) return null;
     return (
       <span style={{
-        display: "inline-flex", alignItems: "center", gap: 5,
-        padding: "4px 10px", borderRadius: 20,
-        background: "rgba(196,41,26,0.09)",
-        fontSize: 13, fontWeight: 600, color: "#c4291a",
-        letterSpacing: "-0.2px",
+        display: "inline-flex", alignItems: "center", gap: 7,
+        padding: "9px 15px", borderRadius: 6,
+        border: "1px solid rgba(196,41,26,0.22)",
+        background: "rgba(196,41,26,0.04)",
+        fontSize: 12.5, fontWeight: 500,
+        color: "#c4291a",
+        whiteSpace: "nowrap",
+        fontFamily: "var(--font-sans)",
       }}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
         {hr} bpm
