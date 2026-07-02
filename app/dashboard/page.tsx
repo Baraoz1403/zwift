@@ -23,6 +23,7 @@ import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import { IconBolt, IconFlame, IconHeart, IconBike, IconRun, IconTrend, IconList, IconCalendar } from "./icons";
+import AvgCadenceCard from "./avg-cadence-card";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -118,15 +119,8 @@ export default async function DashboardPage() {
       })
     : null; // null = show "from Zwift profile" instead
 
-  // Average cadence and average watts — both computed from the last 10 rides
-  // that report the respective field (activities are most-recent-first).
-  const cadenceRides = activities
-    .filter(a => a.avgCadence && (a.avgCadence as number) > 0)
-    .slice(0, 10);
-  const avgCadence = cadenceRides.length > 0
-    ? Math.round(cadenceRides.reduce((s, a) => s + (a.avgCadence as number), 0) / cadenceRides.length)
-    : null;
-
+  // Average watts from the last 10 rides that report it (activities are most-recent-first).
+  // Average cadence comes from FIT files, handled by AvgCadenceCard (client component).
   const wattsRides = activities
     .filter(a => a.avgWatts && (a.avgWatts as number) > 0)
     .slice(0, 10);
@@ -213,75 +207,66 @@ export default async function DashboardPage() {
       </div>
 
       {profile && (
-        <div className="stat-grid stat-grid-3 fade-in">
-          {/* Row 1: FTP · VO2max · Avg cadence */}
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-amber">
-                <IconBolt size={13} />
+        <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Rubric 1: Avg watts · Avg cadence · FTP */}
+          <div className="stat-grid stat-grid-3">
+            <div className="stat-card">
+              <div className="stat-card-head">
+                <div className="stat-card-icon c-blue">
+                  <IconTrend size={13} />
+                </div>
+                <div className="label" style={{ margin: 0 }}>Avg watts</div>
               </div>
-              <div className="label" style={{ margin: 0 }}>FTP</div>
+              <div className="value">{avgWatts10 != null ? `${avgWatts10} W` : "n/a"}</div>
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+                {wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from ride data"}
+              </div>
             </div>
-            <div className="value">{profile.ftp ?? "n/a"}</div>
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-              {ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}
+            <AvgCadenceCard />
+            <div className="stat-card">
+              <div className="stat-card-head">
+                <div className="stat-card-icon c-amber">
+                  <IconBolt size={13} />
+                </div>
+                <div className="label" style={{ margin: 0 }}>FTP</div>
+              </div>
+              <div className="value">{profile.ftp ?? "n/a"}</div>
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+                {ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}
+              </div>
             </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-red">
-                <IconHeart size={13} />
+          {/* Rubric 2: Level cycling · Level running · VO2max */}
+          <div className="stat-grid stat-grid-3">
+            <div className="stat-card">
+              <div className="stat-card-head">
+                <div className="stat-card-icon c-orange">
+                  <IconBike size={13} />
+                </div>
+                <div className="label" style={{ margin: 0 }}>Level (cycling)</div>
               </div>
-              <div className="label" style={{ margin: 0 }}>VO2max (est.)</div>
+              <div className="value">{cyclingLevel ?? "n/a"}</div>
             </div>
-            <div className="value">{vo2max != null ? vo2max.toFixed(1) : "n/a"}</div>
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-              {ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-teal">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
+            <div className="stat-card">
+              <div className="stat-card-head">
+                <div className="stat-card-icon c-green">
+                  <IconRun size={13} />
+                </div>
+                <div className="label" style={{ margin: 0 }}>Level (running)</div>
               </div>
-              <div className="label" style={{ margin: 0 }}>Avg cadence</div>
+              <div className="value">{runLevel ?? "n/a"}</div>
             </div>
-            <div className="value">{avgCadence != null ? `${avgCadence} rpm` : "n/a"}</div>
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-              {cadenceRides.length > 0 ? `last ${cadenceRides.length} rides` : "from ride data"}
-            </div>
-          </div>
-          {/* Row 2: Level cycling · Level running · Avg watts */}
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-orange">
-                <IconBike size={13} />
+            <div className="stat-card">
+              <div className="stat-card-head">
+                <div className="stat-card-icon c-red">
+                  <IconHeart size={13} />
+                </div>
+                <div className="label" style={{ margin: 0 }}>VO2max (est.)</div>
               </div>
-              <div className="label" style={{ margin: 0 }}>Level (cycling)</div>
-            </div>
-            <div className="value">{cyclingLevel ?? "n/a"}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-green">
-                <IconRun size={13} />
+              <div className="value">{vo2max != null ? vo2max.toFixed(1) : "n/a"}</div>
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
+                {ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}
               </div>
-              <div className="label" style={{ margin: 0 }}>Level (running)</div>
-            </div>
-            <div className="value">{runLevel ?? "n/a"}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-head">
-              <div className="stat-card-icon c-blue">
-                <IconTrend size={13} />
-              </div>
-              <div className="label" style={{ margin: 0 }}>Avg watts</div>
-            </div>
-            <div className="value">{avgWatts10 != null ? `${avgWatts10} W` : "n/a"}</div>
-            <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2 }}>
-              {wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from ride data"}
             </div>
           </div>
         </div>
