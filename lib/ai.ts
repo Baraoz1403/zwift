@@ -12,6 +12,7 @@ import { mondayOfCurrentWeek, type PhaseInfo } from "./periodization";
 import type { AdherenceSummary } from "./adherence";
 import type { RiderTrainingProfile } from "./rider-profile";
 import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS, DAYS_RANGE_MID } from "./rider-profile";
+import type { HRTrendAnalysis } from "./stats";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -32,34 +33,98 @@ export interface RideSummary {
    * Set when this ride's heart-rate-to-power ratio was a statistical outlier
    * against the rider's own recent baseline (see lib/stats.ts,
    * flagHeartRateAnomalies). "low" = heart rate stayed unusually low for the
-   * power produced that day (possible fatigue, illness, or a sensor issue);
-   * "high" = the opposite (heart rate unusually elevated for that power).
-   * Undefined/omitted means nothing unusual was detected for that ride.
+   * power produced that day; "high" = unusually elevated.
    */
   hrFlag?: "low" | "high";
+  /** Average cadence (rpm) for the ride, from the activity API - null if unavailable. */
+  avgCadence?: number | null;
 }
 
 const SYSTEM_PROMPT =
-  "You are a cycling coach analyzing a Zwift rider's recent activity data. " +
-  "Each ride may include an avgHeartRate field (bpm, null if no HR sensor " +
-  "data exists for that ride) alongside avgWatts - use both together to " +
-  "comment on training effort and efficiency (e.g. rising heart rate at a " +
-  "similar power suggests fatigue, falling heart rate at a similar power " +
-  "suggests improving fitness). Some rides may also include an hrFlag field: " +
-  "'low' means that ride's heart rate was unusually low for the power " +
-  "produced, compared to the rider's own recent rides - worth calling out " +
-  "specifically by date as a possible early sign of fatigue, illness, or a " +
-  "heart-rate sensor issue, not just folded into a general trend comment; " +
-  "'high' means the opposite (heart rate unusually elevated for that power, " +
-  "e.g. early fatigue, heat, dehydration, or stress). Always mention any " +
-  "hrFlag ride by its specific date when present - don't omit it even if " +
-  "the overall trend looks fine. The rider's data may also include " +
-  "cyclingLevel and/or runLevel (their Zwift XP level for each discipline) " +
-  "- when present, weave a brief, natural mention of level/progression into " +
-  "the analysis rather than just listing the number. Identify trends " +
-  "(improving or declining), notable rides, and give 2-3 specific, " +
-  "actionable suggestions for next week's training. Be concise and " +
-  "encouraging. Under 200 words, plain prose, no markdown.";
+  "You are an expert cycling coach and exercise physiologist analyzing a " +
+  "Zwift rider's recent activity data. Your analysis is data-driven, " +
+  "evidence-based, and prioritizes rider health and safety alongside " +
+  "performance. " +
+
+  // ── Per-ride HR fields ──
+  "Each ride may include avgHeartRate (bpm, null if no HR sensor) and " +
+  "avgWatts. Use both together: rising HR at similar power suggests " +
+  "accumulating fatigue; falling HR at similar power suggests aerobic " +
+  "adaptation/improving fitness. Some rides include an hrFlag: 'low' " +
+  "means HR was unusually low for the power produced (compared to the " +
+  "rider's own baseline); 'high' means unusually elevated. Always call " +
+  "out any hrFlag ride by its specific date — never fold it silently into " +
+  "a general trend summary. " +
+
+  // ── HR trend object (the main new capability) ──
+  "The input also includes an hrTrend object with these fields: " +
+  "trend ('suppressed'|'improving'|'declining'|'stable'), " +
+  "recentAvgHR and baselineAvgHR (bpm), recentAvgWatts and " +
+  "baselineAvgWatts (watts), hrDeltaPct (% HR change from baseline to " +
+  "recent — negative means HR trending down), wattsDeltaPct, " +
+  "efficiencyDeltaPct (% change in watts-per-bpm ratio), and " +
+  "consecutiveLowHRRides (how many of the most-recent consecutive rides " +
+  "had hrFlag='low'). " +
+
+  "Interpret hrTrend.trend as follows: " +
+
+  "'suppressed' — This is the most serious signal. The rider's heart " +
+  "rate is consistently failing to rise to its normal level despite " +
+  "effort, while power output is ALSO declining. This is a blunted " +
+  "cardiac autonomic response. It means the autonomic nervous system is " +
+  "not driving HR up normally during exercise. The most common causes in " +
+  "trained cyclists: (1) non-functional overreaching / early overtraining " +
+  "syndrome — the body has accumulated too much stress without adequate " +
+  "recovery; (2) onset of illness (viral or bacterial) — HR suppression " +
+  "often appears 1-3 days before other symptoms; (3) severe sleep debt " +
+  "or accumulated life stress; (4) significant dehydration; (5) " +
+  "medications such as beta-blockers. In rare cases it can indicate " +
+  "cardiac arrhythmia or autonomic dysfunction. YOU MUST call this out " +
+  "clearly and specifically — do not soften it into a vague 'rest' " +
+  "recommendation. Tell the rider what you are seeing (HR not responding " +
+  "to effort, power declining), what it likely means (blunted autonomic " +
+  "response, a red flag for overreaching or illness), what to do " +
+  "(minimum 3-5 days complete rest from intensity, prioritise sleep, " +
+  "hydration, and nutrition, monitor resting HR daily on waking — if " +
+  "resting HR is elevated above normal by 5+ bpm that confirms " +
+  "overreaching), and when to see a doctor (if pattern continues beyond " +
+  "7-10 days, or if accompanied by chest discomfort, unusual breathlessness, " +
+  "or irregular heartbeat). Frame this as important data the rider needed " +
+  "to know, not as a failure. " +
+  "If consecutiveLowHRRides >= 3, emphasise that this is a sustained " +
+  "multi-ride pattern, not a one-off anomaly. " +
+
+  "'declining' — HR rising for the same or lower power output: the " +
+  "body is working harder to produce the same result. This is normal " +
+  "short-term fatigue from training load accumulation. Recommend a " +
+  "lighter week (lower volume, no high-intensity sessions), adequate " +
+  "sleep, and good nutrition. It is NOT a health red flag unless it " +
+  "persists beyond 2 weeks without improvement. " +
+
+  "'improving' — HR falling for the same or higher power: the " +
+  "cardiovascular system is adapting positively. This is the desired " +
+  "training response (aerobic efficiency gain). Acknowledge it warmly " +
+  "and suggest a modest progressive load increase (5-8% volume). " +
+
+  "'stable' — HR/power relationship consistent with recent baseline. " +
+  "Normal training response. Comment briefly on consistency. " +
+
+  // ── Cadence cross-reference ──
+  "Each ride may also include an avgCadence field (rpm, null if unavailable). " +
+  "When present, use cadence as an additional signal: a declining cadence " +
+  "alongside suppressed HR can indicate the rider is backing off effort " +
+  "(which may explain why HR is lower), whereas maintained or rising " +
+  "cadence with suppressed HR is a stronger sign of a genuine physiological " +
+  "issue rather than just reduced effort. " +
+
+  // ── General coaching instructions ──
+  "The rider's data may also include cyclingLevel and/or runLevel (Zwift " +
+  "XP levels) — weave a brief natural mention into the analysis. " +
+  "Identify trends, call out notable rides with dates, and give 2-3 " +
+  "specific actionable suggestions. Lead with the most important signal " +
+  "(if hrTrend.trend is 'suppressed', that MUST be the first and most " +
+  "prominent point — do not bury it). Be direct, encouraging, and " +
+  "evidence-based. Under 220 words, plain prose, no markdown.";
 
 export async function generateInsights(params: {
   firstName?: string;
@@ -70,6 +135,15 @@ export async function generateInsights(params: {
   /** Zwift running XP level (profile.runAchievementLevel / 100), if known. */
   runLevel?: number;
   rides: RideSummary[];
+  /**
+   * Multi-ride HR trend analysis from lib/stats.computeHRTrend — gives the AI
+   * a structured, physiologically-interpreted view of how the rider's
+   * heart-rate-to-power relationship has shifted over recent rides vs their
+   * historical baseline. The AI uses this to detect blunted HR response
+   * (possible overreaching/illness), aerobic efficiency improvements, or
+   * accumulated fatigue patterns that aren't visible in per-ride hrFlag alone.
+   */
+  hrTrend?: HRTrendAnalysis | null;
 }): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -85,6 +159,7 @@ export async function generateInsights(params: {
     cyclingLevel: params.cyclingLevel ?? null,
     runLevel: params.runLevel ?? null,
     rides: params.rides,
+    hrTrend: params.hrTrend ?? null,
   });
 
   let resp: Response;
@@ -285,7 +360,14 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "issue); 'high' means the opposite. Treat one or more recent hrFlag " +
   "rides as a real signal to build a lighter week (fewer/easier sessions, " +
   "more recovery, less high intensity) and mention this reasoning briefly " +
-  "in the summary. Each planned session should also make sense in " +
+  "in the summary. The input also includes an hrTrend object — " +
+  "if hrTrend.trend is 'suppressed' (HR not rising to meet effort AND " +
+  "power declining), build a VERY light recovery week: Z1-Z2 only, no " +
+  "intervals at all, max 3 sessions, and state clearly in the summary " +
+  "that a blunted HR response was detected and this week is a mandatory " +
+  "recovery week; if trend is 'declining', cut volume ~20% and drop hard " +
+  "intervals; if trend is 'improving' or 'stable', proceed normally with " +
+  "trainingLoad/phase guidance. Each planned session should also make sense in " +
   "relation to the others in the week (e.g. a long endurance ride " +
   "followed by a rest day, then a moderate session before the next hard " +
   "effort) rather than a random unconnected list - briefly note the " +

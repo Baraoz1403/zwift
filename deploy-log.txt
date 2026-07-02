@@ -2531,3 +2531,38 @@ Thu 07/02/2026 20:55:56.10
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/dashboard/avg-cadence-card.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+[main e92fcf4] Auto deploy Thu 07/02/2026 20:55:56.49
+ 3 files changed, 182 insertions(+), 66 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   4286cf5..e92fcf4  main -> main
+Thu 07/02/2026 20:55:58.28 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Thu 07/02/2026 21:04:17.29 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

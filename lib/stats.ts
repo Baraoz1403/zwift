@@ -101,6 +101,148 @@ export function selectChartActivities(activities: ZwiftActivity[], count = 30): 
 }
 
 /**
+ * Structured summary of how a rider's heart-rate-to-power relationship has
+ * shifted between their last few rides and their recent historical baseline.
+ *
+ * The key metric is "cardiac efficiency" = avgWatts / avgHR (W/bpm). A rising
+ * efficiency over time normally signals aerobic adaptation. The trend field
+ * captures the physiological interpretation after cross-referencing whether
+ * watts also changed — because the same W/bpm ratio shift means different
+ * things depending on whether power went up or down alongside it.
+ */
+export interface HRTrendAnalysis {
+  /** Mean bpm over last recentCount rides that have both HR and watts data. */
+  recentAvgHR: number | null;
+  /** Mean bpm from older baseline rides (positions recentCount..recentCount+10). */
+  baselineAvgHR: number | null;
+  /** Mean watts (last recentCount rides with data). */
+  recentAvgWatts: number | null;
+  /** Mean watts from baseline rides. */
+  baselineAvgWatts: number | null;
+  /** W/bpm efficiency — recent. Higher = more watts per heartbeat. */
+  recentEfficiency: number | null;
+  /** W/bpm efficiency — baseline. */
+  baselineEfficiency: number | null;
+  /** % change from baseline to recent (positive = more efficient recently). */
+  efficiencyDeltaPct: number | null;
+  /** % change in avg HR (negative = HR trending down recently). */
+  hrDeltaPct: number | null;
+  /** % change in avg watts (negative = power trending down recently). */
+  wattsDeltaPct: number | null;
+  /**
+   * Physiological interpretation:
+   *
+   * "suppressed" — HR is consistently failing to rise to its usual level
+   *   for the effort, AND output power is also declining. Classic blunted
+   *   autonomic response. Common causes: accumulated fatigue/overreaching,
+   *   onset of illness, severe sleep debt, dehydration, or medications.
+   *   Rare but important: cardiac arrhythmia or autonomic dysfunction.
+   *   Requires rest + monitoring; consult a physician if it persists >1 week.
+   *
+   * "improving" — HR is lower at the same or higher power. This is a
+   *   positive aerobic adaptation: the heart pumps more efficiently.
+   *   Also called "cardiac drift adaptation" when gradual.
+   *
+   * "declining" — HR rising at a given power (body working harder for
+   *   the same output). Normal short-term acute fatigue response. A lighter
+   *   week will resolve it.
+   *
+   * "stable" — relationship within normal variation. No action needed.
+   */
+  trend: "suppressed" | "improving" | "declining" | "stable";
+  /** How many consecutive most-recent rides had hrFlag === "low" (requires hrFlag populated). */
+  consecutiveLowHRRides: number;
+  /** Number of rides with valid HR+watts data available for the analysis. */
+  ridesWithHRData: number;
+}
+
+/**
+ * Computes the HR trend from a list of rides in MOST-RECENT-FIRST order.
+ * Rides without both avgWatts and avgHeartRate are silently skipped.
+ * Needs at least recentCount + 3 rides with data to produce a meaningful result.
+ */
+export function computeHRTrend(
+  rides: Array<{ avgWatts?: number | null; avgHeartRate?: number | null; hrFlag?: "low" | "high" }>,
+  recentCount = 4
+): HRTrendAnalysis {
+  const EMPTY: HRTrendAnalysis = {
+    recentAvgHR: null, baselineAvgHR: null,
+    recentAvgWatts: null, baselineAvgWatts: null,
+    recentEfficiency: null, baselineEfficiency: null,
+    efficiencyDeltaPct: null, hrDeltaPct: null, wattsDeltaPct: null,
+    trend: "stable", consecutiveLowHRRides: 0, ridesWithHRData: 0,
+  };
+
+  const withData = rides.filter(
+    (r) => r.avgWatts && (r.avgWatts as number) > 0 &&
+           r.avgHeartRate && (r.avgHeartRate as number) > 0
+  ) as Array<{ avgWatts: number; avgHeartRate: number; hrFlag?: "low" | "high" }>;
+
+  const ridesWithHRData = withData.length;
+
+  // Count consecutive most-recent low-HR rides from the raw rides list
+  // (before filtering to withData, so we don't miss rides without watts).
+  let consecutiveLowHRRides = 0;
+  for (const r of rides) {
+    if (r.hrFlag === "low") consecutiveLowHRRides++;
+    else break;
+  }
+
+  if (withData.length < recentCount + 3) {
+    return { ...EMPTY, consecutiveLowHRRides, ridesWithHRData };
+  }
+
+  const recent = withData.slice(0, recentCount);
+  const baseline = withData.slice(recentCount, Math.min(recentCount + 10, withData.length));
+
+  const avg = (arr: typeof withData, key: "avgWatts" | "avgHeartRate") =>
+    arr.reduce((s, r) => s + r[key], 0) / arr.length;
+
+  const recentAvgHR = avg(recent, "avgHeartRate");
+  const recentAvgWatts = avg(recent, "avgWatts");
+  const baselineAvgHR = avg(baseline, "avgHeartRate");
+  const baselineAvgWatts = avg(baseline, "avgWatts");
+
+  const recentEfficiency = recentAvgWatts / recentAvgHR;
+  const baselineEfficiency = baselineAvgWatts / baselineAvgHR;
+
+  const hrDeltaPct = ((recentAvgHR - baselineAvgHR) / baselineAvgHR) * 100;
+  const wattsDeltaPct = ((recentAvgWatts - baselineAvgWatts) / baselineAvgWatts) * 100;
+  const efficiencyDeltaPct = ((recentEfficiency - baselineEfficiency) / baselineEfficiency) * 100;
+
+  // Classify: cross-reference HR delta with watts delta to distinguish
+  // fitness improvement from blunted/suppressed HR response.
+  let trend: HRTrendAnalysis["trend"];
+  if (hrDeltaPct < -7 && wattsDeltaPct < -2) {
+    // HR dropped AND power also dropped: HR isn't rising to meet the effort.
+    trend = "suppressed";
+  } else if (hrDeltaPct < -5 && wattsDeltaPct >= -2) {
+    // HR dropped but power held: genuine aerobic adaptation.
+    trend = "improving";
+  } else if (hrDeltaPct > 8) {
+    // HR rising faster than power: accumulating fatigue.
+    trend = "declining";
+  } else {
+    trend = "stable";
+  }
+
+  return {
+    recentAvgHR: Math.round(recentAvgHR),
+    baselineAvgHR: Math.round(baselineAvgHR),
+    recentAvgWatts: Math.round(recentAvgWatts),
+    baselineAvgWatts: Math.round(baselineAvgWatts),
+    recentEfficiency: Math.round(recentEfficiency * 100) / 100,
+    baselineEfficiency: Math.round(baselineEfficiency * 100) / 100,
+    efficiencyDeltaPct: Math.round(efficiencyDeltaPct * 10) / 10,
+    hrDeltaPct: Math.round(hrDeltaPct * 10) / 10,
+    wattsDeltaPct: Math.round(wattsDeltaPct * 10) / 10,
+    trend,
+    consecutiveLowHRRides,
+    ridesWithHRData,
+  };
+}
+
+/**
  * Runs `fn` over every item, but only `limit` calls in flight at once
  * (instead of firing all of them at the same instant via Promise.allSettled).
  *

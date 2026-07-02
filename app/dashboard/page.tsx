@@ -179,9 +179,16 @@ export default async function DashboardPage() {
               <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, letterSpacing: "-0.6px", lineHeight: 1 }}>
                 {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
               </h1>
-              {records && records.currentStreakDays > 1 && (
-                <span className="streak-badge">
-                  {records.currentStreakDays} day streak
+              {avgHR10 != null && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "4px 10px", borderRadius: 20,
+                  background: "rgba(196,41,26,0.09)",
+                  fontSize: 13, fontWeight: 600, color: "#c4291a",
+                  letterSpacing: "-0.2px",
+                }}>
+                  <IconHeart size={12} />
+                  {avgHR10} bpm
                 </span>
               )}
             </div>

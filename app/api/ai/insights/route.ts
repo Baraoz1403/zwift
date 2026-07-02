@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift";
 import { parseFitRecords } from "@/lib/fit-parser";
-import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies } from "@/lib/stats";
+import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeHRTrend } from "@/lib/stats";
 import { generateInsights, AiInsightsError, RideSummary } from "@/lib/ai";
 
 export async function POST(_req: NextRequest) {
@@ -58,16 +58,20 @@ export async function POST(_req: NextRequest) {
       avgWatts: Math.round((a.avgWatts ?? 0) as number),
       elevationM: Math.round((a.totalElevation ?? 0) as number),
       avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
+      avgCadence: a.avgCadence && (a.avgCadence as number) > 0
+        ? Math.round(a.avgCadence as number) : null,
     }));
 
-    // Flag rides where heart rate looks like a statistical outlier for the
-    // power produced that day (e.g. "couldn't get the heart rate up") so the
-    // AI calls these out specifically rather than only describing the
-    // general trend.
+    // Flag individual rides where HR/power ratio is a statistical outlier.
     const hrFlags = flagHeartRateAnomalies(rides);
     for (const [index, direction] of hrFlags) {
       rides[index].hrFlag = direction;
     }
+
+    // Compute multi-ride HR trend — rides come oldest-first from
+    // selectChartActivities, so reverse for most-recent-first ordering.
+    const ridesNewestFirst = [...rides].reverse();
+    const hrTrend = computeHRTrend(ridesNewestFirst);
 
     if (rides.length === 0) {
       return NextResponse.json({ ok: false, error: "Not enough ride history yet for insights." });
@@ -82,6 +86,7 @@ export async function POST(_req: NextRequest) {
       runLevel:
         profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
       rides,
+      hrTrend,
     });
 
     return NextResponse.json({ ok: true, insight });
