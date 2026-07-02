@@ -393,64 +393,39 @@ export default function ActivityCharts({
 
   return (
     <div>
-      {/* Title row — mirrors Personal Statistics: title left, controls right */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        {/* Left: section title + optional sport filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div className="section-title" style={{ margin: 0 }}>
-            <IconTrend size={14} />
-            Performance trends
-          </div>
+      {/* Title row: title left, all controls right */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+        <div className="section-title" style={{ margin: 0 }}>
+          <IconTrend size={14} />
+          Performance trends
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Sport filter — only when multiple sports */}
           {sports.length > 1 && (
             <div className="trend-tabs">
-              <button
-                type="button"
-                className={`trend-tab ${sportFilter === "all" ? "active" : ""}`}
-                onClick={() => setSportFilter("all")}
-              >
-                All
-              </button>
+              <button type="button" className={`trend-tab ${sportFilter === "all" ? "active" : ""}`} onClick={() => setSportFilter("all")}>All</button>
               {sports.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`trend-tab ${sportFilter === s ? "active" : ""}`}
-                  onClick={() => setSportFilter(s)}
-                >
-                  {s}
-                </button>
+                <button key={s} type="button" className={`trend-tab ${sportFilter === s ? "active" : ""}`} onClick={() => setSportFilter(s)}>{s}</button>
               ))}
             </div>
           )}
-        </div>
 
-        {/* Right: ride-count selector — identical to Personal Statistics */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
-          <div className="trend-tabs">
-            {RIDE_COUNT_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={`trend-tab ${rideCount === n ? "active" : ""}`}
-                onClick={() => setRideCount(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          {extrasLoading && (
-            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>
+          {/* Divider between the two control groups */}
+          {sports.length > 1 && (
+            <div style={{ width: 1, height: 18, background: "var(--border)" }} />
           )}
+
+          {/* Ride-count selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
+            <div className="trend-tabs">
+              {RIDE_COUNT_OPTIONS.map((n) => (
+                <button key={n} type="button" className={`trend-tab ${rideCount === n ? "active" : ""}`} onClick={() => setRideCount(n)}>{n}</button>
+              ))}
+            </div>
+            {extrasLoading && <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>}
+          </div>
         </div>
       </div>
 
