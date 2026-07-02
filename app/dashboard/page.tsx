@@ -26,7 +26,7 @@ import { IconBolt, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } fro
 import AvgCadenceCard from "./avg-cadence-card";
 import AvgHRCard from "./avg-hr-card";
 import HRAlertBanner from "./hr-alert-banner";
-import FitnessTrendsChart from "./fitness-trends-chart";
+import FitnessStatusChip from "./fitness-status-chip";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -178,6 +178,7 @@ export default async function DashboardPage() {
                 {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
               </h1>
               <AvgHRCard mode="chip" />
+              <FitnessStatusChip />
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
               Train smarter, every week — powered by your ride data.
@@ -313,15 +314,6 @@ export default async function DashboardPage() {
         <>
           {/* HR anomaly banner — renders client-side after FIT file analysis */}
           <HRAlertBanner />
-
-          {/* ── Fitness trends (CTL / ATL / TSB) ── */}
-          <div className="section fade-in">
-            <div className="section-title" style={{ marginBottom: 14 }}>
-              <IconBolt size={14} />
-              Training Status
-            </div>
-            <FitnessTrendsChart />
-          </div>
 
           {/* ── Most actionable: today’s plan + AI coaching ── */}
           <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
