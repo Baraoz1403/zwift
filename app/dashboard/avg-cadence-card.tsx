@@ -44,7 +44,7 @@ export default function AvgCadenceCard({
   // Horizontal row layout for redesigned rubric cards
   if (asRow) {
     return (
-      <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
         <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>

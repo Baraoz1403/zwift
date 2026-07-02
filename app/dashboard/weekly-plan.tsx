@@ -84,6 +84,27 @@ function loadCachedCycle(): MacroCycleState | null {
 
 const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
+/**
+ * Ensures every workout has a concrete ISO date string ("YYYY-MM-DD"),
+ * computed from the plan's weekOf + the workout's day-of-week index.
+ * The AI sometimes omits dates on active workouts (only day names are
+ * returned), which breaks the "Ride done" detection in the plan grid.
+ */
+function ensureWorkoutDates(plan: WeeklyPlan): WeeklyPlan {
+  const base = new Date(plan.weekOf + "T00:00:00Z");
+  return {
+    ...plan,
+    workouts: plan.workouts.map((w) => {
+      if (w.date) return w; // already populated — leave unchanged
+      const dayIndex = WEEK_DAYS.indexOf(w.day);
+      if (dayIndex < 0) return w;
+      const d = new Date(base);
+      d.setUTCDate(d.getUTCDate() + dayIndex);
+      return { ...w, date: d.toISOString().slice(0, 10) };
+    }),
+  };
+}
+
 function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
   let workouts = [...plan.workouts].sort(
     (a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day)
@@ -147,7 +168,7 @@ export default function WeeklyPlan() {
   useEffect(() => {
     const cached = loadCachedPlan();
     if (cached) {
-      setPlan(normalizeToSix(cached));
+      setPlan(ensureWorkoutDates(normalizeToSix(cached)));
       setStale(cached.weekOf !== currentWeekOf());
     }
     const cachedCycle = loadCachedCycle();
@@ -204,7 +225,7 @@ export default function WeeklyPlan() {
       });
       const data = await res.json();
       if (data.ok) {
-        const normalizedPlan = normalizeToSix(data.plan);
+        const normalizedPlan = ensureWorkoutDates(normalizeToSix(data.plan));
         setPlan(normalizedPlan);
         setStale(false);
         setCycleInfo(data.cycle ?? null);

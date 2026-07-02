@@ -212,12 +212,12 @@ export default async function DashboardPage() {
           <div>
             <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
 
-              <div className="section-title" style={{ margin: 0, paddingTop: 10, paddingRight: 18, paddingBottom: 9, borderBottom: "1px solid var(--border)" }}>
+              <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
                 <IconTrend size={14} />
                 Power &amp; Cadence
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg watts</div>
@@ -242,12 +242,12 @@ export default async function DashboardPage() {
           <div>
             <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
 
-              <div className="section-title" style={{ margin: 0, paddingTop: 10, paddingRight: 18, paddingBottom: 9, borderBottom: "1px solid var(--border)" }}>
+              <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
                 <IconBolt size={14} />
                 Fitness
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg calories</div>
@@ -262,7 +262,7 @@ export default async function DashboardPage() {
 
               <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
 
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
@@ -277,7 +277,7 @@ export default async function DashboardPage() {
 
               <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
 
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
