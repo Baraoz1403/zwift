@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { ZwiftActivity } from "@/lib/zwift";
 import { selectChartActivities, type ChartExtra } from "@/lib/stats";
+import { IconTrend } from "./icons";
 
 interface TrendSeries {
   key: string;
@@ -392,18 +393,23 @@ export default function ActivityCharts({
 
   return (
     <div>
+      {/* Title row — mirrors Personal Statistics: title left, controls right */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
           flexWrap: "wrap",
+          gap: 12,
           marginBottom: 16,
         }}
       >
-        {/* Sport filter — left side, only when multiple sports exist */}
-        <div>
+        {/* Left: section title + optional sport filter */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div className="section-title" style={{ margin: 0 }}>
+            <IconTrend size={14} />
+            Performance trends
+          </div>
           {sports.length > 1 && (
             <div className="trend-tabs">
               <button
@@ -427,8 +433,8 @@ export default function ActivityCharts({
           )}
         </div>
 
-        {/* Ride-count selector — right side, matches Personal Statistics layout */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+        {/* Right: ride-count selector — identical to Personal Statistics */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
           <div className="trend-tabs">
             {RIDE_COUNT_OPTIONS.map((n) => (
@@ -443,9 +449,7 @@ export default function ActivityCharts({
             ))}
           </div>
           {extrasLoading && (
-            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
-              loading…
-            </span>
+            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>
           )}
         </div>
       </div>

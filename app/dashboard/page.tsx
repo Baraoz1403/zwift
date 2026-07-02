@@ -448,7 +448,6 @@ async function ChartDataSection({
       </div>
 
       <div className="section fade-in">
-        <div className="section-title"><IconTrend size={14} /> Performance trends</div>
         <ActivityCharts activities={clientActivities} extras={chartExtras} />
       </div>
       </>
