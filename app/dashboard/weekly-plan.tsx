@@ -522,6 +522,9 @@ export default function WeeklyPlan() {
                       </span>
                     </div>
 
+                    {/* Workout bar graph — same thumbnail shown on planned workouts */}
+                    <WorkoutThumbnail workout={w} />
+
                     <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
                       {/* Planned label (small, muted) */}
                       <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, lineHeight: 1.4 }}>
