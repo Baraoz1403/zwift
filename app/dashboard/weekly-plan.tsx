@@ -306,23 +306,47 @@ export default function WeeklyPlan() {
             </div>
           )}
 
+          {/* Loading indicator when auto-generating after note submit */}
+          {loading && !noteOpen && (
+            <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 500, marginTop: 8, textAlign: "center", opacity: 0.9 }}>
+              Adapting your plan…
+            </div>
+          )}
+
           {/* Button at bottom */}
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <button
               type="button"
-              onClick={() => setNoteOpen(o => !o)}
+              onClick={() => {
+                if (noteOpen) {
+                  // Close the note panel. If a note was entered, auto-trigger plan generation.
+                  setNoteOpen(false);
+                  if (riderNote.trim()) {
+                    handleGenerate();
+                  }
+                } else {
+                  setNoteOpen(true);
+                }
+              }}
+              disabled={loading}
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
                 padding: "9px 20px", borderRadius: 6,
                 border: noteOpen ? "1.5px solid var(--accent)" : "1px solid var(--border)",
-                background: noteOpen ? "rgba(47,143,224,0.07)" : "rgba(47,143,224,0.04)",
+                background: noteOpen
+                  ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
+                  : "rgba(47,143,224,0.04)",
                 color: noteOpen ? "var(--accent)" : "var(--muted)",
                 fontSize: 12.5, fontWeight: noteOpen ? 600 : 500,
-                cursor: "pointer", whiteSpace: "nowrap" as const, fontFamily: "inherit",
+                cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.5 : 1,
+                whiteSpace: "nowrap" as const, fontFamily: "inherit",
                 transition: "all 0.15s ease",
               }}
             >
-              {noteOpen ? "Done" : riderNote ? "Edit note" : "Add today's note"}
+              {noteOpen
+                ? (riderNote.trim() ? "Update plan ↗" : "Done")
+                : (riderNote ? "Edit note" : "Add today's note")}
               {!noteOpen && (
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>

@@ -24,6 +24,7 @@ import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
 import { IconBolt, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } from "./icons";
 import AvgCadenceCard from "./avg-cadence-card";
+import AvgHRCard from "./avg-hr-card";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -120,14 +121,9 @@ export default async function DashboardPage() {
     ? Math.round(wattsRides.reduce((s, a) => s + (a.avgWatts as number), 0) / wattsRides.length)
     : null;
 
-  // Average heart rate and calories over the last 10 rides that report them.
-  const hrRides = activities
-    .filter(a => a.avgHeartRate && (a.avgHeartRate as number) > 0)
-    .slice(0, 10);
-  const avgHR10 = hrRides.length > 0
-    ? Math.round(hrRides.reduce((s, a) => s + (a.avgHeartRate as number), 0) / hrRides.length)
-    : null;
-
+  // Average calories over the last 10 rides that report them.
+  // Avg heart rate is NOT taken from the activity list (that field is unreliable there);
+  // AvgHRCard fetches it lazily from FIT files via /api/zwift/chart-extras instead.
   const calRides = activities
     .filter(a => a.calories && (a.calories as number) > 0)
     .slice(0, 10);
@@ -179,18 +175,7 @@ export default async function DashboardPage() {
               <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, letterSpacing: "-0.6px", lineHeight: 1 }}>
                 {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
               </h1>
-              {avgHR10 != null && (
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "4px 10px", borderRadius: 20,
-                  background: "rgba(196,41,26,0.09)",
-                  fontSize: 13, fontWeight: 600, color: "#c4291a",
-                  letterSpacing: "-0.2px",
-                }}>
-                  <IconHeart size={12} />
-                  {avgHR10} bpm
-                </span>
-              )}
+              <AvgHRCard mode="chip" />
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
               Train smarter, every week — powered by your ride data.
@@ -224,8 +209,12 @@ export default async function DashboardPage() {
 
           {/* Left column */}
           <div>
-            <div className="section-title" style={{ margin: 0, marginBottom: 10 }}>Power &amp; Cadence</div>
             <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+
+              <div className="section-title" style={{ margin: 0, paddingTop: 10, paddingRight: 18, paddingBottom: 9, borderBottom: "1px solid var(--border)" }}>
+                <IconTrend size={14} />
+                Power &amp; Cadence
+              </div>
 
               <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
@@ -240,45 +229,22 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "var(--border)" }} />
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
               <AvgCadenceCard asRow />
-              <div style={{ height: 1, background: "var(--border)" }} />
-
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
-                <div className="stat-card-icon c-red" style={{ flexShrink: 0 }}><IconHeart size={13} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg heart rate</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{hrRides.length > 0 ? `last ${hrRides.length} rides` : "from rides"}</div>
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
-                  {avgHR10 != null
-                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>bpm</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgHR10}</span></>
-                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
-                </div>
-              </div>
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+              <AvgHRCard mode="row" />
 
             </div>
           </div>
 
           {/* Right column */}
           <div>
-            <div className="section-title" style={{ margin: 0, marginBottom: 10 }}>Fitness</div>
             <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
 
-              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
-                <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
-                  {profile.ftp != null
-                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{profile.ftp}</span></>
-                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
-                </div>
+              <div className="section-title" style={{ margin: 0, paddingTop: 10, paddingRight: 18, paddingBottom: 9, borderBottom: "1px solid var(--border)" }}>
+                <IconBolt size={14} />
+                Fitness
               </div>
-
-              <div style={{ height: 1, background: "var(--border)" }} />
 
               <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
@@ -293,7 +259,22 @@ export default async function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ height: 1, background: "var(--border)" }} />
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {profile.ftp != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{profile.ftp}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
 
               <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
