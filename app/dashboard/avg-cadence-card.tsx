@@ -44,30 +44,30 @@ export default function AvgCadenceCard({
   // Horizontal row layout for redesigned rubric cards
   if (asRow) {
     return (
-      <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
         <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
           </svg>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>Avg cadence</div>
-          <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg cadence</div>
+          <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>
             {loading ? "" : rideCount > 0 ? `last ${rideCount} rides` : "from FIT data"}
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
           {loading ? (
-            <span style={{ fontSize: 14, opacity: 0.35 }}>…</span>
+            <span style={{ fontSize: 14, opacity: 0.35, minWidth: 48, textAlign: "right" }}>…</span>
           ) : cadence != null ? (
             <>
-              <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>rpm</span>
+              <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>
                 {cadence}
               </span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>rpm</span>
             </>
           ) : (
-            <span style={{ fontSize: 18, fontWeight: 700, color: "var(--muted)" }}>—</span>
+            <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>
           )}
         </div>
       </div>

@@ -222,91 +222,96 @@ export default async function DashboardPage() {
       {profile && (
         <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
 
-          {/* Left rubric: Avg watts · Avg cadence · Avg heart rate */}
-          <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "9px 18px 8px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: "var(--accent)", flexShrink: 0 }} />
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>Power &amp; Cadence</span>
-            </div>
+          {/* Left column */}
+          <div>
+            <div className="section-title" style={{ margin: 0, marginBottom: 10 }}>Power &amp; Cadence</div>
+            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
 
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
-              <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>Avg watts</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>{wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from rides"}</div>
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg watts</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from rides"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {avgWatts10 != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgWatts10}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>{avgWatts10 ?? "—"}</span>
-                {avgWatts10 != null && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>W</span>}
-              </div>
-            </div>
 
-            <div style={{ height: 1, background: "var(--border)" }} />
-            <AvgCadenceCard asRow />
-            <div style={{ height: 1, background: "var(--border)" }} />
+              <div style={{ height: 1, background: "var(--border)" }} />
+              <AvgCadenceCard asRow />
+              <div style={{ height: 1, background: "var(--border)" }} />
 
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
-              <div className="stat-card-icon c-red" style={{ flexShrink: 0 }}><IconHeart size={13} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>Avg heart rate</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>{hrRides.length > 0 ? `last ${hrRides.length} rides` : "from rides"}</div>
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-red" style={{ flexShrink: 0 }}><IconHeart size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg heart rate</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{hrRides.length > 0 ? `last ${hrRides.length} rides` : "from rides"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {avgHR10 != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>bpm</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgHR10}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>{avgHR10 ?? "—"}</span>
-                {avgHR10 != null && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>bpm</span>}
-              </div>
+
             </div>
           </div>
 
-          {/* Right rubric: FTP · Avg calories · VO2max */}
-          <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "9px 18px 8px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 3, height: 12, borderRadius: 2, background: "var(--good)", flexShrink: 0 }} />
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>Fitness</span>
-            </div>
+          {/* Right column */}
+          <div>
+            <div className="section-title" style={{ margin: 0, marginBottom: 10 }}>Fitness</div>
+            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
 
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
-              <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {profile.ftp != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{profile.ftp}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>{profile.ftp ?? "—"}</span>
-                {profile.ftp != null && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>W</span>}
-              </div>
-            </div>
 
-            <div style={{ height: 1, background: "var(--border)" }} />
+              <div style={{ height: 1, background: "var(--border)" }} />
 
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
-              <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>Avg calories</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>{calRides.length > 0 ? `last ${calRides.length} rides` : "from rides"}</div>
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg calories</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{calRides.length > 0 ? `last ${calRides.length} rides` : "from rides"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {avgCalories10 != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>kcal</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgCalories10}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>{avgCalories10 ?? "—"}</span>
-                {avgCalories10 != null && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>kcal</span>}
-              </div>
-            </div>
 
-            <div style={{ height: 1, background: "var(--border)" }} />
+              <div style={{ height: 1, background: "var(--border)" }} />
 
-            <div style={{ display: "flex", alignItems: "center", padding: "12px 18px", gap: 12 }}>
-              <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                </svg>
+              <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>VO2max (est.)</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {vo2max != null
+                    ? <><span style={{ fontSize: 11, fontWeight: 500, color: "var(--muted)" }}>ml/kg/min</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{vo2max.toFixed(1)}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 500 }}>VO2max (est.)</div>
-                <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.65, marginTop: 1 }}>{ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)" }}>{vo2max != null ? vo2max.toFixed(1) : "—"}</span>
-                {vo2max != null && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>ml/kg/min</span>}
-              </div>
+
             </div>
           </div>
 
