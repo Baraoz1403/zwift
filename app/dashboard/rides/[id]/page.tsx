@@ -104,6 +104,9 @@ export default function RideDetailPage() {
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1.1 }}>
               {rideName}
             </h1>
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400, marginTop: 5 }}>
+              Ride smarter, live better — powered by AI.
+            </div>
           </div>
         </div>
         {/* Right — back + sign out */}
@@ -123,33 +126,32 @@ export default function RideDetailPage() {
 
       {!loading && data?.ok && data.activity && (
         <>
-          {/* ── Stat cards (5 — without World, it's already in the title) ── */}
-          <div className="stat-grid stat-grid-compact fade-in" style={{ marginBottom: 28 }}>
-            <div className="stat-card">
-              <div className="label">Date</div>
-              <div className="value">
-                {data.activity.startDate ? new Date(data.activity.startDate).toLocaleDateString("en-GB") : "n/a"}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="label">Distance</div>
-              <div className="value">
-                {data.activity.distanceInMeters ? `${(data.activity.distanceInMeters / 1000).toFixed(1)} km` : "n/a"}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="label">Duration</div>
-              <div className="value">{formatDuration(data.activity.movingTimeInMs)}</div>
-            </div>
-            <div className="stat-card">
-              <div className="label">Avg power</div>
-              <div className="value">{data.activity.avgWatts ? `${Math.round(data.activity.avgWatts)} W` : "n/a"}</div>
-            </div>
-            <div className="stat-card">
-              <div className="label">Calories</div>
-              <div className="value">
-                {data.activity.calories ? `${Math.round(data.activity.calories)} kcal` : "n/a"}
-              </div>
+          {/* ── Ride summary strip — one card, 5 inline stats ── */}
+          <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 28 }}>
+            <div style={{ display: "flex" }}>
+              {[
+                { label: "Date",      value: data.activity.startDate ? new Date(data.activity.startDate).toLocaleDateString("en-GB") : "n/a" },
+                { label: "Distance",  value: data.activity.distanceInMeters ? `${(data.activity.distanceInMeters / 1000).toFixed(1)} km` : "n/a" },
+                { label: "Duration",  value: formatDuration(data.activity.movingTimeInMs) },
+                { label: "Avg power", value: data.activity.avgWatts ? `${Math.round(data.activity.avgWatts)} W` : "n/a" },
+                { label: "Calories",  value: data.activity.calories ? `${Math.round(data.activity.calories)} kcal` : "n/a" },
+              ].map((s, i, arr) => (
+                <div
+                  key={s.label}
+                  style={{
+                    flex: 1,
+                    padding: "18px 20px",
+                    borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
+                  }}
+                >
+                  <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 7 }}>
+                    {s.label}
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
+                    {s.value}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
