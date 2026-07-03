@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ZwiftActivity } from "@/lib/zwift";
 import { computeRecords } from "@/lib/stats";
 import { IconBolt, IconClock, IconDistance, IconFlame, IconHeart, IconMountain, IconTrophy } from "./icons";
@@ -101,177 +101,119 @@ export default function PersonalRecords({
   }, {});
   const sportBreakdown = Object.entries(caloriesBySport).filter(([, kcal]) => kcal > 0);
 
+  const longestSession = windowed.reduce<{ ms: number; activity: ZwiftActivity } | null>((best, a) => {
+    const ms = ((a.durationInSeconds as number) ?? 0) * 1000;
+    if (!best || ms > best.ms) return { ms, activity: a };
+    return best;
+  }, null);
+
+
+  function StatRow({ icon, iconClass = "c-neutral", label, sub, value }: {
+    icon: ReactNode; iconClass?: string; label: string; sub?: string; value: ReactNode;
+  }) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+        <div className={`stat-card-icon ${iconClass}`} style={{ flexShrink: 0 }}>{icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>{label}</div>
+          {sub && <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+          {value}
+        </div>
+      </div>
+    );
+  }
+
+  const Divider = () => <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />;
 
   return (
     <div>
-      <div
-        className="section-title"
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}
-      >
+      {/* Title + window selector */}
+      <div className="section-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <IconTrophy size={16} />
           Personal statistics
         </span>
-
         <div className="trend-tabs">
           {WINDOW_OPTIONS.map((w) => (
-            <button
-              key={w}
-              type="button"
-              className={`trend-tab ${window === w ? "active" : ""}`}
-              onClick={() => setWindow(w)}
-            >
-              {w}
-            </button>
+            <button key={w} type="button" className={`trend-tab ${window === w ? "active" : ""}`} onClick={() => setWindow(w)}>{w}</button>
           ))}
         </div>
       </div>
 
-      <div className="record-grid">
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconClock size={20} />
-          </div>
-          <div>
-            <div className="label">Total time on the bike</div>
-            <div className="value">
-              <CountUp value={r.totalTimeMs / 3600000} format={(n) => `${n.toFixed(0)} h`} />
-            </div>
-            <div className="sub">all rides combined</div>
-          </div>
+      {/* Two-panel layout — same as the Power & Cadence / Fitness header */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+        {/* Left panel — Activity totals */}
+        <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="section-title" style={{ margin: "14px 18px 10px 20px" }}>Activity totals</div>
+
+          <StatRow icon={<IconClock size={13} />} iconClass="c-neutral" label="Total time" sub="all rides combined"
+            value={<CountUp value={r.totalTimeMs / 3600000} format={(n) => `${n.toFixed(0)} h`} />} />
+          <Divider />
+          <StatRow icon={<IconDistance size={13} />} iconClass="c-blue" label="Total distance" sub={`${r.totalRides} rides logged`}
+            value={<CountUp value={r.totalDistanceM / 1000} format={(n) => `${n.toFixed(0)} km`} />} />
+          <Divider />
+          <StatRow icon={<IconMountain size={13} />} iconClass="c-teal" label="Total elevation" sub={`${(r.totalElevationM / 8849).toFixed(1)}x Everest`}
+            value={<CountUp value={r.totalElevationM} format={(n) => `${n.toFixed(0)} m`} />} />
+          <Divider />
+          <StatRow icon={<IconFlame size={13} />} iconClass="c-orange"
+            label="Total calories"
+            sub={sportBreakdown.length > 1 ? sportBreakdown.map(([s, k]) => `${s}: ${Math.round(k)}`).join(" • ") : "all rides combined"}
+            value={<CountUp value={totalCalories} format={(n) => `${n.toFixed(0)} kcal`} />} />
+          <Divider />
+          <StatRow icon={<IconTrophy size={13} />} iconClass="c-amber" label="Longest streak"
+            sub={r.currentStreakDays > 0 ? `current streak: ${r.currentStreakDays} days` : "no active streak"}
+            value={<CountUp value={r.longestStreakDays} format={(n) => `${n.toFixed(0)} days`} />} />
         </div>
 
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconDistance size={20} />
-          </div>
-          <div>
-            <div className="label">Total distance</div>
-            <div className="value">
-              <CountUp value={r.totalDistanceM / 1000} format={(n) => `${n.toFixed(0)} km`} />
-            </div>
-            <div className="sub">{r.totalRides} rides logged</div>
-          </div>
+        {/* Right panel — Personal bests */}
+        <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="section-title" style={{ margin: "14px 18px 10px 20px" }}>Personal bests</div>
+
+          {r.longestDistance && (
+            <>
+              <StatRow icon={<IconTrophy size={13} />} iconClass="c-blue" label="Longest ride"
+                sub={`${truncateName(r.longestDistance.activity.name)} • ${formatDate(r.longestDistance.activity.startDate)}`}
+                value={<CountUp value={r.longestDistance.meters / 1000} format={(n) => `${n.toFixed(1)} km`} />} />
+              <Divider />
+            </>
+          )}
+
+          {r.biggestClimb && (
+            <>
+              <StatRow icon={<IconMountain size={13} />} iconClass="c-teal" label="Biggest climbing day"
+                sub={`${truncateName(r.biggestClimb.activity.name)} • ${formatDate(r.biggestClimb.activity.startDate)}`}
+                value={<CountUp value={r.biggestClimb.meters} format={(n) => `${n.toFixed(0)} m`} />} />
+              <Divider />
+            </>
+          )}
+
+          <StatRow icon={<IconHeart size={13} />} iconClass="c-red" label="Highest avg heart rate"
+            sub={bestHeartRate ? `${truncateName(bestHeartRate.rideName)} • ${formatDate(bestHeartRate.rideDate)}` : "no HR data in recent rides"}
+            value={bestHeartRate
+              ? <CountUp value={bestHeartRate.bpm} format={(n) => `${n.toFixed(0)} bpm`} />
+              : <span style={{ fontSize: 16, color: "var(--muted)" }}>n/a</span>} />
+          <Divider />
+
+          {r.highestAvgPower && (
+            <>
+              <StatRow icon={<IconBolt size={13} />} iconClass="c-amber" label="Highest avg power"
+                sub={`${truncateName(r.highestAvgPower.activity.name)} • ${formatDate(r.highestAvgPower.activity.startDate)}`}
+                value={<CountUp value={r.highestAvgPower.watts} format={(n) => `${n.toFixed(0)} W`} />} />
+              <Divider />
+            </>
+          )}
+
+          {longestSession && (
+            <StatRow icon={<IconClock size={13} />} iconClass="c-neutral" label="Longest session"
+              sub={`${truncateName(longestSession.activity.name)} • ${formatDate(longestSession.activity.startDate)}`}
+              value={<CountUp value={longestSession.ms / 3600000} format={(n) => n >= 1 ? `${n.toFixed(1)} h` : `${Math.round(n * 60)} min`} />} />
+          )}
         </div>
 
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconMountain size={20} />
-          </div>
-          <div>
-            <div className="label">Total elevation</div>
-            <div className="value">
-              <CountUp value={r.totalElevationM} format={(n) => `${n.toFixed(0)} m`} />
-            </div>
-            <div className="sub">{(r.totalElevationM / 8849).toFixed(1)}x Everest</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconFlame size={20} />
-          </div>
-          <div>
-            <div className="label">Total calories</div>
-            <div className="value">
-              <CountUp value={totalCalories} format={(n) => `${n.toFixed(0)} kcal`} />
-            </div>
-            <div className="sub">
-              {sportBreakdown.length > 1
-                ? sportBreakdown.map(([sport, kcal]) => `${sport}: ${Math.round(kcal)}`).join(" • ")
-                : "all rides combined"}
-            </div>
-          </div>
-        </div>
-
-        {r.longestDistance && (
-          <div className="record-card">
-            <div className="record-icon c-neutral">
-              <IconTrophy size={20} />
-            </div>
-            <div>
-              <div className="label">Longest ride</div>
-              <div className="value">
-                <CountUp value={r.longestDistance.meters / 1000} format={(n) => `${n.toFixed(1)} km`} />
-              </div>
-              <div className="sub">
-                {truncateName(r.longestDistance.activity.name)} • {formatDate(r.longestDistance.activity.startDate)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {r.biggestClimb && (
-          <div className="record-card">
-            <div className="record-icon c-neutral">
-              <IconMountain size={20} />
-            </div>
-            <div>
-              <div className="label">Biggest climbing day</div>
-              <div className="value">
-                <CountUp value={r.biggestClimb.meters} format={(n) => `${n.toFixed(0)} m`} />
-              </div>
-              <div className="sub">
-                {truncateName(r.biggestClimb.activity.name)} • {formatDate(r.biggestClimb.activity.startDate)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconHeart size={20} />
-          </div>
-          <div>
-            <div className="label">Highest avg heart rate</div>
-            <div className="value">
-              {bestHeartRate ? (
-                <CountUp value={bestHeartRate.bpm} format={(n) => `${n.toFixed(0)} bpm`} />
-              ) : (
-                "n/a"
-              )}
-            </div>
-            <div className="sub">
-              {bestHeartRate
-                ? `${truncateName(bestHeartRate.rideName)} • ${formatDate(bestHeartRate.rideDate)}`
-                : "no HR data found in recent rides"}
-            </div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral">
-            <IconFlame size={20} />
-          </div>
-          <div>
-            <div className="label">Longest streak</div>
-            <div className="value">
-              <CountUp value={r.longestStreakDays} format={(n) => `${n.toFixed(0)} days`} />
-            </div>
-            <div className="sub">
-              {r.currentStreakDays > 0 ? `current streak: ${r.currentStreakDays} days` : "no active streak right now"}
-            </div>
-          </div>
-        </div>
-
-        {r.highestAvgPower && (
-          <div className="record-card">
-            <div className="record-icon c-neutral">
-              <IconBolt size={20} />
-            </div>
-            <div>
-              <div className="label">Highest avg power</div>
-              <div className="value">
-                <CountUp value={r.highestAvgPower.watts} format={(n) => `${n.toFixed(0)} W`} />
-              </div>
-              <div className="sub">
-                {truncateName(r.highestAvgPower.activity.name)} • {formatDate(r.highestAvgPower.activity.startDate)}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
     </div>
   );
 }
