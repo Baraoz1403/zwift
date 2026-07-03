@@ -59,9 +59,10 @@ export async function GET(_req: NextRequest) {
     tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, gh),
   ]);
 
-  // Get the first activity ID for detail fetches
-  const firstActivityId = Array.isArray(activities1?.data)
-    ? (activities1.data[0]?.id_str ?? activities1.data[0]?.id ?? null)
+  // Always prefer id_str (the original 64-bit string) over the numeric id
+  // because JS silently rounds large integers, producing a wrong URL and a 404.
+  const firstActivityId: string | null = Array.isArray(activities1?.data)
+    ? (activities1.data[0]?.id_str ?? String(activities1.data[0]?.id) ?? null)
     : null;
 
   // Fetch the single-activity detail with BOTH headers — game client and mobile.
@@ -74,11 +75,22 @@ export async function GET(_req: NextRequest) {
     : [null, null];
 
   // Also probe mobile-only endpoints the Companion app might use
-  const [mobileActivities, mobileProfile, workoutResult] = await Promise.all([
+  const gameDetailData = activityDetailGame?.data as Record<string, unknown> | null;
+  const fitnessDataObj = gameDetailData?.fitnessData as Record<string, unknown> | null;
+  const fullDataUrl = typeof fitnessDataObj?.fullDataUrl === "string" ? fitnessDataObj.fullDataUrl : null;
+  const smallDataUrl = typeof fitnessDataObj?.smallDataUrl === "string" ? fitnessDataObj.smallDataUrl : null;
+
+  const [mobileActivities, mobileProfile, workoutResult, fitnessFile, fitnessFileSmall] = await Promise.all([
     tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, mh),
     tryFetch(`${base}/api/profiles/${id}`, mh),
     firstActivityId
       ? tryFetch(`${base}/api/workout/workout_result/${firstActivityId}`, mh)
+      : Promise.resolve(null),
+    fullDataUrl
+      ? tryFetch(fullDataUrl, gh)
+      : Promise.resolve(null),
+    smallDataUrl
+      ? tryFetch(smallDataUrl, gh)
       : Promise.resolve(null),
   ]);
 
@@ -97,5 +109,7 @@ export async function GET(_req: NextRequest) {
     mobileActivities,        // activity list via mobile UA
     mobileProfile,           // profile via mobile UA
     workoutResult,           // /workout/workout_result/{id} — Companion-specific endpoint
+    fitnessFile,             // activityDetail.fitnessData.fullDataUrl — may contain TSS/training score
+    fitnessFileSmall,        // activityDetail.fitnessData.smallDataUrl
   });
 }
