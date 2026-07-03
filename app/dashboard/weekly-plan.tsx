@@ -43,6 +43,8 @@ interface WeeklyPlan {
 
 const STORAGE_KEY = "zwiftWeeklyPlan";
 const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
+const ACTIVITIES_CACHE_KEY = "zwiftWeekActivitiesCache";
+const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -176,8 +178,20 @@ export default function WeeklyPlan() {
       setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
 
+    // Load cached activities immediately to prevent flash on refresh
+    const thisWeek = currentWeekOf();
+    try {
+      const cachedWeek = window.localStorage.getItem(ACTIVITIES_CACHE_WEEK_KEY);
+      if (cachedWeek === thisWeek) {
+        const raw = window.localStorage.getItem(ACTIVITIES_CACHE_KEY);
+        if (raw) {
+          setWeekActivities(new Map(JSON.parse(raw) as [string, ActualRide][]));
+        }
+      }
+    } catch {}
+
     // Fetch this week's actual Zwift rides to detect completed workouts
-    const weekStart = currentWeekOf();
+    const weekStart = thisWeek;
     const weekEndMs = new Date(weekStart + "T00:00:00Z").getTime() + 7 * 86400 * 1000;
     fetch("/api/zwift/activities")
       .then(r => r.json())
@@ -203,6 +217,11 @@ export default function WeeklyPlan() {
           }
         }
         setWeekActivities(map);
+        // Cache for next page load — keyed by week to auto-invalidate next week
+        try {
+          window.localStorage.setItem(ACTIVITIES_CACHE_WEEK_KEY, currentWeekOf());
+          window.localStorage.setItem(ACTIVITIES_CACHE_KEY, JSON.stringify([...map.entries()]));
+        } catch {}
       })
       .catch(() => {});
   }, []);
@@ -502,7 +521,6 @@ export default function WeeklyPlan() {
                     className="stat-card"
                     style={{
                       display: "flex", flexDirection: "column",
-                      border: "1.5px solid rgba(26,143,76,0.35)",
                       padding: 0, overflow: "hidden",
                     }}
                   >
@@ -575,7 +593,7 @@ export default function WeeklyPlan() {
                   targetPowerPctFtp: "65-75%",
                 };
                 return (
-                  <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", border: "1.5px solid rgba(26,143,76,0.35)", padding: 0, overflow: "hidden" }}>
+                  <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
                     <div style={{ position: "relative" }}>
                       <WorkoutThumbnail workout={bonusWorkout} flush />
                       <div style={{

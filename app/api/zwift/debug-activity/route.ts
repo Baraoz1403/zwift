@@ -47,6 +47,20 @@ export async function GET(_req: NextRequest) {
     tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, token),
   ]);
 
+  // Fetch the full detail of the first activity — the list endpoint returns
+  // a summary; the single-activity endpoint may expose extra fields such as
+  // trainingLoad / Training Score that the list omits.
+  let activityDetail = null;
+  const firstActivityId = Array.isArray(activities1?.data)
+    ? (activities1.data[0]?.id ?? activities1.data[0]?.id_str ?? null)
+    : null;
+  if (firstActivityId) {
+    activityDetail = await tryFetch(
+      `${base}/api/profiles/${id}/activities/${firstActivityId}`,
+      token
+    );
+  }
+
   return NextResponse.json({
     athleteId: id,
     profile,
@@ -54,5 +68,7 @@ export async function GET(_req: NextRequest) {
     fitness,
     goals,
     activities1,
+    activityDetail,           // full single-activity — check here for trainingLoad
+    firstActivityId,
   });
 }
