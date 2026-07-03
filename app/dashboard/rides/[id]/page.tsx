@@ -180,41 +180,62 @@ export default function RideDetailPage() {
             </div>
           )}
 
-          {/* ── Ride On givers ── */}
-          <div className="section-title fade-in" style={{ margin: "0 0 12px" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-              <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-            </svg>
-            Ride On givers
-          </div>
-          {data.rideOns && !data.rideOns.ok ? (
-            <div className="notice">{data.rideOns.error}</div>
-          ) : data.rideOns && data.rideOns.givers.length === 0 ? (
-            <div className="notice">No Ride Ons on this activity yet.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {data.rideOns?.givers.map((g, i) => (
-                <div
-                  key={i}
-                  className="stat-card fade-in"
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px" }}
-                >
-                  {g.profileImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={g.profileImageUrl as string}
-                      alt=""
-                      width={32}
-                      height={32}
-                      style={{ borderRadius: "50%" }}
-                    />
-                  ) : null}
-                  <span>{g.fullName ?? "Unknown rider"}</span>
-                </div>
-              ))}
+          {/* ── Ride On givers — styled like the rubric cards ── */}
+          <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden" }}>
+            <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+              </svg>
+              Ride On givers
+              {data.rideOns?.ok && data.rideOns.givers.length > 0 && (
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 600, color: "var(--muted)", opacity: 0.7 }}>
+                  {data.rideOns.givers.length}
+                </span>
+              )}
             </div>
-          )}
+
+            {data.rideOns && !data.rideOns.ok ? (
+              <div className="notice" style={{ margin: "0 18px 16px" }}>{data.rideOns.error}</div>
+            ) : data.rideOns && data.rideOns.givers.length === 0 ? (
+              <div style={{ padding: "12px 18px 16px", fontSize: 13, color: "var(--muted)", opacity: 0.6 }}>
+                No Ride Ons on this activity yet.
+              </div>
+            ) : (
+              data.rideOns?.givers.map((g, i) => (
+                <div key={i}>
+                  {i > 0 && <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />}
+                  <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
+                    {g.profileImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={g.profileImageUrl as string}
+                        alt=""
+                        width={32}
+                        height={32}
+                        style={{ borderRadius: "50%", flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                        </svg>
+                      </div>
+                    )}
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", flex: 1 }}>
+                      {g.fullName ?? "Unknown rider"}
+                    </span>
+                    <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                        <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </>
       )}
 
