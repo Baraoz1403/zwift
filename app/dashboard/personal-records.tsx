@@ -146,7 +146,7 @@ export default function PersonalRecords({
       </div>
 
       {/* Two-panel layout — same as the Power & Cadence / Fitness header */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="rubric-cards-grid">
 
         {/* Left panel — Activity totals: distance → time → elevation → calories → consistency */}
         <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
