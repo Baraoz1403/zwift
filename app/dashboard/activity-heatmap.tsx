@@ -135,7 +135,6 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
         <div className="heatmap-cell lvl-4" style={{ width: 11, height: 11 }} />
         <span>More</span>
       </div>
-      </div>{/* end heatmap-wrap */}
       </div>{/* end stat-card */}
     </div>
   );
