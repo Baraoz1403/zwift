@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import MultiLineChart from "../../multi-chart";
-import { worldName } from "@/lib/zwift-worlds";
+import DashboardFooter from "../../footer";
+import LogoutButton from "../../logout-button";
 
 interface FitPoint {
   timestampMs: number;
@@ -67,12 +68,6 @@ export default function RideDetailPage() {
   }, [id]);
 
   const points = data?.fit && data.fit.ok ? data.fit.points : [];
-  // Aligned, same-length arrays (one entry per FIT sample) so the combined
-  // chart can use a single shared x-axis (elapsed time). A heart rate of
-  // exactly 0 is never a real reading - the strap briefly lost signal, not
-  // that the rider's heart stopped - so it becomes a gap (null), not a dip
-  // to zero. Zero is a legitimate cadence/power reading (coasting), so those
-  // two keep it as-is.
   const startMs = points.length > 0 ? points[0].timestampMs : 0;
   const elapsedMs = points.map((p) => p.timestampMs - startMs);
   const heartRateSeries = points.map((p) =>
@@ -82,16 +77,45 @@ export default function RideDetailPage() {
   const powerSeries = points.map((p) => (p.power != null ? p.power : null));
   const elevationSeries = points.map((p) => (p.altitudeM != null ? p.altitudeM : null));
 
+  const rideName = data?.activity?.name ?? (loading ? "Loading…" : "Ride details");
+
   return (
     <div className="dashboard">
+
+      {/* ── Header ── */}
       <div className="dashboard-header fade-in">
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{data?.activity?.name ?? "Ride details"}</h1>
-        <Link href="/dashboard" className="btn-secondary btn" style={{ width: "auto", padding: "8px 16px" }}>
-          Back to dashboard
-        </Link>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          {/* Blue Zwift tile */}
+          <div style={{
+            width: 50, height: 50, borderRadius: 14, flexShrink: 0, marginTop: 3,
+            background: "var(--accent)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(47,143,224,0.35)",
+          }}>
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="white">
+              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+            </svg>
+          </div>
+          {/* Title */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 5 }}>
+              AI Training Coach
+            </div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1.1 }}>
+              {rideName}
+            </h1>
+          </div>
+        </div>
+        {/* Right — back + sign out */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href="/dashboard" className="btn-secondary btn" style={{ width: "auto", padding: "8px 16px" }}>
+            ← Dashboard
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
 
-      {loading && <div className="notice">Loading ride...</div>}
+      {loading && <div className="notice">Loading ride…</div>}
 
       {!loading && data && !data.ok && (
         <div className="notice">{data.error ?? "Could not load this ride."}</div>
@@ -99,7 +123,8 @@ export default function RideDetailPage() {
 
       {!loading && data?.ok && data.activity && (
         <>
-          <div className="stat-grid stat-grid-compact fade-in" style={{ marginBottom: 24 }}>
+          {/* ── Stat cards (5 — without World, it's already in the title) ── */}
+          <div className="stat-grid stat-grid-compact fade-in" style={{ marginBottom: 28 }}>
             <div className="stat-card">
               <div className="label">Date</div>
               <div className="value">
@@ -121,10 +146,6 @@ export default function RideDetailPage() {
               <div className="value">{data.activity.avgWatts ? `${Math.round(data.activity.avgWatts)} W` : "n/a"}</div>
             </div>
             <div className="stat-card">
-              <div className="label">World</div>
-              <div className="value">{worldName(data.activity.worldId) ?? "n/a"}</div>
-            </div>
-            <div className="stat-card">
               <div className="label">Calories</div>
               <div className="value">
                 {data.activity.calories ? `${Math.round(data.activity.calories)} kcal` : "n/a"}
@@ -132,28 +153,53 @@ export default function RideDetailPage() {
             </div>
           </div>
 
-          <h2 style={{ fontSize: 16, marginBottom: 12 }}>In-ride telemetry</h2>
+          {/* ── Telemetry chart — full bleed ── */}
           {data.fit && !data.fit.ok ? (
             <div className="notice" style={{ marginBottom: 24 }}>
               Couldn&apos;t load second-by-second data for this ride: {data.fit.error}
             </div>
           ) : (
-            <div style={{ marginBottom: 24 }}>
+            <div
+              className="fade-in"
+              style={{
+                marginLeft: "calc(-50vw + 50%)",
+                marginRight: "calc(-50vw + 50%)",
+                width: "100vw",
+                borderTop: "1px solid var(--border)",
+                borderBottom: "1px solid var(--border)",
+                background: "var(--bg)",
+                padding: "20px 20px 12px",
+                marginBottom: 36,
+              }}
+            >
+              <div className="section-title" style={{ margin: "0 4px 14px", fontSize: 13 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+                In-ride telemetry
+              </div>
               <MultiLineChart
                 elapsedMs={elapsedMs}
                 elevationM={elevationSeries}
                 series={[
-                  { key: "hr", label: "Heart rate", color: "#2f8fe0", unit: "bpm", values: heartRateSeries },
-                  { key: "cadence", label: "Cadence", color: "#22c55e", unit: "rpm", values: cadenceSeries },
-                  { key: "power", label: "Power", color: "#2f8fe0", unit: "W", values: powerSeries },
+                  { key: "hr",      label: "Heart rate", color: "#e53e3e", unit: "bpm", values: heartRateSeries },
+                  { key: "cadence", label: "Cadence",    color: "#22c55e", unit: "rpm", values: cadenceSeries },
+                  { key: "power",   label: "Power",      color: "#f97316", unit: "W",   values: powerSeries },
                 ]}
               />
             </div>
           )}
 
-          <h2 style={{ fontSize: 16, marginBottom: 12 }}>Ride On givers</h2>
+          {/* ── Ride On givers ── */}
+          <div className="section-title fade-in" style={{ margin: "0 0 12px" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+              <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+            Ride On givers
+          </div>
           {data.rideOns && !data.rideOns.ok ? (
-            <div className="notice">Couldn&apos;t load Ride On givers for this ride: {data.rideOns.error}</div>
+            <div className="notice">{data.rideOns.error}</div>
           ) : data.rideOns && data.rideOns.givers.length === 0 ? (
             <div className="notice">No Ride Ons on this activity yet.</div>
           ) : (
@@ -161,7 +207,7 @@ export default function RideDetailPage() {
               {data.rideOns?.givers.map((g, i) => (
                 <div
                   key={i}
-                  className="stat-card"
+                  className="stat-card fade-in"
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px" }}
                 >
                   {g.profileImageUrl ? (
@@ -181,6 +227,9 @@ export default function RideDetailPage() {
           )}
         </>
       )}
+
+      {/* ── Footer ── */}
+      <DashboardFooter />
     </div>
   );
 }

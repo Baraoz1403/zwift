@@ -218,6 +218,9 @@ export default function MultiLineChart({
         onMouseMove={handleMove}
         onMouseLeave={() => setHoverIdx(null)}
       >
+        {/* White SVG background */}
+        <rect width={width} height={height} fill="#ffffff" />
+
         {/* Course elevation profile, drawn first so it sits behind
             everything else - same "faint hill silhouette" look Zwift's own
             ride screen shows. Purely decorative context, not a data line. */}
@@ -242,7 +245,7 @@ export default function MultiLineChart({
 
         {stats.map(({ s, path }) => {
           if (!visible[s.key] || !path) return null;
-          return <path key={s.key} d={path} fill="none" stroke={s.color} strokeWidth={1.2} />;
+          return <path key={s.key} d={path} fill="none" stroke={s.color} strokeWidth={0.5} />;
         })}
 
         {tickIdx.map((i, idx) => (
