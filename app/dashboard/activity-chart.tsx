@@ -10,15 +10,12 @@ interface TrendSeries {
   label: string;
   color: string;
   unit: string;
-  /** One entry per ride, aligned with `labels` below. null = no data for that ride. */
   values: (number | null)[];
 }
 
 function shortDate(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
-  // Fixed locale, day+month only - see personal-records.tsx's formatDate
-  // comment for why a fixed locale matters here (server/client hydration).
   return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" });
 }
 
@@ -34,15 +31,11 @@ function buildPath(
   const max = Math.max(...nums);
   const avg = nums.reduce((s, v) => s + v, 0) / nums.length;
   const range = max - min || 1;
-
   let path = "";
   let drawing = false;
   for (let i = 0; i < values.length; i++) {
     const v = values[i];
-    if (v == null) {
-      drawing = false;
-      continue;
-    }
+    if (v == null) { drawing = false; continue; }
     const x = xFor(i);
     const y = height - padding - ((v - min) / range) * (height - padding * 2);
     path += `${drawing ? "L" : "M"} ${x.toFixed(1)} ${y.toFixed(1)} `;
@@ -56,40 +49,75 @@ function yFor(v: number, min: number, max: number, height: number, padding: numb
   return height - padding - ((v - min) / range) * (height - padding * 2);
 }
 
-/**
- * One combined, interactive chart for all of the per-ride trend metrics
- * (distance, power, heart rate, cadence) instead of four separate stacked
- * graphs. Each series is normalized to its own min/max so very different
- * units (km vs W vs bpm vs rpm) can share one chart - the legend pills under
- * the chart show each series' real numbers and can be clicked to show/hide
- * that line, same interaction as the per-ride detail chart elsewhere in the
- * app. Hovering anywhere shows the date and every visible value at that
- * point in one shared tooltip.
- */
-function CombinedTrendChart({ series, labels }: { series: TrendSeries[]; labels: string[] }) {
-  // All series default to visible (same as the per-ride detail page's
-  // combined chart) - previously only the first two (distance/power) were
-  // on by default, so heart rate and especially cadence looked "missing"
-  // until the user noticed they had to click their legend pill.
-  const [visible, setVisible] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(series.map((s) => [s.key, true]))
+function BikeIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5.5" cy="17.5" r="3.5"/>
+      <circle cx="18.5" cy="17.5" r="3.5"/>
+      <path d="M15 17.5H9l-1.5-3 3.5-6.5h4.5l1.5 3-4.5 1.5 1 5"/>
+      <circle cx="14.5" cy="6" r="1.5"/>
+    </svg>
   );
+}
+
+function RunIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="4.5" r="1.5"/>
+      <path d="M8.5 21.5l2-6.5 2.5 3 2.5-7"/>
+      <path d="M6.5 12.5l3.5-4 3 2.5 4-1.5"/>
+    </svg>
+  );
+}
+
+const TIME_WINDOWS = ["W", "M", "Y", "ALL"] as const;
+type TimeWindow = (typeof TIME_WINDOWS)[number];
+
+const WINDOW_MS: Record<TimeWindow, number | null> = {
+  W: 7 * 86400 * 1000,
+  M: 30 * 86400 * 1000,
+  Y: 365 * 86400 * 1000,
+  ALL: null,
+};
+
+const WINDOW_EXTRAS_COUNT: Record<TimeWindow, number> = {
+  W: 30,
+  M: 30,
+  Y: 90,
+  ALL: 120,
+};
+
+function getWindowStart(w: TimeWindow): Date | null {
+  const ms = WINDOW_MS[w];
+  return ms ? new Date(Date.now() - ms) : null;
+}
+
+/** SVG chart only — legend and controls live in the parent. */
+function TrendChartSVG({
+  series,
+  labels,
+  visible,
+}: {
+  series: TrendSeries[];
+  labels: string[];
+  visible: Record<string, boolean>;
+}) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const width = 700;
   const height = 240;
   const padding = 34;
-  const leftPad = 46; // wider left margin for Y-axis labels
+  const leftPad = 46;
   const n = labels.length;
 
-  if (n === 0) {
-    return <div className="notice">Not enough ride data yet to draw graphs.</div>;
-  }
+  if (n === 0) return <div className="notice">Not enough ride data yet.</div>;
 
-  const xFor = (i: number) => (n === 1 ? width / 2 : leftPad + (i / (n - 1)) * (width - leftPad - padding));
-  const tickIdx = Array.from(new Set([0, Math.floor((n - 1) / 3), Math.floor(((n - 1) * 2) / 3), n - 1]));
-
+  const xFor = (i: number) =>
+    n === 1 ? width / 2 : leftPad + (i / (n - 1)) * (width - leftPad - padding);
+  const tickIdx = Array.from(
+    new Set([0, Math.floor((n - 1) / 3), Math.floor(((n - 1) * 2) / 3), n - 1])
+  );
   const stats = series.map((s) => ({ s, ...buildPath(s.values, xFor, height, padding) }));
 
   function handleMove(e: MouseEvent<SVGSVGElement>) {
@@ -105,177 +133,111 @@ function CombinedTrendChart({ series, labels }: { series: TrendSeries[]; labels:
   const tooltipWidth = 158;
   const hoverX = hoverIdx != null ? xFor(hoverIdx) : 0;
   const tooltipX = Math.min(Math.max(hoverX + 8, leftPad), width - padding - tooltipWidth);
-  const visibleStatsAtHover = hoverIdx != null ? stats.filter((st) => visible[st.s.key] && st.hasData) : [];
+  const visibleStats = hoverIdx != null ? stats.filter((st) => visible[st.s.key] && st.hasData) : [];
 
   return (
-    <div>
-      <div className="trend-legend">
-        {stats.map(({ s, avg, max, hasData }) => {
-          const on = visible[s.key];
-          return (
-            <button
-              key={s.key}
-              type="button"
-              disabled={!hasData}
-              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
-              className="select trend-legend-btn"
-              style={{
-                cursor: hasData ? "pointer" : "default",
-                // Border now always matches the plain .select frame used by
-                // the Rides filters below (same border-color/width for every
-                // pill) - per explicit request to make the two consistent.
-                // On/off state is still visible through opacity alone.
-                opacity: hasData ? (on ? 1 : 0.45) : 0.35,
-              }}
-            >
-              <span
-                style={{
-                  width: 9,
-                  height: 9,
-                  borderRadius: "50%",
-                  background: s.color,
-                  display: "inline-block",
-                  flex: "none",
-                }}
-              />
-              <span className="trend-legend-text">
-                {hasData ? `${s.label} · avg ${Math.round(avg)} / max ${Math.round(max)} ${s.unit}` : `${s.label}: n/a`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ width: "100%", height: "auto", cursor: "crosshair" }}
-        onMouseMove={handleMove}
-        onMouseLeave={() => setHoverIdx(null)}
-      >
-        {/* Gridlines mark 0/25/50/75/100% of each visible series' own range
-            (the series don't share one absolute scale) - just enough
-            structure to read the shape of each line. */}
-        {[0, 0.25, 0.5, 0.75, 1].map((f) => {
-          const y = height - padding - f * (height - padding * 2);
-          return <line key={f} x1={leftPad} y1={y} x2={width - padding} y2={y} stroke="rgba(20,23,26,0.08)" />;
-        })}
-
-        {/* Y-axis labels — always visible, show relative scale 0-100% */}
-        {[0, 0.25, 0.5, 0.75, 1].map((f) => {
-          const y = height - padding - f * (height - padding * 2);
-          const pct = Math.round(f * 100);
-          return (
-            <text
-              key={f}
-              x={leftPad - 5}
-              y={y + 3.5}
-              fill="rgba(20,23,26,0.35)"
-              fontSize="9"
-              textAnchor="end"
-            >
-              {pct === 0 ? "min" : pct === 100 ? "max" : `${pct}%`}
+    <svg
+      ref={svgRef}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ width: "100%", height: "auto", cursor: "crosshair" }}
+      onMouseMove={handleMove}
+      onMouseLeave={() => setHoverIdx(null)}
+    >
+      {[0, 0.25, 0.5, 0.75, 1].map((f) => {
+        const y = height - padding - f * (height - padding * 2);
+        return (
+          <g key={f}>
+            <line x1={leftPad} y1={y} x2={width - padding} y2={y} stroke="rgba(20,23,26,0.08)" />
+            <text x={leftPad - 5} y={y + 3.5} fill="rgba(20,23,26,0.35)" fontSize="9" textAnchor="end">
+              {f === 0 ? "min" : f === 1 ? "max" : `${Math.round(f * 100)}%`}
             </text>
-          );
-        })}
+          </g>
+        );
+      })}
 
-        {stats.map(({ s, path }) => {
-          if (!visible[s.key] || !path) return null;
-          return <path key={s.key} d={path} fill="none" stroke={s.color} strokeWidth={1.6} />;
-        })}
+      {stats.map(({ s, path }) =>
+        visible[s.key] && path ? (
+          <path key={s.key} d={path} fill="none" stroke={s.color} strokeWidth={1.5} />
+        ) : null
+      )}
 
-        {stats.map(({ s, hasData, min, max }) =>
-          visible[s.key] && hasData && n <= 40
-            ? s.values.map((v, i) =>
-                v == null ? null : (
-                  <circle
-                    key={`${s.key}-${i}`}
-                    cx={xFor(i)}
-                    cy={yFor(v, min, max, height, padding)}
-                    r={2}
-                    fill={s.color}
-                  />
-                )
-              )
-            : null
-        )}
-
-        {tickIdx.map((i, idx) => (
-          <text
-            key={idx}
-            x={Math.min(Math.max(xFor(i), padding + 16), width - padding - 16)}
-            y={height - 10}
-            fill="rgba(20,23,26,0.45)"
-            fontSize="10.5"
-            textAnchor={idx === 0 ? "start" : idx === tickIdx.length - 1 ? "end" : "middle"}
-          >
-            {labels[i]}
-          </text>
-        ))}
-
-        {/* Hover crosshair: a vertical guide line, a dot on every visible
-            series at that exact ride, and a small box with the real
-            numbers for that ride. */}
-        {hoverIdx != null && (
-          <>
-            <line
-              x1={xFor(hoverIdx)}
-              y1={padding - 4}
-              x2={xFor(hoverIdx)}
-              y2={height - padding}
-              stroke="rgba(20,23,26,0.3)"
-              strokeWidth={1}
-            />
-            {visibleStatsAtHover.map(({ s, min, max }) => {
-              const v = s.values[hoverIdx];
-              if (v == null) return null;
-              return (
+      {stats.map(({ s, hasData, min, max }) =>
+        visible[s.key] && hasData && n <= 40
+          ? s.values.map((v, i) =>
+              v == null ? null : (
                 <circle
-                  key={s.key}
-                  cx={xFor(hoverIdx)}
+                  key={`${s.key}-${i}`}
+                  cx={xFor(i)}
                   cy={yFor(v, min, max, height, padding)}
-                  r={3.5}
+                  r={2}
                   fill={s.color}
-                  stroke="#ffffff"
-                  strokeWidth={1.5}
                 />
-              );
-            })}
+              )
+            )
+          : null
+      )}
 
-            <g transform={`translate(${tooltipX}, ${padding - 4})`}>
-              <rect
-                width={tooltipWidth}
-                height={16 + Math.max(visibleStatsAtHover.length, 1) * 15}
-                rx={6}
-                fill="rgba(13,17,23,0.92)"
-                stroke="rgba(255,255,255,0.12)"
+      {tickIdx.map((i, idx) => (
+        <text
+          key={idx}
+          x={Math.min(Math.max(xFor(i), padding + 16), width - padding - 16)}
+          y={height - 10}
+          fill="rgba(20,23,26,0.45)"
+          fontSize="10.5"
+          textAnchor={idx === 0 ? "start" : idx === tickIdx.length - 1 ? "end" : "middle"}
+        >
+          {labels[i]}
+        </text>
+      ))}
+
+      {hoverIdx != null && (
+        <>
+          <line
+            x1={xFor(hoverIdx)} y1={padding - 4}
+            x2={xFor(hoverIdx)} y2={height - padding}
+            stroke="rgba(20,23,26,0.3)" strokeWidth={1}
+          />
+          {visibleStats.map(({ s, min, max }) => {
+            const v = s.values[hoverIdx];
+            if (v == null) return null;
+            return (
+              <circle
+                key={s.key}
+                cx={xFor(hoverIdx)} cy={yFor(v, min, max, height, padding)}
+                r={3.5} fill={s.color} stroke="#ffffff" strokeWidth={1.5}
               />
-              <text x={8} y={13} fill="rgba(255,255,255,0.7)" fontSize="10.5">
-                {labels[hoverIdx]}
-              </text>
-              {visibleStatsAtHover.length === 0 ? (
-                <text x={8} y={28} fill="rgba(255,255,255,0.5)" fontSize="10.5">
-                  no series selected
-                </text>
-              ) : (
-                visibleStatsAtHover.map(({ s }, idx) => {
-                  const v = s.values[hoverIdx];
-                  const y = 29 + idx * 15;
-                  return (
-                    <g key={s.key}>
-                      <circle cx={12} cy={y - 4} r={3} fill={s.color} />
-                      <text x={20} y={y} fill="#ffffff" fontSize="10.5" fontWeight={400}>
-                        {v != null ? `${s.label}: ${Math.round(v)} ${s.unit}` : `${s.label}: —`}
-                      </text>
-                    </g>
-                  );
-                })
-              )}
-            </g>
-          </>
-        )}
-      </svg>
-    </div>
+            );
+          })}
+          <g transform={`translate(${tooltipX}, ${padding - 4})`}>
+            <rect
+              width={tooltipWidth}
+              height={16 + Math.max(visibleStats.length, 1) * 15}
+              rx={6}
+              fill="rgba(13,17,23,0.92)"
+              stroke="rgba(255,255,255,0.12)"
+            />
+            <text x={8} y={13} fill="rgba(255,255,255,0.7)" fontSize="10.5">
+              {labels[hoverIdx]}
+            </text>
+            {visibleStats.length === 0 ? (
+              <text x={8} y={28} fill="rgba(255,255,255,0.5)" fontSize="10.5">no series selected</text>
+            ) : (
+              visibleStats.map(({ s }, idx) => {
+                const v = s.values[hoverIdx];
+                return (
+                  <g key={s.key}>
+                    <circle cx={12} cy={29 + idx * 15 - 4} r={3} fill={s.color} />
+                    <text x={20} y={29 + idx * 15} fill="#ffffff" fontSize="10.5">
+                      {v != null ? `${s.label}: ${Math.round(v)} ${s.unit}` : `${s.label}: —`}
+                    </text>
+                  </g>
+                );
+              })
+            )}
+          </g>
+        </>
+      )}
+    </svg>
   );
 }
 
@@ -284,156 +246,214 @@ export default function ActivityCharts({
   extras,
 }: {
   activities: ZwiftActivity[];
-  /**
-   * Average heart rate/cadence per ride, aligned 1:1 with
-   * selectChartActivities(activities, 30) - the chart's *default* window.
-   * Downloading + parsing a FIT file per ride is the most expensive thing
-   * this app does, so the dashboard page only does this for the default
-   * 30-ride window up front. If the user picks a bigger window (60/90/120)
-   * below, this component fetches just that extra data lazily from
-   * /api/zwift/chart-extras instead of forcing every dashboard load (and
-   * every "back to dashboard" navigation) to pay for downloading 120 FIT
-   * files. Optional because it requires a FIT download per ride; the
-   * distance/power lines work fine without it.
-   */
   extras?: ChartExtra[];
 }) {
-  // Oldest -> newest, last 120 rides - the largest option the ride-count
-  // selector below offers. This is cheap (just sorting/slicing data already
-  // sent to the client) - only the HR/cadence *extras* are expensive, and
-  // those are handled separately below.
-  const fullSorted = selectChartActivities(activities, 120);
+  // All activities sorted oldest→newest (no count cap — date filter applied below)
+  const allSorted = useMemo(() => selectChartActivities(activities, 10000), [activities]);
 
-  const RIDE_COUNT_OPTIONS = [30, 60, 90, 120];
-  const [rideCount, setRideCount] = useState<number>(30);
+  // Map each activity object → its index in allSorted (for extras alignment by position)
+  const allSortedIdxMap = useMemo(() => {
+    const m = new Map<ZwiftActivity, number>();
+    allSorted.forEach((a, i) => m.set(a, i));
+    return m;
+  }, [allSorted]);
 
-  // Cache of FIT extras already fetched, keyed by ride count. Starts with
-  // whatever the server pre-fetched for the default 30-ride window so
-  // picking "30" never needs a network round trip.
-  const [extrasByCount, setExtrasByCount] = useState<Record<number, ChartExtra[]>>(() =>
-    (extras ? { 30: extras } : {}) as Record<number, ChartExtra[]>
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>("M");
+
+  // Date-filtered slice (before sport filter)
+  const sortedByDate = useMemo(() => {
+    const start = getWindowStart(timeWindow);
+    if (!start) return allSorted;
+    return allSorted.filter((a) => a.startDate && new Date(a.startDate) >= start);
+  }, [allSorted, timeWindow]);
+
+  // Extras cache keyed by count, seeded with SSR-provided 30-ride data
+  const [extrasByCount, setExtrasByCount] = useState<Record<number, ChartExtra[]>>(
+    () => (extras ? { 30: extras } : {}) as Record<number, ChartExtra[]>
   );
   const [loadingCount, setLoadingCount] = useState<number | null>(null);
 
+  const extrasCount = WINDOW_EXTRAS_COUNT[timeWindow];
+
   useEffect(() => {
-    if (extrasByCount[rideCount] || loadingCount === rideCount) return;
+    if (extrasByCount[extrasCount] || loadingCount === extrasCount) return;
     let cancelled = false;
-    setLoadingCount(rideCount);
-    fetch(`/api/zwift/chart-extras?count=${rideCount}`)
+    setLoadingCount(extrasCount);
+    fetch(`/api/zwift/chart-extras?count=${extrasCount}`)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled || !data.ok) return;
-        setExtrasByCount((prev) => ({ ...prev, [rideCount]: data.extras }));
+        setExtrasByCount((prev) => ({ ...prev, [extrasCount]: data.extras }));
       })
       .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingCount(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // extrasByCount intentionally excluded - it changes every time a fetch
-    // resolves, which would otherwise needlessly re-run/cancel this effect.
+      .finally(() => { if (!cancelled) setLoadingCount(null); });
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rideCount]);
+  }, [extrasCount]);
 
-  // The actual window the chart draws from: just the last `rideCount` of
-  // the fixed 120-ride universe above. The matching extras (if loaded) are
-  // already computed for exactly this same window, so they line up 1:1.
-  const sorted = useMemo(() => fullSorted.slice(-rideCount), [fullSorted, rideCount]);
-  const activeExtras = extrasByCount[rideCount];
-  const trimmedExtras = useMemo(
-    () => (activeExtras ? activeExtras.slice(-rideCount) : undefined),
-    [activeExtras, rideCount]
-  );
-  const extrasLoading = loadingCount === rideCount && !activeExtras;
+  const activeExtras = extrasByCount[extrasCount];
+  const extrasLoading = loadingCount === extrasCount && !activeExtras;
 
-  // Cycling and walking/running activities don't share the same metrics
-  // (power/cadence is meaningless for a walk, pace and distance are on a
-  // totally different scale) - mixing them into one chart makes the lines
-  // unreadable. Offer a simple sport filter, but only when there's actually
-  // more than one sport in the data, so it doesn't show up as clutter for
-  // a cycling-only account.
+  // Sport filter
   const sports = useMemo(() => {
     const set = new Set<string>();
-    for (const a of sorted) if (a.sport) set.add(a.sport);
+    for (const a of sortedByDate) if (a.sport) set.add(a.sport);
     return Array.from(set);
-  }, [sorted]);
+  }, [sortedByDate]);
 
   const [sportFilter, setSportFilter] = useState<string>("all");
 
-  // The chart now draws every ride in the chosen window (30/60/90/120,
-  // optionally narrowed by sport) directly - no more 5-at-a-time paging,
-  // since the ride-count selector above already controls how much is shown.
-  const keepIdx = useMemo(
-    () => sorted.map((_, i) => i).filter((i) => sportFilter === "all" || sorted[i].sport === sportFilter),
-    [sorted, sportFilter]
+  const filtered = useMemo(
+    () => sortedByDate.filter((a) => sportFilter === "all" || a.sport === sportFilter),
+    [sortedByDate, sportFilter]
   );
 
-  const filtered = keepIdx.map((i) => sorted[i]);
+  // Align extras to filtered activities by index position in allSorted
+  const extrasBase = allSorted.length - extrasCount;
+  const getExtras = (a: ZwiftActivity): ChartExtra | null => {
+    if (!activeExtras) return null;
+    const allIdx = allSortedIdxMap.get(a);
+    if (allIdx == null) return null;
+    const extIdx = allIdx - extrasBase;
+    if (extIdx < 0 || extIdx >= activeExtras.length) return null;
+    return activeExtras[extIdx] ?? null;
+  };
+
   const dateLabels = filtered.map((a) => shortDate(a.startDate));
+  const distances = filtered.map((a) => (a.distanceInMeters != null ? a.distanceInMeters / 1000 : null));
+  const power = filtered.map((a) => a.avgWatts ?? null);
+  const avgHeartRate = filtered.map((a) => getExtras(a)?.avgHeartRate ?? null);
+  const avgCadence = filtered.map((a) => getExtras(a)?.avgCadence ?? null);
 
-  const distances: (number | null)[] = filtered.map((a) =>
-    a.distanceInMeters != null ? a.distanceInMeters / 1000 : null
+  const series: TrendSeries[] = [
+    { key: "distance",  label: "Distance",   color: "#2f8fe0", unit: "km",  values: distances },
+    { key: "power",     label: "Avg power",  color: "#f07020", unit: "W",   values: power },
+    { key: "heartRate", label: "Heart rate", color: "#ff4d6d", unit: "bpm", values: avgHeartRate },
+    { key: "cadence",   label: "Cadence",    color: "#1a9e52", unit: "rpm", values: avgCadence },
+  ];
+
+  // Per-series stats for the legend cards
+  const seriesStats = series.map((s) => {
+    const nums = s.values.filter((v): v is number => v != null);
+    return {
+      avg: nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0,
+      max: nums.length ? Math.max(...nums) : 0,
+      hasData: nums.length > 0,
+    };
+  });
+
+  // Visibility state (lifted here so legend cards can toggle it)
+  const [visible, setVisible] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(series.map((s) => [s.key, true]))
   );
-  const power: (number | null)[] = filtered.map((a) => a.avgWatts ?? null);
-  const avgHeartRate: (number | null)[] = keepIdx.map((i) => trimmedExtras?.[i]?.avgHeartRate ?? null);
-  const avgCadence: (number | null)[] = keepIdx.map((i) => trimmedExtras?.[i]?.avgCadence ?? null);
 
-  if (sorted.length === 0) {
+  if (allSorted.length === 0) {
     return <div className="notice">Not enough ride data yet to draw graphs.</div>;
   }
 
-  const series: TrendSeries[] = [
-    { key: "distance", label: "Distance", color: "#2f8fe0", unit: "km", values: distances },
-    { key: "power", label: "Avg power", color: "#f07020", unit: "W", values: power },
-    { key: "heartRate", label: "Avg heart rate", color: "#ff4d6d", unit: "bpm", values: avgHeartRate },
-    { key: "cadence", label: "Avg cadence", color: "#1a9e52", unit: "rpm", values: avgCadence },
-  ];
-
   return (
     <div>
-      {/* Title row: title left, all controls right */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-        <div className="section-title" style={{ margin: 0 }}>
-          <IconTrend size={14} />
-          Performance trends
+      {/* Title */}
+      <div className="section-title" style={{ margin: "0 0 14px 0" }}>
+        <IconTrend size={14} />
+        Performance trends
+      </div>
+
+      {/* Stat-card legend — 4 mini cards, click to toggle series */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
+        {series.map((s, i) => {
+          const { avg, max, hasData } = seriesStats[i];
+          const on = visible[s.key];
+          return (
+            <button
+              key={s.key}
+              type="button"
+              disabled={!hasData}
+              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: `1px solid var(--border)`,
+                borderLeft: `3px solid ${s.color}`,
+                background: on ? "var(--panel)" : "transparent",
+                cursor: hasData ? "pointer" : "default",
+                opacity: hasData ? (on ? 1 : 0.38) : 0.25,
+                textAlign: "left" as const,
+                transition: "opacity 0.15s, background 0.15s",
+                fontFamily: "inherit",
+              }}
+            >
+              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginBottom: 3, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
+                {s.label}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
+                {hasData ? `${Math.round(avg)} ${s.unit}` : "n/a"}
+              </div>
+              {hasData && (
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>
+                  max {Math.round(max)} {s.unit}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Chart */}
+      {filtered.length === 0 ? (
+        <div className="notice">No rides for this filter yet.</div>
+      ) : (
+        <TrendChartSVG series={series} labels={dateLabels} visible={visible} />
+      )}
+
+      {/* Controls — below the chart */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, marginTop: 14 }}>
+        {/* Sport filter — only when multiple sports present */}
+        <div>
+          {sports.length > 1 && (
+            <div className="trend-tabs">
+              <button
+                type="button"
+                className={`trend-tab ${sportFilter === "all" ? "active" : ""}`}
+                onClick={() => setSportFilter("all")}
+              >
+                All
+              </button>
+              {sports.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`trend-tab ${sportFilter === s ? "active" : ""}`}
+                  onClick={() => setSportFilter(s)}
+                  style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  title={s}
+                >
+                  {s === "CYCLING" ? <BikeIcon size={14} /> : <RunIcon size={14} />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Sport filter — only when multiple sports */}
-          {sports.length > 1 && (
-            <div className="trend-tabs">
-              <button type="button" className={`trend-tab ${sportFilter === "all" ? "active" : ""}`} onClick={() => setSportFilter("all")}>All</button>
-              {sports.map((s) => (
-                <button key={s} type="button" className={`trend-tab ${sportFilter === s ? "active" : ""}`} onClick={() => setSportFilter(s)}>{s}</button>
-              ))}
-            </div>
+        {/* Time window selector */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {extrasLoading && (
+            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>
           )}
-
-          {/* Divider between the two control groups */}
-          {sports.length > 1 && (
-            <div style={{ width: 1, height: 18, background: "var(--border)" }} />
-          )}
-
-          {/* Ride-count selector */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
-            <div className="trend-tabs">
-              {RIDE_COUNT_OPTIONS.map((n) => (
-                <button key={n} type="button" className={`trend-tab ${rideCount === n ? "active" : ""}`} onClick={() => setRideCount(n)}>{n}</button>
-              ))}
-            </div>
-            {extrasLoading && <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>}
+          <div className="trend-tabs">
+            {TIME_WINDOWS.map((w) => (
+              <button
+                key={w}
+                type="button"
+                className={`trend-tab ${timeWindow === w ? "active" : ""}`}
+                onClick={() => setTimeWindow(w)}
+              >
+                {w}
+              </button>
+            ))}
           </div>
         </div>
       </div>
-
-      {filtered.length === 0 ? (
-        <div className="notice">No rides for this sport yet.</div>
-      ) : (
-        <CombinedTrendChart series={series} labels={dateLabels} />
-      )}
     </div>
   );
 }

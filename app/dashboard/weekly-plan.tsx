@@ -194,7 +194,7 @@ export default function WeeklyPlan() {
             map.set(dateKey, {
               name: (a.name as string) ?? "Zwift Ride",
               startDate,
-              durationInSeconds: (a.durationInSeconds as number) ?? 0,
+              durationInSeconds: a.movingTimeInMs ? Math.round((a.movingTimeInMs as number) / 1000) : 0,
               distanceInMeters: (a.distanceInMeters as number) ?? 0,
               avgWatts: (a.avgWatts as number | null) ?? null,
               avgHeartRate: (a.avgHeartRate as number | null) ?? null,
@@ -480,7 +480,7 @@ export default function WeeklyPlan() {
             </div>
           )}
 
-          <div className="stat-grid workout-grid">
+          <div className="stat-grid workout-grid" style={{ alignItems: "stretch" }}>
             {plan.workouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
 
@@ -553,6 +553,34 @@ export default function WeeklyPlan() {
                       }}>
                         Planned: {w.title}
                       </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // ── Actual ride on a Rest Day (bonus ride!) ──
+              if (actual && isRestDay(w.type)) {
+                const distKm = actual.distanceInMeters > 0 ? (actual.distanceInMeters / 1000).toFixed(1) + " km" : null;
+                const bonusStats = [
+                  actual.durationInSeconds > 0 ? formatDuration(actual.durationInSeconds) : null,
+                  distKm,
+                  actual.avgWatts ? `${Math.round(actual.avgWatts)} W` : null,
+                  actual.avgHeartRate ? `${Math.round(actual.avgHeartRate)} bpm` : null,
+                ].filter(Boolean).join(" · ");
+                return (
+                  <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", border: "1.5px solid rgba(26,143,76,0.35)" }}>
+                    <div className="stat-card-head" style={{ marginTop: 10 }}>
+                      <div className="stat-card-icon c-green">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </div>
+                      <div className="label" style={{ margin: 0 }}>{w.day} · Bonus ride!</div>
+                    </div>
+                    <div className="value" style={{ fontSize: 16 }}>{actual.name}</div>
+                    {bonusStats && <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8, marginTop: 4 }}>{bonusStats}</div>}
+                    <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 10.5, color: "var(--muted)", fontStyle: "italic", flexGrow: 1 }}>
+                      Planned: Rest Day — great job riding anyway!
                     </div>
                   </div>
                 );
