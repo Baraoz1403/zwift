@@ -8,3 +8,22 @@ To https://github.com/Baraoz1403/zwift.git
 Thu 07/02/2026 15:23:07.28 - Auto-deploy finished 
  
 Fri 07/03/2026  7:00:02.09 - Auto-deploy starting 
+warning: in the working copy of 'app/dashboard/fitness-status-chip.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_deploy_now.bat', LF will be replaced by CRLF the next time Git touches it
+[main 64aaaef] Auto-deploy update
+ 6 files changed, 27 insertions(+), 14 deletions(-)
+ create mode 100644 _deploy_now.bat
+To https://github.com/Baraoz1403/zwift.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Baraoz1403/zwift.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+Fri 07/03/2026  7:00:04.34 - Auto-deploy finished 
+ 
