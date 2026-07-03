@@ -183,28 +183,8 @@ export default async function DashboardPage() {
                 {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
               </h1>
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "3px 7px" }}>
-              {activities.length > 0 ? (
-                <>
-                  <span><strong style={{ color: "var(--text)", fontWeight: 700 }}>{activities.length}</strong> rides logged</span>
-                  {avgWatts10 != null && (
-                    <><span style={{ opacity: 0.35 }}>·</span><span>avg <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{avgWatts10}W</strong></span></>
-                  )}
-                  {avgDistKm != null && (
-                    <><span style={{ opacity: 0.35 }}>·</span><span>avg <strong style={{ color: "var(--text)", fontWeight: 700 }}>{avgDistKm.toFixed(0)}km</strong></span></>
-                  )}
-                  {powerDelta != null && Math.abs(powerDelta) > 3 && (
-                    <><span style={{ opacity: 0.35 }}>·</span>
-                    <span style={{ color: powerDelta > 0 ? "#22c55e" : "#ef4444", fontWeight: 700 }}>
-                      {powerDelta > 0 ? `↑ +${powerDelta}W` : `↓ ${Math.abs(powerDelta)}W`}
-                    </span>
-                    <span style={{ opacity: 0.6 }}>{powerDelta > 0 ? "building" : "vs last block"}</span>
-                    </>
-                  )}
-                </>
-              ) : (
-                "Train smarter, every week — powered by your ride data."
-              )}
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
+              Train smarter, ride stronger — powered by AI.
             </div>
           </div>
         </div>
