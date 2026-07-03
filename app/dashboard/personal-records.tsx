@@ -102,14 +102,14 @@ export default function PersonalRecords({
   const sportBreakdown = Object.entries(caloriesBySport).filter(([, kcal]) => kcal > 0);
 
   const longestSession = windowed.reduce<{ ms: number; activity: ZwiftActivity } | null>((best, a) => {
-    const ms = ((a.durationInSeconds as number) ?? 0) * 1000;
+    const ms = (a.movingTimeInMs as number) ?? 0; // already in ms
     if (!best || ms > best.ms) return { ms, activity: a };
     return best;
   }, null);
 
 
-  function StatRow({ icon, iconClass = "c-neutral", label, sub, value }: {
-    icon: ReactNode; iconClass?: string; label: string; sub?: string; value: ReactNode;
+  function StatRow({ icon, iconClass = "c-neutral", label, sub, value, unit }: {
+    icon: ReactNode; iconClass?: string; label: string; sub?: string; value: ReactNode; unit?: string;
   }) {
     return (
       <div style={{ display: "flex", alignItems: "center", padding: "13px 18px", gap: 12 }}>
@@ -118,8 +118,11 @@ export default function PersonalRecords({
           <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>{label}</div>
           {sub && <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
         </div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
-          {value}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+          {unit && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>{unit}</span>}
+          <span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>
+            {value}
+          </span>
         </div>
       </div>
     );
@@ -150,22 +153,22 @@ export default function PersonalRecords({
           <div className="section-title" style={{ margin: "14px 18px 10px 20px" }}>Activity totals</div>
 
           <StatRow icon={<IconClock size={13} />} iconClass="c-neutral" label="Total time" sub="all rides combined"
-            value={<CountUp value={r.totalTimeMs / 3600000} format={(n) => `${n.toFixed(0)} h`} />} />
+            unit="h" value={<CountUp value={r.totalTimeMs / 3600000} format={(n) => n.toFixed(0)} />} />
           <Divider />
           <StatRow icon={<IconDistance size={13} />} iconClass="c-blue" label="Total distance" sub={`${r.totalRides} rides logged`}
-            value={<CountUp value={r.totalDistanceM / 1000} format={(n) => `${n.toFixed(0)} km`} />} />
+            unit="km" value={<CountUp value={r.totalDistanceM / 1000} format={(n) => n.toFixed(0)} />} />
           <Divider />
           <StatRow icon={<IconMountain size={13} />} iconClass="c-teal" label="Total elevation" sub={`${(r.totalElevationM / 8849).toFixed(1)}x Everest`}
-            value={<CountUp value={r.totalElevationM} format={(n) => `${n.toFixed(0)} m`} />} />
+            unit="m" value={<CountUp value={r.totalElevationM} format={(n) => n.toFixed(0)} />} />
           <Divider />
           <StatRow icon={<IconFlame size={13} />} iconClass="c-orange"
             label="Total calories"
             sub={sportBreakdown.length > 1 ? sportBreakdown.map(([s, k]) => `${s}: ${Math.round(k)}`).join(" • ") : "all rides combined"}
-            value={<CountUp value={totalCalories} format={(n) => `${n.toFixed(0)} kcal`} />} />
+            unit="kcal" value={<CountUp value={totalCalories} format={(n) => n.toFixed(0)} />} />
           <Divider />
           <StatRow icon={<IconTrophy size={13} />} iconClass="c-amber" label="Longest streak"
             sub={r.currentStreakDays > 0 ? `current streak: ${r.currentStreakDays} days` : "no active streak"}
-            value={<CountUp value={r.longestStreakDays} format={(n) => `${n.toFixed(0)} days`} />} />
+            unit="days" value={<CountUp value={r.longestStreakDays} format={(n) => n.toFixed(0)} />} />
         </div>
 
         {/* Right panel — Personal bests */}
@@ -176,7 +179,7 @@ export default function PersonalRecords({
             <>
               <StatRow icon={<IconTrophy size={13} />} iconClass="c-blue" label="Longest ride"
                 sub={`${truncateName(r.longestDistance.activity.name)} • ${formatDate(r.longestDistance.activity.startDate)}`}
-                value={<CountUp value={r.longestDistance.meters / 1000} format={(n) => `${n.toFixed(1)} km`} />} />
+                unit="km" value={<CountUp value={r.longestDistance.meters / 1000} format={(n) => n.toFixed(1)} />} />
               <Divider />
             </>
           )}
@@ -185,15 +188,16 @@ export default function PersonalRecords({
             <>
               <StatRow icon={<IconMountain size={13} />} iconClass="c-teal" label="Biggest climbing day"
                 sub={`${truncateName(r.biggestClimb.activity.name)} • ${formatDate(r.biggestClimb.activity.startDate)}`}
-                value={<CountUp value={r.biggestClimb.meters} format={(n) => `${n.toFixed(0)} m`} />} />
+                unit="m" value={<CountUp value={r.biggestClimb.meters} format={(n) => n.toFixed(0)} />} />
               <Divider />
             </>
           )}
 
           <StatRow icon={<IconHeart size={13} />} iconClass="c-red" label="Highest avg heart rate"
             sub={bestHeartRate ? `${truncateName(bestHeartRate.rideName)} • ${formatDate(bestHeartRate.rideDate)}` : "no HR data in recent rides"}
+            unit={bestHeartRate ? "bpm" : undefined}
             value={bestHeartRate
-              ? <CountUp value={bestHeartRate.bpm} format={(n) => `${n.toFixed(0)} bpm`} />
+              ? <CountUp value={bestHeartRate.bpm} format={(n) => n.toFixed(0)} />
               : <span style={{ fontSize: 16, color: "var(--muted)" }}>n/a</span>} />
           <Divider />
 
@@ -201,15 +205,19 @@ export default function PersonalRecords({
             <>
               <StatRow icon={<IconBolt size={13} />} iconClass="c-amber" label="Highest avg power"
                 sub={`${truncateName(r.highestAvgPower.activity.name)} • ${formatDate(r.highestAvgPower.activity.startDate)}`}
-                value={<CountUp value={r.highestAvgPower.watts} format={(n) => `${n.toFixed(0)} W`} />} />
+                unit="W" value={<CountUp value={r.highestAvgPower.watts} format={(n) => n.toFixed(0)} />} />
               <Divider />
             </>
           )}
 
-          {longestSession && (
+          {longestSession && longestSession.ms > 0 && (
             <StatRow icon={<IconClock size={13} />} iconClass="c-neutral" label="Longest session"
               sub={`${truncateName(longestSession.activity.name)} • ${formatDate(longestSession.activity.startDate)}`}
-              value={<CountUp value={longestSession.ms / 3600000} format={(n) => n >= 1 ? `${n.toFixed(1)} h` : `${Math.round(n * 60)} min`} />} />
+              unit={longestSession.ms >= 3600000 ? "h" : "min"}
+              value={<CountUp
+                value={longestSession.ms >= 3600000 ? longestSession.ms / 3600000 : longestSession.ms / 60000}
+                format={(n) => longestSession.ms >= 3600000 ? n.toFixed(1) : n.toFixed(0)}
+              />} />
           )}
         </div>
 
