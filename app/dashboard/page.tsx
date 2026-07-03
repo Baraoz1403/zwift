@@ -201,4 +201,269 @@ export default async function DashboardPage() {
                   <IconCalendar size={15} />
                   Weekly Plan
                 </a>
-                
+                <a href="#todays-note" className="header-nav-chip">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)", opacity: 0.8 }}>
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                  Today&apos;s Note
+                </a>
+                <AiInsightsLink />
+              </>
+            )}
+            <LogoutButton />
+          </div>
+          {/* Training Score chip — aligned under the nav buttons */}
+          {!activitiesError && activities.length > 0 && (
+            <FitnessStatusChip />
+          )}
+        </div>
+      </div>
+
+      {profile && (
+        <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+
+          {/* Left column */}
+          <div>
+            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+
+              <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
+                <IconTrend size={14} />
+                Power &amp; Cadence
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg watts</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from rides"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {avgWatts10 != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgWatts10}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+              <AvgCadenceCard asRow />
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+              <AvgHRCard mode="row" />
+
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div>
+            <div className="stat-card" style={{ padding: 0, overflow: "hidden" }}>
+
+              <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
+                <IconBolt size={14} />
+                Fitness
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg calories</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{calRides.length > 0 ? `last ${calRides.length} rides` : "from rides"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {avgCalories10 != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>kcal</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgCalories10}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {profile.ftp != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{profile.ftp}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
+              </div>
+
+              <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
+
+              <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
+                <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>VO2max (est.)</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
+                  {vo2max != null
+                    ? <><span style={{ fontSize: 11, fontWeight: 500, color: "var(--muted)" }}>ml/kg/min</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{vo2max.toFixed(1)}</span></>
+                    : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {profileError && (
+        <div className="notice" style={{ marginTop: 16 }}>
+          You&apos;re signed in successfully, but profile data couldn&apos;t be loaded
+          right now ({profileError}). This is a known rough edge we&apos;re still
+          fixing - it doesn&apos;t affect your sign-in.
+        </div>
+      )}
+
+      {!activitiesError && activities.length > 0 && (
+        <>
+          {/* HR anomaly banner — renders client-side after FIT file analysis */}
+          <HRAlertBanner />
+
+          {/* ── Most actionable: today's plan + AI coaching ── */}
+          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
+            <WeeklyPlan />
+          </div>
+
+          <div className="section fade-in" id="ai-insights" style={{ scrollMarginTop: 24 }}>
+            <AiInsights />
+          </div>
+
+          {/* ── Stats & history ── */}
+          <Suspense
+            fallback={
+              <>
+                <div className="section fade-in">
+                  <PersonalRecords activities={clientActivities} bestHeartRate={null} />
+                </div>
+                <div className="section fade-in">
+                  <div className="section-title"><IconTrend size={14} /> Performance trends</div>
+                  <div className="notice">Crunching your recent rides for heart rate/cadence…</div>
+                </div>
+              </>
+            }
+          >
+            <ChartDataSection activities={activities} clientActivities={clientActivities} />
+          </Suspense>
+
+          <div className="section fade-in">
+            <div className="section-title"><IconList size={14} /> Rides</div>
+            <RidesTable activities={clientActivities} />
+          </div>
+
+          <div className="section fade-in">
+            <ActivityHeatmap activities={clientActivities} />
+          </div>
+        </>
+      )}
+
+      {activitiesError && (
+        <div className="section fade-in">
+          <div className="section-title"><IconList size={14} /> Rides</div>
+          <div className="notice">
+            Ride history couldn&apos;t be loaded right now ({activitiesError}).
+          </div>
+        </div>
+      )}
+
+    </div>
+    <DashboardFooter />
+    </>
+  );
+}
+
+/**
+ * Everything that needs per-ride FIT data (heart rate/cadence) - Personal
+ * Records' "best heart rate" tile and the Performance trends chart's
+ * default 30-ride window - lives in this one async component so the rest of
+ * the dashboard (header, stat cards, rides table, AI insights, heatmap,
+ * trend comparison) can render and reach the browser immediately instead of
+ * blocking on ~30 FIT-file downloads first. DashboardPage wraps this in a
+ * <Suspense> boundary; Next.js streams this section in afterwards, in place
+ * of the fallback, once it resolves.
+ */
+async function ChartDataSection({
+  activities,
+  clientActivities,
+}: {
+  activities: ZwiftActivity[];
+  clientActivities: ZwiftActivity[];
+}) {
+  // Only pre-fetch FIT extras (avg heart rate/cadence) for the chart's
+  // *default* 30-ride window here. Downloading + parsing a FIT file per ride
+  // is the most expensive thing this app does, and doing that for the full
+  // 120-ride universe on every single dashboard load - including every time
+  // someone just clicks "Back to dashboard" from a ride's detail page - is
+  // what made that navigation painfully slow. If the user picks a bigger
+  // window (60/90/120) in the chart, activity-chart.tsx fetches just that
+  // extra data lazily from /api/zwift/chart-extras instead.
+  const chartActivities = activities.length > 0 ? selectChartActivities(activities, 30) : [];
+  let chartExtras: ChartExtra[] = [];
+  let bestHeartRate: { bpm: number; rideName?: string; rideDate?: string } | null = null;
+
+  if (chartActivities.length > 0) {
+    // Bounded concurrency (4 at a time) instead of firing all FIT downloads
+    // simultaneously - see the comment on mapWithConcurrency in lib/stats.ts
+    // for why: that many large response bodies landing on Node's
+    // fetch/stream handling at the same instant is exactly the kind of load
+    // that triggered the dashboard's stack-overflow crash.
+    const results = await mapWithConcurrency(chartActivities, 4, async (a) => {
+      // A finished ride's heart rate/cadence never changes, so once it's
+      // been computed once, every later dashboard load can just reuse it
+      // instead of re-downloading and re-parsing the same FIT file again.
+      const cached = getCachedFitExtras(a);
+      if (cached) return cached;
+
+      const buf = await fetchActivityFit(a);
+      const fitRecords = parseFitRecords(buf);
+      const hrVals = fitRecords
+        .filter((r) => r.heartRate != null && r.heartRate > 0)
+        .map((r) => r.heartRate as number);
+      const cadVals = fitRecords.filter((r) => r.cadence != null).map((r) => r.cadence as number);
+      const extra: ChartExtra = {
+        avgHeartRate: hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null,
+        avgCadence: cadVals.length > 0 ? cadVals.reduce((s, v) => s + v, 0) / cadVals.length : null,
+      };
+      setCachedFitExtras(a, extra);
+      return extra;
+    });
+    chartExtras = results.map((r) =>
+      r.status === "fulfilled" ? r.value : { avgHeartRate: null, avgCadence: null }
+    );
+
+    // "Best" here just means highest average heart rate seen across the same
+    // recent rides the charts already cover - we only have heart rate data
+    // for rides whose FIT file we downloaded above, not the full history.
+    let bestIdx = -1;
+    let bestBpm = -1;
+    chartExtras.forEach((e, i) => {
+      if (e.avgHeartRate != null && e.avgHeartRate > bestBpm) {
+        bestBpm = e.avgHeartRate;
+        bestIdx = i;
+      }
+    });
+    if (bestIdx >= 0) {
+      const a = chartActivities[bestIdx];
+      bestHeartRate = { bpm: bestBpm, rideName: a.name, rideDate: a.startDate };
+    }
+  }
+
+  return (
+    <>
+      <div className="section fade-in">
+        <PersonalRecords activities={clientActivities} bestHeartRate={bestHeartRate} />
+      </div>
+
+      <div className="section fade-in">
+        <ActivityCharts activities={clientActivities} extras={chartExtras} />
+      </div>
+      </>
+  );
+}
