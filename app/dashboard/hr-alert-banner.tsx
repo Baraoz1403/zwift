@@ -10,7 +10,27 @@ const PREVIEW_DATA: Record<string, HRAlertResponse> = {
   black:  { ok: true, level: "black",  headline: "Stop Training — Critical HR Suppression", detail: "Your heart rate is 22% below your baseline across 9 recent rides, and power has dropped 15%. This is a severe, sustained blunted cardiac response. Rest completely for at least a week. If you feel unwell, experience chest tightness, or this pattern continues, consult your doctor." },
 };
 
-const DISMISS_KEY = "hrAlertDismissed";
+const STORAGE_KEY = "hrAlertState";
+const MAX_VIEWS = 3;
+const AUTO_HIDE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface AlertState {
+  level: string;
+  views: number;
+  hiddenUntil: number; // epoch ms
+}
+
+function loadState(): AlertState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as AlertState;
+  } catch {}
+  return { level: "", views: 0, hiddenUntil: 0 };
+}
+
+function saveState(s: AlertState) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+}
 
 const LEVEL_STYLES: Record<
   HRAlertLevel,
@@ -83,7 +103,7 @@ export default function HRAlertBanner() {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    // Preview mode: ?hr=orange / red / black — shows mock alert without real data
+    // Preview mode: ?hr=orange / red / black
     const preview = searchParams?.get("hr");
     if (preview && PREVIEW_DATA[preview]) {
       setAlert(PREVIEW_DATA[preview]);
@@ -91,35 +111,43 @@ export default function HRAlertBanner() {
       return;
     }
 
-    // Check if already dismissed this session
-    if (typeof sessionStorage !== "undefined") {
-      const dismissedUntil = sessionStorage.getItem(DISMISS_KEY);
-      if (dismissedUntil && Date.now() < Number(dismissedUntil)) {
-        setDismissed(true);
-        return;
-      }
-    }
-
     fetch("/api/zwift/hr-alert")
       .then((r) => r.json())
       .then((data: HRAlertResponse) => {
-        if (data.ok && data.level) {
-          setAlert(data);
-          // Auto-expand red and black alerts
-          if (data.level === "red" || data.level === "black") {
-            setExpanded(true);
-          }
+        if (!data.ok || !data.level) return;
+
+        const state = loadState();
+        const now = Date.now();
+
+        // If hidden (manual dismiss or auto-hide), stay hidden
+        if (state.hiddenUntil > now) {
+          setDismissed(true);
+          return;
         }
+
+        // Reset view counter if alert level escalated / changed
+        const views = data.level === state.level ? state.views : 0;
+
+        if (views >= MAX_VIEWS) {
+          // Auto-hide for 24h after MAX_VIEWS exposures
+          saveState({ level: data.level, views, hiddenUntil: now + AUTO_HIDE_MS });
+          setDismissed(true);
+          return;
+        }
+
+        // Record this view
+        saveState({ level: data.level, views: views + 1, hiddenUntil: 0 });
+
+        setAlert(data);
+        if (data.level === "red" || data.level === "black") setExpanded(true);
       })
       .catch(() => {});
   }, [searchParams]);
 
   function handleDismiss() {
     setDismissed(true);
-    // Dismiss for 6 hours (so it reappears next day if still an issue)
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(DISMISS_KEY, String(Date.now() + 6 * 60 * 60 * 1000));
-    }
+    const state = loadState();
+    saveState({ ...state, hiddenUntil: Date.now() + 6 * 60 * 60 * 1000 });
   }
 
   if (!alert || !alert.level || dismissed) return null;
