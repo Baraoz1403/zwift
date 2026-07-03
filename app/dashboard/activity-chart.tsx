@@ -294,12 +294,12 @@ export default function ActivityCharts({
   const activeExtras = extrasByCount[extrasCount];
   const extrasLoading = loadingCount === extrasCount && !activeExtras;
 
-  // Sport filter
+  // Sport filter — derived from ALL activities so buttons always show
   const sports = useMemo(() => {
     const set = new Set<string>();
-    for (const a of sortedByDate) if (a.sport) set.add(a.sport);
+    for (const a of allSorted) if (a.sport) set.add(a.sport);
     return Array.from(set);
-  }, [sortedByDate]);
+  }, [allSorted]);
 
   const [sportFilter, setSportFilter] = useState<string>("all");
 
