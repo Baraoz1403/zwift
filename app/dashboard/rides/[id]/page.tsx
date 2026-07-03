@@ -153,40 +153,30 @@ export default function RideDetailPage() {
             </div>
           </div>
 
-          {/* ── Telemetry chart — full bleed ── */}
+          {/* ── Telemetry chart ── */}
           {data.fit && !data.fit.ok ? (
             <div className="notice" style={{ marginBottom: 24 }}>
               Couldn&apos;t load second-by-second data for this ride: {data.fit.error}
             </div>
           ) : (
-            <div
-              className="fade-in"
-              style={{
-                marginLeft: "calc(-50vw + 50%)",
-                marginRight: "calc(-50vw + 50%)",
-                width: "100vw",
-                borderTop: "1px solid var(--border)",
-                borderBottom: "1px solid var(--border)",
-                background: "var(--bg)",
-                padding: "20px 20px 12px",
-                marginBottom: 36,
-              }}
-            >
-              <div className="section-title" style={{ margin: "0 4px 14px", fontSize: 13 }}>
+            <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 32 }}>
+              <div className="section-title" style={{ margin: "16px 18px 12px 20px" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
                 In-ride telemetry
               </div>
-              <MultiLineChart
-                elapsedMs={elapsedMs}
-                elevationM={elevationSeries}
-                series={[
-                  { key: "hr",      label: "Heart rate", color: "#e53e3e", unit: "bpm", values: heartRateSeries },
-                  { key: "cadence", label: "Cadence",    color: "#22c55e", unit: "rpm", values: cadenceSeries },
-                  { key: "power",   label: "Power",      color: "#f97316", unit: "W",   values: powerSeries },
-                ]}
-              />
+              <div style={{ padding: "0 0 12px" }}>
+                <MultiLineChart
+                  elapsedMs={elapsedMs}
+                  elevationM={elevationSeries}
+                  series={[
+                    { key: "hr",      label: "Heart rate", color: "#e53e3e", unit: "bpm", values: heartRateSeries },
+                    { key: "cadence", label: "Cadence",    color: "#22c55e", unit: "rpm", values: cadenceSeries },
+                    { key: "power",   label: "Power",      color: "#f97316", unit: "W",   values: powerSeries },
+                  ]}
+                />
+              </div>
             </div>
           )}
 

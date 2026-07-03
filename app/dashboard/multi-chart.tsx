@@ -173,7 +173,7 @@ export default function MultiLineChart({
 
   return (
     <div>
-      <div className="trend-legend" style={{ gridTemplateColumns: `repeat(${stats.length}, 1fr)` }}>
+      <div className="trend-legend" style={{ gridTemplateColumns: `repeat(${stats.length}, 1fr)`, margin: "0 14px 12px" }}>
         {stats.map(({ s, avg, max, hasData }) => {
           const on = visible[s.key];
           return (
