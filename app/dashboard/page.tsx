@@ -127,6 +127,17 @@ export default async function DashboardPage() {
       : { value: Math.round(avgTimeMs / 60000).toString(), unit: "min" }
     : null;
 
+  // Power trend: compare last 5 rides vs the 5 before that — used for the header subtitle.
+  const last5w = wattsRides.slice(0, 5);
+  const prev5w = wattsRides.slice(5, 10);
+  const last5wAvg = last5w.length >= 3
+    ? Math.round(last5w.reduce((s, a) => s + (a.avgWatts as number), 0) / last5w.length)
+    : null;
+  const prev5wAvg = prev5w.length >= 3
+    ? Math.round(prev5w.reduce((s, a) => s + (a.avgWatts as number), 0) / prev5w.length)
+    : null;
+  const powerDelta = (last5wAvg && prev5wAvg) ? last5wAvg - prev5wAvg : null;
+
   // Rare edge case: session had no athleteId, so activities couldn't be
   // requested in parallel above - now that the profile (and its real id)
   // has arrived, fetch them in this fallback path.
@@ -172,8 +183,28 @@ export default async function DashboardPage() {
                 {profile?.firstName ? `Hi, ${profile.firstName}` : "Your Dashboard"}
               </h1>
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
-              Train smarter, every week — powered by your ride data.
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400, display: "flex", alignItems: "center", flexWrap: "wrap", gap: "3px 7px" }}>
+              {activities.length > 0 ? (
+                <>
+                  <span><strong style={{ color: "var(--text)", fontWeight: 700 }}>{activities.length}</strong> rides logged</span>
+                  {avgWatts10 != null && (
+                    <><span style={{ opacity: 0.35 }}>·</span><span>avg <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{avgWatts10}W</strong></span></>
+                  )}
+                  {avgDistKm != null && (
+                    <><span style={{ opacity: 0.35 }}>·</span><span>avg <strong style={{ color: "var(--text)", fontWeight: 700 }}>{avgDistKm.toFixed(0)}km</strong></span></>
+                  )}
+                  {powerDelta != null && Math.abs(powerDelta) > 3 && (
+                    <><span style={{ opacity: 0.35 }}>·</span>
+                    <span style={{ color: powerDelta > 0 ? "#22c55e" : "#ef4444", fontWeight: 700 }}>
+                      {powerDelta > 0 ? `↑ +${powerDelta}W` : `↓ ${Math.abs(powerDelta)}W`}
+                    </span>
+                    <span style={{ opacity: 0.6 }}>{powerDelta > 0 ? "building" : "vs last block"}</span>
+                    </>
+                  )}
+                </>
+              ) : (
+                "Train smarter, every week — powered by your ride data."
+              )}
             </div>
           </div>
         </div>
