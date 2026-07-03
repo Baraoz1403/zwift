@@ -184,7 +184,7 @@ export default async function DashboardPage() {
               </h1>
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
-              Train smarter, ride stronger — powered by AI.
+              Train smarter, ride better — powered by AI.
             </div>
           </div>
         </div>
@@ -346,7 +346,7 @@ export default async function DashboardPage() {
 
           <div className="section fade-in">
             <div className="section-title"><IconList size={14} /> Rides</div>
-            <RidesTable activities={clientActivities} ftp={profile?.ftp ?? undefined} />
+            <RidesTable activities={clientActivities} />
           </div>
 
           <div className="section fade-in">
