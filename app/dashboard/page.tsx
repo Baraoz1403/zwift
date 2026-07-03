@@ -22,7 +22,7 @@ import AiInsightsLink from "./ai-insights-link";
 import WeeklyPlan from "./weekly-plan";
 import PersonalRecords from "./personal-records";
 import ActivityHeatmap from "./activity-heatmap";
-import { IconBolt, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } from "./icons";
+import { IconBolt, IconClock, IconDistance, IconFlame, IconHeart, IconTrend, IconList, IconCalendar } from "./icons";
 import AvgCadenceCard from "./avg-cadence-card";
 import AvgHRCard from "./avg-hr-card";
 import HRAlertBanner from "./hr-alert-banner";
@@ -88,40 +88,6 @@ export default async function DashboardPage() {
     }
   }
 
-  // Zwift's own site shows a VO2max estimate on the rider's "Fitness
-  // Metrics" page, but that's computed by an undisclosed Zwift algorithm
-  // behind a different, separate endpoint we don't have access to here -
-  // /api/profiles/me has no vo2max field at all. The standard, widely-used
-  // approximation from power data is the Coggan formula, which only needs
-  // FTP and weight (both of which we already have): VO2max (ml/kg/min) =
-  // 10.8 x (FTP watts / weight kg) + 7. It won't match Zwift's exact number,
-  // but it's the same formula most third-party "Zwift VO2max calculator"
-  // tools use to approximate it, so it's labelled as an estimate in the UI.
-  const weightKg = profile?.weight ? profile.weight / 1000 : null;
-  const vo2max =
-    profile?.ftp && weightKg ? 10.8 * (profile.ftp / weightKg) + 7 : null;
-
-  // Look for the most recent FTP/Ramp test ride to find an honest "as of" date.
-  // Zwift's profile API doesn't expose when FTP was last changed, so we search
-  // ride names for known test patterns. If none found, we show "from Zwift profile"
-  // without a date rather than misleadingly showing today's date.
-  const ftpTestRide = activities
-    .filter(a => {
-      const name = (a.name ?? "").toLowerCase();
-      return name.includes("ramp") || name.includes("ftp test") || name.includes("ftp-test");
-    })
-    .sort((a, b) =>
-      new Date(b.startDate ?? 0).getTime() - new Date(a.startDate ?? 0).getTime()
-    )[0] ?? null;
-
-  const ftpDateLabel = ftpTestRide?.startDate
-    ? new Date(ftpTestRide.startDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : null; // null = show "from Zwift profile" instead
-
   // Average watts from the last 10 rides that report it (activities are most-recent-first).
   // Average cadence comes from FIT files, handled by AvgCadenceCard (client component).
   const wattsRides = activities
@@ -139,6 +105,26 @@ export default async function DashboardPage() {
     .slice(0, 10);
   const avgCalories10 = calRides.length > 0
     ? Math.round(calRides.reduce((s, a) => s + (a.calories as number), 0) / calRides.length)
+    : null;
+
+  // Average distance and duration for the last 10 rides.
+  const distRides = activities
+    .filter(a => a.distanceInMeters && (a.distanceInMeters as number) > 0)
+    .slice(0, 10);
+  const avgDistKm = distRides.length > 0
+    ? distRides.reduce((s, a) => s + (a.distanceInMeters as number), 0) / distRides.length / 1000
+    : null;
+
+  const timeRides = activities
+    .filter(a => a.movingTimeInMs && (a.movingTimeInMs as number) > 0)
+    .slice(0, 10);
+  const avgTimeMs = timeRides.length > 0
+    ? timeRides.reduce((s, a) => s + (a.movingTimeInMs as number), 0) / timeRides.length
+    : null;
+  const avgTimeFmt = avgTimeMs != null
+    ? avgTimeMs >= 3600000
+      ? { value: (avgTimeMs / 3600000).toFixed(1), unit: "h" }
+      : { value: Math.round(avgTimeMs / 60000).toString(), unit: "min" }
     : null;
 
   // Rare edge case: session had no athleteId, so activities couldn't be
@@ -277,14 +263,14 @@ export default async function DashboardPage() {
               <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
 
               <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
-                <div className="stat-card-icon c-amber" style={{ flexShrink: 0 }}><IconBolt size={13} /></div>
+                <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconDistance size={13} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>FTP</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `as of ${ftpDateLabel}` : "from Zwift profile"}</div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg distance</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{distRides.length > 0 ? `last ${distRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
-                  {profile.ftp != null
-                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>W</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{profile.ftp}</span></>
+                  {avgDistKm != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>km</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgDistKm.toFixed(1)}</span></>
                     : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
                 </div>
               </div>
@@ -292,18 +278,14 @@ export default async function DashboardPage() {
               <div style={{ height: 1, background: "var(--border)", margin: "0 18px" }} />
 
               <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
-                <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
-                </div>
+                <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}><IconClock size={13} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>VO2max (est.)</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{ftpDateLabel ? `est. ${ftpDateLabel}` : "est. from FTP"}</div>
+                  <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg duration</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{timeRides.length > 0 ? `last ${timeRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
-                  {vo2max != null
-                    ? <><span style={{ fontSize: 11, fontWeight: 500, color: "var(--muted)" }}>ml/kg/min</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{vo2max.toFixed(1)}</span></>
+                  {avgTimeFmt != null
+                    ? <><span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>{avgTimeFmt.unit}</span><span style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.5px", color: "var(--text)", fontVariantNumeric: "tabular-nums", minWidth: 48, textAlign: "right" }}>{avgTimeFmt.value}</span></>
                     : <span style={{ fontSize: 19, fontWeight: 700, color: "var(--muted)", minWidth: 48, textAlign: "right" }}>—</span>}
                 </div>
               </div>

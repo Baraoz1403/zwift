@@ -4167,3 +4167,10 @@ Fri 07/03/2026 19:33:21.21
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/api/zwift/debug-activity/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+[main f072af5] Auto deploy Fri 07/03/2026 19:33:21.69
+ 3 files changed, 64 insertions(+), 3 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   8a37ee0..f072af5  main -> main
+Fri 07/03/2026 19:33:23.59 - SUCCESS: pushed. Vercel rebuilding. 

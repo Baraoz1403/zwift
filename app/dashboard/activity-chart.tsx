@@ -294,17 +294,21 @@ export default function ActivityCharts({
   const activeExtras = extrasByCount[extrasCount];
   const extrasLoading = loadingCount === extrasCount && !activeExtras;
 
-  // Sport filter — derived from ALL activities so buttons always show
+  // Sport filter — derived from ALL activities so buttons always show.
+  // Activities with a null/undefined sport are treated as CYCLING (Zwift's
+  // default — the game client sometimes omits the field on older rides).
+  const normSport = (a: ZwiftActivity) => (a.sport as string) || "CYCLING";
+
   const sports = useMemo(() => {
     const set = new Set<string>();
-    for (const a of allSorted) if (a.sport) set.add(a.sport);
+    for (const a of allSorted) set.add(normSport(a));
     return Array.from(set);
   }, [allSorted]);
 
   const [sportFilter, setSportFilter] = useState<string>("all");
 
   const filtered = useMemo(
-    () => sortedByDate.filter((a) => sportFilter === "all" || a.sport === sportFilter),
+    () => sortedByDate.filter((a) => sportFilter === "all" || normSport(a) === sportFilter),
     [sortedByDate, sportFilter]
   );
 

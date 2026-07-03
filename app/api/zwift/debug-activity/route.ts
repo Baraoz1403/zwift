@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 
-const HEADERS = (token: string) => ({
+const GAME_HEADERS = (token: string) => ({
   Platform: "OSX",
   Source: "Game Client",
   "User-Agent": "CNL/3.30.8 (macOS 13 Ventura; Darwin Kernel 22.4.0) zwift/1.0.110983 curl/7.78.0",
@@ -10,9 +10,18 @@ const HEADERS = (token: string) => ({
   Accept: "application/json",
 });
 
-async function tryFetch(url: string, token: string) {
+// Zwift Companion app (iOS) uses a mobile user agent — some endpoints
+// return additional fields (like Training Score) only to the mobile client.
+const MOBILE_HEADERS = (token: string) => ({
+  "User-Agent": "Zwift Companion/3.53.0 (com.zwift.zwiftcompanion; build:3.53.0; iOS 17.4.1)",
+  Authorization: `Bearer ${token}`,
+  Accept: "application/json",
+  "x-zwift-platform": "iOS",
+});
+
+async function tryFetch(url: string, headers: Record<string, string>) {
   try {
-    const r = await fetch(url, { headers: HEADERS(token) });
+    const r = await fetch(url, { headers });
     const text = await r.text();
     try { return { status: r.status, data: JSON.parse(text) }; }
     catch { return { status: r.status, data: text.slice(0, 500) }; }
@@ -23,6 +32,7 @@ async function tryFetch(url: string, token: string) {
 
 /**
  * Debug endpoint — probes multiple Zwift API endpoints to find Training Score.
+ * Tries both game-client and mobile (Companion app) headers.
  * Visit /api/zwift/debug-activity while logged in.
  */
 export async function GET(_req: NextRequest) {
@@ -38,37 +48,54 @@ export async function GET(_req: NextRequest) {
 
   const token = session.accessToken;
   const base = "https://us-or-rly101.zwift.com";
+  const gh = GAME_HEADERS(token);
+  const mh = MOBILE_HEADERS(token);
 
   const [profile, stats, fitness, goals, activities1] = await Promise.all([
-    tryFetch(`${base}/api/profiles/${id}`, token),
-    tryFetch(`${base}/api/profiles/${id}/stats`, token),
-    tryFetch(`${base}/api/profiles/${id}/fitness`, token),
-    tryFetch(`${base}/api/profiles/${id}/goals`, token),
-    tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, token),
+    tryFetch(`${base}/api/profiles/${id}`, gh),
+    tryFetch(`${base}/api/profiles/${id}/stats`, gh),
+    tryFetch(`${base}/api/profiles/${id}/fitness`, gh),
+    tryFetch(`${base}/api/profiles/${id}/goals`, gh),
+    tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, gh),
   ]);
 
-  // Fetch the full detail of the first activity — the list endpoint returns
-  // a summary; the single-activity endpoint may expose extra fields such as
-  // trainingLoad / Training Score that the list omits.
-  let activityDetail = null;
+  // Get the first activity ID for detail fetches
   const firstActivityId = Array.isArray(activities1?.data)
-    ? (activities1.data[0]?.id ?? activities1.data[0]?.id_str ?? null)
+    ? (activities1.data[0]?.id_str ?? activities1.data[0]?.id ?? null)
     : null;
-  if (firstActivityId) {
-    activityDetail = await tryFetch(
-      `${base}/api/profiles/${id}/activities/${firstActivityId}`,
-      token
-    );
-  }
+
+  // Fetch the single-activity detail with BOTH headers — game client and mobile.
+  // The Companion app (mobile) sometimes sees extra fields like trainingLoad.
+  const [activityDetailGame, activityDetailMobile] = firstActivityId
+    ? await Promise.all([
+        tryFetch(`${base}/api/profiles/${id}/activities/${firstActivityId}`, gh),
+        tryFetch(`${base}/api/profiles/${id}/activities/${firstActivityId}`, mh),
+      ])
+    : [null, null];
+
+  // Also probe mobile-only endpoints the Companion app might use
+  const [mobileActivities, mobileProfile, workoutResult] = await Promise.all([
+    tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, mh),
+    tryFetch(`${base}/api/profiles/${id}`, mh),
+    firstActivityId
+      ? tryFetch(`${base}/api/workout/workout_result/${firstActivityId}`, mh)
+      : Promise.resolve(null),
+  ]);
 
   return NextResponse.json({
     athleteId: id,
+    firstActivityId,
+    // Game client results
     profile,
     stats,
     fitness,
     goals,
     activities1,
-    activityDetail,           // full single-activity — check here for trainingLoad
-    firstActivityId,
+    activityDetailGame,      // single activity via game client — check for trainingLoad
+    // Mobile / Companion app results
+    activityDetailMobile,    // same endpoint, mobile UA — may have extra fields
+    mobileActivities,        // activity list via mobile UA
+    mobileProfile,           // profile via mobile UA
+    workoutResult,           // /workout/workout_result/{id} — Companion-specific endpoint
   });
 }
