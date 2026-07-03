@@ -94,6 +94,55 @@ export async function loginToZwift(
   };
 }
 
+/**
+ * Uses a Zwift refresh_token to obtain a new access_token without requiring
+ * the user's password again. Called automatically when the stored access token
+ * is found to be expired on the next page load.
+ */
+export async function refreshZwiftToken(
+  refreshToken: string
+): Promise<ZwiftLoginResult> {
+  let resp: Response;
+  try {
+    resp = await fetch(`https://${AUTH_HOST}${AUTH_PATH}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams({
+        client_id: "Zwift Game Client",
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }).toString(),
+    });
+  } catch (e) {
+    throw new ZwiftApiError(
+      `Network error reaching Zwift's auth server during token refresh: ${(e as Error).message}`,
+      0
+    );
+  }
+
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => "");
+    throw new ZwiftApiError(
+      `Token refresh failed (HTTP ${resp.status}): ${body.slice(0, 300)}`,
+      resp.status
+    );
+  }
+
+  const data = await resp.json();
+  if (!data.access_token) {
+    throw new ZwiftApiError("Token refresh response had no access_token.", resp.status);
+  }
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token ?? refreshToken,
+    expiresInSeconds: data.expires_in ?? 3600,
+  };
+}
+
 export interface ZwiftProfile {
   id?: number | string;
   firstName?: string;
@@ -369,68 +418,4 @@ export async function fetchActivityFit(activity: ZwiftActivity): Promise<ArrayBu
   }
 
   const chunks: Uint8Array[] = [];
-  let totalLength = 0;
-  const reader = resp.body.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      totalLength += value.length;
-    }
-  }
-
-  const merged = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return merged.buffer;
-}
-
-export interface RideOnGiver {
-  id?: number;
-  profileId?: number;
-  fullName?: string;
-  profileImageUrl?: string;
-  createDate?: string;
-  [key: string]: unknown;
-}
-
-/**
- * Who specifically gave a "Ride On" on one activity (not just the aggregate
- * count already included on the activity object).
- *
- * IMPORTANT: activityId must be the *exact* id - Zwift activity ids are
- * 64-bit and lose precision as a JS number, so always pass the activity's
- * id_str here, never `String(activity.id)` if id_str is available.
- */
-export async function fetchRideOns(
-  accessToken: string,
-  activityId: string
-): Promise<RideOnGiver[]> {
-  let resp: Response;
-  try {
-    resp = await fetch(`https://${API_HOST}/api/activities/${activityId}/rideon`, {
-      headers: {
-        ...GAME_CLIENT_HEADERS,
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-      },
-    });
-  } catch (e) {
-    throw new ZwiftApiError(`Network error fetching Ride On givers: ${(e as Error).message}`, 0);
-  }
-
-  if (!resp.ok) {
-    const body = await resp.text().catch(() => "");
-    throw new ZwiftApiError(
-      `Ride On API returned HTTP ${resp.status}: ${body.slice(0, 300)}`,
-      resp.status
-    );
-  }
-
-  const data = await resp.json();
-  return Array.isArray(data) ? (data as RideOnGiver[]) : [];
-}
+  let totalLengt
