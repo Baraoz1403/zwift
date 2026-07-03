@@ -50,37 +50,6 @@ export default function RidesTable({ activities }: { activities: ZwiftActivity[]
 
   return (
     <div>
-      <div className="stat-grid stat-grid-6" style={{ marginBottom: 16 }}>
-        <div className="stat-card">
-          <div className="label">Rides</div>
-          <div className="value">{summary.count}</div>
-        </div>
-        <div className="stat-card">
-          <div className="label">Total distance</div>
-          <div className="value">{formatDistance(summary.totalDistance)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="label">Total time</div>
-          <div className="value">{formatDuration(summary.totalTimeMs)}</div>
-        </div>
-        <div className="stat-card">
-          <div className="label">Total elevation</div>
-          <div className="value">{Math.round(summary.totalElevation)} m</div>
-        </div>
-        <div className="stat-card">
-          <div className="label">Avg power</div>
-          <div className="value">
-            {summary.avgPower ? `${Math.round(summary.avgPower)} W` : "n/a"}
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="label">Calories</div>
-          <div className="value">
-            {summary.totalCalories ? `${Math.round(summary.totalCalories)} kcal` : "n/a"}
-          </div>
-        </div>
-      </div>
-
       {activities.length === 0 ? (
         <div className="notice">No rides found.</div>
       ) : (
