@@ -56,7 +56,7 @@ from OneDrive sync, but it's not exhaustive.
 **Alternatively**: Claude can deploy using the `deploy-zwift` skill (say "פרוס").
 It replicates check.bat checks in bash and runs git operations directly.
 
-Production URL: **https://zwift-fawn.vercel.app**
+Production URL: **https://zwift-delta.vercel.app**
 
 ---
 

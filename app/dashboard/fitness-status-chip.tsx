@@ -37,7 +37,7 @@ export default function FitnessStatusChip() {
 
   return (
     <div
-      title={`Training Score (CTL) ${score} · TSB ${tsbStr} · ATL ${atl}`}
+      title={`Fitness score (CTL) ${score} · TSB ${tsbStr} · Fatigue (ATL) ${atl}`}
       style={{
         display: "inline-flex", alignItems: "center", gap: 7,
         padding: "9px 15px", borderRadius: 6,
@@ -57,7 +57,7 @@ export default function FitnessStatusChip() {
         background: statusColor, flexShrink: 0,
         boxShadow: `0 0 4px ${statusColor}80`,
       }} />
-      Training Score {score}
+      Fitness (CTL) {score}
       <span style={{ opacity: 0.5, margin: "0 1px" }}>·</span>
       <span style={{ color: statusColor, fontWeight: 600 }}>{label}</span>
     </div>
