@@ -2,10 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 
+const HEADERS = (token: string) => ({
+  Platform: "OSX",
+  Source: "Game Client",
+  "User-Agent": "CNL/3.30.8 (macOS 13 Ventura; Darwin Kernel 22.4.0) zwift/1.0.110983 curl/7.78.0",
+  Authorization: `Bearer ${token}`,
+  Accept: "application/json",
+});
+
+async function tryFetch(url: string, token: string) {
+  try {
+    const r = await fetch(url, { headers: HEADERS(token) });
+    const text = await r.text();
+    try { return { status: r.status, data: JSON.parse(text) }; }
+    catch { return { status: r.status, data: text.slice(0, 500) }; }
+  } catch (e) {
+    return { status: 0, error: String(e) };
+  }
+}
+
 /**
- * Debug endpoint — returns the raw JSON of the 3 most recent activities
- * so we can see exactly which field Zwift uses for Training Score.
- * Visit /api/zwift/debug-activity in the browser to inspect.
+ * Debug endpoint — probes multiple Zwift API endpoints to find Training Score.
+ * Visit /api/zwift/debug-activity while logged in.
  */
 export async function GET(_req: NextRequest) {
   const cookieStore = await cookies();
@@ -15,23 +33,26 @@ export async function GET(_req: NextRequest) {
   const session = await decryptSession(raw);
   if (!session) return NextResponse.json({ error: "Invalid session" }, { status: 401 });
 
-  const athleteId = session.athleteId;
-  if (!athleteId) return NextResponse.json({ error: "No athlete ID" });
+  const id = session.athleteId;
+  if (!id) return NextResponse.json({ error: "No athlete ID" });
 
-  const resp = await fetch(
-    `https://us-or-rly101.zwift.com/api/profiles/${athleteId}/activities?start=0&limit=3`,
-    {
-      headers: {
-        Platform: "OSX",
-        Source: "Game Client",
-        "User-Agent": "CNL/3.30.8 (macOS 13 Ventura; Darwin Kernel 22.4.0) zwift/1.0.110983 curl/7.78.0",
-        Authorization: `Bearer ${session.accessToken}`,
-        Accept: "application/json",
-      },
-    }
-  );
+  const token = session.accessToken;
+  const base = "https://us-or-rly101.zwift.com";
 
-  const data = await resp.json();
-  // Return raw data so we can inspect ALL field names
-  return NextResponse.json({ ok: true, raw: data });
+  const [profile, stats, fitness, goals, activities1] = await Promise.all([
+    tryFetch(`${base}/api/profiles/${id}`, token),
+    tryFetch(`${base}/api/profiles/${id}/stats`, token),
+    tryFetch(`${base}/api/profiles/${id}/fitness`, token),
+    tryFetch(`${base}/api/profiles/${id}/goals`, token),
+    tryFetch(`${base}/api/profiles/${id}/activities?start=0&limit=1`, token),
+  ]);
+
+  return NextResponse.json({
+    athleteId: id,
+    profile,
+    stats,
+    fitness,
+    goals,
+    activities1,
+  });
 }
