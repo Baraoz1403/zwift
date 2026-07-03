@@ -295,14 +295,14 @@ export default function MultiLineChart({
                 width={tooltipWidth}
                 height={16 + Math.max(visibleStatsAtHover.length, 1) * 15}
                 rx={6}
-                fill="rgba(13,17,23,0.92)"
-                stroke="rgba(255,255,255,0.12)"
+                fill="#ffffff"
+                stroke="rgba(20,23,26,0.14)"
               />
-              <text x={8} y={13} fill="rgba(255,255,255,0.7)" fontSize="10.5">
+              <text x={8} y={13} fill="rgba(20,23,26,0.45)" fontSize="10.5">
                 {formatElapsed(elapsedMs[hoverIdx])}
               </text>
               {visibleStatsAtHover.length === 0 ? (
-                <text x={8} y={28} fill="rgba(255,255,255,0.5)" fontSize="10.5">
+                <text x={8} y={28} fill="rgba(20,23,26,0.4)" fontSize="10.5">
                   no series selected
                 </text>
               ) : (
@@ -312,7 +312,7 @@ export default function MultiLineChart({
                   return (
                     <g key={s.key}>
                       <circle cx={12} cy={y - 4} r={3} fill={s.color} />
-                      <text x={20} y={y} fill="#ffffff" fontSize="10.5" fontWeight={400}>
+                      <text x={20} y={y} fill="#14171a" fontSize="10.5" fontWeight={400}>
                         {s.label}: {v != null ? `${Math.round(v)} ${s.unit}` : "—"}
                       </text>
                     </g>
