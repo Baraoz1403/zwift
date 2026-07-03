@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { HRAlertLevel, HRAlertResponse } from "@/app/api/zwift/hr-alert/route";
+
+const PREVIEW_DATA: Record<string, HRAlertResponse> = {
+  orange: { ok: true, level: "orange", headline: "HR Watch — Early Suppression Signal", detail: "Your HR over recent rides is running 8% lower than your baseline alongside a 6% drop in power. This may indicate accumulated fatigue. Consider an easier week, extra sleep, and check for other signs of illness." },
+  red:    { ok: true, level: "red",    headline: "Rest Required — HR Suppression Detected", detail: "Over your last 8 rides, your average HR is 14% below your baseline while power has also dropped 9%. This pattern is a classic sign of overreaching or early illness. Cut training intensity significantly this week." },
+  black:  { ok: true, level: "black",  headline: "Stop Training — Critical HR Suppression", detail: "Your heart rate is 22% below your baseline across 9 recent rides, and power has dropped 15%. This is a severe, sustained blunted cardiac response. Rest completely for at least a week. If you feel unwell, experience chest tightness, or this pattern continues, consult your doctor." },
+};
 
 const DISMISS_KEY = "hrAlertDismissed";
 
@@ -70,11 +77,20 @@ const LEVEL_STYLES: Record<
 };
 
 export default function HRAlertBanner() {
+  const searchParams = useSearchParams();
   const [alert, setAlert] = useState<HRAlertResponse | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
+    // Preview mode: ?hr=orange / red / black — shows mock alert without real data
+    const preview = searchParams?.get("hr");
+    if (preview && PREVIEW_DATA[preview]) {
+      setAlert(PREVIEW_DATA[preview]);
+      if (preview === "red" || preview === "black") setExpanded(true);
+      return;
+    }
+
     // Check if already dismissed this session
     if (typeof sessionStorage !== "undefined") {
       const dismissedUntil = sessionStorage.getItem(DISMISS_KEY);
@@ -96,7 +112,7 @@ export default function HRAlertBanner() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [searchParams]);
 
   function handleDismiss() {
     setDismissed(true);

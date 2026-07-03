@@ -26,7 +26,6 @@ import { IconBolt, IconClock, IconDistance, IconFlame, IconHeart, IconTrend, Ico
 import AvgCadenceCard from "./avg-cadence-card";
 import AvgHRCard from "./avg-hr-card";
 import HRAlertBanner from "./hr-alert-banner";
-import FitnessStatusChip from "./fitness-status-chip";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -209,10 +208,6 @@ export default async function DashboardPage() {
             )}
             <LogoutButton />
           </div>
-          {/* Training Score chip — aligned under the nav buttons */}
-          {!activitiesError && activities.length > 0 && (
-            <FitnessStatusChip />
-          )}
         </div>
       </div>
 
