@@ -346,7 +346,7 @@ export async function fetchActivities(
   // comes back shorter than a full page (the genuine end of history) or
   // errors, later results in that same batch are discarded and pagination
   // stops - same end result as the old one-at-a-time loop, just faster when
-  // there's more history to walk through.
+  // there's more history to walk. Through.
   const BATCH_SIZE = 4;
   let nextPage = 1;
   let done = firstPageData.length !== pageSize;
@@ -418,4 +418,68 @@ export async function fetchActivityFit(activity: ZwiftActivity): Promise<ArrayBu
   }
 
   const chunks: Uint8Array[] = [];
-  let totalLengt
+  let totalLength = 0;
+  const reader = resp.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      totalLength += value.length;
+    }
+  }
+
+  const merged = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return merged.buffer;
+}
+
+export interface RideOnGiver {
+  id?: number;
+  profileId?: number;
+  fullName?: string;
+  profileImageUrl?: string;
+  createDate?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Who specifically gave a "Ride On" on one activity (not just the aggregate
+ * count already included on the activity object).
+ *
+ * IMPORTANT: activityId must be the *exact* id - Zwift activity ids are
+ * 64-bit and lose precision as a JS number, so always pass the activity's
+ * id_str here, never `String(activity.id)` if id_str is available.
+ */
+export async function fetchRideOns(
+  accessToken: string,
+  activityId: string
+): Promise<RideOnGiver[]> {
+  let resp: Response;
+  try {
+    resp = await fetch(`https://${API_HOST}/api/activities/${activityId}/rideon`, {
+      headers: {
+        ...GAME_CLIENT_HEADERS,
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    });
+  } catch (e) {
+    throw new ZwiftApiError(`Network error fetching Ride On givers: ${(e as Error).message}`, 0);
+  }
+
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => "");
+    throw new ZwiftApiError(
+      `Ride On API returned HTTP ${resp.status}: ${body.slice(0, 300)}`,
+      resp.status
+    );
+  }
+
+  const data = await resp.json();
+  return Array.isArray(data) ? (data as RideOnGiver[]) : [];
+}
