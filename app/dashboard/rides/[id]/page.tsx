@@ -126,8 +126,10 @@ export default function RideDetailPage() {
 
       {!loading && data?.ok && data.activity && (
         <>
-          {/* ── Ride summary strip — one card, 5 inline stats ── */}
-          <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 28 }}>
+          {/* ── Unified ride card: stats + telemetry ── */}
+          <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 32 }}>
+
+            {/* Stats strip */}
             <div className="ride-stats-strip">
               {[
                 { label: "Date",      value: data.activity.startDate ? new Date(data.activity.startDate).toLocaleDateString("en-GB") : "n/a" },
@@ -153,34 +155,46 @@ export default function RideDetailPage() {
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* ── Telemetry chart ── */}
-          {data.fit && !data.fit.ok ? (
-            <div className="notice" style={{ marginBottom: 24 }}>
-              Couldn&apos;t load second-by-second data for this ride: {data.fit.error}
-            </div>
-          ) : (
-            <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 32 }}>
-              <div className="section-title" style={{ margin: "16px 18px 12px 20px" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
-                In-ride telemetry
+            {/* Section separator */}
+            {data.fit?.ok && (
+              <>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  padding: "0 20px",
+                  height: 42,
+                  background: "rgba(20,23,26,0.025)",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>
+                    In-ride telemetry
+                  </span>
+                </div>
+
+                {/* Chart */}
+                <div style={{ paddingBottom: 4 }}>
+                  <MultiLineChart
+                    elapsedMs={elapsedMs}
+                    elevationM={elevationSeries}
+                    series={[
+                      { key: "hr",      label: "Heart rate", color: "#e53e3e", unit: "bpm", values: heartRateSeries },
+                      { key: "cadence", label: "Cadence",    color: "#22c55e", unit: "rpm", values: cadenceSeries },
+                      { key: "power",   label: "Power",      color: "#f97316", unit: "W",   values: powerSeries },
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Telemetry error (FIT file failed to load) */}
+            {data.fit && !data.fit.ok && (
+              <div className="notice" style={{ margin: "14px 18px" }}>
+                Couldn&apos;t load second-by-second data: {data.fit.error}
               </div>
-              <div style={{ padding: "0 0 12px" }}>
-                <MultiLineChart
-                  elapsedMs={elapsedMs}
-                  elevationM={elevationSeries}
-                  series={[
-                    { key: "hr",      label: "Heart rate", color: "#e53e3e", unit: "bpm", values: heartRateSeries },
-                    { key: "cadence", label: "Cadence",    color: "#22c55e", unit: "rpm", values: cadenceSeries },
-                    { key: "power",   label: "Power",      color: "#f97316", unit: "W",   values: powerSeries },
-                  ]}
-                />
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* ── Ride On givers — styled like the rubric cards ── */}
           <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden" }}>

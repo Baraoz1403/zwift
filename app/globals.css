@@ -1147,6 +1147,8 @@ tbody tr:hover {
 /* Ride detail: 5-col inline stats strip */
 .ride-stats-strip {
   display: flex;
+  background: rgba(20, 23, 26, 0.026);
+  border-bottom: 1px solid var(--border);
 }
 
 @media (max-width: 700px) {
