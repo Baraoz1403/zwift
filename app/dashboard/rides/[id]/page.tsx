@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import MultiLineChart from "../../multi-chart";
+import RidesTable from "../../rides-table";
 import DashboardFooter from "../../footer";
 import LogoutButton from "../../logout-button";
+import type { ZwiftActivity } from "@/lib/zwift";
 
 interface FitPoint {
   timestampMs: number;
@@ -56,6 +58,7 @@ export default function RideDetailPage() {
 
   const [data, setData] = useState<DetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState<ZwiftActivity[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +68,11 @@ export default function RideDetailPage() {
       .then(setData)
       .catch(() => setData({ ok: false, error: "Network error reaching the server." }))
       .finally(() => setLoading(false));
+    // Fetch all rides for the list at the bottom
+    fetch("/api/zwift/activities")
+      .then((r) => r.json())
+      .then((j) => { if (j.ok && Array.isArray(j.activities)) setActivities(j.activities); })
+      .catch(() => {});
   }, [id]);
 
   const points = data?.fit && data.fit.ok ? data.fit.points : [];
@@ -252,6 +260,31 @@ export default function RideDetailPage() {
               ))
             )}
           </div>
+
+          {/* ── All rides list ── */}
+          {activities.length > 0 && (
+            <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginTop: 28 }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 9,
+                padding: "0 20px", height: 42,
+                background: "rgba(20,23,26,0.025)",
+                borderBottom: "1px solid var(--border)",
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12h18M3 6h18M3 18h18"/>
+                </svg>
+                <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "var(--muted)" }}>
+                  All rides
+                </span>
+                <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 600, color: "var(--muted)", opacity: 0.6 }}>
+                  {activities.length}
+                </span>
+              </div>
+              <div style={{ padding: "8px 0" }}>
+                <RidesTable activities={activities} />
+              </div>
+            </div>
+          )}
         </>
       )}
 
