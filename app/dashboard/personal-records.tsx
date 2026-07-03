@@ -101,27 +101,6 @@ export default function PersonalRecords({
   }, {});
   const sportBreakdown = Object.entries(caloriesBySport).filter(([, kcal]) => kcal > 0);
 
-  // All-time totals (from full activities list, not windowed)
-  const allTime = useMemo(() => {
-    const totalDistanceM = activities.reduce((s, a) => s + (a.distanceInMeters ?? 0), 0);
-    const totalTimeMs = activities.reduce((s, a) => s + (a.movingTimeInMs ?? 0), 0);
-    const totalElevationM = activities.reduce((s, a) => s + (a.totalElevation ?? 0), 0);
-    const totalCal = activities.reduce((s, a) => s + (a.calories ?? 0), 0);
-    const withPower = activities.filter((a) => a.avgWatts);
-    const avgPower = withPower.length > 0
-      ? withPower.reduce((s, a) => s + (a.avgWatts as number), 0) / withPower.length
-      : null;
-    const totalH = Math.floor(totalTimeMs / 3600000);
-    const totalM = Math.round((totalTimeMs % 3600000) / 60000);
-    return {
-      count: activities.length,
-      distanceKm: totalDistanceM / 1000,
-      timeLabel: totalH > 0 ? `${totalH}h ${totalM}m` : `${totalM}m`,
-      elevationM: totalElevationM,
-      calories: totalCal,
-      avgPower,
-    };
-  }, [activities]);
 
   return (
     <div>
@@ -293,66 +272,6 @@ export default function PersonalRecords({
         )}
       </div>
 
-      {/* ── All-time summary — same record-card style ── */}
-      <div className="record-grid" style={{ marginTop: 12 }}>
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconTrophy size={20} /></div>
-          <div>
-            <div className="label">Total rides</div>
-            <div className="value"><CountUp value={allTime.count} format={(n) => `${n.toFixed(0)}`} /></div>
-            <div className="sub">all time</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconDistance size={20} /></div>
-          <div>
-            <div className="label">Total distance</div>
-            <div className="value"><CountUp value={allTime.distanceKm} format={(n) => `${n.toFixed(1)} km`} /></div>
-            <div className="sub">all time</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconClock size={20} /></div>
-          <div>
-            <div className="label">Total time</div>
-            <div className="value">{allTime.timeLabel}</div>
-            <div className="sub">all time</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconMountain size={20} /></div>
-          <div>
-            <div className="label">Total elevation</div>
-            <div className="value"><CountUp value={allTime.elevationM} format={(n) => `${n.toFixed(0)} m`} /></div>
-            <div className="sub">all time</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconBolt size={20} /></div>
-          <div>
-            <div className="label">Avg power</div>
-            <div className="value">
-              {allTime.avgPower
-                ? <CountUp value={allTime.avgPower} format={(n) => `${n.toFixed(0)} W`} />
-                : "n/a"}
-            </div>
-            <div className="sub">all rides</div>
-          </div>
-        </div>
-
-        <div className="record-card">
-          <div className="record-icon c-neutral"><IconFlame size={20} /></div>
-          <div>
-            <div className="label">Calories</div>
-            <div className="value"><CountUp value={allTime.calories} format={(n) => `${n.toFixed(0)} kcal`} /></div>
-            <div className="sub">all time</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

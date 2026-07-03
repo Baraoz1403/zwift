@@ -326,10 +326,10 @@ export default function ActivityCharts({
   const avgCadence = filtered.map((a) => getExtras(a)?.avgCadence ?? null);
 
   const series: TrendSeries[] = [
-    { key: "distance",  label: "Distance",   color: "#2f8fe0", unit: "km",  values: distances },
-    { key: "power",     label: "Avg power",  color: "#f07020", unit: "W",   values: power },
-    { key: "heartRate", label: "Heart rate", color: "#ff4d6d", unit: "bpm", values: avgHeartRate },
-    { key: "cadence",   label: "Cadence",    color: "#1a9e52", unit: "rpm", values: avgCadence },
+    { key: "distance",  label: "Distance", color: "#2f8fe0", unit: "km",  values: distances },
+    { key: "power",     label: "Power",    color: "#f07020", unit: "W",   values: power },
+    { key: "heartRate", label: "HR",       color: "#ff4d6d", unit: "bpm", values: avgHeartRate },
+    { key: "cadence",   label: "Cadence",  color: "#1a9e52", unit: "rpm", values: avgCadence },
   ];
 
   // Per-series stats for the legend cards
@@ -358,6 +358,8 @@ export default function ActivityCharts({
         <IconTrend size={14} />
         Performance trends
       </div>
+
+      <div className="stat-card" style={{ padding: "16px 20px" }}>
 
       {/* Controls row — sport filter + series toggles + time window, all in one line */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 8, marginBottom: 12 }}>
@@ -402,7 +404,12 @@ export default function ActivityCharts({
               >
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color, flexShrink: 0, display: "inline-block" }} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
-                  {hasData ? `${Math.round(avg)} ${s.unit}` : s.label}
+                  {s.label}
+                  {hasData && (
+                    <span style={{ fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>
+                      · {Math.round(avg)} {s.unit}
+                    </span>
+                  )}
                 </span>
               </button>
             );
@@ -426,6 +433,8 @@ export default function ActivityCharts({
       ) : (
         <TrendChartSVG series={series} labels={dateLabels} visible={visible} />
       )}
+
+      </div>{/* end stat-card */}
     </div>
   );
 }

@@ -220,7 +220,7 @@ export default async function DashboardPage() {
       </div>
 
       {profile && (
-        <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32 }}>
 
           {/* Left column */}
           <div>
@@ -328,7 +328,7 @@ export default async function DashboardPage() {
           <HRAlertBanner />
 
           {/* ── Most actionable: today's plan + AI coaching ── */}
-          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
+          <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
             <WeeklyPlan />
           </div>
 
