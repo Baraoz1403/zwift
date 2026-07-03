@@ -4307,3 +4307,10 @@ Fri 07/03/2026 22:14:46.58
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/dashboard/rides/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+[main 7e64389] Auto deploy Fri 07/03/2026 22:14:46.94
+ 2 files changed, 30 insertions(+), 3 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   5c5e869..7e64389  main -> main
+Fri 07/03/2026 22:14:48.71 - SUCCESS: pushed. Vercel rebuilding. 
