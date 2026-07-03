@@ -184,7 +184,7 @@ export default async function DashboardPage() {
               </h1>
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}>
-              Train smarter, ride better — powered by AI.
+              Ride smarter, live better — powered by AI.
             </div>
           </div>
         </div>
