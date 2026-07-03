@@ -365,69 +365,65 @@ export default function ActivityCharts({
 
       <div className="stat-card" style={{ padding: "16px 20px" }}>
 
-      {/* Controls row — sport filter + series toggles + time window, all in one line */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 8, marginBottom: 12 }}>
+      {/* Controls — single scrollable row: sport · series pills · time window */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        marginBottom: 12, overflowX: "auto", overflowY: "hidden",
+        msOverflowStyle: "none", scrollbarWidth: "none",
+        WebkitOverflowScrolling: "touch",
+      } as React.CSSProperties}>
 
-        {/* Left: sport filter */}
-        <div>
-          {sports.length > 1 && (
-            <div className="trend-tabs">
+        {/* Sport filter */}
+        {sports.length > 1 && (
+          <>
+            <div className="trend-tabs" style={{ flexShrink: 0, marginBottom: 0 }}>
               <button type="button" className={`trend-tab ${sportFilter === "all" ? "active" : ""}`} onClick={() => setSportFilter("all")}>All</button>
               {sports.map((s) => (
                 <button key={s} type="button" className={`trend-tab ${sportFilter === s ? "active" : ""}`} onClick={() => setSportFilter(s)} style={{ display: "flex", alignItems: "center", gap: 4 }} title={s}>
-                  {s === "CYCLING" ? <BikeIcon size={14} /> : <RunIcon size={14} />}
+                  {s === "CYCLING" ? <BikeIcon size={13} /> : <RunIcon size={13} />}
                 </button>
               ))}
             </div>
-          )}
-        </div>
+            <div style={{ width: 1, height: 18, background: "var(--border)", flexShrink: 0 }} />
+          </>
+        )}
 
-        {/* Centre: series toggles as compact pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {series.map((s, i) => {
-            const { avg, hasData } = seriesStats[i];
-            const on = visible[s.key];
-            return (
-              <button
-                key={s.key}
-                type="button"
-                disabled={!hasData}
-                onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "4px 9px",
-                  borderRadius: 6,
-                  border: `1px solid var(--border)`,
-                  background: on ? "var(--panel)" : "transparent",
-                  cursor: hasData ? "pointer" : "default",
-                  opacity: hasData ? (on ? 1 : 0.38) : 0.22,
-                  transition: "opacity 0.15s, background 0.15s",
-                  fontFamily: "inherit",
-                  whiteSpace: "nowrap" as const,
-                }}
-              >
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color, flexShrink: 0, display: "inline-block" }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
-                  {s.label}
-                  {hasData && (
-                    <span style={{ fontWeight: 500, color: "var(--muted)", marginLeft: 4 }}>
-                      · {Math.round(avg)} {s.unit}
-                    </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Series pills — compact (dot + short label only) */}
+        {series.map((s, i) => {
+          const { hasData } = seriesStats[i];
+          const on = visible[s.key];
+          return (
+            <button
+              key={s.key}
+              type="button"
+              disabled={!hasData}
+              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "4px 8px", borderRadius: 6, flexShrink: 0,
+                border: "1px solid var(--border)",
+                background: on ? "var(--panel)" : "transparent",
+                cursor: hasData ? "pointer" : "default",
+                opacity: hasData ? (on ? 1 : 0.35) : 0.18,
+                transition: "opacity 0.15s, background 0.15s",
+                fontFamily: "inherit", whiteSpace: "nowrap" as const,
+              }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color, flexShrink: 0, display: "inline-block" }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>{s.label}</span>
+            </button>
+          );
+        })}
 
-        {/* Right: time window */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {extrasLoading && <span style={{ fontSize: 11, color: "var(--muted)" }}>loading…</span>}
-          <div className="trend-tabs">
-            {TIME_WINDOWS.map((w) => (
-              <button key={w} type="button" className={`trend-tab ${timeWindow === w ? "active" : ""}`} onClick={() => setTimeWindow(w)}>{w}</button>
-            ))}
-          </div>
+        {/* Spacer pushes time window to the right on wide screens */}
+        <div style={{ flex: 1, minWidth: 6 }} />
+
+        {/* Time window */}
+        {extrasLoading && <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>loading…</span>}
+        <div className="trend-tabs" style={{ flexShrink: 0, marginBottom: 0 }}>
+          {TIME_WINDOWS.map((w) => (
+            <button key={w} type="button" className={`trend-tab ${timeWindow === w ? "active" : ""}`} onClick={() => setTimeWindow(w)}>{w}</button>
+          ))}
         </div>
       </div>
 
