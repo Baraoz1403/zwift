@@ -215,13 +215,13 @@ export default async function DashboardPage() {
               <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
                 <IconTrend size={14} />
                 Power &amp; Cadence
+                <span style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", opacity: 0.6, marginLeft: 6 }}>· last 10 rides</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconTrend size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg watts</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{wattsRides.length > 0 ? `last ${wattsRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
                   {avgWatts10 != null
@@ -245,13 +245,13 @@ export default async function DashboardPage() {
               <div className="section-title" style={{ margin: "16px 18px 10px 20px" }}>
                 <IconBolt size={14} />
                 Fitness
+                <span style={{ fontSize: 10, fontWeight: 500, color: "var(--muted)", opacity: 0.6, marginLeft: 6 }}>· last 10 rides</span>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", padding: "16px 18px", gap: 12 }}>
                 <div className="stat-card-icon c-orange" style={{ flexShrink: 0 }}><IconFlame size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg calories</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{calRides.length > 0 ? `last ${calRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
                   {avgCalories10 != null
@@ -266,7 +266,6 @@ export default async function DashboardPage() {
                 <div className="stat-card-icon c-blue" style={{ flexShrink: 0 }}><IconDistance size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg distance</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{distRides.length > 0 ? `last ${distRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
                   {avgDistKm != null
@@ -281,7 +280,6 @@ export default async function DashboardPage() {
                 <div className="stat-card-icon c-teal" style={{ flexShrink: 0 }}><IconClock size={13} /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg duration</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>{timeRides.length > 0 ? `last ${timeRides.length} rides` : "from rides"}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
                   {avgTimeFmt != null
@@ -337,7 +335,7 @@ export default async function DashboardPage() {
 
           <div className="section fade-in">
             <div className="section-title"><IconList size={14} /> Rides</div>
-            <RidesTable activities={clientActivities} />
+            <RidesTable activities={clientActivities} ftp={profile?.ftp ?? undefined} />
           </div>
 
           <div className="section fade-in">

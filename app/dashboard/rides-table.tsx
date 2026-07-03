@@ -27,7 +27,19 @@ function formatDate(iso?: string): string {
 
 const PAGE_SIZE = 5;
 
-export default function RidesTable({ activities }: { activities: ZwiftActivity[] }) {
+/**
+ * Training Stress Score — the same formula the Zwift Companion app uses.
+ * TSS = 100 × (duration in hours) × IF²  where IF = avgWatts / FTP.
+ * Returns null when power or FTP data are unavailable.
+ */
+function computeTSS(avgWatts: number | null | undefined, movingTimeInMs: number | null | undefined, ftp: number): number | null {
+  if (!avgWatts || !movingTimeInMs || ftp <= 0) return null;
+  const durationH = movingTimeInMs / 3600000;
+  const IF = avgWatts / ftp;
+  return Math.round(100 * durationH * IF * IF);
+}
+
+export default function RidesTable({ activities, ftp }: { activities: ZwiftActivity[]; ftp?: number }) {
   const [page, setPage] = useState<number>(0);
 
   const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
@@ -44,6 +56,7 @@ export default function RidesTable({ activities }: { activities: ZwiftActivity[]
           {pageRides.map((a) => {
             const rideId = a.id_str ?? String(a.id);
             const world = worldName(a.worldId);
+            const tss = ftp ? computeTSS(a.avgWatts, a.movingTimeInMs, ftp) : null;
             return (
               <Link key={rideId} href={`/dashboard/rides/${rideId}`} className="ride-row">
                 <div className="ride-row-icon">
@@ -80,6 +93,14 @@ export default function RidesTable({ activities }: { activities: ZwiftActivity[]
                     <IconFlame size={13} />
                     {a.calories ? `${Math.round(a.calories)} kcal` : "n/a"}
                   </span>
+                  {tss !== null && (
+                    <span className="ride-stat" title="Training Score (TSS)">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                      </svg>
+                      {tss} TSS
+                    </span>
+                  )}
                 </div>
 
                 <div className="ride-row-arrow">→</div>

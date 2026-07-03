@@ -65,9 +65,6 @@ export default function AvgHRCard({ mode }: { mode: "row" | "chip" }) {
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 500 }}>Avg heart rate</div>
-        <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.65, marginTop: 2 }}>
-          {loading ? "" : rideCount > 0 ? `last ${rideCount} rides` : "from FIT data"}
-        </div>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
         {loading ? (
