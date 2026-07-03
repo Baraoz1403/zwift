@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { ZwiftActivity } from "@/lib/zwift";
 import { worldName } from "@/lib/zwift-worlds";
@@ -29,19 +29,6 @@ const PAGE_SIZE = 5;
 
 export default function RidesTable({ activities }: { activities: ZwiftActivity[] }) {
   const [page, setPage] = useState<number>(0);
-
-  const summary = useMemo(() => {
-    const totalDistance = activities.reduce((s, a) => s + (a.distanceInMeters ?? 0), 0);
-    const totalTimeMs = activities.reduce((s, a) => s + (a.movingTimeInMs ?? 0), 0);
-    const totalElevation = activities.reduce((s, a) => s + (a.totalElevation ?? 0), 0);
-    const totalCalories = activities.reduce((s, a) => s + (a.calories ?? 0), 0);
-    const withPower = activities.filter((a) => a.avgWatts);
-    const avgPower =
-      withPower.length > 0
-        ? withPower.reduce((s, a) => s + (a.avgWatts ?? 0), 0) / withPower.length
-        : null;
-    return { totalDistance, totalTimeMs, totalElevation, totalCalories, avgPower, count: activities.length };
-  }, [activities]);
 
   const totalPages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);

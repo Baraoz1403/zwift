@@ -106,8 +106,8 @@ function TrendChartSVG({
   const svgRef = useRef<SVGSVGElement>(null);
 
   const width = 700;
-  const height = 240;
-  const padding = 34;
+  const height = 210;
+  const padding = 26;
   const leftPad = 46;
   const n = labels.length;
 
@@ -416,7 +416,7 @@ export default function ActivityCharts({
       )}
 
       {/* Stat-card legend — BELOW the chart, click to toggle series */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
         {series.map((s, i) => {
           const { avg, max, hasData } = seriesStats[i];
           const on = visible[s.key];
@@ -427,26 +427,26 @@ export default function ActivityCharts({
               disabled={!hasData}
               onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
               style={{
-                padding: "10px 12px",
-                borderRadius: 8,
+                padding: "7px 10px",
+                borderRadius: 6,
                 border: `1px solid var(--border)`,
-                borderLeft: `3px solid ${s.color}`,
+                borderLeft: `2px solid ${s.color}`,
                 background: on ? "var(--panel)" : "transparent",
                 cursor: hasData ? "pointer" : "default",
-                opacity: hasData ? (on ? 1 : 0.38) : 0.25,
+                opacity: hasData ? (on ? 1 : 0.35) : 0.2,
                 textAlign: "left" as const,
                 transition: "opacity 0.15s, background 0.15s",
                 fontFamily: "inherit",
               }}
             >
-              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginBottom: 3, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
+              <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 600, marginBottom: 2, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
                 {s.label}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
-                {hasData ? `${Math.round(avg)} ${s.unit}` : "n/a"}
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
+                {hasData ? `${Math.round(avg)} ${s.unit}` : "—"}
               </div>
               {hasData && (
-                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>
+                <div style={{ fontSize: 9, color: "var(--muted)", marginTop: 2, opacity: 0.8 }}>
                   max {Math.round(max)} {s.unit}
                 </div>
               )}

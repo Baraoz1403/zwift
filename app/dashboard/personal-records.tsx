@@ -2,10 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ZwiftActivity } from "@/lib/zwift";
-import { computeRecords, selectChartActivities } from "@/lib/stats";
+import { computeRecords } from "@/lib/stats";
 import { IconBolt, IconClock, IconDistance, IconFlame, IconHeart, IconMountain, IconTrophy } from "./icons";
 
-const RECORD_WINDOW_OPTIONS = [30, 60, 90, 120] as const;
+const WINDOW_OPTIONS = ["W", "M", "Y", "ALL"] as const;
+type WindowOption = typeof WINDOW_OPTIONS[number];
+const WINDOW_MS: Record<WindowOption, number | null> = {
+  W: 7 * 86400 * 1000,
+  M: 30 * 86400 * 1000,
+  Y: 365 * 86400 * 1000,
+  ALL: null,
+};
 
 /** Animates from 0 up to `value` once, on mount - a bit of polish so the
  * record cards feel alive instead of just appearing with static numbers. */
