@@ -480,7 +480,7 @@ export default function WeeklyPlan() {
             </div>
           )}
 
-          <div className="stat-grid workout-grid" style={{ alignItems: "stretch" }}>
+          <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
 
@@ -568,19 +568,44 @@ export default function WeeklyPlan() {
                   actual.avgHeartRate ? `${Math.round(actual.avgHeartRate)} bpm` : null,
                 ].filter(Boolean).join(" · ");
                 return (
-                  <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", border: "1.5px solid rgba(26,143,76,0.35)" }}>
-                    <div className="stat-card-head" style={{ marginTop: 10 }}>
-                      <div className="stat-card-icon c-green">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", border: "1.5px solid rgba(26,143,76,0.35)", padding: 0, overflow: "hidden" }}>
+                    {/* Visual header — green gradient since no workout structure */}
+                    <div style={{ position: "relative" }}>
+                      <div style={{
+                        height: 72,
+                        background: "linear-gradient(135deg, rgba(26,143,76,0.18) 0%, rgba(26,143,76,0.06) 100%)",
+                        borderBottom: "1px solid rgba(26,143,76,0.2)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(26,143,76,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
                       </div>
-                      <div className="label" style={{ margin: 0 }}>{w.day} · Bonus ride!</div>
+                      <div style={{
+                        position: "absolute", top: 8, left: 10,
+                        background: "rgba(26,143,76,0.88)", color: "#fff",
+                        fontSize: 10, fontWeight: 700, padding: "2.5px 8px",
+                        borderRadius: 20, display: "flex", alignItems: "center", gap: 4,
+                        letterSpacing: "0.06em", boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                      }}>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        BONUS
+                      </div>
                     </div>
-                    <div className="value" style={{ fontSize: 16 }}>{actual.name}</div>
-                    {bonusStats && <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8, marginTop: 4 }}>{bonusStats}</div>}
-                    <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 10.5, color: "var(--muted)", fontStyle: "italic", flexGrow: 1 }}>
-                      Planned: Rest Day — great job riding anyway!
+                    {/* Card body */}
+                    <div style={{ padding: "12px 16px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.3, marginBottom: 3 }}>
+                        {actual.name}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>
+                        {w.day}{w.date ? ` · ${w.date}` : ""} · Bonus ride!
+                      </div>
+                      {bonusStats && <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8 }}>{bonusStats}</div>}
+                      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 10.5, color: "var(--muted)", fontStyle: "italic" }}>
+                        Planned: Rest Day — great job riding anyway!
+                      </div>
                     </div>
                   </div>
                 );

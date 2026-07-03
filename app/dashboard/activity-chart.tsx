@@ -359,56 +359,9 @@ export default function ActivityCharts({
         Performance trends
       </div>
 
-      {/* Stat-card legend — 4 mini cards, click to toggle series */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 14 }}>
-        {series.map((s, i) => {
-          const { avg, max, hasData } = seriesStats[i];
-          const on = visible[s.key];
-          return (
-            <button
-              key={s.key}
-              type="button"
-              disabled={!hasData}
-              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 8,
-                border: `1px solid var(--border)`,
-                borderLeft: `3px solid ${s.color}`,
-                background: on ? "var(--panel)" : "transparent",
-                cursor: hasData ? "pointer" : "default",
-                opacity: hasData ? (on ? 1 : 0.38) : 0.25,
-                textAlign: "left" as const,
-                transition: "opacity 0.15s, background 0.15s",
-                fontFamily: "inherit",
-              }}
-            >
-              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginBottom: 3, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
-                {s.label}
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
-                {hasData ? `${Math.round(avg)} ${s.unit}` : "n/a"}
-              </div>
-              {hasData && (
-                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>
-                  max {Math.round(max)} {s.unit}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Chart */}
-      {filtered.length === 0 ? (
-        <div className="notice">No rides for this filter yet.</div>
-      ) : (
-        <TrendChartSVG series={series} labels={dateLabels} visible={visible} />
-      )}
-
-      {/* Controls — below the chart */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, marginTop: 14 }}>
-        {/* Sport filter — only when multiple sports present */}
+      {/* Controls — ABOVE the chart */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, marginBottom: 14 }}>
+        {/* Sport filter — always show when user has multiple sports */}
         <div>
           {sports.length > 1 && (
             <div className="trend-tabs">
@@ -453,6 +406,53 @@ export default function ActivityCharts({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Chart */}
+      {filtered.length === 0 ? (
+        <div className="notice">No rides for this filter yet.</div>
+      ) : (
+        <TrendChartSVG series={series} labels={dateLabels} visible={visible} />
+      )}
+
+      {/* Stat-card legend — BELOW the chart, click to toggle series */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 14 }}>
+        {series.map((s, i) => {
+          const { avg, max, hasData } = seriesStats[i];
+          const on = visible[s.key];
+          return (
+            <button
+              key={s.key}
+              type="button"
+              disabled={!hasData}
+              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: `1px solid var(--border)`,
+                borderLeft: `3px solid ${s.color}`,
+                background: on ? "var(--panel)" : "transparent",
+                cursor: hasData ? "pointer" : "default",
+                opacity: hasData ? (on ? 1 : 0.38) : 0.25,
+                textAlign: "left" as const,
+                transition: "opacity 0.15s, background 0.15s",
+                fontFamily: "inherit",
+              }}
+            >
+              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginBottom: 3, textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
+                {s.label}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
+                {hasData ? `${Math.round(avg)} ${s.unit}` : "n/a"}
+              </div>
+              {hasData && (
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>
+                  max {Math.round(max)} {s.unit}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
