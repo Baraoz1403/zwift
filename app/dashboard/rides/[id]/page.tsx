@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import MultiLineChart from "../../multi-chart";
@@ -146,23 +146,23 @@ export default function RideDetailPage() {
                 { label: "Avg power", value: data.activity.avgWatts ? `${Math.round(data.activity.avgWatts)} W` : "n/a" },
                 { label: "Calories",  value: data.activity.calories ? `${Math.round(data.activity.calories)} kcal` : "n/a" },
               ].map((s, i, arr) => (
-                <div
-                  key={s.label}
-                  style={{
-                    flex: 1,
-                    padding: "18px 20px",
-                    borderRight: i < arr.length - 1 ? "1px solid var(--border)" : "none",
-                  }}
-                >
-                  <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 7 }}>
-                    {s.label}
+                <React.Fragment key={s.label}>
+                  <div style={{ flex: 1, padding: "18px 20px" }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)", marginBottom: 7 }}>
+                      {s.label}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
+                      {s.value}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
-                    {s.value}
-                  </div>
-                </div>
+                  {i < arr.length - 1 && (
+                    <div style={{ width: 1, background: "var(--border)", margin: "14px 0", flexShrink: 0 }} />
+                  )}
+                </React.Fragment>
               ))}
             </div>
+            {/* Inset horizontal divider */}
+            <div style={{ height: 1, background: "var(--border)", margin: "0 20px" }} />
 
             {/* Section separator */}
             {data.fit?.ok && (
