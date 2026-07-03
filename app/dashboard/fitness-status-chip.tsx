@@ -30,7 +30,7 @@ export default function FitnessStatusChip() {
   if (!data?.ok || !data.current) return null;
 
   const { status, ctl, atl, tsb } = data.current;
-  const color = STATUS_COLORS[status] ?? "#848490";
+  const statusColor = STATUS_COLORS[status] ?? "#848490";
   const label = STATUS_LABELS[status] ?? status;
   const score = Math.round(ctl);
   const tsbStr = (tsb >= 0 ? "+" : "") + tsb;
@@ -41,23 +41,25 @@ export default function FitnessStatusChip() {
       style={{
         display: "inline-flex", alignItems: "center", gap: 7,
         padding: "9px 15px", borderRadius: 6,
-        border: `1px solid ${color}38`,
-        background: `${color}07`,
+        border: "1px solid rgba(47,143,224,0.22)",
+        background: "rgba(47,143,224,0.06)",
         fontSize: 12.5, fontWeight: 500,
-        color: color,
+        color: "var(--accent)",
         whiteSpace: "nowrap" as const,
         fontFamily: "var(--font-sans)",
         cursor: "default",
         userSelect: "none" as const,
       }}
     >
-      {/* Colored dot */}
+      {/* Status dot — colored per Fresh/Productive/etc. */}
       <span style={{
         width: 7, height: 7, borderRadius: "50%",
-        background: color, flexShrink: 0,
-        boxShadow: `0 0 4px ${color}70`,
+        background: statusColor, flexShrink: 0,
+        boxShadow: `0 0 4px ${statusColor}80`,
       }} />
-      Training Score {score} · {label}
+      Training Score {score}
+      <span style={{ opacity: 0.5, margin: "0 1px" }}>·</span>
+      <span style={{ color: statusColor, fontWeight: 600 }}>{label}</span>
     </div>
   );
 }

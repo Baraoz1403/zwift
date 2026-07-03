@@ -204,12 +204,9 @@ export default async function DashboardPage() {
             )}
             <LogoutButton />
           </div>
-          {/* HR + Training Score chips — aligned under the nav buttons */}
+          {/* Training Score chip — aligned under the nav buttons */}
           {!activitiesError && activities.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <AvgHRCard mode="chip" />
-              <FitnessStatusChip />
-            </div>
+            <FitnessStatusChip />
           )}
         </div>
       </div>
@@ -322,7 +319,7 @@ export default async function DashboardPage() {
           {/* HR anomaly banner — renders client-side after FIT file analysis */}
           <HRAlertBanner />
 
-          {/* ── Most actionable: today’s plan + AI coaching ── */}
+          {/* ── Most actionable: today's plan + AI coaching ── */}
           <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24, marginTop: 16 }}>
             <WeeklyPlan />
           </div>
