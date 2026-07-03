@@ -359,28 +359,16 @@ export default function ActivityCharts({
         Performance trends
       </div>
 
-      {/* Controls — ABOVE the chart */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 10, marginBottom: 14 }}>
-        {/* Sport filter — always show when user has multiple sports */}
+      {/* Controls row — sport filter + series toggles + time window, all in one line */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 8, marginBottom: 12 }}>
+
+        {/* Left: sport filter */}
         <div>
           {sports.length > 1 && (
             <div className="trend-tabs">
-              <button
-                type="button"
-                className={`trend-tab ${sportFilter === "all" ? "active" : ""}`}
-                onClick={() => setSportFilter("all")}
-              >
-                All
-              </button>
+              <button type="button" className={`trend-tab ${sportFilter === "all" ? "active" : ""}`} onClick={() => setSportFilter("all")}>All</button>
               {sports.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`trend-tab ${sportFilter === s ? "active" : ""}`}
-                  onClick={() => setSportFilter(s)}
-                  style={{ display: "flex", alignItems: "center", gap: 4 }}
-                  title={s}
-                >
+                <button key={s} type="button" className={`trend-tab ${sportFilter === s ? "active" : ""}`} onClick={() => setSportFilter(s)} style={{ display: "flex", alignItems: "center", gap: 4 }} title={s}>
                   {s === "CYCLING" ? <BikeIcon size={14} /> : <RunIcon size={14} />}
                 </button>
               ))}
@@ -388,21 +376,45 @@ export default function ActivityCharts({
           )}
         </div>
 
-        {/* Time window selector */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {extrasLoading && (
-            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>loading…</span>
-          )}
+        {/* Centre: series toggles as compact pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {series.map((s, i) => {
+            const { avg, hasData } = seriesStats[i];
+            const on = visible[s.key];
+            return (
+              <button
+                key={s.key}
+                type="button"
+                disabled={!hasData}
+                onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "4px 9px",
+                  borderRadius: 6,
+                  border: `1px solid var(--border)`,
+                  background: on ? "var(--panel)" : "transparent",
+                  cursor: hasData ? "pointer" : "default",
+                  opacity: hasData ? (on ? 1 : 0.38) : 0.22,
+                  transition: "opacity 0.15s, background 0.15s",
+                  fontFamily: "inherit",
+                  whiteSpace: "nowrap" as const,
+                }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: s.color, flexShrink: 0, display: "inline-block" }} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text)" }}>
+                  {hasData ? `${Math.round(avg)} ${s.unit}` : s.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: time window */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {extrasLoading && <span style={{ fontSize: 11, color: "var(--muted)" }}>loading…</span>}
           <div className="trend-tabs">
             {TIME_WINDOWS.map((w) => (
-              <button
-                key={w}
-                type="button"
-                className={`trend-tab ${timeWindow === w ? "active" : ""}`}
-                onClick={() => setTimeWindow(w)}
-              >
-                {w}
-              </button>
+              <button key={w} type="button" className={`trend-tab ${timeWindow === w ? "active" : ""}`} onClick={() => setTimeWindow(w)}>{w}</button>
             ))}
           </div>
         </div>
@@ -414,46 +426,6 @@ export default function ActivityCharts({
       ) : (
         <TrendChartSVG series={series} labels={dateLabels} visible={visible} />
       )}
-
-      {/* Stat-card legend — BELOW the chart, click to toggle series */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
-        {series.map((s, i) => {
-          const { avg, max, hasData } = seriesStats[i];
-          const on = visible[s.key];
-          return (
-            <button
-              key={s.key}
-              type="button"
-              disabled={!hasData}
-              onClick={() => setVisible((v) => ({ ...v, [s.key]: !v[s.key] }))}
-              style={{
-                padding: "7px 10px",
-                borderRadius: 6,
-                border: `1px solid var(--border)`,
-                borderLeft: `2px solid ${s.color}`,
-                background: on ? "var(--panel)" : "transparent",
-                cursor: hasData ? "pointer" : "default",
-                opacity: hasData ? (on ? 1 : 0.35) : 0.2,
-                textAlign: "left" as const,
-                transition: "opacity 0.15s, background 0.15s",
-                fontFamily: "inherit",
-              }}
-            >
-              <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 600, marginBottom: 2, textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-                {s.label}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>
-                {hasData ? `${Math.round(avg)} ${s.unit}` : "—"}
-              </div>
-              {hasData && (
-                <div style={{ fontSize: 9, color: "var(--muted)", marginTop: 2, opacity: 0.8 }}>
-                  max {Math.round(max)} {s.unit}
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
