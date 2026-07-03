@@ -1194,6 +1194,14 @@ tbody tr:hover {
   }
 }
 
+/* Nav chips row — desktop */
+.header-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 /* Dashboard header bar: stack on mobile */
 @media (max-width: 760px) {
   .dashboard-header {
@@ -1204,12 +1212,11 @@ tbody tr:hover {
     width: 100%;
     margin-left: 0;
   }
-  /* Right-side nav chips: wrap tightly */
-  .dashboard-header > div:last-child {
-    display: flex;
+  .header-nav-row {
     flex-wrap: wrap;
     gap: 6px;
     width: 100%;
+    flex-shrink: unset;
   }
   .header-nav-chip {
     padding: 7px 11px;
