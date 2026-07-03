@@ -567,20 +567,17 @@ export default function WeeklyPlan() {
                   actual.avgWatts ? `${Math.round(actual.avgWatts)} W` : null,
                   actual.avgHeartRate ? `${Math.round(actual.avgHeartRate)} bpm` : null,
                 ].filter(Boolean).join(" · ");
+                // Synthetic workout so WorkoutThumbnail renders actual-ride bars
+                const bonusWorkout = {
+                  title: actual.name as string,
+                  type: (actual.sport as string) === "RUNNING" ? "Easy Run" : "Endurance",
+                  durationMin: Math.round(((actual.durationInSeconds as number) || 3600) / 60),
+                  targetPowerPctFtp: "65-75%",
+                };
                 return (
                   <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", border: "1.5px solid rgba(26,143,76,0.35)", padding: 0, overflow: "hidden" }}>
-                    {/* Visual header — green gradient since no workout structure */}
                     <div style={{ position: "relative" }}>
-                      <div style={{
-                        height: 72,
-                        background: "linear-gradient(135deg, rgba(26,143,76,0.18) 0%, rgba(26,143,76,0.06) 100%)",
-                        borderBottom: "1px solid rgba(26,143,76,0.2)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(26,143,76,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      </div>
+                      <WorkoutThumbnail workout={bonusWorkout} flush />
                       <div style={{
                         position: "absolute", top: 8, left: 10,
                         background: "rgba(26,143,76,0.88)", color: "#fff",
@@ -594,7 +591,6 @@ export default function WeeklyPlan() {
                         BONUS
                       </div>
                     </div>
-                    {/* Card body */}
                     <div style={{ padding: "12px 16px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
                       <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.3, marginBottom: 3 }}>
                         {actual.name}
