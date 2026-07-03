@@ -83,7 +83,7 @@ export default function RideDetailPage() {
     <div className="dashboard">
 
       {/* ── Header ── */}
-      <div className="dashboard-header fade-in">
+      <div className="dashboard-header fade-in" style={{ flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
           {/* Blue Zwift tile */}
           <div style={{
@@ -128,7 +128,7 @@ export default function RideDetailPage() {
         <>
           {/* ── Ride summary strip — one card, 5 inline stats ── */}
           <div className="stat-card fade-in" style={{ padding: 0, overflow: "hidden", marginBottom: 28 }}>
-            <div style={{ display: "flex" }}>
+            <div className="ride-stats-strip">
               {[
                 { label: "Date",      value: data.activity.startDate ? new Date(data.activity.startDate).toLocaleDateString("en-GB") : "n/a" },
                 { label: "Distance",  value: data.activity.distanceInMeters ? `${(data.activity.distanceInMeters / 1000).toFixed(1)} km` : "n/a" },

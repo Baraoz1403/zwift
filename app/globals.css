@@ -1128,6 +1128,65 @@ tbody tr:hover {
   }
 }
 
+/* 2-column rubric cards (Power & Cadence / Fitness) */
+.rubric-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+@media (max-width: 700px) {
+  .rubric-cards-grid {
+    grid-template-columns: 1fr;
+    margin-top: 20px;
+  }
+}
+
+/* Ride detail: 5-col inline stats strip */
+.ride-stats-strip {
+  display: flex;
+}
+
+@media (max-width: 700px) {
+  .ride-stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ride-stats-strip > div {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+  .ride-stats-strip > div:nth-child(3n) {
+    border-right: none !important;
+  }
+  .ride-stats-strip > div:nth-child(1),
+  .ride-stats-strip > div:nth-child(2) {
+    border-right: 1px solid var(--border) !important;
+  }
+  .ride-stats-strip > div:nth-child(4) {
+    border-right: 1px solid var(--border) !important;
+  }
+  .ride-stats-strip > div:last-child {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .ride-stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ride-stats-strip > div:nth-child(odd) {
+    border-right: 1px solid var(--border) !important;
+  }
+  .ride-stats-strip > div:nth-child(even) {
+    border-right: none !important;
+  }
+  .ride-stats-strip > div:last-child:nth-child(odd) {
+    border-right: none !important;
+  }
+}
+
 /* Dashboard outer padding */
 @media (max-width: 640px) {
   .dashboard {
@@ -1161,20 +1220,34 @@ tbody tr:hover {
 /* H1 size on small phones */
 @media (max-width: 480px) {
   .dashboard-header h1 {
-    font-size: 24px !important;
+    font-size: 22px !important;
   }
-  /* Streak badge: keep but shrink */
   .streak-badge {
     font-size: 11px;
     padding: 4px 10px;
   }
 }
 
-/* stat-grid-compact (5+5 AI signals + stat cards)
-   Desktop: 5 per row (2 rows of 5)
-   Tablet 900px: 3 per row
-   Mobile 520px: 2 per row  ← existing rules cover this */
+/* Heatmap: allow horizontal scroll instead of page overflow */
+.heatmap-scroll-outer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
 
-/* Workout cards: auto-fit minmax(260px) already collapses to 1 col on phone */
+/* Personal stats / record grid: 2 cols on tablet, 1 on phone */
+@media (max-width: 520px) {
+  .record-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* stat-grid-compact: cap at 2 cols on very small phones */
+@media (max-width: 380px) {
+  .stat-grid-compact,
+  .stat-grid-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
 /* Ride stats row: already has flex-wrap at 640px */

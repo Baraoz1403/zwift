@@ -212,7 +212,7 @@ export default async function DashboardPage() {
       </div>
 
       {profile && (
-        <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 32 }}>
+        <div className="rubric-cards-grid fade-in">
 
           {/* Left column */}
           <div>
