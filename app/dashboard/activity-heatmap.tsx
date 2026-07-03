@@ -66,6 +66,7 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
         </span>
       </div>
 
+      <div className="stat-card" style={{ padding: "16px 20px", overflow: "hidden" }}>
       <div className="heatmap-wrap">
         <div style={{ display: "flex" }}>
           {/* LEFT sticky day labels */}
@@ -73,7 +74,7 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
             display: "flex", flexDirection: "column", gap: 4,
             paddingRight: 6, marginTop: 21,
             position: "sticky", left: 0, zIndex: 2,
-            background: "var(--bg)",
+            background: "var(--panel)",
           }}>
             {DAY_LABELS.map((label, i) => (
               <div key={label} style={{ width: 28, height: 17, fontSize: 10.5, color: "var(--muted)", lineHeight: "17px" }}>
@@ -114,7 +115,7 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
             display: "flex", flexDirection: "column", gap: 4,
             paddingLeft: 6, marginTop: 21,
             position: "sticky", right: 0, zIndex: 2,
-            background: "var(--bg)",
+            background: "var(--panel)",
           }}>
             {DAY_LABELS.map((label, i) => (
               <div key={`r-${label}`} style={{ width: 28, height: 17, fontSize: 10.5, color: "var(--muted)", lineHeight: "17px" }}>
@@ -134,6 +135,8 @@ export default function ActivityHeatmap({ activities }: { activities: ZwiftActiv
         <div className="heatmap-cell lvl-4" style={{ width: 11, height: 11 }} />
         <span>More</span>
       </div>
+      </div>{/* end heatmap-wrap */}
+      </div>{/* end stat-card */}
     </div>
   );
 }
