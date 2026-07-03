@@ -72,11 +72,16 @@ export default function PersonalRecords({
   // most-recent-N slice the Performance trends chart uses (lib/stats.ts),
   // applied here without any FIT-file fetching since none of these records
   // need second-by-second data.
-  const [windowSize, setWindowSize] = useState<number>(30);
-  const windowed = useMemo(
-    () => selectChartActivities(activities, windowSize),
-    [activities, windowSize]
-  );
+  const [window, setWindow] = useState<WindowOption>("M");
+  const windowed = useMemo(() => {
+    const ms = WINDOW_MS[window];
+    if (!ms) return activities;
+    const cutoff = Date.now() - ms;
+    return activities.filter((a) => {
+      const d = a.startDate ? new Date(a.startDate as string).getTime() : 0;
+      return d >= cutoff;
+    });
+  }, [activities, window]);
 
   const r = computeRecords(windowed);
 
@@ -129,20 +134,17 @@ export default function PersonalRecords({
           Personal statistics
         </span>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Last</span>
-          <div className="trend-tabs">
-            {RECORD_WINDOW_OPTIONS.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={`trend-tab ${windowSize === n ? "active" : ""}`}
-                onClick={() => setWindowSize(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
+        <div className="trend-tabs">
+          {WINDOW_OPTIONS.map((w) => (
+            <button
+              key={w}
+              type="button"
+              className={`trend-tab ${window === w ? "active" : ""}`}
+              onClick={() => setWindow(w)}
+            >
+              {w}
+            </button>
+          ))}
         </div>
       </div>
 
