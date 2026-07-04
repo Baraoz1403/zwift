@@ -136,7 +136,7 @@ export async function pushWorkoutToTP(opts: PushWorkoutOptions): Promise<PushWor
     workoutTypeValueId: toTPWorkoutTypeId(opts.type),
     title: opts.title,
     description: opts.description,
-    totalTimePlanned: (opts.durationMin * 60), // v6 uses seconds
+    totalTimePlanned: opts.durationMin, // TP v6 uses minutes for totalTimePlanned
     ...(opts.tssPlanned ? { tssPlanned: opts.tssPlanned } : {}),
   };
 
