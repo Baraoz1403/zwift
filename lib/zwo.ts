@@ -21,6 +21,33 @@
  * documented .zwo schema - https://github.com/h4l/zwift-workout-file-reference
  */
 
+/**
+ * One structured workout block from the AI's machine-readable plan — a ramp
+ * (warmup/cooldown), a flat effort (steadystate), or a repeated interval set.
+ * When present on a WeeklyWorkout, these replace the type-inference logic in
+ * generateDefaultBlocks so ZWO generation and thumbnail rendering reflect the
+ * actual structure the coach prescribed, not a best-guess from the type name.
+ */
+export interface WorkoutStructureBlock {
+  /** Block category */
+  type: "warmup" | "steadystate" | "intervals" | "cooldown";
+  /** Total duration of this block in minutes.
+   *  For intervals: repeats × (onSec + offSec) / 60 */
+  durationMin: number;
+  /** Target power as a fraction of FTP (e.g. 0.90 = 90 % FTP). */
+  powerFtp: number;
+  /** For intervals only: recovery power as fraction of FTP (e.g. 0.50). */
+  recoveryPowerFtp?: number;
+  /** For intervals only: number of repetitions. */
+  repeats?: number;
+  /** For intervals only: ON duration per rep in seconds. */
+  onSec?: number;
+  /** For intervals only: OFF (recovery) duration per rep in seconds. */
+  offSec?: number;
+  /** Short human label shown in the workout card (e.g. "Easy warm-up"). */
+  label: string;
+}
+
 export interface ZwoWorkoutInput {
   title: string;
   /** e.g. "Endurance", "Sweet Spot", "Intervals", "Threshold", "VO2", "Recovery", "Rest" */
@@ -29,6 +56,9 @@ export interface ZwoWorkoutInput {
   /** e.g. "65-75%" - omitted/empty for rest days. */
   targetPowerPctFtp?: string;
   description?: string;
+  /** Machine-readable block structure from the AI — when present,
+   *  generateDefaultBlocks uses structureToBlocks() instead of type inference. */
+  structure?: WorkoutStructureBlock[];
 }
 
 /**
@@ -132,6 +162,44 @@ export function blockDurationSec(b: ZwoBlock): number {
   return b.durationSec;
 }
 
+/**
+ * Converts an AI WorkoutStructureBlock array into the ZwoBlock list used for
+ * ZWO file generation and thumbnail rendering.
+ * Warmup ramps from 45 % → stated powerFtp; cooldown ramps back down to 40 %.
+ */
+export function structureToBlocks(structure: WorkoutStructureBlock[]): ZwoBlock[] {
+  const blocks: ZwoBlock[] = [];
+  for (const b of structure) {
+    const durationSec = Math.max(60, Math.round(b.durationMin * 60));
+    switch (b.type) {
+      case "warmup":
+        blocks.push({ kind: "Warmup", durationSec, powerLow: 0.45, powerHigh: b.powerFtp });
+        break;
+      case "cooldown":
+        blocks.push({ kind: "Cooldown", durationSec, powerLow: b.powerFtp, powerHigh: 0.40 });
+        break;
+      case "steadystate":
+        blocks.push({ kind: "SteadyState", durationSec, power: b.powerFtp });
+        break;
+      case "intervals": {
+        const onSec  = b.onSec  ?? Math.round(durationSec / ((b.repeats ?? 3) * 2));
+        const offSec = b.offSec ?? onSec;
+        const repeat = b.repeats ?? Math.max(2, Math.round(durationSec / (onSec + offSec)));
+        blocks.push({
+          kind: "IntervalsT",
+          repeat,
+          onDuration:  onSec,
+          offDuration: offSec,
+          onPower:  b.powerFtp,
+          offPower: b.recoveryPowerFtp ?? 0.50,
+        });
+        break;
+      }
+    }
+  }
+  return blocks;
+}
+
 function escapeXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -168,6 +236,12 @@ export function isRestDay(type: string): boolean {
  * *starting point* the workout editor lets the rider adjust before export.
  */
 export function generateDefaultBlocks(w: ZwoWorkoutInput): ZwoBlock[] {
+  // When the AI has provided a machine-readable structure, use it directly —
+  // much more accurate than inferring structure from the type string alone.
+  if (w.structure && w.structure.length > 0) {
+    return structureToBlocks(w.structure);
+  }
+
   const totalSec = Math.max(300, Math.round(w.durationMin * 60));
   const t = w.type.toLowerCase();
   const { low, high, mid } = parsePowerRange(w.targetPowerPctFtp);

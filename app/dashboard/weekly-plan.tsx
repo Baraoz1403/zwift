@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
+import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import WorkoutThumbnail from "./workout-thumbnail";
 import TrainingProfileCard from "./training-profile";
@@ -15,6 +15,7 @@ interface WeeklyWorkout {
   durationMin: number;
   targetPowerPctFtp?: string;
   description: string;
+  structure?: WorkoutStructureBlock[];
 }
 
 /** Actual Zwift ride detected for a planned workout day */
@@ -33,6 +34,27 @@ function formatDuration(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
   return `${m} min`;
+}
+
+/** Approximate Training Stress Score from structured blocks.
+ *  Formula per block: hours × IF² × 100  (IF = powerFtp fraction).
+ *  Intervals split into on/off contributions separately. */
+function calcTss(structure: WorkoutStructureBlock[]): number {
+  let tss = 0;
+  for (const b of structure) {
+    if (b.type === "intervals" && b.onSec && b.offSec && b.repeats) {
+      const onHours  = (b.repeats * b.onSec)  / 3600;
+      const offHours = (b.repeats * b.offSec) / 3600;
+      tss += onHours  * b.powerFtp * b.powerFtp * 100;
+      tss += offHours * (b.recoveryPowerFtp ?? 0.50) * (b.recoveryPowerFtp ?? 0.50) * 100;
+    } else {
+      const avgPower = b.type === "warmup"   ? (0.45 + b.powerFtp) / 2
+                     : b.type === "cooldown" ? (b.powerFtp + 0.40) / 2
+                     : b.powerFtp;
+      tss += (b.durationMin / 60) * avgPower * avgPower * 100;
+    }
+  }
+  return Math.round(tss);
 }
 
 interface WeeklyPlan {
@@ -196,6 +218,14 @@ export default function WeeklyPlan() {
       .then(d => { if (d.connected) setTpConnected(true); })
       .catch(() => {});
 
+    // Check Strava connection status + handle redirect-back from OAuth
+    fetch("/api/strava/status")
+      .then(r => r.json())
+      .then((d: { connected: boolean; athleteName?: string }) => {
+        if (d.connected) { setStravaConnected(true); setStravaName(d.athleteName ?? null); }
+      })
+      .catch(() => {});
+
     // Fetch this week's actual Zwift rides to detect completed workouts
     const weekStart = thisWeek;
     const weekEndMs = new Date(weekStart + "T00:00:00Z").getTime() + 7 * 86400 * 1000;
@@ -289,6 +319,10 @@ export default function WeeklyPlan() {
   // Tracks per-workout push state: idle | loading | ok | error
   const [pushState, setPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
   const [pushLog, setPushLog]     = useState<Record<string, string>>({});
+
+  // ── Strava integration ────────────────────────────────────────────────────
+  const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaName, setStravaName] = useState<string | null>(null);
 
   // ── TrainingPeaks integration ──────────────────────────────────────────────
   const [tpConnected, setTpConnected] = useState(false);
@@ -811,6 +845,47 @@ export default function WeeklyPlan() {
             </button>
           </div>
 
+          {/* Strava connect banner */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 16px", borderRadius: 8, marginBottom: 12,
+            background: stravaConnected ? "rgba(252,76,2,0.06)" : "rgba(20,23,26,0.03)",
+            border: `1px solid ${stravaConnected ? "rgba(252,76,2,0.2)" : "var(--border)"}`,
+          }}>
+            {/* Strava logo mark */}
+            <div style={{ width: 24, height: 24, borderRadius: 7, background: "#FC4C02", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
+                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.17"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: stravaConnected ? "#FC4C02" : "var(--text)" }}>
+                {stravaConnected ? `Strava connected${stravaName ? ` · ${stravaName}` : ""}` : "Connect Strava"}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>
+                {stravaConnected
+                  ? "Outdoor rides & Garmin data visible to your AI coach"
+                  : "Add outdoor rides + Garmin data for a more complete training picture"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => stravaConnected
+                ? fetch("/api/strava/status", { method: "DELETE" }).then(() => { setStravaConnected(false); setStravaName(null); })
+                : (window.location.href = "/api/strava/oauth-start")
+              }
+              style={{
+                padding: "5px 12px", borderRadius: 6, flexShrink: 0,
+                border: stravaConnected ? "1px solid rgba(252,76,2,0.3)" : "1px solid var(--border)",
+                background: stravaConnected ? "rgba(252,76,2,0.08)" : "rgba(252,76,2,0.06)",
+                color: stravaConnected ? "#FC4C02" : "#FC4C02",
+                fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {stravaConnected ? "Disconnect" : "Connect →"}
+            </button>
+          </div>
+
           <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
@@ -954,10 +1029,41 @@ export default function WeeklyPlan() {
                   <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
                     {w.durationMin} min
                     {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
+                    {w.structure && w.structure.length > 0 && (
+                      <span style={{ marginLeft: 6, opacity: 0.8 }}>
+                        · ~{calcTss(w.structure)} TSS
+                      </span>
+                    )}
                   </div>
                   <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
                     {w.description}
                   </div>
+                  {/* Interval structure chips — colored by power zone */}
+                  {w.structure && w.structure.length > 0 && (
+                    <div style={{
+                      display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10,
+                      paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.07)",
+                    }}>
+                      {w.structure.map((b, j) => {
+                        const zone = zoneForPowerFraction(b.powerFtp);
+                        const isInterval = b.type === "intervals";
+                        const label = isInterval
+                          ? `${b.repeats ?? "?"}×${Math.round((b.onSec ?? 0) / 60)}′ @ ${Math.round(b.powerFtp * 100)}%`
+                          : `${b.durationMin}′ @ ${Math.round(b.powerFtp * 100)}%`;
+                        return (
+                          <span key={j} title={b.label} style={{
+                            fontSize: 10.5, padding: "3px 7px", borderRadius: 4,
+                            background: `${zone.color}1a`,
+                            border: `1px solid ${zone.color}55`,
+                            color: zone.color,
+                            fontWeight: 600, letterSpacing: "0.01em",
+                          }}>
+                            {label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                   {!isRestDay(w.type) && (() => {
                     const key    = w.date ?? w.title;
                     const ps     = pushState[key] ?? "idle";
