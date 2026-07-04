@@ -43,18 +43,21 @@ export async function POST(req: NextRequest) {
   const tpAthleteId = String(profile.personId ?? profile.athleteId ?? profile.userId ?? "");
   const athleteName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "TrainingPeaks user";
 
-  // ── Update session with TP credentials ───────────────────────────────────
-  const updatedSession = { ...session, tpToken: tpToken.trim(), tpAthleteId };
-  const encrypted = await encryptSession(updatedSession);
-
-  // Use cookieStore.set() — more reliable than res.cookies.set() in Next.js 14 App Router
-  cookieStore.set(SESSION_COOKIE_NAME, encrypted, {
+  // ── Store TP credentials in a separate cookie to avoid 4KB session limit ──
+  // The Zwift session already contains large tokens; adding the gAAAA TP token
+  // (800+ chars) would push the encrypted cookie over the browser's 4KB limit.
+  // Solution: write tpToken + tpAthleteId to a dedicated "zwift_tp" cookie.
+  const isSecure = process.env.NODE_ENV === "production";
+  const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isSecure,
+    sameSite: "lax" as const,
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
-  });
+  };
+
+  cookieStore.set("zwift_tp_token", tpToken.trim(), cookieOpts);
+  cookieStore.set("zwift_tp_id", tpAthleteId, cookieOpts);
 
   return NextResponse.json({ ok: true, athleteName, tpAthleteId });
 }
@@ -70,17 +73,8 @@ export async function DELETE() {
   const session = await decryptSession(raw);
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
-  // Remove TP fields from session (strip tpToken + tpAthleteId, keep everything else)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { tpToken: _tp, tpAthleteId: _tpId, ...rest } = session;
-  const encrypted = await encryptSession({ ...rest });
-
-  cookieStore.set(SESSION_COOKIE_NAME, encrypted, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
+  // Remove TP cookies
+  cookieStore.delete("zwift_tp_token");
+  cookieStore.delete("zwift_tp_id");
   return NextResponse.json({ ok: true });
 }

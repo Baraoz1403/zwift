@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
   const session = await decryptSession(raw);
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
-  if (!session.tpToken || !session.tpAthleteId) {
+  // TP credentials live in dedicated cookies (zwift_tp_token / zwift_tp_id)
+  const tpToken = cookieStore.get("zwift_tp_token")?.value;
+  const tpAthleteId = cookieStore.get("zwift_tp_id")?.value;
+
+  if (!tpToken || !tpAthleteId) {
     return NextResponse.json({
       ok: false,
       error: "TrainingPeaks not connected. Connect it first in the weekly plan.",
@@ -59,8 +63,8 @@ export async function POST(req: NextRequest) {
 
   // ── Push to TrainingPeaks ─────────────────────────────────────────────────
   const result = await pushWorkoutToTP({
-    tpCookie: session.tpToken,
-    tpAthleteId: session.tpAthleteId,
+    tpCookie: tpToken,
+    tpAthleteId: tpAthleteId,
     workoutDay: body.workoutDay,
     title: body.title,
     description: body.description ?? "",
