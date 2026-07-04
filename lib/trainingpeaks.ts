@@ -16,12 +16,22 @@
 
 const TP_API = "https://tpapi.trainingpeaks.com";
 
-/** Exchange the Production_tpAuth cookie for a short-lived access token. */
-async function exchangeCookieForToken(tpCookie: string): Promise<string> {
+/**
+ * Exchange the Production_tpAuth cookie for a short-lived access token.
+ * If the value already looks like an access token (starts with "gAAAA"),
+ * returns it directly without doing an exchange.
+ */
+async function exchangeCookieForToken(tpCookieOrToken: string): Promise<string> {
+  const val = tpCookieOrToken.trim();
+  // Already an access token — use directly
+  if (val.startsWith("gAAAA") || val.startsWith("eyJ")) {
+    return val;
+  }
+
   const res = await fetch(`${TP_API}/users/v3/token`, {
     method: "GET",
     headers: {
-      Cookie: `Production_tpAuth=${tpCookie.trim()}`,
+      Cookie: `Production_tpAuth=${val}`,
       Accept: "application/json",
     },
   });
