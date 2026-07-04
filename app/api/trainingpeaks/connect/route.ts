@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
   const updatedSession = { ...session, tpToken: tpToken.trim(), tpAthleteId };
   const encrypted = await encryptSession(updatedSession);
 
-  const res = NextResponse.json({ ok: true, athleteName, tpAthleteId });
-  res.cookies.set(SESSION_COOKIE_NAME, encrypted, {
+  // Use cookieStore.set() — more reliable than res.cookies.set() in Next.js 14 App Router
+  cookieStore.set(SESSION_COOKIE_NAME, encrypted, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     path: "/",
   });
 
-  return res;
+  return NextResponse.json({ ok: true, athleteName, tpAthleteId });
 }
 
 /**
@@ -75,13 +75,12 @@ export async function DELETE() {
   const { tpToken: _tp, tpAthleteId: _tpId, ...rest } = session;
   const encrypted = await encryptSession({ ...rest });
 
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE_NAME, encrypted, {
+  cookieStore.set(SESSION_COOKIE_NAME, encrypted, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });
-  return res;
+  return NextResponse.json({ ok: true });
 }
