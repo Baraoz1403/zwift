@@ -4341,3 +4341,37 @@ Sat 07/04/2026  8:37:36.82
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy_log.txt', LF will be replaced by CRLF the next time Git touches it
+[main 06abf33] Auto deploy Sat 07/04/2026  8:37:37.31
+ 3 files changed, 49 insertions(+), 3 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   dcaee5a..06abf33  main -> main
+Sat 07/04/2026  8:37:39.09 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Sat 07/04/2026  8:50:23.53 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
