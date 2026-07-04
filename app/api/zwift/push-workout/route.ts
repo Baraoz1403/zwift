@@ -22,7 +22,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { fetchOwnProfile, ZwiftApiError } from "@/lib/zwift";
+import { fetchOwnProfile } from "@/lib/zwift";
 
 const API_HOST = "us-or-rly101.zwift.com";
 

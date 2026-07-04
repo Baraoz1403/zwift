@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
@@ -392,7 +392,7 @@ export default function WeeklyPlan() {
           position: "fixed", inset: 0, zIndex: 1000,
           background: "rgba(14,17,20,0.72)",
           display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
-        } as React.CSSProperties}
+        } as CSSProperties}
           onClick={() => setShowTPModal(false)}
         >
           <div

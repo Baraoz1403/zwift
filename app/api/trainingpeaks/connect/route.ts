@@ -69,10 +69,10 @@ export async function DELETE() {
   const session = await decryptSession(raw);
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
-  // Remove TP fields from session
-  const { tpToken: _, tpAthleteId: __, ...rest } = session;
-  void _; void __;
-  const encrypted = await encryptSession({ ...rest, expiresAt: session.expiresAt });
+  // Remove TP fields from session (strip tpToken + tpAthleteId, keep everything else)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { tpToken: _tp, tpAthleteId: _tpId, ...rest } = session;
+  const encrypted = await encryptSession({ ...rest });
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE_NAME, encrypted, {
