@@ -4408,3 +4408,38 @@ Sat 07/04/2026  9:01:52.17
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/api/trainingpeaks/connect/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/push-workout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF the next time Git touches it
+[main e604cc6] Auto deploy Sat 07/04/2026  9:01:52.58
+ 4 files changed, 40 insertions(+), 7 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   529d237..e604cc6  main -> main
+Sat 07/04/2026  9:01:54.34 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Sat 07/04/2026 14:32:50.73 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
