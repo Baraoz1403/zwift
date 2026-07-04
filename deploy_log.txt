@@ -28,3 +28,22 @@ hint: See the 'Note about fast-forwards' in 'git push --help' for details.
 Fri 07/03/2026  7:00:04.34 - Auto-deploy finished 
  
 Sat 07/04/2026  8:14:48.50 - Auto-deploy starting 
+warning: in the working copy of 'lib/session-constants.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/connect/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/push-workout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/status/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/push-workout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/workouts-diagnostic/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/trainingpeaks.ts', LF will be replaced by CRLF the next time Git touches it
+[main dcaee5a] Auto-deploy update
+ 9 files changed, 995 insertions(+), 18 deletions(-)
+ create mode 100644 app/api/trainingpeaks/connect/route.ts
+ create mode 100644 app/api/trainingpeaks/push-workout/route.ts
+ create mode 100644 app/api/trainingpeaks/status/route.ts
+ create mode 100644 app/api/zwift/push-workout/route.ts
+ create mode 100644 app/api/zwift/workouts-diagnostic/route.ts
+ create mode 100644 lib/trainingpeaks.ts
+To https://github.com/Baraoz1403/zwift.git
+   a07863a..dcaee5a  main -> main
+Sat 07/04/2026  8:15:19.79 - Auto-deploy finished 
+ 
