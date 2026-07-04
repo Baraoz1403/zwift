@@ -14,4 +14,7 @@ export interface SessionPayload {
   refreshToken?: string;
   athleteId?: string; // real Zwift player id (from profile.id), used for future per-rider calls
   expiresAt: number; // epoch ms when the Zwift access token itself expires
+  // TrainingPeaks connection (optional — added when user connects TP)
+  tpToken?: string;       // Production_tpAuth cookie value used as Bearer
+  tpAthleteId?: string;   // TP athlete/user id
 }

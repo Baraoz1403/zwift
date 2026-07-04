@@ -190,6 +190,12 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
+    // Check TrainingPeaks connection status
+    fetch("/api/trainingpeaks/status")
+      .then(r => r.json())
+      .then(d => { if (d.connected) setTpConnected(true); })
+      .catch(() => {});
+
     // Fetch this week's actual Zwift rides to detect completed workouts
     const weekStart = thisWeek;
     const weekEndMs = new Date(weekStart + "T00:00:00Z").getTime() + 7 * 86400 * 1000;
@@ -279,8 +285,210 @@ export default function WeeklyPlan() {
     URL.revokeObjectURL(url);
   }
 
+  // Push .zwo directly to the user's Zwift account (experimental).
+  // Tracks per-workout push state: idle | loading | ok | error
+  const [pushState, setPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
+  const [pushLog, setPushLog]     = useState<Record<string, string>>({});
+
+  // ── TrainingPeaks integration ──────────────────────────────────────────────
+  const [tpConnected, setTpConnected] = useState(false);
+  const [tpConnecting, setTpConnecting] = useState(false);
+  const [showTPModal, setShowTPModal] = useState(false);
+  const [tpTokenInput, setTpTokenInput] = useState("");
+  const [tpConnectError, setTpConnectError] = useState<string | null>(null);
+  const [tpPushState, setTpPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
+  const [tpPushLog, setTpPushLog]     = useState<Record<string, string>>({});
+
+  async function handlePushToZwift(w: WeeklyWorkout) {
+    const key = w.date ?? w.title;
+    setPushState((s) => ({ ...s, [key]: "loading" }));
+    setPushLog((l) => ({ ...l, [key]: "" }));
+    try {
+      const xml = generateZwoXml(w);
+      const res = await fetch("/api/zwift/push-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ xml, title: w.title }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setPushState((s) => ({ ...s, [key]: "ok" }));
+        setPushLog((l) => ({ ...l, [key]: `✓ Pushed via ${data.method}` }));
+      } else {
+        setPushState((s) => ({ ...s, [key]: "error" }));
+        // Log each probe result so we can diagnose which path to try next
+        const log = (data.probes ?? [])
+          .map((p: { endpoint: string; status: number | null; body: string }) =>
+            `${p.status ?? "ERR"} ${p.endpoint.replace("https://us-or-rly101.zwift.com", "")}\n  ${p.body.slice(0, 120)}`)
+          .join("\n");
+        setPushLog((l) => ({ ...l, [key]: log || "All probes failed." }));
+      }
+    } catch (e) {
+      setPushState((s) => ({ ...s, [key]: "error" }));
+      setPushLog((l) => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
+    }
+  }
+
+  async function handleTPConnect() {
+    setTpConnecting(true);
+    setTpConnectError(null);
+    try {
+      const res = await fetch("/api/trainingpeaks/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tpToken: tpTokenInput.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTpConnected(true);
+        setShowTPModal(false);
+        setTpTokenInput("");
+      } else {
+        setTpConnectError(data.error ?? "Connection failed.");
+      }
+    } catch {
+      setTpConnectError("Network error.");
+    } finally {
+      setTpConnecting(false);
+    }
+  }
+
+  async function handlePushToTP(w: WeeklyWorkout) {
+    const key = `tp_${w.date ?? w.title}`;
+    setTpPushState(s => ({ ...s, [key]: "loading" }));
+    try {
+      const res = await fetch("/api/trainingpeaks/push-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
+          title: w.title,
+          description: w.description,
+          durationMin: w.durationMin,
+          type: w.type,
+          targetPower: w.targetPowerPctFtp,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTpPushState(s => ({ ...s, [key]: "ok" }));
+        setTpPushLog(l => ({ ...l, [key]: `✓ ID: ${data.workoutId ?? "pushed"}` }));
+      } else {
+        setTpPushState(s => ({ ...s, [key]: "error" }));
+        setTpPushLog(l => ({ ...l, [key]: data.error ?? "Failed." }));
+      }
+    } catch (e) {
+      setTpPushState(s => ({ ...s, [key]: "error" }));
+      setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
+    }
+  }
+
   return (
     <div>
+
+      {/* ── TrainingPeaks Connect Modal ────────────────────────────────── */}
+      {showTPModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000,
+          background: "rgba(14,17,20,0.72)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+        }}
+          onClick={() => setShowTPModal(false)}
+        >
+          <div
+            className="stat-card"
+            style={{ maxWidth: 500, width: "100%", padding: "28px 28px 24px" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, background: "#e8264c",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Connect TrainingPeaks</div>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                  Workouts will sync automatically to Zwift
+                </div>
+              </div>
+              <button onClick={() => setShowTPModal(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 18, padding: 4 }}>✕</button>
+            </div>
+
+            {/* Instructions */}
+            <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.65, marginBottom: 16 }}>
+              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 1:</strong> Open{" "}
+              <a href="https://app.trainingpeaks.com" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
+                app.trainingpeaks.com
+              </a>{" "}
+              and log in.<br />
+              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 2:</strong> Open DevTools{" "}
+              <kbd style={{ fontSize: 11, padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", background: "rgba(20,23,26,0.06)" }}>F12</kbd>{" "}
+              → <strong>Application</strong> → <strong>Cookies</strong> → <code style={{ fontSize: 11, background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>app.trainingpeaks.com</code><br />
+              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 3:</strong> Find the cookie named{" "}
+              <code style={{ fontSize: 11, background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>Production_tpAuth</code>{" "}
+              and copy its value below.
+            </div>
+
+            {/* Input */}
+            <textarea
+              rows={3}
+              placeholder="Paste Production_tpAuth value here…"
+              value={tpTokenInput}
+              onChange={e => setTpTokenInput(e.target.value)}
+              style={{
+                width: "100%", resize: "vertical", padding: "10px 13px",
+                borderRadius: 6, border: "1px solid var(--border)",
+                background: "rgba(20,23,26,0.02)", fontSize: 12,
+                color: "var(--text)", fontFamily: "monospace", lineHeight: 1.5,
+                outline: "none", boxSizing: "border-box", marginBottom: 10,
+              }}
+            />
+
+            {tpConnectError && (
+              <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>
+                {tpConnectError}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleTPConnect}
+                disabled={tpConnecting || !tpTokenInput.trim()}
+                style={{
+                  flex: 1, padding: "9px 16px", borderRadius: 6, border: "none",
+                  background: "#e8264c", color: "#fff",
+                  fontSize: 13, fontWeight: 700, cursor: tpConnecting || !tpTokenInput.trim() ? "default" : "pointer",
+                  opacity: tpConnecting || !tpTokenInput.trim() ? 0.5 : 1,
+                  fontFamily: "inherit",
+                }}
+              >
+                {tpConnecting ? "Connecting…" : "Connect TrainingPeaks"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowTPModal(false)}
+                style={{
+                  padding: "9px 16px", borderRadius: 6, border: "1px solid var(--border)",
+                  background: "transparent", color: "var(--muted)",
+                  fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div style={{ marginTop: 14, fontSize: 11, color: "var(--muted)", opacity: 0.7 }}>
+              Your token is stored encrypted in your session and sent only to TrainingPeaks. It is never shared or logged.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 3-column header grid ────────────────────────────────────────── */}
       <div className="header-cards-grid">
@@ -499,6 +707,44 @@ export default function WeeklyPlan() {
             </div>
           )}
 
+          {/* TrainingPeaks connect banner */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 16px", borderRadius: 8, marginBottom: 12,
+            background: tpConnected ? "rgba(232,38,76,0.06)" : "rgba(20,23,26,0.03)",
+            border: `1px solid ${tpConnected ? "rgba(232,38,76,0.2)" : "var(--border)"}`,
+          }}>
+            <div style={{ width: 24, height: 24, borderRadius: 7, background: "#e8264c", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: tpConnected ? "#e8264c" : "var(--text)" }}>
+                {tpConnected ? "TrainingPeaks connected" : "Connect TrainingPeaks"}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>
+                {tpConnected
+                  ? "Push workouts to your calendar — they sync to Zwift automatically"
+                  : "Push workouts straight to your Zwift calendar via TrainingPeaks"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => tpConnected
+                ? fetch("/api/trainingpeaks/connect", { method: "DELETE" }).then(() => setTpConnected(false))
+                : setShowTPModal(true)
+              }
+              style={{
+                padding: "5px 12px", borderRadius: 6, flexShrink: 0,
+                border: tpConnected ? "1px solid rgba(232,38,76,0.3)" : "1px solid var(--border)",
+                background: tpConnected ? "rgba(232,38,76,0.08)" : "rgba(47,143,224,0.06)",
+                color: tpConnected ? "#e8264c" : "var(--accent)",
+                fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {tpConnected ? "Disconnect" : "Connect →"}
+            </button>
+          </div>
+
           <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
@@ -646,30 +892,122 @@ export default function WeeklyPlan() {
                   <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
                     {w.description}
                   </div>
-                  {!isRestDay(w.type) && (
-                    <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        style={{ width: "auto", padding: "5px 18px", fontSize: 11.5 }}
-                        onClick={() => handleDownloadZwo(w)}
-                      >
-                        Download .zwo
-                      </button>
-                    </div>
-                  )}
+                  {!isRestDay(w.type) && (() => {
+                    const key    = w.date ?? w.title;
+                    const ps     = pushState[key] ?? "idle";
+                    const log    = pushLog[key] ?? "";
+                    const tpKey  = `tp_${key}`;
+                    const tps    = tpPushState[tpKey] ?? "idle";
+                    const tpLog  = tpPushLog[tpKey] ?? "";
+                    return (
+                      <div style={{ marginTop: 14 }}>
+                        {/* TrainingPeaks push — primary action when connected */}
+                        {tpConnected && (
+                          <div style={{ marginBottom: 6 }}>
+                            <button
+                              type="button"
+                              disabled={tps === "loading"}
+                              onClick={() => handlePushToTP(w)}
+                              style={{
+                                width: "100%", padding: "7px 14px", fontSize: 12, borderRadius: 6,
+                                border: "none", cursor: tps === "loading" ? "default" : "pointer",
+                                fontFamily: "inherit", fontWeight: 700,
+                                background:
+                                  tps === "ok"    ? "#16a34a" :
+                                  tps === "error" ? "var(--danger)" :
+                                                    "#e8264c",
+                                color: "#fff",
+                                opacity: tps === "loading" ? 0.65 : 1,
+                                transition: "background 0.2s",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                              }}
+                            >
+                              {tps === "loading" ? "Sending to TrainingPeaks…" :
+                               tps === "ok"      ? `✓ In TrainingPeaks · syncs to Zwift` :
+                               tps === "error"   ? `✗ ${tpLog.slice(0, 40)}` :
+                               <>
+                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                 Push to TrainingPeaks → Zwift
+                               </>}
+                            </button>
+                            {tps === "error" && tpLog && (
+                              <div style={{ fontSize: 10.5, color: "var(--danger)", marginTop: 4, textAlign: "center" }}>
+                                {tpLog}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action buttons row: Zwift probe + Download */}
+                        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                          {/* Push to Zwift — experimental direct probe */}
+                          <button
+                            type="button"
+                            disabled={ps === "loading"}
+                            onClick={() => handlePushToZwift(w)}
+                            style={{
+                              padding: "5px 11px", fontSize: 11, borderRadius: 6,
+                              border: "none", cursor: ps === "loading" ? "default" : "pointer",
+                              fontFamily: "inherit", fontWeight: 600,
+                              background:
+                                ps === "ok"    ? "var(--good)"   :
+                                ps === "error" ? "var(--danger)"  :
+                                                 "var(--accent)",
+                              color: "#fff",
+                              opacity: ps === "loading" ? 0.65 : 1,
+                              transition: "background 0.2s",
+                            }}
+                          >
+                            {ps === "loading" ? "Pushing…" :
+                             ps === "ok"      ? "✓ Zwift direct" :
+                             ps === "error"   ? "✗ Direct failed" :
+                                               "⚡ Direct to Zwift"}
+                          </button>
+
+                          {/* Download fallback — always available */}
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ width: "auto", padding: "5px 11px", fontSize: 11 }}
+                            onClick={() => handleDownloadZwo(w)}
+                          >
+                            ↓ Download .zwo
+                          </button>
+                        </div>
+
+                        {/* Probe log — only visible on error, for diagnostics */}
+                        {ps === "error" && log && (
+                          <pre style={{
+                            marginTop: 8, fontSize: 9.5, color: "var(--muted)",
+                            background: "rgba(20,23,26,0.04)", borderRadius: 6,
+                            padding: "8px 10px", overflowX: "auto",
+                            whiteSpace: "pre-wrap", wordBreak: "break-all",
+                            textAlign: "left",
+                          }}>
+                            {log}
+                          </pre>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
           </div>
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
-            Each session above can be downloaded as a real Zwift workout file (.zwo) - drop
-            it into your Documents/Zwift/Workouts/&lt;your Zwift ID&gt; folder, then open
-            Zwift on that computer once. Zwift uploads custom workouts placed there to your
-            account automatically, so they then sync to your phone and any other device too
-            - no separate step needed beyond opening Zwift once after adding the file. This
-            plan itself (the weekly text/structure) is saved in your browser only.
+            {tpConnected
+              ? <>
+                  <strong style={{ opacity: 0.8, color: "#e8264c" }}>TrainingPeaks connected</strong> — workouts pushed here appear in your Zwift calendar automatically (connect Zwift to TrainingPeaks once in the Zwift Companion app if you haven&apos;t yet). Fall back to{" "}
+                  <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> at any time.
+                </>
+              : <>
+                  <strong style={{ opacity: 0.8 }}>Connect TrainingPeaks</strong> (above) for the easiest path — push workouts straight to your Zwift calendar. Or use{" "}
+                  <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> and drop the file into{" "}
+                  <code style={{ fontSize: 10 }}>Documents/Zwift/Workouts/&lt;your Zwift ID&gt;/</code>,
+                  then open Zwift once.
+                </>
+            }
           </div>
         </>
       )}
