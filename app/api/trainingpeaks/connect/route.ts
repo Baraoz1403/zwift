@@ -10,8 +10,28 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { decryptSession, encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
+import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchTPProfile } from "@/lib/trainingpeaks";
+
+// Allow the TrainingPeaks bookmarklet (running on app.trainingpeaks.com) to POST
+// credentials directly to this endpoint. The bookmarklet exchanges the TP session
+// cookie (HttpOnly) for a gAAAA token on the TP origin, then sends it here via
+// a credentialed cross-origin fetch so we never have to touch DevTools.
+const CORS_ORIGIN = "https://app.trainingpeaks.com";
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": CORS_ORIGIN,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+/** Handle CORS preflight from the bookmarklet */
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
 export async function POST(req: NextRequest) {
   // ── Require existing Zwift session ────────────────────────────────────────
@@ -59,7 +79,9 @@ export async function POST(req: NextRequest) {
   cookieStore.set("zwift_tp_token", tpToken.trim(), cookieOpts);
   cookieStore.set("zwift_tp_id", tpAthleteId, cookieOpts);
 
-  return NextResponse.json({ ok: true, athleteName, tpAthleteId });
+  const response = NextResponse.json({ ok: true, athleteName, tpAthleteId });
+  Object.entries(corsHeaders()).forEach(([k, v]) => response.headers.set(k, v));
+  return response;
 }
 
 /**
@@ -76,5 +98,7 @@ export async function DELETE() {
   // Remove TP cookies
   cookieStore.delete("zwift_tp_token");
   cookieStore.delete("zwift_tp_id");
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  Object.entries(corsHeaders()).forEach(([k, v]) => response.headers.set(k, v));
+  return response;
 }

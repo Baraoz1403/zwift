@@ -292,12 +292,41 @@ export default function WeeklyPlan() {
 
   // ── TrainingPeaks integration ──────────────────────────────────────────────
   const [tpConnected, setTpConnected] = useState(false);
-  const [tpConnecting, setTpConnecting] = useState(false);
   const [showTPModal, setShowTPModal] = useState(false);
-  const [tpTokenInput, setTpTokenInput] = useState("");
-  const [tpConnectError, setTpConnectError] = useState<string | null>(null);
+  const [tpPolling, setTpPolling] = useState(false);
+  const [tpTokenExpired, setTpTokenExpired] = useState(false);
   const [tpPushState, setTpPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
   const [tpPushLog, setTpPushLog]     = useState<Record<string, string>>({});
+
+  // Build bookmarklet href on the client using the current dashboard origin.
+  // The bookmarklet runs on app.trainingpeaks.com and:
+  //   1. Exchanges the HttpOnly Production_tpAuth cookie for a gAAAA token (same-origin fetch to TP API)
+  //   2. Posts the token back here via credentialed CORS fetch
+  const bookmarkletHref = typeof window !== "undefined"
+    ? (() => {
+        const origin = window.location.origin;
+        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in');return;}const d=await r.json();const t=d?.token?.access_token;if(!t){alert('TP token not found');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t})});const d2=await r2.json();if(d2.ok){alert('Connected! Return to Zwift AI Dashboard.')}else{alert('Error: '+(d2.error||'Unknown. Are you logged in?'))}}catch(e){alert('Error: '+e.message)}})()`;
+        return `javascript:${encodeURIComponent(code)}`;
+      })()
+    : "#";
+
+  // Poll connection status every 2 s while modal is open waiting for bookmarklet
+  useEffect(() => {
+    if (!tpPolling || tpConnected) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/trainingpeaks/status");
+        const data = await res.json() as { connected: boolean };
+        if (data.connected) {
+          setTpConnected(true);
+          setTpPolling(false);
+          setShowTPModal(false);
+          setTpTokenExpired(false);
+        }
+      } catch { /* ignore */ }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [tpPolling, tpConnected]);
 
   async function handlePushToZwift(w: WeeklyWorkout) {
     const key = w.date ?? w.title;
@@ -329,30 +358,6 @@ export default function WeeklyPlan() {
     }
   }
 
-  async function handleTPConnect() {
-    setTpConnecting(true);
-    setTpConnectError(null);
-    try {
-      const res = await fetch("/api/trainingpeaks/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tpToken: tpTokenInput.trim() }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setTpConnected(true);
-        setShowTPModal(false);
-        setTpTokenInput("");
-      } else {
-        setTpConnectError(data.error ?? "Connection failed.");
-      }
-    } catch {
-      setTpConnectError("Network error.");
-    } finally {
-      setTpConnecting(false);
-    }
-  }
-
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
     setTpPushState(s => ({ ...s, [key]: "loading" }));
@@ -373,9 +378,18 @@ export default function WeeklyPlan() {
       if (data.ok) {
         setTpPushState(s => ({ ...s, [key]: "ok" }));
         setTpPushLog(l => ({ ...l, [key]: `✓ ID: ${data.workoutId ?? "pushed"}` }));
+        setTpTokenExpired(false);
       } else {
         setTpPushState(s => ({ ...s, [key]: "error" }));
         setTpPushLog(l => ({ ...l, [key]: data.error ?? "Failed." }));
+        // Detect expired / invalid token — surface reconnect banner
+        if (res.status === 401 || res.status === 403 ||
+            (data.error ?? "").toLowerCase().includes("token") ||
+            (data.error ?? "").toLowerCase().includes("unauthorized") ||
+            (data.error ?? "").toLowerCase().includes("auth")) {
+          setTpTokenExpired(true);
+          setTpConnected(false);
+        }
       }
     } catch (e) {
       setTpPushState(s => ({ ...s, [key]: "error" }));
@@ -386,22 +400,22 @@ export default function WeeklyPlan() {
   return (
     <div>
 
-      {/* ── TrainingPeaks Connect Modal ────────────────────────────────── */}
+      {/* ── TrainingPeaks Connect Modal (bookmarklet flow) ───────────── */}
       {showTPModal && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
           background: "rgba(14,17,20,0.72)",
           display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
         } as CSSProperties}
-          onClick={() => setShowTPModal(false)}
+          onClick={() => { setShowTPModal(false); setTpPolling(false); }}
         >
           <div
             className="stat-card"
-            style={{ maxWidth: 500, width: "100%", padding: "28px 28px 24px" }}
+            style={{ maxWidth: 460, width: "100%", padding: "28px 28px 24px" }}
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10, background: "#e8264c",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -413,80 +427,132 @@ export default function WeeklyPlan() {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Connect TrainingPeaks</div>
                 <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                  Workouts will sync automatically to Zwift
+                  One bookmark → one click to connect, every time
                 </div>
               </div>
-              <button onClick={() => setShowTPModal(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 18, padding: 4 }}>✕</button>
+              <button
+                onClick={() => { setShowTPModal(false); setTpPolling(false); }}
+                style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 18, padding: 4 }}
+              >✕</button>
             </div>
 
-            {/* Instructions */}
-            <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.65, marginBottom: 16 }}>
-              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 1:</strong> Open{" "}
-              <a href="https://app.trainingpeaks.com" target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
-                app.trainingpeaks.com
-              </a>{" "}
-              and log in.<br />
-              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 2:</strong> Open DevTools{" "}
-              <kbd style={{ fontSize: 11, padding: "1px 5px", borderRadius: 4, border: "1px solid var(--border)", background: "rgba(20,23,26,0.06)" }}>F12</kbd>{" "}
-              → <strong>Application</strong> → <strong>Cookies</strong> → <code style={{ fontSize: 11, background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>app.trainingpeaks.com</code><br />
-              <strong style={{ color: "var(--text)", fontWeight: 600 }}>Step 3:</strong> Find the cookie named{" "}
-              <code style={{ fontSize: 11, background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>Production_tpAuth</code>{" "}
-              and copy its value below.
+            {/* Step 1 — drag bookmarklet */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>
+                Step 1 — Save the connector (drag to bookmark bar)
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* The actual bookmarklet link — user drags this */}
+                <a
+                  href={bookmarkletHref}
+                  draggable
+                  onClick={e => e.preventDefault()}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "9px 18px", borderRadius: 8,
+                    border: "2px dashed var(--accent)",
+                    background: "rgba(47,143,224,0.07)",
+                    color: "var(--accent)", fontSize: 13, fontWeight: 700,
+                    cursor: "grab", textDecoration: "none",
+                    userSelect: "none" as const, flexShrink: 0,
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  Zwift AI → TP
+                </a>
+                <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>
+                  ← Drag this to your browser&apos;s bookmarks bar. You only need to do this once.
+                </div>
+              </div>
             </div>
 
-            {/* Input */}
-            <textarea
-              rows={3}
-              placeholder="Paste Production_tpAuth value here…"
-              value={tpTokenInput}
-              onChange={e => setTpTokenInput(e.target.value)}
-              style={{
-                width: "100%", resize: "vertical", padding: "10px 13px",
-                borderRadius: 6, border: "1px solid var(--border)",
-                background: "rgba(20,23,26,0.02)", fontSize: 12,
-                color: "var(--text)", fontFamily: "monospace", lineHeight: 1.5,
-                outline: "none", boxSizing: "border-box", marginBottom: 10,
-              }}
-            />
+            {/* Step 2 — go to TP and click */}
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>
+                Step 2 — Open TrainingPeaks and click the bookmark
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  window.open("https://app.trainingpeaks.com", "_blank");
+                  setTpPolling(true);
+                }}
+                style={{
+                  width: "100%", padding: "10px 18px", borderRadius: 7, border: "none",
+                  background: "#e8264c", color: "#fff",
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  fontFamily: "inherit", letterSpacing: "0.01em",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                Open TrainingPeaks →
+              </button>
+              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.55 }}>
+                A TrainingPeaks tab opens. Click the <strong style={{ color: "var(--text)" }}>Zwift AI → TP</strong> bookmark in your bar — it connects automatically and you can close that tab.
+              </div>
+            </div>
 
-            {tpConnectError && (
-              <div style={{ fontSize: 12, color: "var(--danger)", marginBottom: 10 }}>
-                {tpConnectError}
+            {/* Polling status */}
+            {tpPolling && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
+                padding: "10px 14px", borderRadius: 7,
+                background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.2)",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                </svg>
+                <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
+                  Waiting for connection… click the bookmark in the TrainingPeaks tab
+                </span>
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                onClick={handleTPConnect}
-                disabled={tpConnecting || !tpTokenInput.trim()}
-                style={{
-                  flex: 1, padding: "9px 16px", borderRadius: 6, border: "none",
-                  background: "#e8264c", color: "#fff",
-                  fontSize: 13, fontWeight: 700, cursor: tpConnecting || !tpTokenInput.trim() ? "default" : "pointer",
-                  opacity: tpConnecting || !tpTokenInput.trim() ? 0.5 : 1,
-                  fontFamily: "inherit",
-                }}
-              >
-                {tpConnecting ? "Connecting…" : "Connect TrainingPeaks"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowTPModal(false)}
-                style={{
-                  padding: "9px 16px", borderRadius: 6, border: "1px solid var(--border)",
-                  background: "transparent", color: "var(--muted)",
-                  fontSize: 13, cursor: "pointer", fontFamily: "inherit",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+            {/* Cancel */}
+            <button
+              type="button"
+              onClick={() => { setShowTPModal(false); setTpPolling(false); }}
+              style={{
+                width: "100%", padding: "8px 16px", borderRadius: 6,
+                border: "1px solid var(--border)", background: "transparent",
+                color: "var(--muted)", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Cancel
+            </button>
 
-            <div style={{ marginTop: 14, fontSize: 11, color: "var(--muted)", opacity: 0.7 }}>
-              Your token is stored encrypted in your session and sent only to TrainingPeaks. It is never shared or logged.
+            <div style={{ marginTop: 12, fontSize: 11, color: "var(--muted)", opacity: 0.65, lineHeight: 1.5 }}>
+              The bookmark exchanges your TrainingPeaks session for a short-lived token that is sent over HTTPS and stored only in your browser session.
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Token-expired reconnect banner ─────────────────────────────── */}
+      {tpTokenExpired && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, marginBottom: 12,
+          padding: "10px 16px", borderRadius: 8,
+          background: "rgba(232,38,76,0.08)", border: "1px solid rgba(232,38,76,0.3)",
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8264c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1 }}>
+            TrainingPeaks session expired
+          </span>
+          <button
+            type="button"
+            onClick={() => { setShowTPModal(true); setTpPolling(false); }}
+            style={{
+              padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(232,38,76,0.4)",
+              background: "rgba(232,38,76,0.12)", color: "#e8264c",
+              fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            Reconnect →
+          </button>
         </div>
       )}
 
