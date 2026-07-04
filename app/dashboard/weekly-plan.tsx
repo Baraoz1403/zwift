@@ -6,6 +6,7 @@ import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, type Work
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import WorkoutThumbnail from "./workout-thumbnail";
 import TrainingProfileCard from "./training-profile";
+import ConnectionsPanel from "./connections-panel";
 
 interface WeeklyWorkout {
   day: string;
@@ -751,6 +752,14 @@ export default function WeeklyPlan() {
 
       </div>{/* end 3-col grid */}
 
+      {/* ── Connections panel — always visible ──────────────────────────── */}
+      <div style={{ marginTop: 20 }}>
+        <ConnectionsPanel
+          onOpenTPModal={() => setShowTPModal(true)}
+          onConnectStrava={() => { window.location.href = "/api/strava/oauth-start"; }}
+        />
+      </div>
+
       {stale && plan && !loading && (
         <div className="notice" style={{ marginTop: 16, marginBottom: 12 }}>
           This plan is from the week of {plan.weekOf} - generate a new one for the current week.
@@ -810,85 +819,6 @@ export default function WeeklyPlan() {
               )}
             </div>
           )}
-
-          {/* TrainingPeaks connect banner */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 16px", borderRadius: 8, marginBottom: 12,
-            background: "rgba(20,23,26,0.03)",
-            border: "1px solid var(--border)",
-          }}>
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: "#e8264c", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: tpConnected ? "#e8264c" : "var(--text)" }}>
-                {tpConnected ? "TrainingPeaks connected" : "Connect TrainingPeaks"}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>
-                {tpConnected
-                  ? "Push workouts to your calendar — they sync to Zwift automatically"
-                  : "Push workouts straight to your Zwift calendar via TrainingPeaks"}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => tpConnected
-                ? fetch("/api/trainingpeaks/connect", { method: "DELETE" }).then(() => setTpConnected(false))
-                : setShowTPModal(true)
-              }
-              style={{
-                padding: "5px 12px", borderRadius: 6, flexShrink: 0,
-                border: tpConnected ? "1px solid rgba(232,38,76,0.3)" : "1px solid var(--border)",
-                background: tpConnected ? "rgba(232,38,76,0.08)" : "rgba(47,143,224,0.06)",
-                color: tpConnected ? "#e8264c" : "var(--accent)",
-                fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {tpConnected ? "Disconnect" : "Connect →"}
-            </button>
-          </div>
-
-          {/* Strava connect banner */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 16px", borderRadius: 8, marginBottom: 12,
-            background: "rgba(20,23,26,0.03)",
-            border: "1px solid var(--border)",
-          }}>
-            {/* Strava logo mark */}
-            <div style={{ width: 24, height: 24, borderRadius: 7, background: "#FC4C02", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
-                <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.17"/>
-              </svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: stravaConnected ? "#FC4C02" : "var(--text)" }}>
-                {stravaConnected ? `Strava connected${stravaName ? ` · ${stravaName}` : ""}` : "Connect Strava"}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>
-                {stravaConnected
-                  ? "Outdoor rides & Garmin data visible to your AI coach"
-                  : "Add outdoor rides + Garmin data for a more complete training picture"}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => stravaConnected
-                ? fetch("/api/strava/status", { method: "DELETE" }).then(() => { setStravaConnected(false); setStravaName(null); })
-                : (window.location.href = "/api/strava/oauth-start")
-              }
-              style={{
-                padding: "5px 12px", borderRadius: 6, flexShrink: 0,
-                border: stravaConnected ? "1px solid rgba(252,76,2,0.3)" : "1px solid var(--border)",
-                background: stravaConnected ? "rgba(252,76,2,0.08)" : "rgba(252,76,2,0.06)",
-                color: stravaConnected ? "#FC4C02" : "#FC4C02",
-                fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              {stravaConnected ? "Disconnect" : "Connect →"}
-            </button>
-          </div>
 
           <div className="stat-grid workout-grid">
             {plan.workouts.map((w, i) => {
