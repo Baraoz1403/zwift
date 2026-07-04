@@ -4482,3 +4482,30 @@ warning: in the working copy of 'deploy-log.txt', LF will be replaced by CRLF th
 To https://github.com/Baraoz1403/zwift.git
    4dac9af..2d6476b  main -> main
 Sat 07/04/2026 16:03:06.85 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Sat 07/04/2026 19:02:55.95 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
