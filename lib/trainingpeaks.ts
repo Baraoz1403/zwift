@@ -114,6 +114,46 @@ export interface PushWorkoutResult {
   responseBody?: string;
 }
 
+export interface DeleteWorkoutResult {
+  ok: boolean;
+  error?: string;
+}
+
+/**
+ * Delete a planned workout from TrainingPeaks by workoutId.
+ * Returns ok:true also on 404 (already gone).
+ */
+export async function deleteWorkoutFromTP(opts: {
+  tpCookie: string;
+  tpAthleteId: string;
+  workoutId: string | number;
+}): Promise<DeleteWorkoutResult> {
+  let accessToken: string;
+  try {
+    accessToken = await exchangeCookieForToken(opts.tpCookie);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+  try {
+    const res = await fetch(
+      `${TP_API}/fitness/v6/athletes/${opts.tpAthleteId}/workouts/${opts.workoutId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      }
+    );
+    // 204 No Content = success; 404 = already deleted — both are fine
+    if (res.ok || res.status === 404) return { ok: true };
+    const text = await res.text().catch(() => "");
+    return { ok: false, error: `HTTP ${res.status}: ${text.slice(0, 120)}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /**
  * Push a single planned workout to TrainingPeaks calendar.
  * Uses the tpapi.trainingpeaks.com internal API (cookie→token exchange).

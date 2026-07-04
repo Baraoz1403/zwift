@@ -24,7 +24,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { pushWorkoutToTP } from "@/lib/trainingpeaks";
+import { pushWorkoutToTP, deleteWorkoutFromTP } from "@/lib/trainingpeaks";
 
 export async function POST(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -71,6 +71,41 @@ export async function POST(req: NextRequest) {
     durationMin: body.durationMin,
     type: body.type ?? "Bike",
     tssPlanned: body.tssPlanned,
+  });
+
+  return NextResponse.json(result);
+}
+
+/**
+ * DELETE /api/trainingpeaks/push-workout
+ *
+ * Deletes a previously pushed workout from TrainingPeaks.
+ * Body: { workoutId: string | number }
+ */
+export async function DELETE(req: NextRequest) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
+
+  const session = await decryptSession(raw);
+  if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
+
+  const tpToken = cookieStore.get("zwift_tp_token")?.value;
+  const tpAthleteId = cookieStore.get("zwift_tp_id")?.value;
+
+  if (!tpToken || !tpAthleteId) {
+    return NextResponse.json({ ok: false, error: "TrainingPeaks not connected." }, { status: 403 });
+  }
+
+  const body = await req.json() as { workoutId?: string | number };
+  if (!body.workoutId) {
+    return NextResponse.json({ ok: false, error: "Missing workoutId." }, { status: 400 });
+  }
+
+  const result = await deleteWorkoutFromTP({
+    tpCookie: tpToken,
+    tpAthleteId,
+    workoutId: body.workoutId,
   });
 
   return NextResponse.json(result);

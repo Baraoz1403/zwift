@@ -67,6 +67,8 @@ const STORAGE_KEY = "zwiftWeeklyPlan";
 const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
 const ACTIVITIES_CACHE_KEY = "zwiftWeekActivitiesCache";
 const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
+/** localStorage key for the array of TP workoutIds pushed in the current plan */
+const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -286,8 +288,28 @@ export default function WeeklyPlan() {
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
         // Auto-push all non-rest workouts to TrainingPeaks if connected.
+        // Before pushing, delete any previously pushed workout IDs so the TP
+        // calendar only ever contains the current plan (not stale old entries).
         // TP syncs to Zwift + Garmin automatically — no manual step needed.
         if (tpConnected) {
+          // 1. Delete previously pushed workouts from TP
+          try {
+            const prevRaw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
+            if (prevRaw) {
+              const prevIds = JSON.parse(prevRaw) as (string | number)[];
+              prevIds.forEach(id => {
+                fetch("/api/trainingpeaks/push-workout", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ workoutId: id }),
+                }).catch(() => {});
+              });
+            }
+          } catch {}
+          // Clear old IDs from storage before pushing new ones
+          try { window.localStorage.removeItem(TP_PUSHED_IDS_KEY); } catch {}
+
+          // 2. Push new workouts
           normalizedPlan.workouts
             .filter(w => !isRestDay(w.type))
             .forEach(w => { handlePushToTP(w); });
@@ -386,6 +408,15 @@ export default function WeeklyPlan() {
         setTpPushState(s => ({ ...s, [key]: "ok" }));
         setTpPushLog(l => ({ ...l, [key]: `✓ ID: ${data.workoutId ?? "pushed"}` }));
         setTpTokenExpired(false);
+        // Persist workoutId so it can be deleted when the plan is regenerated
+        if (data.workoutId != null) {
+          try {
+            const raw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
+            const ids: (string | number)[] = raw ? JSON.parse(raw) : [];
+            ids.push(data.workoutId);
+            window.localStorage.setItem(TP_PUSHED_IDS_KEY, JSON.stringify(ids));
+          } catch {}
+        }
       } else {
         setTpPushState(s => ({ ...s, [key]: "error" }));
         setTpPushLog(l => ({ ...l, [key]: data.error ?? "Failed." }));
@@ -1043,39 +1074,28 @@ export default function WeeklyPlan() {
                     const tpLog = tpPushLog[tpKey] ?? "";
                     return (
                       <div style={{ marginTop: 14 }}>
-                        {/* TP sync status — shown when connected */}
+                        {/* TP sync status — shown when connected; no interactive button, auto-push handles it */}
                         {tpConnected && (
-                          <div style={{ marginBottom: 6 }}>
-                            <button
-                              type="button"
-                              disabled={tps === "loading"}
-                              onClick={() => handlePushToTP(w)}
-                              style={{
-                                width: "100%", padding: "7px 14px", fontSize: 12, borderRadius: 6,
-                                border: "none", cursor: tps === "loading" ? "default" : "pointer",
-                                fontFamily: "inherit", fontWeight: 700,
-                                background:
-                                  tps === "ok"    ? "#16a34a" :
-                                  tps === "error" ? "var(--danger)" :
-                                                    "#e8264c",
-                                color: "#fff",
-                                opacity: tps === "loading" ? 0.65 : 1,
-                                transition: "background 0.2s",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                              }}
-                            >
-                              {tps === "loading" ? "Syncing to TrainingPeaks…" :
-                               tps === "ok"      ? "✓ Synced → TrainingPeaks → Zwift + Garmin" :
-                               tps === "error"   ? `✗ Retry` :
-                               <>
-                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                 Push to TrainingPeaks → Zwift + Garmin
-                               </>}
-                            </button>
-                            {tps === "error" && tpLog && (
-                              <div style={{ fontSize: 10.5, color: "var(--danger)", marginTop: 4, textAlign: "center" }}>
-                                {tpLog}
-                              </div>
+                          <div style={{ marginBottom: 6, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                            {tps === "loading" && (
+                              <span style={{ color: "var(--muted)", opacity: 0.7 }}>
+                                ⏳ Syncing to TrainingPeaks…
+                              </span>
+                            )}
+                            {tps === "ok" && (
+                              <span style={{ color: "#e8264c" }}>
+                                ✓ Synced → TrainingPeaks → Zwift + Garmin
+                              </span>
+                            )}
+                            {tps === "error" && (
+                              <span style={{ color: "var(--danger)" }} title={tpLog}>
+                                ✗ Sync failed
+                              </span>
+                            )}
+                            {tps === "idle" && (
+                              <span style={{ color: "var(--muted)", opacity: 0.4, fontSize: 10 }}>
+                                will sync on generate
+                              </span>
                             )}
                           </div>
                         )}
