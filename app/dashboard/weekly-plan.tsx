@@ -285,6 +285,13 @@ export default function WeeklyPlan() {
         setStale(false);
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
+        // Auto-push all non-rest workouts to TrainingPeaks if connected.
+        // TP syncs to Zwift + Garmin automatically — no manual step needed.
+        if (tpConnected) {
+          normalizedPlan.workouts
+            .filter(w => !isRestDay(w.type))
+            .forEach(w => { handlePushToTP(w); });
+        }
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -315,10 +322,6 @@ export default function WeeklyPlan() {
     URL.revokeObjectURL(url);
   }
 
-  // Push .zwo directly to the user's Zwift account (experimental).
-  // Tracks per-workout push state: idle | loading | ok | error
-  const [pushState, setPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
-  const [pushLog, setPushLog]     = useState<Record<string, string>>({});
 
   // ── Strava integration ────────────────────────────────────────────────────
   const [stravaConnected, setStravaConnected] = useState(false);
@@ -361,36 +364,6 @@ export default function WeeklyPlan() {
     }, 2000);
     return () => clearInterval(id);
   }, [tpPolling, tpConnected]);
-
-  async function handlePushToZwift(w: WeeklyWorkout) {
-    const key = w.date ?? w.title;
-    setPushState((s) => ({ ...s, [key]: "loading" }));
-    setPushLog((l) => ({ ...l, [key]: "" }));
-    try {
-      const xml = generateZwoXml(w);
-      const res = await fetch("/api/zwift/push-workout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ xml, title: w.title }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setPushState((s) => ({ ...s, [key]: "ok" }));
-        setPushLog((l) => ({ ...l, [key]: `✓ Pushed via ${data.method}` }));
-      } else {
-        setPushState((s) => ({ ...s, [key]: "error" }));
-        // Log each probe result so we can diagnose which path to try next
-        const log = (data.probes ?? [])
-          .map((p: { endpoint: string; status: number | null; body: string }) =>
-            `${p.status ?? "ERR"} ${p.endpoint.replace("https://us-or-rly101.zwift.com", "")}\n  ${p.body.slice(0, 120)}`)
-          .join("\n");
-        setPushLog((l) => ({ ...l, [key]: log || "All probes failed." }));
-      }
-    } catch (e) {
-      setPushState((s) => ({ ...s, [key]: "error" }));
-      setPushLog((l) => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
-    }
-  }
 
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
@@ -811,8 +784,8 @@ export default function WeeklyPlan() {
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "10px 16px", borderRadius: 8, marginBottom: 12,
-            background: tpConnected ? "rgba(232,38,76,0.06)" : "rgba(20,23,26,0.03)",
-            border: `1px solid ${tpConnected ? "rgba(232,38,76,0.2)" : "var(--border)"}`,
+            background: "rgba(20,23,26,0.03)",
+            border: "1px solid var(--border)",
           }}>
             <div style={{ width: 24, height: 24, borderRadius: 7, background: "#e8264c", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -849,8 +822,8 @@ export default function WeeklyPlan() {
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "10px 16px", borderRadius: 8, marginBottom: 12,
-            background: stravaConnected ? "rgba(252,76,2,0.06)" : "rgba(20,23,26,0.03)",
-            border: `1px solid ${stravaConnected ? "rgba(252,76,2,0.2)" : "var(--border)"}`,
+            background: "rgba(20,23,26,0.03)",
+            border: "1px solid var(--border)",
           }}>
             {/* Strava logo mark */}
             <div style={{ width: 24, height: 24, borderRadius: 7, background: "#FC4C02", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1065,15 +1038,12 @@ export default function WeeklyPlan() {
                     </div>
                   )}
                   {!isRestDay(w.type) && (() => {
-                    const key    = w.date ?? w.title;
-                    const ps     = pushState[key] ?? "idle";
-                    const log    = pushLog[key] ?? "";
-                    const tpKey  = `tp_${key}`;
-                    const tps    = tpPushState[tpKey] ?? "idle";
-                    const tpLog  = tpPushLog[tpKey] ?? "";
+                    const tpKey = `tp_${w.date ?? w.title}`;
+                    const tps   = tpPushState[tpKey] ?? "idle";
+                    const tpLog = tpPushLog[tpKey] ?? "";
                     return (
                       <div style={{ marginTop: 14 }}>
-                        {/* TrainingPeaks push — primary action when connected */}
+                        {/* TP sync status — shown when connected */}
                         {tpConnected && (
                           <div style={{ marginBottom: 6 }}>
                             <button
@@ -1094,12 +1064,12 @@ export default function WeeklyPlan() {
                                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                               }}
                             >
-                              {tps === "loading" ? "Sending to TrainingPeaks…" :
-                               tps === "ok"      ? `✓ In TrainingPeaks · syncs to Zwift` :
-                               tps === "error"   ? `✗ ${tpLog.slice(0, 40)}` :
+                              {tps === "loading" ? "Syncing to TrainingPeaks…" :
+                               tps === "ok"      ? "✓ Synced → TrainingPeaks → Zwift + Garmin" :
+                               tps === "error"   ? `✗ Retry` :
                                <>
                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                 Push to TrainingPeaks → Zwift
+                                 Push to TrainingPeaks → Zwift + Garmin
                                </>}
                             </button>
                             {tps === "error" && tpLog && (
@@ -1110,33 +1080,8 @@ export default function WeeklyPlan() {
                           </div>
                         )}
 
-                        {/* Action buttons row: Zwift probe + Download */}
-                        <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
-                          {/* Push to Zwift — experimental direct probe */}
-                          <button
-                            type="button"
-                            disabled={ps === "loading"}
-                            onClick={() => handlePushToZwift(w)}
-                            style={{
-                              padding: "5px 11px", fontSize: 11, borderRadius: 6,
-                              border: "none", cursor: ps === "loading" ? "default" : "pointer",
-                              fontFamily: "inherit", fontWeight: 600,
-                              background:
-                                ps === "ok"    ? "var(--good)"   :
-                                ps === "error" ? "var(--danger)"  :
-                                                 "var(--accent)",
-                              color: "#fff",
-                              opacity: ps === "loading" ? 0.65 : 1,
-                              transition: "background 0.2s",
-                            }}
-                          >
-                            {ps === "loading" ? "Pushing…" :
-                             ps === "ok"      ? "✓ Zwift direct" :
-                             ps === "error"   ? "✗ Direct failed" :
-                                               "⚡ Direct to Zwift"}
-                          </button>
-
-                          {/* Download fallback — always available */}
+                        {/* Download .zwo — always available as fallback */}
+                        <div style={{ display: "flex", justifyContent: "center" }}>
                           <button
                             type="button"
                             className="btn btn-secondary"
@@ -1146,19 +1091,6 @@ export default function WeeklyPlan() {
                             ↓ Download .zwo
                           </button>
                         </div>
-
-                        {/* Probe log — only visible on error, for diagnostics */}
-                        {ps === "error" && log && (
-                          <pre style={{
-                            marginTop: 8, fontSize: 9.5, color: "var(--muted)",
-                            background: "rgba(20,23,26,0.04)", borderRadius: 6,
-                            padding: "8px 10px", overflowX: "auto",
-                            whiteSpace: "pre-wrap", wordBreak: "break-all",
-                            textAlign: "left",
-                          }}>
-                            {log}
-                          </pre>
-                        )}
                       </div>
                     );
                   })()}
