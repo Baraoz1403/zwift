@@ -1,14 +1,12 @@
 /**
  * TrainingPeaks API client
  *
- * Auth approach: TrainingPeaks stores a JWT in the `Production_tpAuth` cookie.
- * This same JWT value works as a Bearer token for api.trainingpeaks.com.
- * Users copy it from DevTools → Application → Cookies, paste it once into
- * our "Connect TrainingPeaks" form, and we store it (encrypted) in their
- * Zwift session cookie. No partnership or OAuth client credentials required.
- *
- * Why this works: TrainingPeaks' own web app sends this cookie with every
- * request, and the API validates it as a standard Bearer token.
+ * Auth approach (corrected):
+ * 1. The Production_tpAuth cookie value is NOT a Bearer token itself.
+ * 2. It must be sent as a Cookie header to the token exchange endpoint:
+ *    GET https://tpapi.trainingpeaks.com/users/v3/token
+ * 3. That returns a short-lived access_token (1h TTL).
+ * 4. Subsequent API calls use: Authorization: Bearer <access_token>
  *
  * Zwift sync: when a user connects TrainingPeaks to Zwift (in the Zwift
  * Companion app), any planned workout added to their TP calendar automatically
@@ -16,44 +14,76 @@
  * a supported, legitimate path — TrainingPeaks is Zwift's official partner.
  */
 
-const TP_API = "https://api.trainingpeaks.com";
+const TP_API = "https://tpapi.trainingpeaks.com";
 
-export interface TPAthleteProfile {
-  Id: number | string;
-  FirstName?: string;
-  LastName?: string;
-  Email?: string;
-  [key: string]: unknown;
-}
-
-/** Validate a TP token and return the athlete profile. Throws on failure. */
-export async function fetchTPProfile(tpToken: string): Promise<TPAthleteProfile> {
-  const res = await fetch(`${TP_API}/v1/athlete/profile`, {
+/** Exchange the Production_tpAuth cookie for a short-lived access token. */
+async function exchangeCookieForToken(tpCookie: string): Promise<string> {
+  const res = await fetch(`${TP_API}/users/v3/token`, {
+    method: "GET",
     headers: {
-      Authorization: `Bearer ${tpToken}`,
+      Cookie: `Production_tpAuth=${tpCookie.trim()}`,
       Accept: "application/json",
-      "User-Agent": "ZwiftAIDashboard/1.0",
     },
   });
+
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`TrainingPeaks auth failed (${res.status}): ${body.slice(0, 120)}`);
   }
-  return res.json() as Promise<TPAthleteProfile>;
+
+  const data = await res.json() as { success?: boolean; token?: { access_token?: string } };
+  const accessToken = data?.token?.access_token;
+  if (!accessToken) {
+    throw new Error("TrainingPeaks token exchange returned no access_token");
+  }
+  return accessToken;
 }
 
-/** Map our AI workout type to TrainingPeaks WorkoutType string */
-function toTPWorkoutType(type: string): string {
+export interface TPAthleteProfile {
+  personId?: number | string;
+  athleteId?: number | string;
+  userId?: number | string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  username?: string;
+  [key: string]: unknown;
+}
+
+/** Validate a TP cookie and return the athlete profile. Throws on failure. */
+export async function fetchTPProfile(tpCookie: string): Promise<TPAthleteProfile> {
+  const accessToken = await exchangeCookieForToken(tpCookie);
+
+  const res = await fetch(`${TP_API}/users/v3/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`TrainingPeaks profile fetch failed (${res.status}): ${body.slice(0, 120)}`);
+  }
+
+  const data = await res.json() as { user?: TPAthleteProfile } | TPAthleteProfile;
+  // API returns { user: { ... } } or the profile directly
+  const profile = (data as { user?: TPAthleteProfile }).user ?? data as TPAthleteProfile;
+  return profile;
+}
+
+/** Map our AI workout type to TrainingPeaks workoutTypeValueId */
+function toTPWorkoutTypeId(type: string): number {
   const t = type.toLowerCase();
-  if (t.includes("run")) return "Run";
-  if (t.includes("swim")) return "Swim";
-  if (t.includes("strength") || t.includes("gym")) return "Strength";
-  if (t.includes("walk")) return "Walk";
-  return "Bike";
+  if (t.includes("run")) return 3;
+  if (t.includes("swim")) return 1;
+  if (t.includes("strength") || t.includes("gym")) return 9;
+  if (t.includes("walk")) return 13;
+  return 2; // Bike
 }
 
 export interface PushWorkoutOptions {
-  tpToken: string;
+  tpCookie: string;        // Production_tpAuth cookie value
   tpAthleteId: string;
   /** YYYY-MM-DD */
   workoutDay: string;
@@ -64,8 +94,6 @@ export interface PushWorkoutOptions {
   type: string;
   /** Optional TSS estimate */
   tssPlanned?: number;
-  /** %FTP target as string e.g. "75-85%" */
-  targetPower?: string;
 }
 
 export interface PushWorkoutResult {
@@ -78,32 +106,43 @@ export interface PushWorkoutResult {
 
 /**
  * Push a single planned workout to TrainingPeaks calendar.
- *
- * Endpoint: POST https://api.trainingpeaks.com/v2/workouts/plan
- * Docs: https://github.com/TrainingPeaks/PartnersAPI/wiki/Workouts-Create
+ * Uses the tpapi.trainingpeaks.com internal API (cookie→token exchange).
  */
 export async function pushWorkoutToTP(opts: PushWorkoutOptions): Promise<PushWorkoutResult> {
+  let accessToken: string;
+  try {
+    accessToken = await exchangeCookieForToken(opts.tpCookie);
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
+
+  // Workout payload for the v6 API
   const body = {
-    AthleteId: opts.tpAthleteId,
-    WorkoutDay: opts.workoutDay,
-    WorkoutType: toTPWorkoutType(opts.type),
-    Title: opts.title,
-    Description: opts.description,
-    TotalTimePlanned: opts.durationMin / 60,      // TP uses decimal hours
-    ...(opts.tssPlanned ? { TSSPlanned: opts.tssPlanned } : {}),
+    athleteId: opts.tpAthleteId,
+    workoutDay: `${opts.workoutDay}T00:00:00`,
+    workoutTypeValueId: toTPWorkoutTypeId(opts.type),
+    title: opts.title,
+    description: opts.description,
+    totalTimePlanned: (opts.durationMin * 60), // v6 uses seconds
+    ...(opts.tssPlanned ? { tssPlanned: opts.tssPlanned } : {}),
   };
 
   try {
-    const res = await fetch(`${TP_API}/v2/workouts/plan`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${opts.tpToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "User-Agent": "ZwiftAIDashboard/1.0",
-      },
-      body: JSON.stringify(body),
-    });
+    const res = await fetch(
+      `${TP_API}/fitness/v6/athletes/${opts.tpAthleteId}/workouts`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
     const text = await res.text().catch(() => "");
     let parsed: Record<string, unknown> | null = null;
@@ -112,7 +151,7 @@ export async function pushWorkoutToTP(opts: PushWorkoutOptions): Promise<PushWor
     if (res.ok) {
       return {
         ok: true,
-        workoutId: (parsed as Record<string, unknown>)?.Id ?? (parsed as Record<string, unknown>)?.id,
+        workoutId: (parsed as Record<string, unknown>)?.workoutId ?? (parsed as Record<string, unknown>)?.id,
         status: res.status,
       };
     }

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   // ── Push to TrainingPeaks ─────────────────────────────────────────────────
   const result = await pushWorkoutToTP({
-    tpToken: session.tpToken,
+    tpCookie: session.tpToken,
     tpAthleteId: session.tpAthleteId,
     workoutDay: body.workoutDay,
     title: body.title,
@@ -67,7 +67,6 @@ export async function POST(req: NextRequest) {
     durationMin: body.durationMin,
     type: body.type ?? "Bike",
     tssPlanned: body.tssPlanned,
-    targetPower: body.targetPower,
   });
 
   return NextResponse.json(result);
