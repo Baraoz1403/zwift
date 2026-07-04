@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const tpAthleteId = String(profile.Id ?? "");
-  const athleteName = [profile.FirstName, profile.LastName].filter(Boolean).join(" ") || "TrainingPeaks user";
+  // tpapi returns personId/athleteId (not legacy .Id)
+  const tpAthleteId = String(profile.personId ?? profile.athleteId ?? profile.userId ?? "");
+  const athleteName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "TrainingPeaks user";
 
   // ── Update session with TP credentials ───────────────────────────────────
   const updatedSession = { ...session, tpToken: tpToken.trim(), tpAthleteId };
