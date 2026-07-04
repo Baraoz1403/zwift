@@ -233,10 +233,10 @@ export default function TrainingProfileCard() {
             <button type="button" onClick={startEdit} style={{
               display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
               padding: "9px 20px", borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: "rgba(47,143,224,0.04)",
-              color: "var(--muted)",
-              fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+              border: "1.5px solid #16a34a",
+              background: "#16a34a",
+              color: "#fff",
+              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
               whiteSpace: "nowrap" as const, fontFamily: "inherit",
             }}>
               {profile ? "Update my profile" : "Set up my profile"}

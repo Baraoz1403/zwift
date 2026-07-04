@@ -580,12 +580,12 @@ export default function WeeklyPlan() {
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
                 padding: "9px 20px", borderRadius: 6,
-                border: noteOpen ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+                border: noteOpen ? "1.5px solid var(--accent)" : "1.5px solid #16a34a",
                 background: noteOpen
                   ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
-                  : "rgba(47,143,224,0.04)",
-                color: noteOpen ? "var(--accent)" : "var(--muted)",
-                fontSize: 12.5, fontWeight: noteOpen ? 600 : 500,
+                  : "#16a34a",
+                color: noteOpen ? "var(--accent)" : "#fff",
+                fontSize: 12.5, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
                 whiteSpace: "nowrap" as const, fontFamily: "inherit",
@@ -625,10 +625,10 @@ export default function WeeklyPlan() {
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
                 padding: "9px 20px", borderRadius: 6,
-                border: "1px solid var(--border)",
-                background: "rgba(47,143,224,0.04)",
-                color: "var(--muted)",
-                fontSize: 12.5, fontWeight: 500,
+                border: "1.5px solid #16a34a",
+                background: "#16a34a",
+                color: "#fff",
+                fontSize: 12.5, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
                 whiteSpace: "nowrap" as const, fontFamily: "inherit",
