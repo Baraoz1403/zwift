@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 
 interface HealthData {
   zwift:  { connected: boolean; athleteId?: string | null };
-  tp:     { connected: boolean; tokenExpired?: boolean; athleteId?: string | null };
+  tp:     { connected: boolean; tokenExpired?: boolean; hasRefreshToken?: boolean; athleteId?: string | null };
   strava: { configured: boolean; connected: boolean; athleteName?: string | null };
   garmin: { viaTp: boolean; note: string };
 }
@@ -195,11 +195,23 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           line1={
             tpStatus === "loading" ? "בודק…" :
             tpStatus === "ok"      ? `מחובר · תוכניות מסתנכרות אוטומטית לזוויפט ולגרמין` :
+            tpStatus === "warn" && health?.tp.hasRefreshToken
+              ? "הטוקן פג — מנסה לרענן אוטומטית…" :
             tpStatus === "warn"    ? "הטוקן פג — יש להתחבר מחדש (דקה אחת)" :
             "לא מחובר"
           }
-          line2={tpStatus !== "ok" ? "לחץ להתחבר דרך ה-bookmarklet" : undefined}
-          action={tpStatus !== "ok" ? { label: "חבר TrainingPeaks", onClick: onOpenTPModal } : undefined}
+          line2={
+            tpStatus !== "ok" && !health?.tp.hasRefreshToken
+              ? "לחץ להתחבר דרך ה-bookmarklet"
+              : tpStatus === "ok"
+              ? `מזהה אתלט: ${health?.tp.athleteId ?? "—"}${health?.tp.hasRefreshToken ? " · רענון אוטומטי פעיל" : ""}`
+              : undefined
+          }
+          action={
+            tpStatus !== "ok" && !health?.tp.hasRefreshToken
+              ? { label: "חבר TrainingPeaks", onClick: onOpenTPModal }
+              : undefined
+          }
         />
 
         {/* Strava */}

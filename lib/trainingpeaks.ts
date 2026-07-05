@@ -17,10 +17,29 @@
 const TP_API = "https://tpapi.trainingpeaks.com";
 
 /**
- * Exchange the Production_tpAuth cookie for a short-lived access token.
- * If the value already looks like an access token (starts with "gAAAA"),
- * returns it directly without doing an exchange.
+ * Try to refresh the TP access token using a refresh token.
+ * Returns the new access token, or throws if refresh fails.
  */
+export async function refreshTPToken(refreshToken: string): Promise<string> {
+  // TP may support a refresh endpoint — attempt it.
+  // (If TP doesn't support refresh tokens, this will fail with a 4xx.)
+  const res = await fetch(`${TP_API}/users/v3/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ refresh_token: refreshToken, grant_type: "refresh_token" }),
+  });
+  if (!res.ok) {
+    throw new Error(`TP refresh failed (${res.status})`);
+  }
+  const data = await res.json() as { token?: { access_token?: string } };
+  const token = data?.token?.access_token;
+  if (!token) throw new Error("No access_token in TP refresh response");
+  return token;
+}
+
 async function exchangeCookieForToken(tpCookieOrToken: string): Promise<string> {
   const val = tpCookieOrToken.trim();
   // Already an access token — use directly

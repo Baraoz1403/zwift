@@ -16,6 +16,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
+import { refreshTPToken } from "@/lib/trainingpeaks";
 import {
   STRAVA_TOKEN_COOKIE,
   STRAVA_REFRESH_COOKIE,
@@ -34,16 +35,33 @@ export async function GET() {
   };
 
   // ── TrainingPeaks ──────────────────────────────────────────────────────────
-  const tpToken     = cookieStore.get("zwift_tp_token")?.value;
+  let tpToken     = cookieStore.get("zwift_tp_token")?.value;
   const tpAthleteId = cookieStore.get("zwift_tp_id")?.value;
-  // Cookies don't expose their expiry to server code.
-  // We detect "expiring soon" by attempting a lightweight API call when the
-  // token exists — if it 401s, the token is already expired.
+  const tpRefresh   = cookieStore.get("zwift_tp_refresh")?.value;
+  const tpExpiresAt = Number(cookieStore.get("zwift_tp_expires")?.value ?? "0");
+
+  // Auto-refresh if token is expired/expiring and we have a refresh token
+  if (tpRefresh && (!tpToken || (tpExpiresAt && tpExpiresAt < Date.now() + 5 * 60 * 1000))) {
+    try {
+      const newToken = await refreshTPToken(tpRefresh);
+      // Update the cookie for this response cycle (next request will also use it)
+      const isSecure = process.env.NODE_ENV === "production";
+      const cookieOpts = { httpOnly: true, secure: isSecure, sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 30, path: "/" };
+      cookieStore.set("zwift_tp_token", newToken, cookieOpts);
+      cookieStore.set("zwift_tp_expires", String(Date.now() + 60 * 60 * 1000), { ...cookieOpts, httpOnly: false });
+      tpToken = newToken;
+    } catch {
+      // Refresh failed — will fall through to expired state
+    }
+  }
+
+  // Probe the TP API to verify the token is actually valid
   let tpExpired = false;
   if (tpToken) {
     try {
+      const today = new Date().toISOString().slice(0, 10);
       const probe = await fetch(
-        `https://tpapi.trainingpeaks.com/fitness/v6/athletes/${tpAthleteId}/workouts?startDate=${new Date().toISOString().slice(0, 10)}&endDate=${new Date().toISOString().slice(0, 10)}`,
+        `https://tpapi.trainingpeaks.com/fitness/v6/athletes/${tpAthleteId}/workouts?startDate=${today}&endDate=${today}`,
         {
           method: "GET",
           headers: { Authorization: `Bearer ${tpToken}`, Accept: "application/json" },
@@ -52,12 +70,13 @@ export async function GET() {
       );
       if (probe.status === 401 || probe.status === 403) tpExpired = true;
     } catch {
-      // network error — assume token might still be ok, don't flag as expired
+      // Network error — assume token might still be ok
     }
   }
   const tp = {
     connected: !!tpToken && !tpExpired,
     tokenExpired: tpExpired,
+    hasRefreshToken: !!tpRefresh,
     athleteId: tpAthleteId ?? null,
   };
 

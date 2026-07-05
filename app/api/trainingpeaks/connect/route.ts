@@ -43,7 +43,11 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
   // ── Parse body ────────────────────────────────────────────────────────────
-  const { tpToken } = await req.json() as { tpToken?: string };
+  const { tpToken, refreshToken, expiresIn } = await req.json() as {
+    tpToken?: string;
+    refreshToken?: string | null;
+    expiresIn?: number | null;
+  };
   if (!tpToken?.trim()) {
     return NextResponse.json({ ok: false, error: "No token provided." });
   }
@@ -78,6 +82,15 @@ export async function POST(req: NextRequest) {
 
   cookieStore.set("zwift_tp_token", tpToken.trim(), cookieOpts);
   cookieStore.set("zwift_tp_id", tpAthleteId, cookieOpts);
+  // Store refresh token if TP provides one (allows auto-refresh without bookmarklet)
+  if (refreshToken) {
+    cookieStore.set("zwift_tp_refresh", refreshToken, cookieOpts);
+  }
+  // Store token expiry timestamp for proactive refresh warnings
+  if (expiresIn) {
+    const expiresAt = Date.now() + expiresIn * 1000;
+    cookieStore.set("zwift_tp_expires", String(expiresAt), { ...cookieOpts, httpOnly: false });
+  }
 
   const response = NextResponse.json({ ok: true, athleteName, tpAthleteId });
   Object.entries(corsHeaders()).forEach(([k, v]) => response.headers.set(k, v));

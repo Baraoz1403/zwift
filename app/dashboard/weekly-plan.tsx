@@ -365,7 +365,7 @@ export default function WeeklyPlan() {
   const bookmarkletHref = typeof window !== "undefined"
     ? (() => {
         const origin = window.location.origin;
-        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in');return;}const d=await r.json();const t=d?.token?.access_token;if(!t){alert('TP token not found');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t})});const d2=await r2.json();if(d2.ok){alert('Connected! Return to Zwift AI Dashboard.')}else{alert('Error: '+(d2.error||'Unknown. Are you logged in?'))}}catch(e){alert('Error: '+e.message)}})()`;
+        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: לא מחובר — יש להתחבר תחילה');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||null;const exp=d?.token?.expires_in||null;if(!t){alert('שגיאה: לא נמצא טוקן TP');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t,refreshToken:rt,expiresIn:exp})});const d2=await r2.json();if(d2.ok){alert('מחובר! חזור לדשבורד.')}else{alert('שגיאה: '+(d2.error||'נסה שוב'))}}catch(e){alert('שגיאה: '+e.message)}})()`;
         return `javascript:${encodeURIComponent(code)}`;
       })()
     : "#";
@@ -453,8 +453,8 @@ export default function WeeklyPlan() {
             style={{ maxWidth: 460, width: "100%", padding: "28px 28px 24px" }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+            {/* כותרת */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10, background: "#e8264c",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
@@ -464,9 +464,9 @@ export default function WeeklyPlan() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Connect TrainingPeaks</div>
-                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                  One bookmark → one click to connect, every time
+                <div style={{ fontSize: 15, fontWeight: 700 }}>חיבור TrainingPeaks</div>
+                <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>
+                  פעם אחת — ומאז לחיצה אחת בכל חיבור מחדש
                 </div>
               </div>
               <button
@@ -475,41 +475,50 @@ export default function WeeklyPlan() {
               >✕</button>
             </div>
 
-            {/* Step 1 — drag bookmarklet */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>
-                Step 1 — Save the connector (drag to bookmark bar)
+            {/* שלב 1 */}
+            <div style={{
+              marginBottom: 14, padding: "14px 16px", borderRadius: 10,
+              background: "rgba(20,23,26,0.04)", border: "1px solid var(--border)",
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                שלב 1 — שמור סימנייה (פעם אחת בלבד)
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {/* The actual bookmarklet link — user drags this */}
+              {/* הוראת קליק ימני */}
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10, lineHeight: 1.6 }}>
+                לחץ <strong>קליק ימני</strong> על הכפתור הכחול למטה ← בחר <strong>&ldquo;הוסף קישור לסימניות&rdquo;</strong> ← שמור בשם &ldquo;Zwift TP&rdquo;
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <a
                   href={bookmarkletHref}
                   draggable
                   onClick={e => e.preventDefault()}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "9px 18px", borderRadius: 8,
-                    border: "2px dashed var(--accent)",
-                    background: "rgba(47,143,224,0.07)",
+                    padding: "10px 20px", borderRadius: 8,
+                    border: "2px solid var(--accent)",
+                    background: "rgba(47,143,224,0.10)",
                     color: "var(--accent)", fontSize: 13, fontWeight: 700,
                     cursor: "grab", textDecoration: "none",
-                    userSelect: "none" as const, flexShrink: 0,
-                    letterSpacing: "0.01em",
+                    userSelect: "none" as const, letterSpacing: "0.01em",
+                    flexShrink: 0,
                   }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                   Zwift AI → TP
                 </a>
-                <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.55 }}>
-                  ← Drag this to your browser&apos;s bookmarks bar. You only need to do this once.
+                <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+                  (אפשר גם לגרור אותו לשורת הסימניות)
                 </div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8, opacity: 0.7 }}>
+                💡 שורת הסימניות לא נראית? לחץ <strong>Ctrl+Shift+B</strong> להצגתה
               </div>
             </div>
 
-            {/* Step 2 — go to TP and click */}
-            <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 10 }}>
-                Step 2 — Open TrainingPeaks and click the bookmark
+            {/* שלב 2 */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                שלב 2 — פתח TrainingPeaks ולחץ על הסימנייה
               </div>
               <button
                 type="button"
@@ -518,37 +527,35 @@ export default function WeeklyPlan() {
                   setTpPolling(true);
                 }}
                 style={{
-                  width: "100%", padding: "10px 18px", borderRadius: 7, border: "none",
+                  width: "100%", padding: "11px 18px", borderRadius: 7, border: "none",
                   background: "#e8264c", color: "#fff",
                   fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  fontFamily: "inherit", letterSpacing: "0.01em",
+                  fontFamily: "inherit",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                Open TrainingPeaks →
+                פתח TrainingPeaks ←
               </button>
-              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.55 }}>
-                A TrainingPeaks tab opens. Click the <strong style={{ color: "var(--text)" }}>Zwift AI → TP</strong> bookmark in your bar — it connects automatically and you can close that tab.
+              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.6 }}>
+                בטאב שנפתח — לחץ על הסימנייה <strong>Zwift AI → TP</strong> שיצרת.
+                הדשבורד יתחבר אוטומטית ותוכל לסגור את הטאב.
               </div>
             </div>
 
-            {/* Polling status */}
+            {/* סטטוס המתנה */}
             {tpPolling && (
               <div style={{
-                display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
                 padding: "10px 14px", borderRadius: 7,
                 background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.2)",
               }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                </svg>
                 <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
-                  Waiting for connection… click the bookmark in the TrainingPeaks tab
+                  ⏳ ממתין לחיבור… לחץ על הסימנייה בטאב TrainingPeaks
                 </span>
               </div>
             )}
 
-            {/* Cancel */}
+            {/* ביטול */}
             <button
               type="button"
               onClick={() => { setShowTPModal(false); setTpPolling(false); }}
@@ -558,11 +565,11 @@ export default function WeeklyPlan() {
                 color: "var(--muted)", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Cancel
+              ביטול
             </button>
 
-            <div style={{ marginTop: 12, fontSize: 11, color: "var(--muted)", opacity: 0.65, lineHeight: 1.5 }}>
-              The bookmark exchanges your TrainingPeaks session for a short-lived token that is sent over HTTPS and stored only in your browser session.
+            <div style={{ marginTop: 10, fontSize: 10.5, color: "var(--muted)", opacity: 0.55, lineHeight: 1.5 }}>
+              הסימנייה מחליפה את ה-session של TrainingPeaks לטוקן זמני ושולחת אותו ב-HTTPS לדשבורד.
             </div>
           </div>
         </div>
@@ -761,8 +768,30 @@ export default function WeeklyPlan() {
       </div>
 
       {stale && plan && !loading && (
-        <div className="notice" style={{ marginTop: 16, marginBottom: 12 }}>
-          This plan is from the week of {plan.weekOf} - generate a new one for the current week.
+        <div style={{
+          marginTop: 16, marginBottom: 12,
+          padding: "14px 18px", borderRadius: 10,
+          background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.25)",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
+        }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>📅 השבוע הזה כבר עבר</div>
+            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+              התוכנית מ-{plan.weekOf} הסתיימה — ייצר תוכנית חדשה לשבוע הנוכחי
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={loading}
+            style={{
+              flexShrink: 0, padding: "8px 16px", borderRadius: 7,
+              background: "var(--accent)", color: "#fff", border: "none",
+              fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            {loading ? "מייצר…" : "ייצר תוכנית חדשה ←"}
+          </button>
         </div>
       )}
 
