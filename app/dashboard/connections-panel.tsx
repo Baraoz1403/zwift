@@ -15,7 +15,15 @@
  */
 
 import { useEffect, useState } from "react";
-import { IconBolt, IconMountain, IconTrend } from "./icons";
+import { IconMountain, IconTrend } from "./icons";
+
+type VirtualPlatform = "zwift" | "rouvy" | "mywhoosh";
+const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; emoji: string }[] = [
+  { id: "zwift",    label: "Zwift",    emoji: "⚡" },
+  { id: "rouvy",   label: "Rouvy",    emoji: "🎥" },
+  { id: "mywhoosh",label: "MyWhoosh", emoji: "🌐" },
+];
+const VIRTUAL_PLATFORMS_KEY = "zwiftVirtualPlatforms";
 
 /** Strava is currently out of scope for the push pipeline (it's a read-only,
  *  post-hoc activity log, not part of plan delivery) - hidden from this
@@ -125,6 +133,25 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   const [intervalsConnecting, setIntervalsConnecting] = useState(false);
   const [intervalsError, setIntervalsError] = useState<string | null>(null);
 
+  // Virtual platforms selector — which platforms the rider has connected in ICU
+  // (ICU handles delivery; this is just a UI signal, no extra API calls needed)
+  const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>([]);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(VIRTUAL_PLATFORMS_KEY);
+      if (stored) setVirtualPlatforms(JSON.parse(stored) as VirtualPlatform[]);
+      else setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]); // default: all selected
+    } catch { setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]); }
+  }, []);
+
+  function togglePlatform(id: VirtualPlatform) {
+    setVirtualPlatforms(prev => {
+      const next = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
+      try { localStorage.setItem(VIRTUAL_PLATFORMS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
   async function refresh() {
     setLoading(true);
     try {
@@ -224,7 +251,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           status={tpStatus}
           line1={
             tpStatus === "loading" ? "Checking…" :
-            tpStatus === "ok"      ? "Connected · plans sync to Zwift and Garmin" :
+            tpStatus === "ok"      ? "Connected · outdoor / Garmin sync" :
             tpStatus === "warn" && health?.tp.hasRefreshToken
               ? "Token expired — trying to auto-refresh…" :
             tpStatus === "warn"    ? "Token expired — please reconnect (takes a minute)" :
@@ -271,7 +298,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           status={intervalsStatus}
           line1={
             intervalsStatus === "loading" ? "Checking…" :
-            intervalsStatus === "ok"      ? `Connected${health?.intervals.athleteName ? ` · ${health.intervals.athleteName}` : ""} · syncs to Zwift and Garmin` :
+            intervalsStatus === "ok"      ? `Connected${health?.intervals.athleteName ? ` · ${health.intervals.athleteName}` : ""} · virtual platform hub` :
             "Not connected — free, no approval needed"
           }
           action={
@@ -281,6 +308,48 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           }
         />
       </div>
+
+      {/* Virtual platforms selector — shown only when ICU is connected */}
+      {intervalsStatus === "ok" && (
+        <div className="stat-card" style={{ marginTop: 12, padding: "16px 18px" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 4 }}>
+            Virtual platforms via Intervals.icu
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
+            Select which virtual platforms you&apos;ve connected in your Intervals.icu account.
+            Workouts pushed to ICU will sync to all selected platforms automatically.
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {VIRTUAL_PLATFORMS.map(({ id, label, emoji }) => {
+              const active = virtualPlatforms.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => togglePlatform(id)}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                    border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border, #d8dce0)",
+                    background: active ? "var(--accent)" : "transparent",
+                    color: active ? "#fff" : "var(--muted)",
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{emoji}</span>
+                  {label}
+                  {active && <span style={{ fontSize: 10, opacity: 0.85 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+          {virtualPlatforms.length === 0 && (
+            <div style={{ marginTop: 10, fontSize: 11, color: "#e4483a", lineHeight: 1.5 }}>
+              No platforms selected — workouts will be pushed to ICU only.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Strava setup instructions when not configured — hidden with the card above */}
       {SHOW_STRAVA && health && !health.strava.configured && (
