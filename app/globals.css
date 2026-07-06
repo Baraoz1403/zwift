@@ -1158,13 +1158,19 @@ tbody tr:hover {
   gap: 16px;
 }
 
+/* Header card action buttons — consistent size on all screen sizes */
+.header-card-btn {
+  min-width: 190px;
+  justify-content: center;
+}
+
 @media (max-width: 860px) {
   .header-cards-grid {
     grid-template-columns: 1fr;
   }
-  /* On mobile/tablet, make all 3 header-card buttons the same (full) width */
   .header-card-btn {
     width: 100%;
+    min-width: unset;
   }
 }
 
