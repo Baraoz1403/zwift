@@ -14,6 +14,7 @@ import {
   type ChartExtra,
 } from "@/lib/stats";
 import LogoutButton from "./logout-button";
+import ConnectionsNavChip from "./connections-nav-chip";
 import DashboardFooter from "./footer";
 import ActivityCharts from "./activity-chart";
 import RidesTable from "./rides-table";
@@ -205,6 +206,7 @@ export default async function DashboardPage() {
               <AiInsightsLink />
             </>
           )}
+          <ConnectionsNavChip />
           <LogoutButton />
         </div>
       </div>

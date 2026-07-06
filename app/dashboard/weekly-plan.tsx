@@ -258,6 +258,14 @@ export default function WeeklyPlan() {
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
+  // Connections panel visibility — hidden by default, toggled via header button
+  const [showConnections, setShowConnections] = useState(false);
+  useEffect(() => {
+    const toggle = () => setShowConnections(v => !v);
+    window.addEventListener("zwift:toggle-connections", toggle);
+    return () => window.removeEventListener("zwift:toggle-connections", toggle);
+  }, []);
+
   useEffect(() => {
     const thisWeek = currentWeekOf();
     const cached = loadCachedPlan();
@@ -1205,13 +1213,16 @@ export default function WeeklyPlan() {
 
       </div>{/* end 3-col grid */}
 
-      {/* ── Connections panel — always visible ──────────────────────────── */}
-      <div style={{ marginTop: 36, marginBottom: 24 }}>
-        <ConnectionsPanel
-          onOpenTPModal={() => setShowTPModal(true)}
-          onConnectStrava={() => { window.location.href = "/api/strava/oauth-start"; }}
-        />
-      </div>
+      {/* ── Connections panel — shown only when header CONNECTIONS button clicked ── */}
+      {showConnections && (
+        <div style={{ marginTop: 36, marginBottom: 24 }}>
+          <ConnectionsPanel
+            onOpenTPModal={() => setShowTPModal(true)}
+            onConnectStrava={() => { window.location.href = "/api/strava/oauth-start"; }}
+            onHide={() => setShowConnections(false)}
+          />
+        </div>
+      )}
 
 
       {stale && plan && !loading && (

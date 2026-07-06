@@ -233,9 +233,11 @@ function PlatformChip({
 interface ConnectionsPanelProps {
   onOpenTPModal:   () => void;
   onConnectStrava: () => void;
+  /** Called when the user clicks the HIDE button — lets the parent collapse the panel. */
+  onHide?: () => void;
 }
 
-export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: ConnectionsPanelProps) {
+export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHide }: ConnectionsPanelProps) {
   const [health,      setHealth]      = useState<HealthData | null>(null);
   const [loading,     setLoading]     = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
@@ -379,32 +381,54 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                 : "Sync plans to TrainingPeaks, Intervals.icu & beyond"}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={loading}
-            title="Re-check connections"
-            style={{
-              background: "none",
-              border: "1.5px solid var(--border)",
-              borderRadius: 8,
-              cursor: loading ? "wait" : "pointer",
-              opacity: loading ? 0.4 : 1,
-              color: "var(--muted)",
-              fontSize: 16, lineHeight: 1,
-              padding: "5px 7px",
-              display: "flex", alignItems: "center",
-              transition: "opacity 0.15s",
-              marginTop: 2,
-            }}
-          >
-            <span style={{
-              display: "inline-block",
-              animation: loading ? "connSpin 1s linear infinite" : "none",
-            }}>
-              ↻
-            </span>
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={loading}
+              title="Re-check connections"
+              style={{
+                background: "none",
+                border: "1.5px solid var(--border)",
+                borderRadius: 8,
+                cursor: loading ? "wait" : "pointer",
+                opacity: loading ? 0.4 : 1,
+                color: "var(--muted)",
+                fontSize: 16, lineHeight: 1,
+                padding: "5px 7px",
+                display: "flex", alignItems: "center",
+                transition: "opacity 0.15s",
+              }}
+            >
+              <span style={{
+                display: "inline-block",
+                animation: loading ? "connSpin 1s linear infinite" : "none",
+              }}>
+                ↻
+              </span>
+            </button>
+            {onHide && (
+              <button
+                type="button"
+                onClick={onHide}
+                title="Hide connections panel"
+                style={{
+                  background: "none",
+                  border: "1.5px solid var(--border)",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  color: "var(--muted)",
+                  fontSize: 11, fontWeight: 600, lineHeight: 1,
+                  padding: "5px 9px",
+                  display: "flex", alignItems: "center",
+                  transition: "opacity 0.15s",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                Hide
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Service tiles — 2-column grid ──────────────────────────────── */}
