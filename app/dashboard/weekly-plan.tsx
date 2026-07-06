@@ -1078,6 +1078,7 @@ export default function WeeklyPlan() {
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <button
               type="button"
+              className="header-card-btn"
               onClick={() => {
                 if (noteOpen) {
                   // Close the note panel. If a note was entered, auto-trigger plan generation.
@@ -1091,7 +1092,7 @@ export default function WeeklyPlan() {
               }}
               disabled={loading}
               style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+                display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "9px 20px", borderRadius: 6,
                 border: noteOpen ? "1.5px solid var(--accent)" : "1.5px solid #16a34a",
                 background: noteOpen
@@ -1101,7 +1102,7 @@ export default function WeeklyPlan() {
                 fontSize: 12.5, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
-                whiteSpace: "nowrap" as const, fontFamily: "inherit",
+                fontFamily: "inherit",
                 transition: "all 0.15s ease",
               }}
             >
@@ -1133,10 +1134,11 @@ export default function WeeklyPlan() {
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <button
               type="button"
+              className="header-card-btn"
               onClick={handleGenerate}
               disabled={loading}
               style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+                display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "9px 20px", borderRadius: 6,
                 border: "1.5px solid #16a34a",
                 background: "#16a34a",
@@ -1144,7 +1146,7 @@ export default function WeeklyPlan() {
                 fontSize: 12.5, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
-                whiteSpace: "nowrap" as const, fontFamily: "inherit",
+                fontFamily: "inherit",
                 transition: "opacity 0.15s",
               }}
             >

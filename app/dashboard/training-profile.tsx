@@ -257,14 +257,14 @@ export default function TrainingProfileCard() {
               : "Answer 4 questions once. Your AI coach learns your goals, schedule, and limits — and never forgets them."}
           </div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <button type="button" onClick={startEdit} style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7,
+            <button type="button" onClick={startEdit} className="header-card-btn" style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
               padding: "9px 20px", borderRadius: 6,
               border: "1.5px solid #16a34a",
               background: "#16a34a",
               color: "#fff",
               fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-              whiteSpace: "nowrap" as const, fontFamily: "inherit",
+              fontFamily: "inherit",
             }}>
               {profile ? "Update my profile" : "Set up my profile"}
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
