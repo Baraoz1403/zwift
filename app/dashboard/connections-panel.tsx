@@ -7,11 +7,14 @@
  *   Zwift · TrainingPeaks · Strava · Garmin
  *
  * Fetches /api/health once on mount and exposes a manual "Re-check" button.
- * Each service card shows:
- *   🟢 Connected | 🟡 Action needed | 🔴 Not connected / broken
+ * Visual language matches the rest of the dashboard: each connection is a
+ * `.stat-card` (same white panel, top accent stripe, hover lift) with a
+ * `.record-icon` badge whose color (c-green/c-amber/c-red/c-neutral)
+ * communicates status at a glance - no separate status dot needed.
  */
 
 import { useEffect, useState } from "react";
+import { IconBolt, IconMountain } from "./icons";
 
 interface HealthData {
   zwift:  { connected: boolean; athleteId?: string | null };
@@ -22,19 +25,15 @@ interface HealthData {
 
 type Status = "ok" | "warn" | "error" | "loading";
 
-function dot(s: Status) {
-  const color = s === "ok" ? "#22c55e" : s === "warn" ? "#f59e0b" : s === "error" ? "#ef4444" : "#94a3b8";
-  return (
-    <span style={{
-      display: "inline-block", width: 9, height: 9, borderRadius: "50%",
-      background: color, flexShrink: 0,
-      boxShadow: s === "ok" ? `0 0 6px ${color}88` : "none",
-    }} />
-  );
-}
+const STATUS_CLASS: Record<Status, string> = {
+  ok: "c-green",
+  warn: "c-amber",
+  error: "c-red",
+  loading: "c-neutral",
+};
 
 interface ServiceCardProps {
-  icon: string;
+  icon: React.ReactNode;
   name: string;
   status: Status;
   line1: string;
@@ -44,61 +43,39 @@ interface ServiceCardProps {
 
 function ServiceCard({ icon, name, status, line1, line2, action }: ServiceCardProps) {
   return (
-    <div style={{
-      display: "flex", alignItems: "flex-start", gap: 12,
-      padding: "14px 16px", borderRadius: 10,
-      background: "rgba(20,23,26,0.03)",
-      border: "1px solid var(--border)",
-    }}>
-      {/* Icon */}
-      <div style={{
-        width: 36, height: 36, borderRadius: 9, flexShrink: 0,
-        background: status === "ok" ? "rgba(34,197,94,0.12)" : status === "warn" ? "rgba(245,158,11,0.12)" : "rgba(148,163,184,0.1)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 18,
-      }}>
+    <div className="stat-card" style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px" }}>
+      <div className={`record-icon ${STATUS_CLASS[status]}`} style={{ width: 40, height: 40, borderRadius: 10, fontSize: 17 }}>
         {icon}
       </div>
 
-      {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          {dot(status)}
-          <span style={{ fontWeight: 700, fontSize: 13 }}>{name}</span>
-        </div>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.45 }}>{line1}</div>
+        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>{name}</div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.45 }}>{line1}</div>
         {line2 && <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.7, marginTop: 2 }}>{line2}</div>}
-        {action && (
-          <div style={{ marginTop: 8 }}>
-            {action.href ? (
-              <a
-                href={action.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-block", padding: "4px 10px", borderRadius: 6,
-                  background: "var(--accent)", color: "#fff",
-                  fontSize: 11, fontWeight: 700, textDecoration: "none",
-                }}
-              >
-                {action.label}
-              </a>
-            ) : (
-              <button
-                type="button"
-                onClick={action.onClick}
-                style={{
-                  padding: "4px 10px", borderRadius: 6,
-                  background: "var(--accent)", color: "#fff", border: "none",
-                  fontSize: 11, fontWeight: 700, cursor: "pointer",
-                }}
-              >
-                {action.label}
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      {action && (
+        action.href ? (
+          <a
+            href={action.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn"
+            style={{ width: "auto", flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+          >
+            {action.label}
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className="btn"
+            style={{ width: "auto", flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none" }}
+          >
+            {action.label}
+          </button>
+        )
+      )}
     </div>
   );
 }
@@ -147,37 +124,37 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
     health.tp.connected ? "warn" : "error";
 
   return (
-    <div className="stat-card" style={{ padding: "20px 20px 16px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <div className="section-title" style={{ margin: 0, fontSize: 13 }}>Connections</div>
-          {lastChecked && (
-            <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.55, marginTop: 1 }}>
-              Checked {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-            </div>
-          )}
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div className="section-title" style={{ margin: 0 }}>
+          Connections
         </div>
         <button
           type="button"
           onClick={refresh}
           disabled={loading}
+          className="btn-secondary"
           style={{
-            padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)",
-            background: "transparent", color: "var(--muted)", fontSize: 11,
+            width: "auto", padding: "5px 12px", fontSize: 11, fontWeight: 600,
             cursor: loading ? "wait" : "pointer", opacity: loading ? 0.5 : 1,
+            display: "flex", alignItems: "center", gap: 5,
           }}
         >
-          {loading ? "Checking…" : "🔄 Re-check"}
+          {loading ? "Checking…" : "↻ Re-check"}
         </button>
       </div>
+      {lastChecked && (
+        <div style={{ fontSize: 10.5, color: "var(--muted)", opacity: 0.55, marginTop: -10, marginBottom: 14 }}>
+          Checked {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      )}
 
       {/* Service cards */}
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="stat-grid workout-grid" style={{ gap: 12 }}>
 
         {/* Zwift */}
         <ServiceCard
-          icon="⚡"
+          icon={<IconBolt size={17} />}
           name="Zwift"
           status={zwiftStatus}
           line1={
@@ -189,7 +166,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
 
         {/* TrainingPeaks */}
         <ServiceCard
-          icon="🏔️"
+          icon={<IconMountain size={17} />}
           name="TrainingPeaks"
           status={tpStatus}
           line1={
@@ -209,14 +186,14 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           }
           action={
             tpStatus !== "ok" && !health?.tp.hasRefreshToken
-              ? { label: "Connect TrainingPeaks", onClick: onOpenTPModal }
+              ? { label: "Connect", onClick: onOpenTPModal }
               : undefined
           }
         />
 
         {/* Strava */}
         <ServiceCard
-          icon="🟠"
+          icon={<span style={{ fontSize: 17, lineHeight: 1 }}>🟠</span>}
           name="Strava"
           status={stravaStatus}
           line1={
@@ -225,19 +202,19 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
             stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""} · auto-refreshing` :
             "Configured — click to connect"
           }
-          line2={!health?.strava.configured ? "See setup instructions on this panel" : undefined}
+          line2={!health?.strava.configured ? "See setup instructions below" : undefined}
           action={
             health?.strava.configured && stravaStatus !== "ok"
-              ? { label: "Connect Strava", onClick: onConnectStrava }
+              ? { label: "Connect", onClick: onConnectStrava }
               : !health?.strava.configured
-              ? { label: "Setup instructions ↗", href: "https://www.strava.com/settings/api" }
+              ? { label: "Setup ↗", href: "https://www.strava.com/settings/api" }
               : undefined
           }
         />
 
         {/* Garmin */}
         <ServiceCard
-          icon="⌚"
+          icon={<span style={{ fontSize: 17, lineHeight: 1 }}>⌚</span>}
           name="Garmin"
           status={garminStatus}
           line1={
@@ -253,20 +230,19 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
 
       {/* Strava setup instructions when not configured */}
       {health && !health.strava.configured && (
-        <div style={{
-          marginTop: 14, padding: "12px 14px", borderRadius: 8,
-          background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)",
+        <div className="stat-card" style={{
+          marginTop: 14, padding: "16px 18px",
         }}>
-          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, color: "#f59e0b" }}>
+          <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 8, color: "var(--text)" }}>
             Strava setup — 5 minutes, one time
           </div>
-          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, lineHeight: 1.8, color: "var(--muted)" }}>
+          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, lineHeight: 1.85, color: "var(--muted)" }}>
             <li>Go to <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>strava.com/settings/api</a> and create an application</li>
-            <li>In the "Authorization Callback Domain" field, enter: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>zwift-delta.vercel.app</code></li>
+            <li>In the &ldquo;Authorization Callback Domain&rdquo; field, enter: <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>zwift-delta.vercel.app</code></li>
             <li>Copy the Client ID and Client Secret</li>
             <li>Go to <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>Vercel → Project → Settings → Environment Variables</a></li>
-            <li>Add: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_ID</code> and <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_SECRET</code></li>
-            <li>Redeploy on Vercel — then come back and click "Connect Strava"</li>
+            <li>Add: <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_ID</code> and <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_SECRET</code></li>
+            <li>Redeploy on Vercel — then come back and click &ldquo;Connect&rdquo;</li>
           </ol>
         </div>
       )}

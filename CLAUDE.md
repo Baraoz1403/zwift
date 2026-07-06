@@ -17,6 +17,21 @@ A personal Next.js App Router dashboard for Zwift training data.
 
 ---
 
+## Language rule
+
+Conversation language and product language are separate. The user talks to
+Claude in Hebrew — that does **not** mean any UI text, button labels, error
+messages, or alert strings in the dashboard should be Hebrew. **All
+dashboard-facing text stays in English**, regardless of what language the
+chat with Claude happens in.
+
+This has regressed before: a prior session translated banners/buttons/error
+strings to Hebrew because the conversation itself was in Hebrew. Don't let
+conversation language leak into `app/dashboard/*.tsx` or any user-facing
+string in the codebase.
+
+---
+
 ## CRITICAL: File editing rules
 
 ### Never use bash for file edits
