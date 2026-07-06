@@ -122,32 +122,44 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
         <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.45 }}>{description}</div>
       </div>
 
-      {/* Action button — always full-width so both tiles match */}
+      {/* Action button — same size/style as header-card-btn */}
       {action && (
-        action.href ? (
-          <a
-            href={action.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={isPrimary ? "btn" : "btn-secondary"}
-            style={{
-              width: "100%", padding: "8px", fontSize: 12,
-              boxShadow: "none", textDecoration: "none",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            {action.label}
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={action.onClick}
-            className={isPrimary ? "btn" : "btn-secondary"}
-            style={{ width: "100%", padding: "8px", fontSize: 12, boxShadow: "none" }}
-          >
-            {action.label}
-          </button>
-        )
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+          {action.href ? (
+            <a
+              href={action.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="header-card-btn"
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+                border: isPrimary ? "1.5px solid #ea580c" : "1.5px solid var(--border, #d8dce0)",
+                background: isPrimary ? "#ea580c" : "transparent",
+                color: isPrimary ? "#fff" : "var(--muted)",
+                textDecoration: "none", boxShadow: "none",
+              }}
+            >
+              {action.label}
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={action.onClick}
+              className="header-card-btn"
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+                border: isPrimary ? "1.5px solid #ea580c" : "1.5px solid var(--border, #d8dce0)",
+                background: isPrimary ? "#ea580c" : "transparent",
+                color: isPrimary ? "#fff" : "var(--muted)",
+                cursor: "pointer", fontFamily: "inherit", boxShadow: "none",
+              }}
+            >
+              {action.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
