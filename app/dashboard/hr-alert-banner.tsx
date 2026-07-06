@@ -60,7 +60,7 @@ const LEVEL_STYLES: Record<
     ),
     pill: { bg: "rgba(186,117,23,0.14)", color: "#854F0B", label: "HR Watch" },
     actionLabel: "Update training plan",
-    actionPrompt: "זוהתה עייפות מצטברת בדופק. בנה לי שבוע אימון קל יותר להתאוששות.",
+    actionPrompt: "Accumulated fatigue detected in heart rate. Build me an easier recovery-focused training week.",
   },
   red: {
     bg: "rgba(162,45,45,0.07)",
@@ -76,7 +76,7 @@ const LEVEL_STYLES: Record<
     ),
     pill: { bg: "rgba(162,45,45,0.12)", color: "#A32D2D", label: "Action Required" },
     actionLabel: "Build recovery week",
-    actionPrompt: "זוהתה ירידת דופק משמעותית — סימן לעומס יתר. בנה לי שבוע התאוששות מלא.",
+    actionPrompt: "Significant heart rate drop detected — a sign of overreaching. Build me a full recovery week.",
   },
   black: {
     bg: "rgba(10,10,15,0.88)",
@@ -92,7 +92,7 @@ const LEVEL_STYLES: Record<
     ),
     pill: { bg: "rgba(255,60,60,0.22)", color: "#ff8080", label: "Critical" },
     actionLabel: "Pause training plan",
-    actionPrompt: "זוהתה ירידת דופק קריטית. עצור את תכנית האימון שלי ובנה תכנית התאוששות לשבוע.",
+    actionPrompt: "Critical heart rate drop detected. Pause my training plan and build a recovery week instead.",
   },
 };
 

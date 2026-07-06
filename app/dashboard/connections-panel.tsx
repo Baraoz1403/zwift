@@ -151,10 +151,10 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <div className="section-title" style={{ margin: 0, fontSize: 13 }}>חיבורים</div>
+          <div className="section-title" style={{ margin: 0, fontSize: 13 }}>Connections</div>
           {lastChecked && (
             <div style={{ fontSize: 10, color: "var(--muted)", opacity: 0.55, marginTop: 1 }}>
-              נבדק {lastChecked.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+              Checked {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
             </div>
           )}
         </div>
@@ -168,7 +168,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
             cursor: loading ? "wait" : "pointer", opacity: loading ? 0.5 : 1,
           }}
         >
-          {loading ? "בודק…" : "🔄 בדוק שוב"}
+          {loading ? "Checking…" : "🔄 Re-check"}
         </button>
       </div>
 
@@ -181,9 +181,9 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           name="Zwift"
           status={zwiftStatus}
           line1={
-            zwiftStatus === "loading" ? "בודק…" :
-            zwiftStatus === "ok"      ? `מחובר${health?.zwift.athleteId ? ` · ID ${health.zwift.athleteId}` : ""}` :
-            "לא מחובר — יש להתחבר לדשבורד"
+            zwiftStatus === "loading" ? "Checking…" :
+            zwiftStatus === "ok"      ? `Connected${health?.zwift.athleteId ? ` · ID ${health.zwift.athleteId}` : ""}` :
+            "Not connected — please log in to the dashboard"
           }
         />
 
@@ -193,23 +193,23 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           name="TrainingPeaks"
           status={tpStatus}
           line1={
-            tpStatus === "loading" ? "בודק…" :
-            tpStatus === "ok"      ? `מחובר · תוכניות מסתנכרות אוטומטית לזוויפט ולגרמין` :
+            tpStatus === "loading" ? "Checking…" :
+            tpStatus === "ok"      ? `Connected · plans sync automatically to Zwift and Garmin` :
             tpStatus === "warn" && health?.tp.hasRefreshToken
-              ? "הטוקן פג — מנסה לרענן אוטומטית…" :
-            tpStatus === "warn"    ? "הטוקן פג — יש להתחבר מחדש (דקה אחת)" :
-            "לא מחובר"
+              ? "Token expired — trying to auto-refresh…" :
+            tpStatus === "warn"    ? "Token expired — please reconnect (takes a minute)" :
+            "Not connected"
           }
           line2={
             tpStatus !== "ok" && !health?.tp.hasRefreshToken
-              ? "לחץ להתחבר דרך ה-bookmarklet"
+              ? "Click to connect via the bookmarklet"
               : tpStatus === "ok"
-              ? `מזהה אתלט: ${health?.tp.athleteId ?? "—"}${health?.tp.hasRefreshToken ? " · רענון אוטומטי פעיל" : ""}`
+              ? `Athlete ID: ${health?.tp.athleteId ?? "—"}${health?.tp.hasRefreshToken ? " · auto-refresh active" : ""}`
               : undefined
           }
           action={
             tpStatus !== "ok" && !health?.tp.hasRefreshToken
-              ? { label: "חבר TrainingPeaks", onClick: onOpenTPModal }
+              ? { label: "Connect TrainingPeaks", onClick: onOpenTPModal }
               : undefined
           }
         />
@@ -220,17 +220,17 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           name="Strava"
           status={stravaStatus}
           line1={
-            stravaStatus === "loading"   ? "בודק…" :
-            !health?.strava.configured   ? "דורש הגדרת STRAVA_CLIENT_ID ב-Vercel" :
-            stravaStatus === "ok"        ? `מחובר${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""} · מתרענן אוטומטית` :
-            "מוגדר — לחץ להתחבר"
+            stravaStatus === "loading"   ? "Checking…" :
+            !health?.strava.configured   ? "Requires STRAVA_CLIENT_ID set up on Vercel" :
+            stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""} · auto-refreshing` :
+            "Configured — click to connect"
           }
-          line2={!health?.strava.configured ? "ראה הוראות בפאנל זה" : undefined}
+          line2={!health?.strava.configured ? "See setup instructions on this panel" : undefined}
           action={
             health?.strava.configured && stravaStatus !== "ok"
-              ? { label: "חבר Strava", onClick: onConnectStrava }
+              ? { label: "Connect Strava", onClick: onConnectStrava }
               : !health?.strava.configured
-              ? { label: "הוראות הגדרה ↗", href: "https://www.strava.com/settings/api" }
+              ? { label: "Setup instructions ↗", href: "https://www.strava.com/settings/api" }
               : undefined
           }
         />
@@ -241,13 +241,13 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           name="Garmin"
           status={garminStatus}
           line1={
-            garminStatus === "loading" ? "בודק…" :
+            garminStatus === "loading" ? "Checking…" :
             health?.tp.connected
-              ? "מסתנכרן דרך TrainingPeaks → בדוק שחיברת TP↔Garmin בהגדרות TP"
-              : "דורש חיבור TrainingPeaks קודם"
+              ? "Syncs via TrainingPeaks → check that TP↔Garmin is linked in TP settings"
+              : "Requires TrainingPeaks connected first"
           }
-          line2={health?.tp.connected ? "Settings → Connected Apps → Garmin בתוך אתר TP" : undefined}
-          action={health?.tp.connected ? { label: "פתח הגדרות TP ↗", href: "https://app.trainingpeaks.com/athlete/settings/apps" } : undefined}
+          line2={health?.tp.connected ? "Settings → Connected Apps → Garmin on the TP site" : undefined}
+          action={health?.tp.connected ? { label: "Open TP settings ↗", href: "https://app.trainingpeaks.com/athlete/settings/apps" } : undefined}
         />
       </div>
 
@@ -258,15 +258,15 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)",
         }}>
           <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6, color: "#f59e0b" }}>
-            הגדרת Strava — 5 דקות, פעם אחת
+            Strava setup — 5 minutes, one time
           </div>
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, lineHeight: 1.8, color: "var(--muted)" }}>
-            <li>כנס ל-<a href="https://www.strava.com/settings/api" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>strava.com/settings/api</a> וצור אפליקציה</li>
-            <li>בשדה "Authorization Callback Domain" הכנס: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>zwift-delta.vercel.app</code></li>
-            <li>העתק את ה-Client ID וה-Client Secret</li>
-            <li>כנס ל-<a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>Vercel → Project → Settings → Environment Variables</a></li>
-            <li>הוסף: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_ID</code> ו-<code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_SECRET</code></li>
-            <li>פרוס מחדש (Redeploy) ב-Vercel — ואז חזור ולחץ "חבר Strava"</li>
+            <li>Go to <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>strava.com/settings/api</a> and create an application</li>
+            <li>In the "Authorization Callback Domain" field, enter: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>zwift-delta.vercel.app</code></li>
+            <li>Copy the Client ID and Client Secret</li>
+            <li>Go to <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>Vercel → Project → Settings → Environment Variables</a></li>
+            <li>Add: <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_ID</code> and <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 4px", borderRadius: 3 }}>STRAVA_CLIENT_SECRET</code></li>
+            <li>Redeploy on Vercel — then come back and click "Connect Strava"</li>
           </ol>
         </div>
       )}

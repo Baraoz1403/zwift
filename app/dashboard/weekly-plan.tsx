@@ -338,7 +338,7 @@ export default function WeeklyPlan() {
       window.history.replaceState({}, "", window.location.pathname);
     }
     if (urlParams.get("strava_error")) {
-      setError(`שגיאת Strava: ${urlParams.get("strava_error")}`);
+      setError(`Strava error: ${urlParams.get("strava_error")}`);
       window.history.replaceState({}, "", window.location.pathname);
     }
 
@@ -582,7 +582,7 @@ export default function WeeklyPlan() {
   const bookmarkletHref = typeof window !== "undefined"
     ? (() => {
         const origin = window.location.origin;
-        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: לא מחובר — יש להתחבר תחילה');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||null;const exp=d?.token?.expires_in||null;if(!t){alert('שגיאה: לא נמצא טוקן TP');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t,refreshToken:rt,expiresIn:exp})});const d2=await r2.json();if(d2.ok){alert('מחובר! חזור לדשבורד.')}else{alert('שגיאה: '+(d2.error||'נסה שוב'))}}catch(e){alert('שגיאה: '+e.message)}})()`;
+        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||null;const exp=d?.token?.expires_in||null;if(!t){alert('Error: no TP token found');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t,refreshToken:rt,expiresIn:exp})});const d2=await r2.json();if(d2.ok){alert('Connected! Go back to the dashboard.')}else{alert('Error: '+(d2.error||'please try again'))}}catch(e){alert('Error: '+e.message)}})()`;
         return `javascript:${encodeURIComponent(code)}`;
       })()
     : "#";
@@ -650,7 +650,7 @@ export default function WeeklyPlan() {
         }
       } else {
         setTpPushState(s => ({ ...s, [key]: "error" }));
-        setTpPushLog(l => ({ ...l, [key]: data.error ?? "שגיאה." }));
+        setTpPushLog(l => ({ ...l, [key]: data.error ?? "Error." }));
         // If still expired after refresh attempt — show reconnect banner
         if (res.status === 401 || res.status === 403 ||
             (data.error ?? "").toLowerCase().includes("token") ||
@@ -662,7 +662,7 @@ export default function WeeklyPlan() {
       }
     } catch (e) {
       setTpPushState(s => ({ ...s, [key]: "error" }));
-      setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "שגיאת רשת." }));
+      setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
     }
   }
 
@@ -683,7 +683,7 @@ export default function WeeklyPlan() {
             style={{ maxWidth: 460, width: "100%", padding: "28px 28px 24px" }}
             onClick={e => e.stopPropagation()}
           >
-            {/* כותרת */}
+            {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 10, background: "#e8264c",
@@ -694,9 +694,9 @@ export default function WeeklyPlan() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>חיבור TrainingPeaks</div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Connect TrainingPeaks</div>
                 <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>
-                  פעם אחת — ומאז לחיצה אחת בכל חיבור מחדש
+                  One time — after that, one click for every reconnect
                 </div>
               </div>
               <button
@@ -705,17 +705,17 @@ export default function WeeklyPlan() {
               >✕</button>
             </div>
 
-            {/* שלב 1 */}
+            {/* Step 1 */}
             <div style={{
               marginBottom: 14, padding: "14px 16px", borderRadius: 10,
               background: "rgba(20,23,26,0.04)", border: "1px solid var(--border)",
             }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-                שלב 1 — שמור סימנייה (פעם אחת בלבד)
+                Step 1 — Save the bookmark (one time only)
               </div>
-              {/* הוראת קליק ימני */}
+              {/* Right-click instructions */}
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10, lineHeight: 1.6 }}>
-                לחץ <strong>קליק ימני</strong> על הכפתור הכחול למטה ← בחר <strong>&ldquo;הוסף קישור לסימניות&rdquo;</strong> ← שמור בשם &ldquo;Zwift TP&rdquo;
+                <strong>Right-click</strong> the blue button below → choose <strong>&ldquo;Add bookmark&rdquo;</strong> → save it as &ldquo;Zwift TP&rdquo;
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <a
@@ -737,18 +737,18 @@ export default function WeeklyPlan() {
                   Zwift AI → TP
                 </a>
                 <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
-                  (אפשר גם לגרור אותו לשורת הסימניות)
+                  (you can also drag it to your bookmarks bar)
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8, opacity: 0.7 }}>
-                💡 שורת הסימניות לא נראית? לחץ <strong>Ctrl+Shift+B</strong> להצגתה
+                💡 Bookmarks bar not visible? Press <strong>Ctrl+Shift+B</strong> to show it
               </div>
             </div>
 
-            {/* שלב 2 */}
+            {/* Step 2 */}
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-                שלב 2 — פתח TrainingPeaks ולחץ על הסימנייה
+                Step 2 — Open TrainingPeaks and click the bookmark
               </div>
               <button
                 type="button"
@@ -764,15 +764,15 @@ export default function WeeklyPlan() {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                פתח TrainingPeaks ←
+                Open TrainingPeaks →
               </button>
               <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.6 }}>
-                בטאב שנפתח — לחץ על הסימנייה <strong>Zwift AI → TP</strong> שיצרת.
-                הדשבורד יתחבר אוטומטית ותוכל לסגור את הטאב.
+                In the tab that opens — click the <strong>Zwift AI → TP</strong> bookmark you created.
+                The dashboard will connect automatically and you can close the tab.
               </div>
             </div>
 
-            {/* סטטוס המתנה */}
+            {/* Waiting status */}
             {tpPolling && (
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
@@ -780,12 +780,12 @@ export default function WeeklyPlan() {
                 background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.2)",
               }}>
                 <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
-                  ⏳ ממתין לחיבור… לחץ על הסימנייה בטאב TrainingPeaks
+                  ⏳ Waiting for connection… click the bookmark in the TrainingPeaks tab
                 </span>
               </div>
             )}
 
-            {/* ביטול */}
+            {/* Cancel */}
             <button
               type="button"
               onClick={() => { setShowTPModal(false); setTpPolling(false); }}
@@ -795,11 +795,11 @@ export default function WeeklyPlan() {
                 color: "var(--muted)", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              ביטול
+              Cancel
             </button>
 
             <div style={{ marginTop: 10, fontSize: 10.5, color: "var(--muted)", opacity: 0.55, lineHeight: 1.5 }}>
-              הסימנייה מחליפה את ה-session של TrainingPeaks לטוקן זמני ושולחת אותו ב-HTTPS לדשבורד.
+              The bookmark exchanges your TrainingPeaks session for a temporary token and sends it over HTTPS to the dashboard.
             </div>
           </div>
         </div>
@@ -816,7 +816,7 @@ export default function WeeklyPlan() {
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1 }}>
-            טוקן TrainingPeaks פג — יש להתחבר מחדש
+            TrainingPeaks token expired — please reconnect
           </span>
           <button
             type="button"
@@ -1005,9 +1005,9 @@ export default function WeeklyPlan() {
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
         }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>📅 השבוע הזה כבר עבר</div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>📅 This week's plan has ended</div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-              התוכנית מ-{plan.weekOf} הסתיימה — ייצר תוכנית חדשה לשבוע הנוכחי
+              The plan from {plan.weekOf} has ended — generate a new plan for the current week
             </div>
           </div>
           <button
@@ -1020,7 +1020,7 @@ export default function WeeklyPlan() {
               fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
             }}
           >
-            {loading ? "מייצר…" : "ייצר תוכנית חדשה ←"}
+            {loading ? "Generating…" : "Generate new plan →"}
           </button>
         </div>
       )}
