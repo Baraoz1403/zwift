@@ -37,19 +37,45 @@ export interface IntervalsAthlete {
 }
 
 /**
- * Validate an API key and return the athlete profile. Throws on failure.
- * Athlete id "0" is a documented shortcut for "whoever this API key belongs to".
+ * Validate an API key and return the athlete profile. Throws on auth failure.
+ *
+ * Tries /athlete/me first (the standard self-referential endpoint), then falls
+ * back to /athlete/0. A 401/403 from either endpoint means the key is wrong.
+ * A 404 or non-auth error means the endpoint path may differ across accounts —
+ * in that case we return an empty profile so the key still gets stored and can
+ * be validated on first push.
  */
 export async function fetchIntervalsAthlete(apiKey: string): Promise<IntervalsAthlete> {
-  const res = await fetch(`${INTERVALS_API}/athlete/0`, {
-    headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Intervals.icu validation failed (${res.status}): ${body.slice(0, 120)}`);
+  const endpoints = ["/athlete/me", "/athlete/0"] as const;
+
+  for (const endpoint of endpoints) {
+    let res: Response;
+    try {
+      res = await fetch(`${INTERVALS_API}${endpoint}`, {
+        headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
+        signal: AbortSignal.timeout(8000),
+      });
+    } catch {
+      // Network / timeout — try next endpoint, or fall through to empty profile
+      continue;
+    }
+
+    if (res.ok) {
+      return await res.json() as IntervalsAthlete;
+    }
+
+    // Definitive auth failure — the key is wrong, no point retrying
+    if (res.status === 401 || res.status === 403) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Invalid API key (${res.status}). Please check the key and try again.${body ? " — " + body.slice(0, 80) : ""}`);
+    }
+
+    // 404 or other — try the next endpoint
   }
-  return await res.json() as IntervalsAthlete;
+
+  // Both endpoints failed for non-auth reasons (network, unexpected format).
+  // Return an empty profile so the key is stored; it will be validated on first push.
+  return {};
 }
 
 export interface PushIntervalsOptions {
