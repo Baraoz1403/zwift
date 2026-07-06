@@ -5206,3 +5206,41 @@ Tue 07/07/2026  1:13:54.52
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/api/auth/login/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/intervals/connect/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/connect/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/refresh/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/kv.ts', LF will be replaced by CRLF the next time Git touches it
+[main 51f078f] Auto deploy Tue 07/07/2026  1:13:55.58
+ 7 files changed, 204 insertions(+), 6 deletions(-)
+ create mode 100644 lib/kv.ts
+To https://github.com/Baraoz1403/zwift.git
+   0b268ce..51f078f  main -> main
+Tue 07/07/2026  1:13:57.99 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/07/2026  1:16:44.62 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
