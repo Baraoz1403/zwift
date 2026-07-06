@@ -524,7 +524,9 @@ export default function WeeklyPlan() {
           macroCycle,
           previousPlan: previousPlanForAI ?? null,
           riderProfile,
-          riderNote: riderNote.trim() || undefined,
+          riderNote: riderNote.trim()
+            ? `[Today is ${new Date().toISOString().slice(0,10)} (${new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})})] ${riderNote.trim()}`
+            : undefined,
           targetWeekOf,
         }),
       });
