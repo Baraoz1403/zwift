@@ -245,6 +245,11 @@ export default function WeeklyPlan() {
   const [nextPlan, setNextPlan] = useState<WeeklyPlan | null>(null);
   const [prefetchingNext, setPrefetchingNext] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Manual "re-sync to TP" - force-pushes the *current* plan's workouts as-is
+  // (no AI regeneration), for cases like a code fix landing that changes how
+  // pushed workouts are built (e.g. adding real interval structure) - the
+  // rider shouldn't have to regenerate their whole plan just to pick that up.
+  const [syncingTP, setSyncingTP] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
@@ -544,6 +549,21 @@ export default function WeeklyPlan() {
     const targetWeekOf = currentWeekOf();
     const previousPlanForAI = plan && stale ? plan : null;
     await generateAndActivate(targetWeekOf, previousPlanForAI);
+  }
+
+  /** Manual "re-sync to TrainingPeaks" - re-pushes the currently displayed
+   *  plan's workouts exactly as-is (deleting the old TP entries first, same
+   *  as pushPlanToTP always does). Doesn't touch the plan's content at all -
+   *  just makes sure what's on TP (and therefore Zwift/Garmin) matches what
+   *  the rider is looking at right now. */
+  async function handleManualSync() {
+    if (!plan || syncingTP) return;
+    setSyncingTP(true);
+    try {
+      await pushPlanToTP(plan);
+    } finally {
+      setSyncingTP(false);
+    }
   }
 
   // Rolling 6-day-ahead window actually rendered below - see
@@ -1014,6 +1034,25 @@ export default function WeeklyPlan() {
               )}
             </button>
           </div>
+          {/* Force a fresh TP push of the current plan's content, without
+              regenerating it - useful right after a code/format fix lands. */}
+          {tpConnected && plan && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={syncingTP || loading}
+                className="btn-secondary"
+                style={{
+                  width: "auto", padding: "6px 14px", fontSize: 11.5, fontWeight: 600,
+                  cursor: syncingTP ? "wait" : "pointer", opacity: syncingTP ? 0.6 : 1,
+                  display: "flex", alignItems: "center", gap: 5,
+                }}
+              >
+                {syncingTP ? "Syncing…" : "↻ Re-sync to TrainingPeaks"}
+              </button>
+            </div>
+          )}
         </div>
 
       </div>{/* end 3-col grid */}
