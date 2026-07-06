@@ -7,10 +7,12 @@ import {
   type SessionLength,
   type Sport,
   type DaysRange,
+  type TrainingEnvironment,
   GOAL_LABELS,
   SESSION_LENGTH_LABELS,
   SPORT_LABELS,
   DAYS_RANGE_LABELS,
+  ENVIRONMENT_LABELS,
 } from "@/lib/rider-profile";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 
@@ -25,6 +27,7 @@ function loadProfile(): RiderTrainingProfile | null {
     if (!p.goals)    p.goals    = p.goal  ? [p.goal]  : ["fitness"];
     if (!p.sports)   p.sports   = p.sport ? [p.sport] : ["cycling"];
     if (!p.daysRange) p.daysRange = "3-4";
+    if (!p.environment) p.environment = "indoor";
     return p;
   } catch { return null; }
 }
@@ -48,6 +51,7 @@ const DEFAULT: RiderTrainingProfile = {
   daysRange: "3-4",
   sessionLength: "60",
   sports: ["cycling"],
+  environment: "indoor",
 };
 
 const GOAL_ICONS: Record<TrainingGoal, React.ReactNode> = {
@@ -93,6 +97,29 @@ const SPORT_ICONS: Record<Sport, React.ReactNode> = {
       <path d="M6.5 21l2-8 2.5 2.5 2-4.5 3 5.5"/>
       <path d="m11 13-1.5 7.5L13 19l2 2 1.5-7"/>
       <path d="m15 7-3 2-2-2 1.5-3"/>
+    </svg>
+  ),
+  both: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 3L4 7l4 4"/><path d="M4 7h10a4 4 0 0 1 0 8H8"/>
+      <path d="m16 21 4-4-4-4"/><path d="M20 17H10a4 4 0 0 1 0-8h6"/>
+    </svg>
+  ),
+};
+
+const ENVIRONMENT_ICONS: Record<TrainingEnvironment, React.ReactNode> = {
+  indoor: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/>
+    </svg>
+  ),
+  outdoor: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4"/>
+      <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+      <line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/>
+      <line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/>
     </svg>
   ),
   both: (
@@ -299,6 +326,19 @@ export default function TrainingProfileCard() {
                   }
                   setDraft(d => ({ ...d, sports }));
                 }}
+                columns={3}
+              />
+            </div>
+
+            <Divider />
+
+            <div>
+              <FieldLabel>Where do you train?</FieldLabel>
+              <SelectCards<TrainingEnvironment>
+                options={["indoor","outdoor","both"]}
+                labels={ENVIRONMENT_LABELS} icons={ENVIRONMENT_ICONS}
+                selected={[draft.environment ?? "indoor"]}
+                onChange={v => setDraft(d => ({ ...d, environment: v[v.length - 1] as TrainingEnvironment }))}
                 columns={3}
               />
             </div>

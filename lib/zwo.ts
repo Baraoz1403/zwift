@@ -200,6 +200,184 @@ export function structureToBlocks(structure: WorkoutStructureBlock[]): ZwoBlock[
   return blocks;
 }
 
+// ─── TrainingPeaks native structured-workout wire format ──────────────────
+//
+// This is the piece that was missing end-to-end: pushWorkoutToTP() only ever
+// sent a plain duration/TSS/description calendar entry, so TP (and therefore
+// Zwift, which reads a workout's *structure* to decide whether it belongs in
+// the in-game Custom Workouts menu) never saw real intervals - just a note.
+// The schema below (steps/targets/intensityClass/polyline) was reverse
+// engineered from the open-source trainingpeaks-mcp project
+// (github.com/JamsusMaximus/trainingpeaks-mcp, src/tp_mcp/tools/structure.py)
+// and confirmed against TP's public v6 workouts endpoint - `structure` is a
+// JSON-*stringified* value on the workout payload, not a nested object.
+
+export interface TPWireTarget {
+  minValue: number;
+  maxValue: number;
+  unit?: string;
+}
+
+export interface TPWireStep {
+  name: string;
+  type: "step";
+  length: { value: number; unit: "second" };
+  targets: TPWireTarget[];
+  intensityClass: "warmUp" | "active" | "rest" | "coolDown" | "other";
+  openDuration: false;
+}
+
+export interface TPWireBlock {
+  type: "step" | "repetition";
+  length: { value: number; unit: "repetition" };
+  steps: TPWireStep[];
+  begin: number;
+  end: number;
+}
+
+export interface TPWireStructure {
+  structure: TPWireBlock[];
+  polyline: number[][];
+  primaryLengthMetric: "duration";
+  primaryIntensityMetric: "percentOfFtp";
+  primaryIntensityTargetOrRange: "range";
+}
+
+function tpStep(
+  name: string,
+  durationSec: number,
+  powerLow: number,
+  powerHigh: number,
+  intensityClass: TPWireStep["intensityClass"]
+): TPWireStep {
+  return {
+    name,
+    type: "step",
+    length: { value: Math.round(durationSec), unit: "second" },
+    // TP wants whole percent-of-FTP values (e.g. 90, not 0.9), min/max forms
+    // a *range* target - this is how a warmup/cooldown ramp is represented:
+    // one step whose target ramps from powerLow to powerHigh.
+    targets: [{ minValue: Math.round(powerLow * 100), maxValue: Math.round(powerHigh * 100) }],
+    intensityClass,
+    openDuration: false,
+  };
+}
+
+/**
+ * Converts our editable ZwoBlock list (the same blocks used for .zwo export
+ * and the thumbnail preview) into TrainingPeaks' native structured-workout
+ * wire format, ready to JSON.stringify() straight into the `structure` field
+ * of a workout POST/PUT body.
+ */
+export function buildTPWireStructure(blocks: ZwoBlock[]): TPWireStructure {
+  const wireBlocks: TPWireBlock[] = [];
+  let cumulative = 0;
+
+  for (const b of blocks) {
+    const dur = blockDurationSec(b);
+    const begin = cumulative;
+    const end = cumulative + dur;
+
+    if (b.kind === "IntervalsT") {
+      wireBlocks.push({
+        type: "repetition",
+        length: { value: Math.round(b.repeat), unit: "repetition" },
+        steps: [
+          tpStep("Interval", b.onDuration, b.onPower, b.onPower, "active"),
+          tpStep("Recovery", b.offDuration, b.offPower, b.offPower, "rest"),
+        ],
+        begin,
+        end,
+      });
+    } else {
+      const step =
+        b.kind === "Warmup"
+          ? tpStep("Warm up", dur, b.powerLow, b.powerHigh, "warmUp")
+          : b.kind === "Cooldown"
+          ? tpStep("Cool down", dur, b.powerLow, b.powerHigh, "coolDown")
+          : tpStep("Steady state", dur, b.power, b.power, "active");
+      wireBlocks.push({
+        type: "step",
+        length: { value: 1, unit: "repetition" },
+        steps: [step],
+        begin,
+        end,
+      });
+    }
+    cumulative = end;
+  }
+
+  // Polyline: normalized-time rectangular bars (drop-to-0 → rise → hold →
+  // drop-to-0), one per elemental step - matches TP's own chart-drawing
+  // convention. Uses each step's *peak* intensity for the bar height, same
+  // simplification TP's own builder output uses for ramps.
+  const totalDuration = cumulative || 1;
+  const polyline: number[][] = [];
+  let t = 0;
+  const bar = (durSec: number, peakFrac: number) => {
+    const tStart = t / totalDuration;
+    t += durSec;
+    const tEnd = t / totalDuration;
+    polyline.push([round4(tStart), 0], [round4(tStart), round4(peakFrac)], [round4(tEnd), round4(peakFrac)], [round4(tEnd), 0]);
+  };
+  for (const b of blocks) {
+    if (b.kind === "IntervalsT") {
+      for (let r = 0; r < b.repeat; r++) {
+        bar(b.onDuration, b.onPower);
+        bar(b.offDuration, b.offPower);
+      }
+    } else if (b.kind === "SteadyState") {
+      bar(b.durationSec, b.power);
+    } else {
+      bar(b.durationSec, b.powerHigh);
+    }
+  }
+
+  return {
+    structure: wireBlocks,
+    polyline,
+    primaryLengthMetric: "duration",
+    primaryIntensityMetric: "percentOfFtp",
+    primaryIntensityTargetOrRange: "range",
+  };
+}
+
+function round4(n: number): number {
+  return Math.round(n * 10000) / 10000;
+}
+
+/** Approximate IF/TSS from a block list - same NP-style 4th-power-weighted
+ *  formula TP itself (and trainingpeaks-mcp) uses, so the value we send as
+ *  tssPlanned/ifPlanned roughly matches what TP would compute on its own. */
+export function computeIfTss(blocks: ZwoBlock[]): { intensityFactor: number; tss: number; totalSec: number } {
+  let weightedSum = 0;
+  let totalSec = 0;
+  const add = (durSec: number, powerFrac: number) => {
+    weightedSum += durSec * Math.pow(powerFrac, 4);
+    totalSec += durSec;
+  };
+  for (const b of blocks) {
+    if (b.kind === "IntervalsT") {
+      for (let r = 0; r < b.repeat; r++) {
+        add(b.onDuration, b.onPower);
+        add(b.offDuration, b.offPower);
+      }
+    } else if (b.kind === "SteadyState") {
+      add(b.durationSec, b.power);
+    } else {
+      add(b.durationSec, (b.powerLow + b.powerHigh) / 2);
+    }
+  }
+  if (totalSec === 0) return { intensityFactor: 0, tss: 0, totalSec: 0 };
+  const intensityFactor = Math.pow(weightedSum / totalSec, 0.25);
+  const tss = (totalSec * intensityFactor * intensityFactor * 100) / 3600;
+  return {
+    intensityFactor: Math.round(intensityFactor * 1000) / 1000,
+    tss: Math.round(tss * 10) / 10,
+    totalSec,
+  };
+}
+
 function escapeXml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

@@ -8,12 +8,19 @@ export type TrainingGoal = "fitness" | "ftp" | "weight" | "event" | "fun";
 export type SessionLength = "45" | "60" | "90" | "90plus";
 export type Sport = "cycling" | "running" | "both";
 export type DaysRange = "1-2" | "2-3" | "3-4" | "4-5" | "5-6";
+/** Where the rider actually trains: "indoor" = Zwift/trainer only, "outdoor"
+ *  = real-world rides only (tracked via Garmin/Strava), "both" = a mix.
+ *  This is distinct from `sports` (cycling vs running) - it's about venue,
+ *  and feeds the AI plan builder so it knows whether to ever prescribe an
+ *  outdoor-specific session or keep everything Zwift-executable. */
+export type TrainingEnvironment = "indoor" | "outdoor" | "both";
 
 export interface RiderTrainingProfile {
   goals: TrainingGoal[];     // one or more goals
   daysRange: DaysRange;      // weekly session count range
   sessionLength: SessionLength;
   sports: Sport[];           // one or more disciplines
+  environment?: TrainingEnvironment; // indoor / outdoor / both — defaults to "indoor"
   ageYears?: number;
   eventDate?: string;
   notes?: string;
@@ -27,6 +34,12 @@ export const SPORT_LABELS: Record<Sport, string> = {
   cycling: "Cycling",
   running: "Running",
   both:    "Cycling & Running",
+};
+
+export const ENVIRONMENT_LABELS: Record<TrainingEnvironment, string> = {
+  indoor:  "Indoor (Zwift)",
+  outdoor: "Outdoor only",
+  both:    "Indoor & Outdoor",
 };
 
 export const GOAL_LABELS: Record<TrainingGoal, string> = {

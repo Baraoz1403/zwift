@@ -4772,3 +4772,153 @@ Mon 07/06/2026 16:59:55.58
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'CLAUDE.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/connections-panel.tsx', LF will be replaced by CRLF the next time Git touches it
+[main b48d1dc] Auto deploy Mon 07/06/2026 17:00:00.47
+ 3 files changed, 117 insertions(+), 92 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   8c3d937..b48d1dc  main -> main
+Mon 07/06/2026 17:00:06.36 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Mon 07/06/2026 17:54:13.64 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  WARN: Hardcoded #ff6600 found in a component - use var(--accent) instead.
+        (Run: findstr /R "#ff6600" app\dashboard\*.tsx to locate)
+  OK
+  OK
+
+============================================
+  CHECKS FAILED. Fix the issues above
+  before deploying. Do NOT run deploy.bat.
+============================================
+Mon 07/06/2026 17:54:15.11 - ABORTED: check.bat failed 
+ 
+=============================== 
+Mon 07/06/2026 17:55:02.32 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  WARN: Hardcoded #ff6600 found in a component - use var(--accent) instead.
+        (Run: findstr /R "#ff6600" app\dashboard\*.tsx to locate)
+  OK
+  OK
+
+============================================
+  CHECKS FAILED. Fix the issues above
+  before deploying. Do NOT run deploy.bat.
+============================================
+Mon 07/06/2026 17:55:03.05 - ABORTED: check.bat failed 
+ 
+=============================== 
+Mon 07/06/2026 17:56:00.60 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  WARN: Hardcoded #ff6600 found in a component - use var(--accent) instead.
+        (Run: findstr /R "#ff6600" app\dashboard\*.tsx to locate)
+  OK
+  OK
+
+============================================
+  CHECKS FAILED. Fix the issues above
+  before deploying. Do NOT run deploy.bat.
+============================================
+Mon 07/06/2026 17:56:01.29 - ABORTED: check.bat failed 
+ 
+=============================== 
+Mon 07/06/2026 18:23:57.92 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  WARN: Hardcoded #ff6600 found in a component - use var(--accent) instead.
+        (Run: findstr /R "#ff6600" app\dashboard\*.tsx to locate)
+  OK
+  OK
+
+============================================
+  CHECKS FAILED. Fix the issues above
+  before deploying. Do NOT run deploy.bat.
+============================================
+Mon 07/06/2026 18:23:58.58 - ABORTED: check.bat failed 
+ 
+=============================== 
+Mon 07/06/2026 18:27:51.67 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

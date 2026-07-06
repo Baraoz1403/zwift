@@ -221,6 +221,73 @@ export interface WeeklyPlan {
   workouts: WeeklyWorkout[];
 }
 
+/**
+ * Validates and repairs the AI's raw JSON response before it ever reaches
+ * the dashboard. Previously there was NO server-side check here at all - the
+ * parsed JSON was cast straight to WeeklyWorkout[] and trusted completely.
+ * That let two classes of bug through silently: a workout's `structure`
+ * durations not summing to its stated `durationMin` (so the card shows one
+ * duration while a different one gets pushed/executed), and malformed or
+ * physiologically-nonsensical block values reaching the ZWO/TP pipeline.
+ * This is a defensive net, not a replacement for good prompting - the system
+ * prompt already instructs the model correctly; this just guarantees the
+ * *data* is internally consistent even when the model drifts.
+ */
+function normalizeWeeklyPlan(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
+  const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const normalized = workouts.map((w) => {
+    const isRest = w.type === "Rest" || isRestDayType(w.type);
+    if (isRest || !Array.isArray(w.structure) || w.structure.length === 0) {
+      return { ...w, structure: isRest ? undefined : w.structure };
+    }
+
+    // Drop any block missing the fields it needs to be usable downstream.
+    const cleanBlocks = w.structure.filter((b) => {
+      if (!b || typeof b.durationMin !== "number" || b.durationMin <= 0) return false;
+      if (typeof b.powerFtp !== "number" || b.powerFtp <= 0) return false;
+      if (!["warmup", "steadystate", "intervals", "cooldown"].includes(b.type)) return false;
+      return true;
+    }).map((b) => ({
+      ...b,
+      // Clamp to a physiologically sane range - guards against an
+      // occasional hallucinated value (e.g. powerFtp: 9 instead of 0.9)
+      // reaching the ZWO file or TP push.
+      powerFtp: Math.min(2.2, Math.max(0.3, b.powerFtp)),
+      recoveryPowerFtp: b.recoveryPowerFtp != null
+        ? Math.min(1.2, Math.max(0.3, b.recoveryPowerFtp))
+        : b.recoveryPowerFtp,
+    }));
+
+    if (cleanBlocks.length === 0) {
+      // Nothing usable survived validation - fall back to type-based
+      // inference (generateDefaultBlocks) rather than pushing garbage.
+      return { ...w, structure: undefined };
+    }
+
+    // The structure is the *actual* thing that gets built into a ZWO file
+    // and pushed to TP - if its total minutes disagree with the stated
+    // durationMin (model arithmetic drift), trust the structure and correct
+    // durationMin to match, so the card, the file, and the TP push all agree
+    // on one real number instead of three different ones.
+    const structuredMin = cleanBlocks.reduce((sum, b) => sum + b.durationMin, 0);
+    const durationMin = structuredMin > 0 ? Math.round(structuredMin) : w.durationMin;
+
+    return { ...w, structure: cleanBlocks, durationMin };
+  });
+
+  // Guarantee exactly 6 entries - the UI is a fixed 6-card grid.
+  while (normalized.length < 6) {
+    const day = DAY_ORDER[normalized.length % 7] ?? `Day ${normalized.length + 1}`;
+    normalized.push({ day, type: "Rest", title: "Rest Day", durationMin: 0, description: "", structure: undefined });
+  }
+  return normalized.slice(0, 6);
+}
+
+function isRestDayType(type: string | undefined): boolean {
+  return typeof type === "string" && type.toLowerCase().includes("rest");
+}
+
 const WEEKLY_PLAN_SYSTEM_PROMPT =
   "You are a cycling coach building a personalized one-week Zwift training " +
   "plan for a rider, based on their recent ride history (avgWatts, " +
@@ -308,6 +375,21 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "means plan only cycling sessions (Zwift rides); 'Running' means plan " +
   "only running sessions; 'Cycling & Running' means mix both. Never " +
   "mix sports unless sport is 'Cycling & Running'. " +
+  "The input may also include a trainingEnvironment field on riderProfile: " +
+  "'indoor' means the rider only trains on Zwift/a trainer - every single " +
+  "session must be fully executable indoors on Zwift (never prescribe " +
+  "outdoor-only sessions like real-road group rides, hill repeats on " +
+  "actual terrain, or trail/open-water work); 'outdoor' means the rider " +
+  "trains outdoors only (real rides/runs tracked via Garmin) - prescribe " +
+  "outdoor-appropriate sessions freely (terrain-based efforts, long routes, " +
+  "weather-dependent pacing) and note in each session's description that " +
+  "it's an outdoor session; 'both' means mix venues deliberately - use " +
+  "Zwift for structured interval/threshold work where exact power control " +
+  "matters, and outdoor for long endurance rides/runs or terrain-specific " +
+  "work, stating the intended venue (Zwift vs outdoor) in every session " +
+  "description so the rider knows where to do it. Absent/null " +
+  "trainingEnvironment defaults to 'indoor' - treat every session as " +
+  "Zwift-only in that case. " +
   "Running plan structure (apply when sport is 'Running' or 'Cycling & " +
   "Running'): follow Hal Higdon-style progressive principles. " +
   "(1) The long run is the anchor - always the slowest session " +
@@ -527,6 +609,7 @@ export async function generateWeeklyPlan(params: {
           daysPerWeek: params.riderProfile.daysRange
             ? DAYS_RANGE_MID[params.riderProfile.daysRange]
             : (params.riderProfile.daysPerWeek ?? null),
+          trainingEnvironment: params.riderProfile.environment ?? "indoor",
           sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
           sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
           eventDate: params.riderProfile.eventDate ?? null,
@@ -595,6 +678,6 @@ export async function generateWeeklyPlan(params: {
   return {
     weekOf: weekOfMonday,
     summary: typeof obj.summary === "string" ? obj.summary : "",
-    workouts: obj.workouts as WeeklyWorkout[],
+    workouts: normalizeWeeklyPlan(obj.workouts as WeeklyWorkout[]),
   };
 }

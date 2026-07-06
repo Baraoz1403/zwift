@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { pushWorkoutToTP, deleteWorkoutFromTP, refreshTPToken } from "@/lib/trainingpeaks";
+import type { WorkoutStructureBlock } from "@/lib/zwo";
 
 export async function POST(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
     type?: string;
     targetPower?: string;
     tssPlanned?: number;
+    structure?: WorkoutStructureBlock[];
   };
 
   if (!body.workoutDay || !body.title || !body.durationMin) {
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
     durationMin: body.durationMin,
     type: body.type ?? "Bike",
     tssPlanned: body.tssPlanned,
+    structure: body.structure,
   };
 
   let result = await pushWorkoutToTP(pushOpts);

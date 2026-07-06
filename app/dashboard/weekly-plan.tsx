@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, type WorkoutStructureBlock } from "@/lib/zwo";
+import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import WorkoutThumbnail from "./workout-thumbnail";
 import TrainingProfileCard from "./training-profile";
@@ -37,25 +37,14 @@ function formatDuration(seconds: number): string {
   return `${m} min`;
 }
 
-/** Approximate Training Stress Score from structured blocks.
- *  Formula per block: hours × IF² × 100  (IF = powerFtp fraction).
- *  Intervals split into on/off contributions separately. */
+/** Training Stress Score from structured blocks - delegates to the same
+ *  NP-style (4th-power-weighted) computeIfTss() used when pushing the
+ *  workout to TrainingPeaks, so the number shown here on the card always
+ *  matches what actually gets recorded on TP. Previously this used a
+ *  simpler average-power² formula that could disagree with the TP-side
+ *  value - two different "truths" for the same workout. */
 function calcTss(structure: WorkoutStructureBlock[]): number {
-  let tss = 0;
-  for (const b of structure) {
-    if (b.type === "intervals" && b.onSec && b.offSec && b.repeats) {
-      const onHours  = (b.repeats * b.onSec)  / 3600;
-      const offHours = (b.repeats * b.offSec) / 3600;
-      tss += onHours  * b.powerFtp * b.powerFtp * 100;
-      tss += offHours * (b.recoveryPowerFtp ?? 0.50) * (b.recoveryPowerFtp ?? 0.50) * 100;
-    } else {
-      const avgPower = b.type === "warmup"   ? (0.45 + b.powerFtp) / 2
-                     : b.type === "cooldown" ? (b.powerFtp + 0.40) / 2
-                     : b.powerFtp;
-      tss += (b.durationMin / 60) * avgPower * avgPower * 100;
-    }
-  }
-  return Math.round(tss);
+  return Math.round(computeIfTss(structureToBlocks(structure)).tss);
 }
 
 interface WeeklyPlan {
@@ -396,22 +385,41 @@ export default function WeeklyPlan() {
     // 0. Try to refresh the TP token proactively before pushing
     try { await fetch("/api/trainingpeaks/refresh", { method: "POST" }); } catch {}
 
-    // 1. Delete previously pushed workouts from TP
+    // 1. Delete previously pushed workouts from TP - awaited (not
+    // fire-and-forget) so a failed delete doesn't silently lose track of an
+    // orphaned entry. Anything that fails even after one retry stays in
+    // TP_PUSHED_IDS_KEY so the *next* push attempt tries again instead of
+    // abandoning it on TP forever.
+    const deleteOne = (id: string | number) =>
+      fetch("/api/trainingpeaks/push-workout", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workoutId: id }),
+      }).then(r => r.ok).catch(() => false);
+
     try {
       const prevRaw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
       if (prevRaw) {
         const prevIds = JSON.parse(prevRaw) as (string | number)[];
-        prevIds.forEach(id => {
-          fetch("/api/trainingpeaks/push-workout", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ workoutId: id }),
-          }).catch(() => {});
-        });
+        const firstPass = await Promise.all(prevIds.map(async id => ({ id, ok: await deleteOne(id) })));
+        const stillFailing = firstPass.filter(r => !r.ok);
+        // One retry - TP token refresh above may not have landed before the
+        // first attempt fired, so a single retry catches most transient 401s.
+        const secondPass = stillFailing.length > 0
+          ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
+          : [];
+        const stillOrphaned = secondPass.filter(r => !r.ok).map(r => r.id);
+        // Keep only the ones we truly couldn't delete - so they're retried
+        // on the next push cycle instead of vanishing from our own records
+        // while still sitting on the user's TP calendar.
+        window.localStorage.setItem(TP_PUSHED_IDS_KEY, JSON.stringify(stillOrphaned));
+        if (stillOrphaned.length > 0) {
+          setTpPushLog(l => ({ ...l, _cleanup: `${stillOrphaned.length} old workout(s) couldn't be removed from TP - will retry next sync` }));
+        } else {
+          setTpPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
+        }
       }
     } catch {}
-    // Clear old IDs from storage before pushing new ones
-    try { window.localStorage.removeItem(TP_PUSHED_IDS_KEY); } catch {}
 
     // 2. Push new workouts
     normalizedPlan.workouts
@@ -605,6 +613,17 @@ export default function WeeklyPlan() {
     return () => clearInterval(id);
   }, [tpPolling, tpConnected]);
 
+  // After 45s of waiting with no success, most likely cause is the rider
+  // forgot to actually click the bookmark in the other tab (easy to miss,
+  // since nothing visually confirms the click worked over there) - a gentle
+  // reminder beats leaving them staring at "Waiting..." with no idea why.
+  const [tpPollSlow, setTpPollSlow] = useState(false);
+  useEffect(() => {
+    if (!tpPolling) { setTpPollSlow(false); return; }
+    const t = setTimeout(() => setTpPollSlow(true), 45000);
+    return () => clearTimeout(t);
+  }, [tpPolling]);
+
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
     setTpPushState(s => ({ ...s, [key]: "loading" }));
@@ -615,6 +634,10 @@ export default function WeeklyPlan() {
       durationMin: w.durationMin,
       type: w.type,
       targetPower: w.targetPowerPctFtp,
+      // Real interval structure, when the AI provided one - this is what
+      // makes the pushed workout an actual rideable structured entry in TP
+      // (and therefore Zwift's Custom Workouts menu) instead of a plain note.
+      structure: w.structure,
     });
     try {
       let res = await fetch("/api/trainingpeaks/push-workout", {
@@ -775,13 +798,19 @@ export default function WeeklyPlan() {
             {/* Waiting status */}
             {tpPolling && (
               <div style={{
-                display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
+                display: "flex", flexDirection: "column", gap: 6, marginBottom: 14,
                 padding: "10px 14px", borderRadius: 7,
                 background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.2)",
               }}>
                 <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
                   ⏳ Waiting for connection… click the bookmark in the TrainingPeaks tab
                 </span>
+                {tpPollSlow && (
+                  <span style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5 }}>
+                    Still nothing after a while — make sure you clicked the <strong>Zwift AI → TP</strong> bookmark
+                    itself (not just opened the tab), and that you&apos;re logged into TrainingPeaks there.
+                  </span>
+                )}
               </div>
             )}
 

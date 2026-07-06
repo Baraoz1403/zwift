@@ -14,6 +14,13 @@
  * a supported, legitimate path — TrainingPeaks is Zwift's official partner.
  */
 
+import {
+  type WorkoutStructureBlock,
+  structureToBlocks,
+  buildTPWireStructure,
+  computeIfTss,
+} from "./zwo";
+
 const TP_API = "https://tpapi.trainingpeaks.com";
 
 export interface TPRefreshResult {
@@ -143,6 +150,13 @@ export interface PushWorkoutOptions {
   type: string;
   /** Optional TSS estimate */
   tssPlanned?: number;
+  /** Machine-readable interval structure from the AI plan. When present,
+   *  this is converted into TrainingPeaks' native structured-workout wire
+   *  format and sent as the `structure` field - this is the piece that
+   *  makes the pushed entry a real, rideable structured workout instead of
+   *  a plain calendar note, which is what's required for it to ever show
+   *  up in Zwift's own Custom Workouts menu. */
+  structure?: WorkoutStructureBlock[];
 }
 
 export interface PushWorkoutResult {
@@ -208,15 +222,39 @@ export async function pushWorkoutToTP(opts: PushWorkoutOptions): Promise<PushWor
     };
   }
 
+  // If the AI plan included a machine-readable structure, convert it into
+  // TP's native structured-workout wire format. `structure` on the TP v6
+  // payload must be a JSON *string*, not a nested object - confirmed against
+  // TP's own workouts endpoint via the open-source trainingpeaks-mcp project.
+  let structureJson: string | undefined;
+  let effectiveTss = opts.tssPlanned;
+  let effectiveIf: number | undefined;
+  if (opts.structure && opts.structure.length > 0) {
+    const blocks = structureToBlocks(opts.structure);
+    const wire = buildTPWireStructure(blocks);
+    structureJson = JSON.stringify(wire);
+    const { intensityFactor, tss } = computeIfTss(blocks);
+    if (effectiveTss == null && tss > 0) effectiveTss = tss;
+    if (intensityFactor > 0) effectiveIf = intensityFactor;
+  }
+
+  // TP's own sport map uses matching family/value IDs for every sport we
+  // support (Bike 2/2, Run 3/3, Swim 1/1, Strength 9/9, Walk 13/13) - both
+  // fields are required on create, so reuse the same id for each.
+  const workoutTypeId = toTPWorkoutTypeId(opts.type);
+
   // Workout payload for the v6 API
   const body = {
     athleteId: opts.tpAthleteId,
     workoutDay: `${opts.workoutDay}T00:00:00`,
-    workoutTypeValueId: toTPWorkoutTypeId(opts.type),
+    workoutTypeFamilyId: workoutTypeId,
+    workoutTypeValueId: workoutTypeId,
     title: opts.title,
     description: opts.description,
     totalTimePlanned: opts.durationMin / 60, // TP v6 stores time in fractional hours (e.g. 1.5 = 90 min)
-    ...(opts.tssPlanned ? { tssPlanned: opts.tssPlanned } : {}),
+    ...(effectiveTss ? { tssPlanned: effectiveTss } : {}),
+    ...(effectiveIf ? { ifPlanned: effectiveIf } : {}),
+    ...(structureJson ? { structure: structureJson } : {}),
   };
 
   try {

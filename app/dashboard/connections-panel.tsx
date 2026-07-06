@@ -7,10 +7,11 @@
  *   Zwift · TrainingPeaks · Strava · Garmin
  *
  * Fetches /api/health once on mount and exposes a manual "Re-check" button.
- * Visual language matches the rest of the dashboard: each connection is a
- * `.stat-card` (same white panel, top accent stripe, hover lift) with a
- * `.record-icon` badge whose color (c-green/c-amber/c-red/c-neutral)
- * communicates status at a glance - no separate status dot needed.
+ * Each icon badge uses that service's own real brand color (so the row is
+ * instantly recognizable at a glance, the same way it would be on their own
+ * sites) - live status is a small corner dot instead, so brand identity and
+ * connection health are two separate, simple signals rather than one
+ * overloaded color.
  */
 
 import { useEffect, useState } from "react";
@@ -25,33 +26,50 @@ interface HealthData {
 
 type Status = "ok" | "warn" | "error" | "loading";
 
-const STATUS_CLASS: Record<Status, string> = {
-  ok: "c-green",
-  warn: "c-amber",
-  error: "c-red",
-  loading: "c-neutral",
+const STATUS_DOT_COLOR: Record<Status, string> = {
+  ok: "#22c55e",
+  warn: "#f0ad00",
+  error: "#e4483a",
+  loading: "#b7bcc2",
 };
+
+/** Each service's own real brand color - defined once in globals.css
+ *  (.brand-icon.<name>) and referenced here by class name, the same
+ *  documented exception to "never hard-code a color" that the c-* icon
+ *  badges use. */
+type BrandName = "zwift" | "trainingpeaks" | "strava" | "garmin";
 
 interface ServiceCardProps {
   icon: React.ReactNode;
+  brand: BrandName;
   name: string;
   status: Status;
   line1: string;
-  line2?: string;
   action?: { label: string; onClick: () => void; href?: never } | { label: string; href: string; onClick?: never };
 }
 
-function ServiceCard({ icon, name, status, line1, line2, action }: ServiceCardProps) {
+function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardProps) {
   return (
     <div className="stat-card" style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px" }}>
-      <div className={`record-icon ${STATUS_CLASS[status]}`} style={{ width: 40, height: 40, borderRadius: 10, fontSize: 17 }}>
-        {icon}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <div className={`brand-icon ${brand}`} style={{
+          width: 40, height: 40, borderRadius: 10, fontSize: 17,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {icon}
+        </div>
+        {/* Live status - a small corner dot, separate from the brand color above */}
+        <span style={{
+          position: "absolute", bottom: -2, right: -2,
+          width: 11, height: 11, borderRadius: "50%",
+          background: STATUS_DOT_COLOR[status],
+          border: "2px solid var(--panel)",
+        }} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>{name}</div>
         <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.45 }}>{line1}</div>
-        {line2 && <div style={{ fontSize: 11, color: "var(--muted)", opacity: 0.7, marginTop: 2 }}>{line2}</div>}
       </div>
 
       {action && (
@@ -155,6 +173,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         {/* Zwift */}
         <ServiceCard
           icon={<IconBolt size={17} />}
+          brand="zwift"
           name="Zwift"
           status={zwiftStatus}
           line1={
@@ -167,22 +186,16 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         {/* TrainingPeaks */}
         <ServiceCard
           icon={<IconMountain size={17} />}
+          brand="trainingpeaks"
           name="TrainingPeaks"
           status={tpStatus}
           line1={
             tpStatus === "loading" ? "Checking…" :
-            tpStatus === "ok"      ? `Connected · plans sync automatically to Zwift and Garmin` :
+            tpStatus === "ok"      ? "Connected · plans sync to Zwift and Garmin" :
             tpStatus === "warn" && health?.tp.hasRefreshToken
               ? "Token expired — trying to auto-refresh…" :
             tpStatus === "warn"    ? "Token expired — please reconnect (takes a minute)" :
-            "Not connected"
-          }
-          line2={
-            tpStatus !== "ok" && !health?.tp.hasRefreshToken
-              ? "Click to connect via the bookmarklet"
-              : tpStatus === "ok"
-              ? `Athlete ID: ${health?.tp.athleteId ?? "—"}${health?.tp.hasRefreshToken ? " · auto-refresh active" : ""}`
-              : undefined
+            "Not connected — click to connect via the bookmarklet"
           }
           action={
             tpStatus !== "ok" && !health?.tp.hasRefreshToken
@@ -194,15 +207,15 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         {/* Strava */}
         <ServiceCard
           icon={<span style={{ fontSize: 17, lineHeight: 1 }}>🟠</span>}
+          brand="strava"
           name="Strava"
           status={stravaStatus}
           line1={
             stravaStatus === "loading"   ? "Checking…" :
-            !health?.strava.configured   ? "Requires STRAVA_CLIENT_ID set up on Vercel" :
-            stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""} · auto-refreshing` :
+            !health?.strava.configured   ? "Setup required — see instructions below" :
+            stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""}` :
             "Configured — click to connect"
           }
-          line2={!health?.strava.configured ? "See setup instructions below" : undefined}
           action={
             health?.strava.configured && stravaStatus !== "ok"
               ? { label: "Connect", onClick: onConnectStrava }
@@ -215,15 +228,15 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         {/* Garmin */}
         <ServiceCard
           icon={<span style={{ fontSize: 17, lineHeight: 1 }}>⌚</span>}
+          brand="garmin"
           name="Garmin"
           status={garminStatus}
           line1={
             garminStatus === "loading" ? "Checking…" :
             health?.tp.connected
-              ? "Syncs via TrainingPeaks → check that TP↔Garmin is linked in TP settings"
+              ? "Syncs via TrainingPeaks — check TP↔Garmin is linked there"
               : "Requires TrainingPeaks connected first"
           }
-          line2={health?.tp.connected ? "Settings → Connected Apps → Garmin on the TP site" : undefined}
           action={health?.tp.connected ? { label: "Open TP settings ↗", href: "https://app.trainingpeaks.com/athlete/settings/apps" } : undefined}
         />
       </div>
