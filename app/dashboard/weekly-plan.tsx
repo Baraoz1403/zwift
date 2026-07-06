@@ -1390,32 +1390,6 @@ export default function WeeklyPlan() {
                   <div className="card-desc" style={{ fontSize: 12, opacity: 0.85, marginTop: 6, flexGrow: 1 }}>
                     {w.description}
                   </div>
-                  {/* Interval structure chips — colored by power zone */}
-                  {w.structure && w.structure.length > 0 && (
-                    <div style={{
-                      display: "flex", flexWrap: "wrap", gap: 5, marginTop: 10,
-                      paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.07)",
-                    }}>
-                      {w.structure.map((b, j) => {
-                        const zone = zoneForPowerFraction(b.powerFtp);
-                        const isInterval = b.type === "intervals";
-                        const label = isInterval
-                          ? `${b.repeats ?? "?"}×${Math.round((b.onSec ?? 0) / 60)}′ @ ${Math.round(b.powerFtp * 100)}%`
-                          : `${b.durationMin}′ @ ${Math.round(b.powerFtp * 100)}%`;
-                        return (
-                          <span key={j} title={b.label} style={{
-                            fontSize: 10.5, padding: "3px 7px", borderRadius: 4,
-                            background: `${zone.color}1a`,
-                            border: `1px solid ${zone.color}55`,
-                            color: zone.color,
-                            fontWeight: 600, letterSpacing: "0.01em",
-                          }}>
-                            {label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
                   {!isRestDay(w.type) && (() => {
                     const tpKey = `tp_${w.date ?? w.title}`;
                     const tps   = tpPushState[tpKey] ?? "idle";
