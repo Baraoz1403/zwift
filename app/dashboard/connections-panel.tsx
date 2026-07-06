@@ -225,9 +225,11 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const [showIntervalsModal,  setShowIntervalsModal]  = useState(false);
+  const [intervalsStep,       setIntervalsStep]       = useState<0|1>(0);
   const [intervalsKeyInput,   setIntervalsKeyInput]   = useState("");
   const [intervalsConnecting, setIntervalsConnecting] = useState(false);
   const [intervalsError,      setIntervalsError]      = useState<string | null>(null);
+  const [clipboardSupported,  setClipboardSupported]  = useState(true);
 
   const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>([]);
   useEffect(() => {
@@ -258,23 +260,52 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
 
   useEffect(() => { refresh(); }, []);
 
-  async function handleDisconnectIntervals() {
-    try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch { /* ignore */ }
+  function openIntervalsModal() {
     setShowIntervalsModal(true);
+    setIntervalsStep(0);
     setIntervalsKeyInput("");
     setIntervalsError(null);
+  }
+
+  async function handleDisconnectIntervals() {
+    try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch { /* ignore */ }
+    openIntervalsModal();
     await refresh();
   }
 
-  async function handleConnectIntervals() {
-    if (!intervalsKeyInput.trim()) return;
+  function handleOpenICUSettings() {
+    window.open("https://intervals.icu/settings#developer", "_blank", "noopener");
+    setIntervalsStep(1);
+  }
+
+  async function handlePasteAndConnect() {
+    setIntervalsError(null);
+    let key = intervalsKeyInput.trim();
+    // Try reading from clipboard first
+    if (!key) {
+      try {
+        key = (await navigator.clipboard.readText()).trim();
+        if (key) setIntervalsKeyInput(key);
+      } catch {
+        setClipboardSupported(false);
+      }
+    }
+    if (!key) {
+      setIntervalsError("No key found in clipboard — paste it manually below.");
+      return;
+    }
+    await doConnect(key);
+  }
+
+  async function doConnect(key: string) {
+    if (!key.trim()) return;
     setIntervalsConnecting(true);
     setIntervalsError(null);
     try {
       const r = await fetch("/api/intervals/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: intervalsKeyInput.trim() }),
+        body: JSON.stringify({ apiKey: key.trim() }),
       });
       const d = await r.json() as { ok: boolean; error?: string };
       if (d.ok) {
@@ -366,7 +397,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
             }
             action={
               intervalsStatus !== "ok"
-                ? { label: "Connect",    onClick: () => setShowIntervalsModal(true) }
+                ? { label: "Connect",    onClick: openIntervalsModal }
                 : { label: "Change key", primary: false, onClick: handleDisconnectIntervals }
             }
           />
@@ -412,60 +443,153 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         )}
       </div>
 
-      {/* ── Intervals.icu connect modal ──────────────────────────────────── */}
+      {/* ── Intervals.icu connect wizard ─────────────────────────────────── */}
       {showIntervalsModal && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
-          background: "rgba(0,0,0,0.45)",
+          background: "rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
         }}>
-          <div className="stat-card" style={{ maxWidth: 440, width: "100%", padding: "22px 24px" }}>
-            <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 6, color: "var(--text)" }}>
-              Connect Intervals.icu
-            </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14 }}>
-              Free, no approval process. Generate a personal API key at{" "}
-              <a href="https://intervals.icu/settings" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>
-                intervals.icu/settings
-              </a>{" "}
-              — look for &ldquo;Developer Settings&rdquo; — then paste it below.
-            </div>
-            <input
-              type="text"
-              value={intervalsKeyInput}
-              onChange={e => setIntervalsKeyInput(e.target.value)}
-              placeholder="Paste your Intervals.icu API key"
-              autoFocus
-              style={{
-                width: "100%", padding: "9px 12px", fontSize: 13, borderRadius: 8,
-                border: "1px solid var(--border, #d8dce0)", marginBottom: 10, boxSizing: "border-box",
-              }}
-              onKeyDown={e => { if (e.key === "Enter") handleConnectIntervals(); }}
-            />
-            {intervalsError && (
-              <div style={{ fontSize: 12, color: "#e4483a", marginBottom: 10, lineHeight: 1.5 }}>
-                {intervalsError}
+          <div className="stat-card" style={{ maxWidth: 420, width: "100%", padding: "24px 26px" }}>
+
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
+                Connect Intervals.icu
               </div>
-            )}
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
               <button
                 type="button"
                 onClick={() => { setShowIntervalsModal(false); setIntervalsError(null); }}
-                className="btn-secondary"
-                style={{ width: "auto", padding: "8px 16px", fontSize: 12.5 }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConnectIntervals}
-                disabled={intervalsConnecting || !intervalsKeyInput.trim()}
-                className="btn"
-                style={{ width: "auto", padding: "8px 18px", fontSize: 12.5, opacity: intervalsConnecting ? 0.6 : 1 }}
-              >
-                {intervalsConnecting ? "Connecting…" : "Connect"}
-              </button>
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--muted)", fontSize: 18, lineHeight: 1, padding: "2px 4px",
+                }}
+              >×</button>
             </div>
+
+            {/* Step indicators */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 22 }}>
+              {[0, 1].map(s => (
+                <div key={s} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%",
+                    background: intervalsStep >= s ? "var(--accent)" : "var(--border, #e0e0e0)",
+                    color: intervalsStep >= s ? "#fff" : "var(--muted)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, flexShrink: 0,
+                  }}>{s + 1}</div>
+                  <span style={{ fontSize: 11.5, color: intervalsStep >= s ? "var(--text)" : "var(--muted)", fontWeight: intervalsStep === s ? 600 : 400 }}>
+                    {s === 0 ? "Open settings" : "Paste & connect"}
+                  </span>
+                  {s === 0 && <div style={{ width: 20, height: 1, background: "var(--border, #e0e0e0)" }} />}
+                </div>
+              ))}
+            </div>
+
+            {/* Step 0: Open ICU settings */}
+            {intervalsStep === 0 && (
+              <>
+                <div style={{
+                  background: "var(--bg, #f8f9fa)", borderRadius: 10, padding: "14px 16px",
+                  marginBottom: 18, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.7,
+                }}>
+                  Intervals.icu is <strong style={{ color: "var(--text)" }}>free</strong> and requires no approval.
+                  You&apos;ll generate a personal API key in their settings — takes about 30 seconds.
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenICUSettings}
+                  className="btn"
+                  style={{ width: "100%", padding: "12px", fontSize: 13.5, fontWeight: 700, boxShadow: "none" }}
+                >
+                  Open Intervals.icu Settings →
+                </button>
+                <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
+                  Scroll to <strong>Developer Settings</strong> and click <strong>Generate API Key</strong>
+                </div>
+              </>
+            )}
+
+            {/* Step 1: Paste & connect */}
+            {intervalsStep === 1 && (
+              <>
+                <div style={{
+                  background: "color-mix(in srgb, var(--accent) 8%, var(--panel, #fff))",
+                  border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)",
+                  borderRadius: 10, padding: "12px 14px",
+                  marginBottom: 18, fontSize: 12.5, color: "var(--text)", lineHeight: 1.65,
+                }}>
+                  <strong>Copy the API key</strong> from the Developer Settings section on Intervals.icu,
+                  then click the button below — we&apos;ll read it automatically.
+                </div>
+
+                {/* Primary: paste from clipboard */}
+                {clipboardSupported && (
+                  <button
+                    type="button"
+                    onClick={handlePasteAndConnect}
+                    disabled={intervalsConnecting}
+                    className="btn"
+                    style={{
+                      width: "100%", padding: "13px", fontSize: 14, fontWeight: 700,
+                      boxShadow: "none", marginBottom: 14,
+                      opacity: intervalsConnecting ? 0.6 : 1,
+                    }}
+                  >
+                    {intervalsConnecting ? "Connecting…" : "📋  Paste & Connect"}
+                  </button>
+                )}
+
+                {/* Fallback: manual input */}
+                <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>
+                  {clipboardSupported ? "Or paste manually:" : "Paste your API key:"}
+                </div>
+                <input
+                  type="text"
+                  value={intervalsKeyInput}
+                  onChange={e => setIntervalsKeyInput(e.target.value)}
+                  placeholder="API key"
+                  autoFocus={!clipboardSupported}
+                  style={{
+                    width: "100%", padding: "9px 12px", fontSize: 13, borderRadius: 8,
+                    border: "1px solid var(--border, #d8dce0)", marginBottom: 8,
+                    boxSizing: "border-box", fontFamily: "monospace",
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter") doConnect(intervalsKeyInput); }}
+                />
+                {!clipboardSupported && (
+                  <button
+                    type="button"
+                    onClick={() => doConnect(intervalsKeyInput)}
+                    disabled={intervalsConnecting || !intervalsKeyInput.trim()}
+                    className="btn"
+                    style={{ width: "100%", padding: "10px", fontSize: 13, boxShadow: "none", opacity: intervalsConnecting ? 0.6 : 1 }}
+                  >
+                    {intervalsConnecting ? "Connecting…" : "Connect"}
+                  </button>
+                )}
+
+                {intervalsError && (
+                  <div style={{ fontSize: 12, color: "#e4483a", marginTop: 8, lineHeight: 1.5 }}>
+                    {intervalsError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIntervalsStep(0)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "var(--muted)", fontSize: 11.5, marginTop: 12,
+                    padding: 0, display: "block",
+                  }}
+                >
+                  ← Back
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
