@@ -228,7 +228,12 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "their FTP/weight/level/ageYears. The input also includes weekOfMonday " +
   "(YYYY-MM-DD, the Monday of the upcoming week this plan covers) - use it " +
   "to compute each workout's real calendar date (Monday=weekOfMonday, " +
-  "Tuesday=weekOfMonday+1, etc). The input also includes a trainingLoad " +
+  "Tuesday=weekOfMonday+1, etc), and a separate today field (YYYY-MM-DD, " +
+  "the actual real-world current date) - use today, NOT weekOfMonday, to " +
+  "resolve any relative day reference in riderNote (see below) such as " +
+  "'today' or 'tomorrow', since today can fall anywhere inside or before " +
+  "the plan's week (e.g. requesting a mid-week update). The input also " +
+  "includes a trainingLoad " +
   "object - {ctl, atl, tsb, freshness, ridesLast7Days, ridesPrior7Days} - " +
   "computed directly from the rider's ride history (a simplified version " +
   "of the standard cycling ATL/CTL/TSB training-load model: ctl is " +
@@ -321,6 +326,23 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(6) Running easy-day sessions are 'Easy Run' type, long run is " +
   "'Long Run' type, tempo/harder runs are 'Tempo Run' type. " +
   "Absent/null riderProfile means no profile set - proceed normally. " +
+  "The input may also include a riderNote field - free text the rider " +
+  "typed just before requesting this specific plan. Treat it as a direct, " +
+  "high-priority instruction for THIS plan, and always briefly acknowledge " +
+  "in the summary how you accommodated it. Two kinds of note are common: " +
+  "(1) how they feel right now (e.g. 'tired legs', 'feeling great', 'sore " +
+  "back') - adjust this week's intensity/volume accordingly, same as a " +
+  "fatigue signal; (2) an explicit scheduling request naming a day or " +
+  "relative date (e.g. 'put a hard workout tomorrow', 'I need Thursday " +
+  "off', 'long ride on Saturday instead of Sunday') - resolve it against " +
+  "the today field (not weekOfMonday) to get the exact calendar date, then " +
+  "place/swap the requested session type on that date if it falls within " +
+  "this plan's 6 days, even if it means deviating from " +
+  "the usual weekly shape. Only override a note's specific request if " +
+  "honoring it literally would break a hard safety rule above (two hard " +
+  "days back to back, or exceeding the mandatory Recovery-week cutback) - " +
+  "in that case get as close as safely possible and say why in the summary. " +
+  "Absent/null riderNote means no note - proceed normally. " +
   "Use session types/structures matching Zwift's own official plans (FTP " +
   "Builder, Build Me Up, Zwift Academy) and workout categories: " +
   "'Endurance'/'Foundation' (long steady Zone 1-2 ride), 'Tempo' (steady " +
@@ -514,6 +536,7 @@ export async function generateWeeklyPlan(params: {
       : null,
     runLevel: params.runLevel ?? null,
     weekOfMonday,
+    today: new Date().toISOString().slice(0, 10),
     rides: params.rides,
     riderNote: params.riderNote ?? null,
   });
