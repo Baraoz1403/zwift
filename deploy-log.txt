@@ -5144,3 +5144,30 @@ warning: in the working copy of 'lib/intervals.ts', LF will be replaced by CRLF 
 To https://github.com/Baraoz1403/zwift.git
    38fd5ae..4e291ee  main -> main
 Mon 07/06/2026 22:35:05.60 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/07/2026  0:49:20.23 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

@@ -14,6 +14,7 @@ import type { RiderTrainingProfile } from "./rider-profile";
 import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS, DAYS_RANGE_MID } from "./rider-profile";
 import type { HRTrendAnalysis } from "./stats";
 import type { WorkoutStructureBlock } from "./zwo";
+import { WORKOUT_LIBRARY_PROMPT } from "./coaching-knowledge";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -429,15 +430,23 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "session in between) or Recovery-week volume cap - in those cases get as " +
   "close as safely possible and explain why in the summary. " +
   "Absent/null riderNote means no note - proceed normally. " +
-  "Use session types/structures matching Zwift's own official plans (FTP " +
-  "Builder, Build Me Up, Zwift Academy) and workout categories: " +
-  "'Endurance'/'Foundation' (long steady Zone 1-2 ride), 'Tempo' (steady " +
-  "Zone 3 block), 'Threshold' (repeated 5-8min efforts at/near FTP), " +
-  "'Sweet Spot' (repeated 8-15min efforts at 88-94% FTP), 'VO2' (short " +
-  "2-3min near-max efforts), 'Intermittent' (short 30s on/30s off bursts), " +
-  "'Strength' (5-8x 15s near-maximal sprints with long recovery), " +
-  "'Recovery' (very easy spin), or 'Rest' (no ride) - pick whichever " +
-  "matches each day's role rather than inventing new labels. " +
+
+  // ── Named workout library ──
+  WORKOUT_LIBRARY_PROMPT + " " +
+
+  "The workout name in the 'title' field MUST match a name from the library " +
+  "above (e.g. 'Sweet Spot Classic', 'Norwegian 4×4', 'Foundation Ride'). " +
+  "Do NOT invent generic names like 'Endurance Ride' or 'Interval Session'. " +
+  "The 'type' field should still be one of the standard categories: " +
+  "'Endurance'/'Foundation', 'Tempo', 'Threshold', 'Sweet Spot', 'VO2', " +
+  "'Intermittent', 'Strength'/'Neuromuscular', 'Recovery', or 'Rest'. " +
+  "The 'description' field is a coaching note to THIS rider for THIS session: " +
+  "start with why this specific protocol is right for them right now (their " +
+  "fatigue level, training phase, last week's pattern), then add 1-2 " +
+  "specific execution cues (e.g. 'Start the 4×8s conservatively — the last " +
+  "two blocks should feel harder than the first, not equal. If your power " +
+  "fades on block 3, you started too hot.'). Never write generic descriptions " +
+  "like 'Build aerobic base'. Make it feel like a real coach wrote it. " +
   "POWER ZONE RULE: All power targets MUST use % FTP or Coggan zone " +
   "names (Z1-Z7), never absolute watt values (not '200W' - FTP varies " +
   "per rider). Sweet spot is sustained 10-30 min blocks at 84-97% FTP " +
@@ -639,7 +648,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: WEEKLY_PLAN_SYSTEM_PROMPT,
         messages: [{ role: "user", content: userContent }],
       }),
