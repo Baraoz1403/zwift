@@ -16,11 +16,25 @@
 
 const TP_API = "https://tpapi.trainingpeaks.com";
 
+export interface TPRefreshResult {
+  accessToken: string;
+  /** New refresh token, if TP rotated it (single-use refresh tokens). Reuse the
+   *  old one only if TP didn't send a new one. */
+  refreshToken?: string;
+  expiresIn?: number;
+}
+
 /**
  * Try to refresh the TP access token using a refresh token.
- * Returns the new access token, or throws if refresh fails.
+ * Returns the new access token (and, if TP rotated it, a new refresh token),
+ * or throws if refresh fails.
+ *
+ * IMPORTANT: TrainingPeaks may rotate refresh tokens (single-use — each
+ * refresh call invalidates the old one and issues a new one). Callers MUST
+ * persist the returned refreshToken (when present) and overwrite the old one,
+ * or the next refresh cycle will fail and force a manual reconnect.
  */
-export async function refreshTPToken(refreshToken: string): Promise<string> {
+export async function refreshTPToken(refreshToken: string): Promise<TPRefreshResult> {
   // TP may support a refresh endpoint — attempt it.
   // (If TP doesn't support refresh tokens, this will fail with a 4xx.)
   const res = await fetch(`${TP_API}/users/v3/token`, {
@@ -34,10 +48,16 @@ export async function refreshTPToken(refreshToken: string): Promise<string> {
   if (!res.ok) {
     throw new Error(`TP refresh failed (${res.status})`);
   }
-  const data = await res.json() as { token?: { access_token?: string } };
+  const data = await res.json() as {
+    token?: { access_token?: string; refresh_token?: string; expires_in?: number };
+  };
   const token = data?.token?.access_token;
   if (!token) throw new Error("No access_token in TP refresh response");
-  return token;
+  return {
+    accessToken: token,
+    refreshToken: data?.token?.refresh_token,
+    expiresIn: data?.token?.expires_in,
+  };
 }
 
 async function exchangeCookieForToken(tpCookieOrToken: string): Promise<string> {

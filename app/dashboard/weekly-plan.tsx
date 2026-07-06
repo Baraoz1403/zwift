@@ -228,6 +228,16 @@ export default function WeeklyPlan() {
         if (d.connected) { setStravaConnected(true); setStravaName(d.athleteName ?? null); }
       })
       .catch(() => {});
+    // Handle Strava OAuth redirect-back
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("strava_connected") === "1") {
+      setStravaConnected(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    if (urlParams.get("strava_error")) {
+      setError(`שגיאת Strava: ${urlParams.get("strava_error")}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
 
     // Fetch this week's actual Zwift rides to detect completed workouts
     const weekStart = thisWeek;
@@ -293,6 +303,9 @@ export default function WeeklyPlan() {
         // calendar only ever contains the current plan (not stale old entries).
         // TP syncs to Zwift + Garmin automatically — no manual step needed.
         if (tpConnected) {
+          // 0. Try to refresh the TP token proactively before pushing
+          try { await fetch("/api/trainingpeaks/refresh", { method: "POST" }); } catch {}
+
           // 1. Delete previously pushed workouts from TP
           try {
             const prevRaw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
@@ -391,19 +404,32 @@ export default function WeeklyPlan() {
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
     setTpPushState(s => ({ ...s, [key]: "loading" }));
+    const pushBody = JSON.stringify({
+      workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
+      title: w.title,
+      description: w.description,
+      durationMin: w.durationMin,
+      type: w.type,
+      targetPower: w.targetPowerPctFtp,
+    });
     try {
-      const res = await fetch("/api/trainingpeaks/push-workout", {
+      let res = await fetch("/api/trainingpeaks/push-workout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
-          title: w.title,
-          description: w.description,
-          durationMin: w.durationMin,
-          type: w.type,
-          targetPower: w.targetPowerPctFtp,
-        }),
+        body: pushBody,
       });
+      // If expired, try to auto-refresh and retry once
+      if ((res.status === 401 || res.status === 403)) {
+        const refreshRes = await fetch("/api/trainingpeaks/refresh", { method: "POST" });
+        const refreshData = await refreshRes.json() as { ok: boolean; renewed?: boolean };
+        if (refreshData.ok && refreshData.renewed) {
+          res = await fetch("/api/trainingpeaks/push-workout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: pushBody,
+          });
+        }
+      }
       const data = await res.json();
       if (data.ok) {
         setTpPushState(s => ({ ...s, [key]: "ok" }));
@@ -420,8 +446,8 @@ export default function WeeklyPlan() {
         }
       } else {
         setTpPushState(s => ({ ...s, [key]: "error" }));
-        setTpPushLog(l => ({ ...l, [key]: data.error ?? "Failed." }));
-        // Detect expired / invalid token — surface reconnect banner
+        setTpPushLog(l => ({ ...l, [key]: data.error ?? "שגיאה." }));
+        // If still expired after refresh attempt — show reconnect banner
         if (res.status === 401 || res.status === 403 ||
             (data.error ?? "").toLowerCase().includes("token") ||
             (data.error ?? "").toLowerCase().includes("unauthorized") ||
@@ -432,7 +458,7 @@ export default function WeeklyPlan() {
       }
     } catch (e) {
       setTpPushState(s => ({ ...s, [key]: "error" }));
-      setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
+      setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "שגיאת רשת." }));
     }
   }
 
@@ -586,7 +612,7 @@ export default function WeeklyPlan() {
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1 }}>
-            TrainingPeaks session expired
+            טוקן TrainingPeaks פג — יש להתחבר מחדש
           </span>
           <button
             type="button"
@@ -1095,5 +1121,5 @@ export default function WeeklyPlan() {
         </>
       )}
     </div>
-    );
+  );
 }

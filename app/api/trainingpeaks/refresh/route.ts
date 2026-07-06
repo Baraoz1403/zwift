@@ -43,9 +43,9 @@ export async function POST() {
   }
 
   // Attempt the refresh
-  let newToken: string;
+  let result: Awaited<ReturnType<typeof refreshTPToken>>;
   try {
-    newToken = await refreshTPToken(refreshToken);
+    result = await refreshTPToken(refreshToken);
   } catch (e) {
     return NextResponse.json({
       ok: false,
@@ -64,10 +64,16 @@ export async function POST() {
     path: "/",
   };
 
-  cookieStore.set("zwift_tp_token", newToken, cookieOpts);
+  cookieStore.set("zwift_tp_token", result.accessToken, cookieOpts);
 
-  // Reset expiry to 1 hour from now (standard TP token TTL)
-  const newExpiresAt = Date.now() + 60 * 60 * 1000;
+  // TP may rotate the refresh token (single-use) — if it sent a new one,
+  // we MUST persist it or the next refresh cycle will fail.
+  if (result.refreshToken) {
+    cookieStore.set("zwift_tp_refresh", result.refreshToken, cookieOpts);
+  }
+
+  // Reset expiry — use TP's expires_in if provided, else assume 1 hour
+  const newExpiresAt = Date.now() + (result.expiresIn ?? 3600) * 1000;
   cookieStore.set("zwift_tp_expires", String(newExpiresAt), { ...cookieOpts, httpOnly: false });
 
   return NextResponse.json({ ok: true, renewed: true });

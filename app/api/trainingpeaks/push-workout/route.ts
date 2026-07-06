@@ -24,7 +24,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { pushWorkoutToTP, deleteWorkoutFromTP } from "@/lib/trainingpeaks";
+import { pushWorkoutToTP, deleteWorkoutFromTP, refreshTPToken } from "@/lib/trainingpeaks";
 
 export async function POST(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
   // TP credentials live in dedicated cookies (zwift_tp_token / zwift_tp_id)
-  const tpToken = cookieStore.get("zwift_tp_token")?.value;
+  let tpToken = cookieStore.get("zwift_tp_token")?.value;
   const tpAthleteId = cookieStore.get("zwift_tp_id")?.value;
+  const tpRefresh   = cookieStore.get("zwift_tp_refresh")?.value;
 
   if (!tpToken || !tpAthleteId) {
     return NextResponse.json({
@@ -61,17 +62,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Missing required fields: workoutDay, title, durationMin." });
   }
 
-  // ── Push to TrainingPeaks ─────────────────────────────────────────────────
-  const result = await pushWorkoutToTP({
+  // ── Push to TrainingPeaks (with auto-refresh retry on 401) ─────────────────
+  const pushOpts = {
     tpCookie: tpToken,
-    tpAthleteId: tpAthleteId,
+    tpAthleteId,
     workoutDay: body.workoutDay,
     title: body.title,
     description: body.description ?? "",
     durationMin: body.durationMin,
     type: body.type ?? "Bike",
     tssPlanned: body.tssPlanned,
-  });
+  };
+
+  let result = await pushWorkoutToTP(pushOpts);
+
+  // If the push failed with 401/403 and we have a refresh token, try once more
+  if (!result.ok && (result.status === 401 || result.status === 403) && tpRefresh) {
+    try {
+      const refreshed = await refreshTPToken(tpRefresh);
+      const isSecure = process.env.NODE_ENV === "production";
+      cookieStore.set("zwift_tp_token", refreshed.accessToken, {
+        httpOnly: true, secure: isSecure, sameSite: "lax", maxAge: 60 * 60 * 24 * 30, path: "/",
+      });
+      // TP may rotate the refresh token (single-use) — persist the new one or
+      // the next refresh cycle will fail and force a manual reconnect.
+      if (refreshed.refreshToken) {
+        cookieStore.set("zwift_tp_refresh", refreshed.refreshToken, {
+          httpOnly: true, secure: isSecure, sameSite: "lax", maxAge: 60 * 60 * 24 * 30, path: "/",
+        });
+      }
+      cookieStore.set("zwift_tp_expires", String(Date.now() + (refreshed.expiresIn ?? 3600) * 1000), {
+        httpOnly: false, secure: isSecure, sameSite: "lax", maxAge: 60 * 60 * 24 * 30, path: "/",
+      });
+      result = await pushWorkoutToTP({ ...pushOpts, tpCookie: refreshed.accessToken });
+    } catch {
+      // Refresh failed — return original error
+    }
+  }
 
   return NextResponse.json(result);
 }

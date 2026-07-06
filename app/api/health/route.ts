@@ -43,13 +43,18 @@ export async function GET() {
   // Auto-refresh if token is expired/expiring and we have a refresh token
   if (tpRefresh && (!tpToken || (tpExpiresAt && tpExpiresAt < Date.now() + 5 * 60 * 1000))) {
     try {
-      const newToken = await refreshTPToken(tpRefresh);
+      const result = await refreshTPToken(tpRefresh);
       // Update the cookie for this response cycle (next request will also use it)
       const isSecure = process.env.NODE_ENV === "production";
       const cookieOpts = { httpOnly: true, secure: isSecure, sameSite: "lax" as const, maxAge: 60 * 60 * 24 * 30, path: "/" };
-      cookieStore.set("zwift_tp_token", newToken, cookieOpts);
-      cookieStore.set("zwift_tp_expires", String(Date.now() + 60 * 60 * 1000), { ...cookieOpts, httpOnly: false });
-      tpToken = newToken;
+      cookieStore.set("zwift_tp_token", result.accessToken, cookieOpts);
+      // TP may rotate the refresh token (single-use) — persist the new one or
+      // the next refresh cycle will fail and force a manual reconnect.
+      if (result.refreshToken) {
+        cookieStore.set("zwift_tp_refresh", result.refreshToken, cookieOpts);
+      }
+      cookieStore.set("zwift_tp_expires", String(Date.now() + (result.expiresIn ?? 3600) * 1000), { ...cookieOpts, httpOnly: false });
+      tpToken = result.accessToken;
     } catch {
       // Refresh failed — will fall through to expired state
     }
