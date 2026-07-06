@@ -123,8 +123,7 @@ export async function DELETE() {
   cookieStore.delete("zwift_tp_refresh");
   cookieStore.delete("zwift_tp_expires");
 
-  // Remove from KV too
-  const session = await decryptSession(raw);
+  // Remove from KV too (session was already decrypted above)
   if (session?.athleteId) {
     await kvDel(
       `zwift:${session.athleteId}:tp_token`,
