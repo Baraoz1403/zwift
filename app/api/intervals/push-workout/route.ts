@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
     }, { status: 403 });
   }
 
+  // Use the stored athlete ID (set at connect time). Falls back to "me" inside
+  // pushWorkoutToIntervals if this is "0" or missing — "me" is the correct
+  // self-referential shortcut for the Intervals.icu API.
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+
   const body = await req.json() as {
     workoutDay?: string;
     title?: string;
@@ -82,6 +87,7 @@ export async function POST(req: NextRequest) {
 
   const result = await pushWorkoutToIntervals({
     apiKey,
+    athleteId: athleteId && athleteId !== "0" ? athleteId : undefined,
     workoutDay: body.workoutDay,
     title: body.title,
     description: body.description ?? "",
@@ -112,11 +118,17 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Intervals.icu not connected." }, { status: 403 });
   }
 
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+
   const body = await req.json() as { eventId?: string | number };
   if (!body.eventId) {
     return NextResponse.json({ ok: false, error: "Missing eventId." }, { status: 400 });
   }
 
-  const result = await deleteEventFromIntervals(apiKey, body.eventId);
+  const result = await deleteEventFromIntervals(
+    apiKey,
+    body.eventId,
+    athleteId && athleteId !== "0" ? athleteId : undefined,
+  );
   return NextResponse.json(result);
 }

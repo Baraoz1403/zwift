@@ -80,6 +80,9 @@ export async function fetchIntervalsAthlete(apiKey: string): Promise<IntervalsAt
 
 export interface PushIntervalsOptions {
   apiKey: string;
+  /** Athlete ID returned at connect time (from zwift_intervals_id cookie).
+   *  Falls back to "me" (the REST self-referential shortcut) if omitted. */
+  athleteId?: string;
   /** YYYY-MM-DD */
   workoutDay: string;
   title: string;
@@ -134,7 +137,7 @@ export async function pushWorkoutToIntervals(opts: PushIntervalsOptions): Promis
   };
 
   try {
-    const res = await fetch(`${INTERVALS_API}/athlete/0/events`, {
+    const res = await fetch(`${INTERVALS_API}/athlete/${opts.athleteId ?? "me"}/events`, {
       method: "POST",
       headers: {
         Authorization: basicAuthHeader(opts.apiKey),
@@ -162,9 +165,9 @@ export async function pushWorkoutToIntervals(opts: PushIntervalsOptions): Promis
 }
 
 /** Delete a planned workout from Intervals.icu by event id. 404 counts as success (already gone). */
-export async function deleteEventFromIntervals(apiKey: string, eventId: string | number): Promise<DeleteIntervalsResult> {
+export async function deleteEventFromIntervals(apiKey: string, eventId: string | number, athleteId?: string): Promise<DeleteIntervalsResult> {
   try {
-    const res = await fetch(`${INTERVALS_API}/athlete/0/events/${eventId}`, {
+    const res = await fetch(`${INTERVALS_API}/athlete/${athleteId ?? "me"}/events/${eventId}`, {
       method: "DELETE",
       headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
       signal: AbortSignal.timeout(8000),

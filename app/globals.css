@@ -1158,16 +1158,13 @@ tbody tr:hover {
   gap: 16px;
 }
 
-/* Action buttons at the bottom of header cards — always fill the card width
-   so all three buttons look visually equal regardless of label length */
-.header-card-btn {
-  width: 100%;
-  justify-content: center;
-}
-
 @media (max-width: 860px) {
   .header-cards-grid {
     grid-template-columns: 1fr;
+  }
+  /* On mobile/tablet, make all 3 header-card buttons the same (full) width */
+  .header-card-btn {
+    width: 100%;
   }
 }
 
