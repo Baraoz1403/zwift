@@ -552,28 +552,32 @@ a:hover {
   color: #7e22ce;
 }
 
-/* Connections panel icon badges - each service's own real brand color
-   (Zwift orange, TrainingPeaks red, Strava orange, Garmin blue), defined
-   once here and referenced by class name from connections-panel.tsx - the
-   documented exception to "never hard-code a color in a component" above,
-   same pattern as the c-* badges. Keeping the actual hex values here (not
-   inline in the .tsx) is also what keeps check.bat's hardcoded-color guard
-   from flagging real, intentional brand colors as a mistake. */
+/* Connections panel icon badges - solid, full-strength brand color per
+   service (not a tint), with a white icon on top for max contrast/instant
+   recognition - Zwift's real orange, TrainingPeaks' real blue (verified
+   directly from their own site's theme-color meta tag, #005695 - not the
+   pink/red often mis-cited for their logo), and a distinct dark charcoal
+   for Garmin so it doesn't read as "another blue" next to TrainingPeaks.
+   Defined once here and referenced by class name from connections-panel.tsx
+   - the documented exception to "never hard-code a color in a component"
+   above, same pattern as the c-* badges. Keeping the actual hex values here
+   (not inline in the .tsx) is also what keeps check.bat's hardcoded-color
+   guard from flagging real, intentional brand colors as a mistake. */
 .brand-icon.zwift {
-  background: linear-gradient(135deg, rgba(255, 102, 0, 0.25), rgba(255, 102, 0, 0.08));
-  color: #ff6600;
+  background: #ff6600;
+  color: #ffffff;
 }
 .brand-icon.trainingpeaks {
-  background: linear-gradient(135deg, rgba(232, 38, 76, 0.25), rgba(232, 38, 76, 0.08));
-  color: #e8264c;
+  background: #005695;
+  color: #ffffff;
 }
 .brand-icon.strava {
-  background: linear-gradient(135deg, rgba(252, 76, 2, 0.25), rgba(252, 76, 2, 0.08));
-  color: #fc4c02;
+  background: #fc4c02;
+  color: #ffffff;
 }
 .brand-icon.garmin {
-  background: linear-gradient(135deg, rgba(0, 124, 195, 0.25), rgba(0, 124, 195, 0.08));
-  color: #007cc3;
+  background: #22262b;
+  color: #ffffff;
 }
 
 /* Small icon badge for the header stat cards (Name/FTP/VO2max/Weight/Level

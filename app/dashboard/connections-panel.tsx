@@ -15,7 +15,13 @@
  */
 
 import { useEffect, useState } from "react";
-import { IconBolt, IconMountain } from "./icons";
+import { IconBolt, IconMountain, IconClock } from "./icons";
+
+/** Strava is currently out of scope for the push pipeline (it's a read-only,
+ *  post-hoc activity log, not part of plan delivery) - hidden from this
+ *  panel for now without removing the underlying integration/code, so it's
+ *  a one-line flip to bring back if that changes. */
+const SHOW_STRAVA = false;
 
 interface HealthData {
   zwift:  { connected: boolean; athleteId?: string | null };
@@ -204,30 +210,32 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           }
         />
 
-        {/* Strava */}
-        <ServiceCard
-          icon={<span style={{ fontSize: 17, lineHeight: 1 }}>🟠</span>}
-          brand="strava"
-          name="Strava"
-          status={stravaStatus}
-          line1={
-            stravaStatus === "loading"   ? "Checking…" :
-            !health?.strava.configured   ? "Setup required — see instructions below" :
-            stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""}` :
-            "Configured — click to connect"
-          }
-          action={
-            health?.strava.configured && stravaStatus !== "ok"
-              ? { label: "Connect", onClick: onConnectStrava }
-              : !health?.strava.configured
-              ? { label: "Setup ↗", href: "https://www.strava.com/settings/api" }
-              : undefined
-          }
-        />
+        {/* Strava — hidden for now, see SHOW_STRAVA above */}
+        {SHOW_STRAVA && (
+          <ServiceCard
+            icon={<span style={{ fontSize: 17, lineHeight: 1 }}>🟠</span>}
+            brand="strava"
+            name="Strava"
+            status={stravaStatus}
+            line1={
+              stravaStatus === "loading"   ? "Checking…" :
+              !health?.strava.configured   ? "Setup required — see instructions below" :
+              stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""}` :
+              "Configured — click to connect"
+            }
+            action={
+              health?.strava.configured && stravaStatus !== "ok"
+                ? { label: "Connect", onClick: onConnectStrava }
+                : !health?.strava.configured
+                ? { label: "Setup ↗", href: "https://www.strava.com/settings/api" }
+                : undefined
+            }
+          />
+        )}
 
         {/* Garmin */}
         <ServiceCard
-          icon={<span style={{ fontSize: 17, lineHeight: 1 }}>⌚</span>}
+          icon={<IconClock size={17} />}
           brand="garmin"
           name="Garmin"
           status={garminStatus}
@@ -241,8 +249,8 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         />
       </div>
 
-      {/* Strava setup instructions when not configured */}
-      {health && !health.strava.configured && (
+      {/* Strava setup instructions when not configured — hidden with the card above */}
+      {SHOW_STRAVA && health && !health.strava.configured && (
         <div className="stat-card" style={{
           marginTop: 14, padding: "16px 18px",
         }}>
