@@ -867,7 +867,7 @@ export default function WeeklyPlan() {
               </div>
               {/* Right-click instructions */}
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10, lineHeight: 1.6 }}>
-                <strong>Right-click</strong> the blue button below → choose <strong>&ldquo;Add bookmark&rdquo;</strong> → save it as &ldquo;Zwift TP&rdquo;
+                <strong>Drag</strong> the button below to your bookmarks bar
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <a
@@ -888,12 +888,13 @@ export default function WeeklyPlan() {
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                   Zwift AI → TP
                 </a>
-                <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
-                  (you can also drag it to your bookmarks bar)
+                <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.6 }}>
+                  ← drag this up to your bookmarks bar
                 </div>
               </div>
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8, opacity: 0.7 }}>
-                💡 Bookmarks bar not visible? Press <strong>Ctrl+Shift+B</strong> to show it
+                💡 Bookmarks bar not visible? Press <strong>Ctrl+Shift+B</strong> to show it first.
+                On Firefox/Safari: right-click → &ldquo;Bookmark Link&rdquo;
               </div>
             </div>
 

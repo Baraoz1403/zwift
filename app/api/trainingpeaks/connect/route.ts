@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchTPProfile } from "@/lib/trainingpeaks";
+import { kvSet, kvDel } from "@/lib/kv";
 
 // Allow the TrainingPeaks bookmarklet (running on app.trainingpeaks.com) to POST
 // credentials directly to this endpoint. The bookmarklet exchanges the TP session
@@ -92,6 +93,14 @@ export async function POST(req: NextRequest) {
     cookieStore.set("zwift_tp_expires", String(expiresAt), { ...cookieOpts, httpOnly: false });
   }
 
+  // Mirror to KV so other devices auto-restore on login
+  if (session.athleteId) {
+    await kvSet(`zwift:${session.athleteId}:tp_token`, tpToken.trim());
+    await kvSet(`zwift:${session.athleteId}:tp_id`, tpAthleteId);
+    if (refreshToken) await kvSet(`zwift:${session.athleteId}:tp_refresh`, refreshToken);
+    if (expiresIn) await kvSet(`zwift:${session.athleteId}:tp_expires_in`, String(expiresIn));
+  }
+
   const response = NextResponse.json({ ok: true, athleteName, tpAthleteId });
   Object.entries(corsHeaders()).forEach(([k, v]) => response.headers.set(k, v));
   return response;
@@ -111,6 +120,20 @@ export async function DELETE() {
   // Remove TP cookies
   cookieStore.delete("zwift_tp_token");
   cookieStore.delete("zwift_tp_id");
+  cookieStore.delete("zwift_tp_refresh");
+  cookieStore.delete("zwift_tp_expires");
+
+  // Remove from KV too
+  const session = await decryptSession(raw);
+  if (session?.athleteId) {
+    await kvDel(
+      `zwift:${session.athleteId}:tp_token`,
+      `zwift:${session.athleteId}:tp_refresh`,
+      `zwift:${session.athleteId}:tp_id`,
+      `zwift:${session.athleteId}:tp_expires_in`,
+    );
+  }
+
   const response = NextResponse.json({ ok: true });
   Object.entries(corsHeaders()).forEach(([k, v]) => response.headers.set(k, v));
   return response;

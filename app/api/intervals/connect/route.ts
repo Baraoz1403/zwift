@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchIntervalsAthlete } from "@/lib/intervals";
+import { kvSet, kvDel } from "@/lib/kv";
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -54,6 +55,13 @@ export async function POST(req: NextRequest) {
   cookieStore.set("zwift_intervals_id", athleteId, cookieOpts);
   cookieStore.set("zwift_intervals_name", athleteName, { ...cookieOpts, httpOnly: false });
 
+  // Mirror to KV so other devices auto-restore on login
+  if (session.athleteId) {
+    await kvSet(`zwift:${session.athleteId}:icu_key`, apiKey.trim());
+    await kvSet(`zwift:${session.athleteId}:icu_id`, athleteId);
+    await kvSet(`zwift:${session.athleteId}:icu_name`, athleteName);
+  }
+
   return NextResponse.json({ ok: true, athleteName, athleteId });
 }
 
@@ -69,5 +77,16 @@ export async function DELETE() {
   cookieStore.delete("zwift_intervals_key");
   cookieStore.delete("zwift_intervals_id");
   cookieStore.delete("zwift_intervals_name");
+
+  // Remove from KV too
+  const session = await decryptSession(raw);
+  if (session?.athleteId) {
+    await kvDel(
+      `zwift:${session.athleteId}:icu_key`,
+      `zwift:${session.athleteId}:icu_id`,
+      `zwift:${session.athleteId}:icu_name`,
+    );
+  }
+
   return NextResponse.json({ ok: true });
 }

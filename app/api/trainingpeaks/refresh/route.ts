@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { refreshTPToken } from "@/lib/trainingpeaks";
+import { kvSet } from "@/lib/kv";
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -75,6 +76,14 @@ export async function POST() {
   // Reset expiry — use TP's expires_in if provided, else assume 1 hour
   const newExpiresAt = Date.now() + (result.expiresIn ?? 3600) * 1000;
   cookieStore.set("zwift_tp_expires", String(newExpiresAt), { ...cookieOpts, httpOnly: false });
+
+  // Keep KV in sync so other devices get the fresh token on next login
+  if (session.athleteId) {
+    await kvSet(`zwift:${session.athleteId}:tp_token`, result.accessToken);
+    if (result.refreshToken) {
+      await kvSet(`zwift:${session.athleteId}:tp_refresh`, result.refreshToken);
+    }
+  }
 
   return NextResponse.json({ ok: true, renewed: true });
 }
