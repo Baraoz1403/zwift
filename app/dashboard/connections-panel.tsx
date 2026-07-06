@@ -139,6 +139,16 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
 
   useEffect(() => { refresh(); }, []);
 
+  async function handleDisconnectIntervals() {
+    try {
+      await fetch("/api/intervals/connect", { method: "DELETE" });
+    } catch { /* ignore */ }
+    setShowIntervalsModal(true);
+    setIntervalsKeyInput("");
+    setIntervalsError(null);
+    await refresh();
+  }
+
   async function handleConnectIntervals() {
     if (!intervalsKeyInput.trim()) return;
     setIntervalsConnecting(true);
@@ -301,7 +311,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           action={
             intervalsStatus !== "ok"
               ? { label: "Connect", onClick: () => setShowIntervalsModal(true) }
-              : undefined
+              : { label: "Change key", onClick: handleDisconnectIntervals, variant: "ghost" }
           }
         />
       </div>
