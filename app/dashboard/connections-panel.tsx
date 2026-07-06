@@ -3,33 +3,60 @@
 /**
  * ConnectionsPanel
  *
- * Shows live status for every integration:
- *   Zwift · TrainingPeaks · Intervals.icu
- *
- * Fetches /api/health once on mount and exposes a manual "Re-check" button.
- * Each icon badge uses that service's own real brand color (so the row is
- * instantly recognizable at a glance, the same way it would be on their own
- * sites) - live status is a small corner dot instead, so brand identity and
- * connection health are two separate, simple signals rather than one
- * overloaded color.
+ * One unified card: service rows (TP + ICU) + virtual platform selector.
+ * Platform toggles use the same selection-card pattern as the training profile.
  */
 
 import { useEffect, useState } from "react";
 import { IconMountain, IconTrend } from "./icons";
 
+// ── Virtual platforms ─────────────────────────────────────────────────────────
+
 type VirtualPlatform = "zwift" | "rouvy" | "mywhoosh";
-const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; emoji: string }[] = [
-  { id: "zwift",    label: "Zwift",    emoji: "⚡" },
-  { id: "rouvy",   label: "Rouvy",    emoji: "🎥" },
-  { id: "mywhoosh",label: "MyWhoosh", emoji: "🌐" },
+
+const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; icon: React.ReactNode }[] = [
+  {
+    id: "zwift",
+    label: "Zwift",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M14 2L4 14h9l-3 8 10-12h-9l3-8z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    id: "rouvy",
+    label: "Rouvy",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M10 8.5l5.5 3.5-5.5 3.5V8.5z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    id: "mywhoosh",
+    label: "MyWhoosh",
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M3 10l4 5.5 5-6.5 5 6.5 4-5.5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
 ];
+
 const VIRTUAL_PLATFORMS_KEY = "zwiftVirtualPlatforms";
 
-/** Strava is currently out of scope for the push pipeline (it's a read-only,
- *  post-hoc activity log, not part of plan delivery) - hidden from this
- *  panel for now without removing the underlying integration/code, so it's
- *  a one-line flip to bring back if that changes. */
+// ── Strava is hidden — read-only activity log, not part of plan delivery ──────
 const SHOW_STRAVA = false;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface HealthData {
   zwift:     { connected: boolean; athleteId?: string | null };
@@ -41,52 +68,60 @@ interface HealthData {
 
 type Status = "ok" | "warn" | "error" | "loading";
 
-const STATUS_DOT_COLOR: Record<Status, string> = {
-  ok: "#22c55e",
-  warn: "#f0ad00",
-  error: "#e4483a",
+const STATUS_DOT: Record<Status, string> = {
+  ok:      "#22c55e",
+  warn:    "#f0ad00",
+  error:   "#e4483a",
   loading: "#b7bcc2",
 };
 
-/** Each service's own real brand color - defined once in globals.css
- *  (.brand-icon.<name>) and referenced here by class name, the same
- *  documented exception to "never hard-code a color" that the c-* icon
- *  badges use. */
 type BrandName = "zwift" | "trainingpeaks" | "strava" | "intervals";
 
-interface ServiceCardProps {
-  icon: React.ReactNode;
-  brand: BrandName;
-  name: string;
-  status: Status;
-  line1: string;
-  action?: { label: string; onClick: () => void; href?: never } | { label: string; href: string; onClick?: never };
+// ── ServiceRow ────────────────────────────────────────────────────────────────
+
+interface ServiceRowProps {
+  icon:        React.ReactNode;
+  brand:       BrandName;
+  name:        string;
+  status:      Status;
+  description: string;
+  action?: { label: string; onClick: () => void; href?: never }
+         | { label: string; href: string; onClick?: never };
 }
 
-function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardProps) {
+function ServiceRow({ icon, brand, name, status, description, action }: ServiceRowProps) {
+  const btnStyle: React.CSSProperties = {
+    width: "auto", flexShrink: 0, padding: "7px 16px",
+    fontSize: 12, boxShadow: "none", minWidth: 90,
+  };
   return (
-    <div className="stat-card" style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Brand icon + live status dot */}
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <div className={`brand-icon ${brand}`} style={{
-          width: 40, height: 40, borderRadius: 10, fontSize: 17,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+        <div
+          className={`brand-icon ${brand}`}
+          style={{
+            width: 40, height: 40, borderRadius: 10, fontSize: 17,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
           {icon}
         </div>
-        {/* Live status - a small corner dot, separate from the brand color above */}
         <span style={{
           position: "absolute", bottom: -2, right: -2,
-          width: 11, height: 11, borderRadius: "50%",
-          background: STATUS_DOT_COLOR[status],
-          border: "2px solid var(--panel)",
+          width: 10, height: 10, borderRadius: "50%",
+          background: STATUS_DOT[status],
+          border: "2px solid var(--panel, #fff)",
         }} />
       </div>
 
+      {/* Name + description */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)" }}>{name}</div>
-        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.45 }}>{line1}</div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, lineHeight: 1.4 }}>{description}</div>
       </div>
 
+      {/* Action button */}
       {action && (
         action.href ? (
           <a
@@ -94,17 +129,12 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
             target="_blank"
             rel="noopener noreferrer"
             className="btn"
-            style={{ width: "auto", flexShrink: 0, padding: "7px 14px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 88 }}
+            style={{ ...btnStyle, textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
           >
             {action.label}
           </a>
         ) : (
-          <button
-            type="button"
-            onClick={action.onClick}
-            className="btn"
-            style={{ width: "auto", flexShrink: 0, padding: "7px 14px", fontSize: 12, boxShadow: "none", minWidth: 88 }}
-          >
+          <button type="button" onClick={action.onClick} className="btn" style={btnStyle}>
             {action.label}
           </button>
         )
@@ -113,35 +143,109 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
   );
 }
 
+// ── PlatformCard ──────────────────────────────────────────────────────────────
+
+function PlatformCard({
+  id, label, icon, active, onToggle,
+}: { id: VirtualPlatform; label: string; icon: React.ReactNode; active: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        padding: "18px 10px 15px",
+        borderRadius: 12,
+        border: active ? "2px solid var(--accent)" : "1.5px solid var(--border, #d8dce0)",
+        background: active
+          ? "color-mix(in srgb, var(--accent) 6%, var(--panel, #fff))"
+          : "transparent",
+        cursor: "pointer",
+        fontFamily: "inherit",
+        transition: "border-color 0.15s, background 0.15s",
+        outline: "none",
+        minWidth: 0,
+      }}
+    >
+      {/* Checkmark badge — matches the training-profile card pattern */}
+      {active && (
+        <div style={{
+          position: "absolute", top: -1, right: -1,
+          width: 22, height: 22,
+          borderRadius: "0 12px 0 12px",
+          background: "var(--accent)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+            <path
+              d="M1.5 4.5L4 7 9.5 1.5"
+              stroke="white"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      )}
+
+      {/* Icon bubble */}
+      <div style={{
+        width: 42, height: 42,
+        borderRadius: 10,
+        background: active
+          ? "color-mix(in srgb, var(--accent) 12%, var(--panel, #fff))"
+          : "var(--bg, #f4f6f8)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: active ? "var(--accent)" : "var(--muted)",
+        transition: "background 0.15s, color 0.15s",
+      }}>
+        {icon}
+      </div>
+
+      {/* Label */}
+      <div style={{
+        fontSize: 12.5, fontWeight: 700,
+        color: active ? "var(--accent)" : "var(--text)",
+        lineHeight: 1.2, textAlign: "center",
+        transition: "color 0.15s",
+      }}>
+        {label}
+      </div>
+    </button>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 interface ConnectionsPanelProps {
-  /** Called when user clicks "Connect TrainingPeaks" — opens the TP modal */
-  onOpenTPModal: () => void;
-  /** Called when user clicks "Connect Strava" — triggers Strava OAuth */
+  onOpenTPModal:   () => void;
   onConnectStrava: () => void;
 }
 
 export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: ConnectionsPanelProps) {
-  const [health, setHealth] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [health,      setHealth]      = useState<HealthData | null>(null);
+  const [loading,     setLoading]     = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
-  // Intervals.icu connect modal - much simpler than TP's bookmarklet flow:
-  // it's a personal API key the rider generates once at intervals.icu/settings
-  // and pastes in, no cross-origin dance or expiring tokens involved.
-  const [showIntervalsModal, setShowIntervalsModal] = useState(false);
-  const [intervalsKeyInput, setIntervalsKeyInput] = useState("");
+  const [showIntervalsModal,  setShowIntervalsModal]  = useState(false);
+  const [intervalsKeyInput,   setIntervalsKeyInput]   = useState("");
   const [intervalsConnecting, setIntervalsConnecting] = useState(false);
-  const [intervalsError, setIntervalsError] = useState<string | null>(null);
+  const [intervalsError,      setIntervalsError]      = useState<string | null>(null);
 
-  // Virtual platforms selector — which platforms the rider has connected in ICU
-  // (ICU handles delivery; this is just a UI signal, no extra API calls needed)
   const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>([]);
   useEffect(() => {
     try {
       const stored = localStorage.getItem(VIRTUAL_PLATFORMS_KEY);
       if (stored) setVirtualPlatforms(JSON.parse(stored) as VirtualPlatform[]);
-      else setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]); // default: all selected
-    } catch { setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]); }
+      else        setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]);
+    } catch {
+      setVirtualPlatforms(["zwift", "rouvy", "mywhoosh"]);
+    }
   }, []);
 
   function togglePlatform(id: VirtualPlatform) {
@@ -167,9 +271,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   useEffect(() => { refresh(); }, []);
 
   async function handleDisconnectIntervals() {
-    try {
-      await fetch("/api/intervals/connect", { method: "DELETE" });
-    } catch { /* ignore */ }
+    try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch { /* ignore */ }
     setShowIntervalsModal(true);
     setIntervalsKeyInput("");
     setIntervalsError(null);
@@ -201,60 +303,70 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
     }
   }
 
-  // ── Derive service statuses ───────────────────────────────────────────────
+  // ── Status derivation ─────────────────────────────────────────────────────
 
   const tpStatus: Status = !health ? "loading" :
     health.tp.tokenExpired ? "warn" :
-    health.tp.connected     ? "ok"  : "error";
-
-  const stravaStatus: Status = !health ? "loading" :
-    !health.strava.configured ? "error" :
-    health.strava.connected   ? "ok"   : "warn";
+    health.tp.connected    ? "ok"   : "error";
 
   const intervalsStatus: Status = !health ? "loading" :
     health.intervals.connected ? "ok" : "error";
 
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div className="section-title" style={{ margin: 0 }}>
-          Connections
-        </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={loading}
-          className="btn-secondary"
-          style={{
-            width: "auto", padding: "5px 12px", fontSize: 11, fontWeight: 600,
-            cursor: loading ? "wait" : "pointer", opacity: loading ? 0.5 : 1,
-            display: "flex", alignItems: "center", gap: 5,
-          }}
-        >
-          {loading ? "Checking…" : "↻ Re-check"}
-        </button>
-      </div>
-      {lastChecked && (
-        <div style={{ fontSize: 10.5, color: "var(--muted)", opacity: 0.55, marginTop: -10, marginBottom: 14 }}>
-          Checked {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-        </div>
-      )}
+  // Strava kept for when SHOW_STRAVA is re-enabled
+  const stravaStatus: Status = !health ? "loading" :
+    !health.strava.configured ? "error" :
+    health.strava.connected   ? "ok"   : "warn";
+  void stravaStatus; void onConnectStrava; // suppress unused-var warnings while hidden
 
-      {/* Service cards — 2-column equal-width grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <>
+      {/* ── Unified connections card ──────────────────────────────────────── */}
+      <div className="stat-card" style={{ padding: "20px 22px" }}>
+
+        {/* Header */}
+        <div style={{
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between", marginBottom: 18,
+        }}>
+          <div className="section-title" style={{ margin: 0 }}>Connections</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {lastChecked && (
+              <span style={{ fontSize: 10.5, color: "var(--muted)", opacity: 0.5 }}>
+                Checked{" "}
+                {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={loading}
+              className="btn-secondary"
+              style={{
+                width: "auto", padding: "5px 12px", fontSize: 11, fontWeight: 600,
+                cursor: loading ? "wait" : "pointer", opacity: loading ? 0.5 : 1,
+                display: "flex", alignItems: "center", gap: 5,
+              }}
+            >
+              {loading ? "Checking…" : "↻ Re-check"}
+            </button>
+          </div>
+        </div>
 
         {/* TrainingPeaks */}
-        <ServiceCard
+        <ServiceRow
           icon={<IconMountain size={17} />}
           brand="trainingpeaks"
           name="TrainingPeaks"
           status={tpStatus}
-          line1={
+          description={
             tpStatus === "loading" ? "Checking…" :
             tpStatus === "ok"      ? "Connected · outdoor / Garmin sync" :
             tpStatus === "warn" && health?.tp.hasRefreshToken
               ? "Token expired — trying to auto-refresh…" :
-            tpStatus === "warn"    ? "Token expired — please reconnect (takes a minute)" :
+            tpStatus === "warn"
+              ? "Token expired — please reconnect (takes a minute)" :
             "Not connected — click to connect via the bookmarklet"
           }
           action={
@@ -264,113 +376,86 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           }
         />
 
-        {/* Strava — hidden for now, see SHOW_STRAVA above */}
-        {SHOW_STRAVA && (
-          <ServiceCard
-            icon={<span style={{ fontSize: 17, lineHeight: 1 }}>🟠</span>}
-            brand="strava"
-            name="Strava"
-            status={stravaStatus}
-            line1={
-              stravaStatus === "loading"   ? "Checking…" :
-              !health?.strava.configured   ? "Setup required — see instructions below" :
-              stravaStatus === "ok"        ? `Connected${health?.strava.athleteName ? ` · ${health.strava.athleteName}` : ""}` :
-              "Configured — click to connect"
-            }
-            action={
-              health?.strava.configured && stravaStatus !== "ok"
-                ? { label: "Connect", onClick: onConnectStrava }
-                : !health?.strava.configured
-                ? { label: "Setup ↗", href: "https://www.strava.com/settings/api" }
-                : undefined
-            }
-          />
-        )}
+        <div style={{ borderTop: "1px solid var(--border, #e8eaed)", margin: "16px 0" }} />
 
-
-        {/* Intervals.icu — free, self-service alternative/backup to TrainingPeaks.
-            No approval process, no bookmarklet: a personal API key generated
-            once at intervals.icu/settings works immediately. */}
-        <ServiceCard
+        {/* Intervals.icu */}
+        <ServiceRow
           icon={<IconTrend size={17} />}
           brand="intervals"
           name="Intervals.icu"
           status={intervalsStatus}
-          line1={
+          description={
             intervalsStatus === "loading" ? "Checking…" :
-            intervalsStatus === "ok"      ? `Connected${health?.intervals.athleteName ? ` · ${health.intervals.athleteName}` : ""} · virtual platform hub` :
-            "Not connected — free, no approval needed"
+            intervalsStatus === "ok"
+              ? `Connected${health?.intervals.athleteName ? ` · ${health.intervals.athleteName}` : ""} · virtual platform hub`
+              : "Not connected — free, no approval needed"
           }
           action={
             intervalsStatus !== "ok"
-              ? { label: "Connect", onClick: () => setShowIntervalsModal(true) }
-              : { label: "Change key", onClick: handleDisconnectIntervals, variant: "ghost" }
+              ? { label: "Connect",    onClick: () => setShowIntervalsModal(true) }
+              : { label: "Change key", onClick: handleDisconnectIntervals }
           }
         />
+
+        {/* ── Virtual platforms selector ──────────────────────────────────── */}
+        {intervalsStatus === "ok" && (
+          <>
+            <div style={{
+              borderTop: "1px solid var(--border, #e8eaed)",
+              margin: "20px 0 18px",
+            }} />
+
+            {/* Sub-section eyebrow */}
+            <div style={{
+              fontSize: 10.5, fontWeight: 700, color: "var(--muted)",
+              letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 6,
+            }}>
+              Virtual platforms via Intervals.icu
+            </div>
+            <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.55, marginBottom: 14 }}>
+              Select the platforms you&apos;ve connected in your Intervals.icu account.
+              Workouts pushed to ICU sync to all selected platforms automatically.
+            </div>
+
+            {/* 3-column card grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+              {VIRTUAL_PLATFORMS.map(({ id, label, icon }) => (
+                <PlatformCard
+                  key={id}
+                  id={id}
+                  label={label}
+                  icon={icon}
+                  active={virtualPlatforms.includes(id)}
+                  onToggle={() => togglePlatform(id)}
+                />
+              ))}
+            </div>
+
+            {virtualPlatforms.length === 0 && (
+              <div style={{ marginTop: 10, fontSize: 11, color: "#e4483a", lineHeight: 1.5 }}>
+                No platforms selected — workouts will push to ICU only.
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* Virtual platforms selector — shown only when ICU is connected */}
-      {intervalsStatus === "ok" && (
-        <div className="stat-card" style={{ marginTop: 12, padding: "16px 18px" }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)", marginBottom: 4 }}>
-            Virtual platforms via Intervals.icu
-          </div>
-          <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
-            Select which virtual platforms you&apos;ve connected in your Intervals.icu account.
-            Workouts pushed to ICU will sync to all selected platforms automatically.
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {VIRTUAL_PLATFORMS.map(({ id, label, emoji }) => {
-              const active = virtualPlatforms.includes(id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => togglePlatform(id)}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                    cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-                    border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border, #d8dce0)",
-                    background: active ? "var(--accent)" : "transparent",
-                    color: active ? "#fff" : "var(--muted)",
-                  }}
-                >
-                  <span style={{ fontSize: 14 }}>{emoji}</span>
-                  {label}
-                  {active && <span style={{ fontSize: 10, opacity: 0.85 }}>✓</span>}
-                </button>
-              );
-            })}
-          </div>
-          {virtualPlatforms.length === 0 && (
-            <div style={{ marginTop: 10, fontSize: 11, color: "#e4483a", lineHeight: 1.5 }}>
-              No platforms selected — workouts will be pushed to ICU only.
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Strava setup instructions when not configured — hidden with the card above */}
+      {/* Strava setup (re-enable SHOW_STRAVA to surface) */}
       {SHOW_STRAVA && health && !health.strava.configured && (
-        <div className="stat-card" style={{
-          marginTop: 14, padding: "16px 18px",
-        }}>
+        <div className="stat-card" style={{ marginTop: 14, padding: "16px 18px" }}>
           <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 8, color: "var(--text)" }}>
             Strava setup — 5 minutes, one time
           </div>
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, lineHeight: 1.85, color: "var(--muted)" }}>
             <li>Go to <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>strava.com/settings/api</a> and create an application</li>
-            <li>In the &ldquo;Authorization Callback Domain&rdquo; field, enter: <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>zwift-delta.vercel.app</code></li>
-            <li>Copy the Client ID and Client Secret</li>
-            <li>Go to <a href="https://vercel.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>Vercel → Project → Settings → Environment Variables</a></li>
-            <li>Add: <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_ID</code> and <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_SECRET</code></li>
-            <li>Redeploy on Vercel — then come back and click &ldquo;Connect&rdquo;</li>
+            <li>Set the Authorization Callback Domain to <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>zwift-delta.vercel.app</code></li>
+            <li>Copy the Client ID and Client Secret into Vercel env vars: <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_ID</code> and <code style={{ background: "rgba(20,23,26,0.06)", padding: "1px 5px", borderRadius: 4 }}>STRAVA_CLIENT_SECRET</code></li>
+            <li>Redeploy on Vercel — then click &ldquo;Connect&rdquo;</li>
           </ol>
         </div>
       )}
 
-      {/* Intervals.icu connect modal — one text field, no bookmarklet needed */}
+      {/* ── Intervals.icu connect modal ──────────────────────────────────── */}
       {showIntervalsModal && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
@@ -427,6 +512,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
