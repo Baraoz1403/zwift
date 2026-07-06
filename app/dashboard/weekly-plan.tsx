@@ -1206,7 +1206,7 @@ export default function WeeklyPlan() {
       </div>{/* end 3-col grid */}
 
       {/* ── Connections panel — always visible ──────────────────────────── */}
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 36, marginBottom: 24 }}>
         <ConnectionsPanel
           onOpenTPModal={() => setShowTPModal(true)}
           onConnectStrava={() => { window.location.href = "/api/strava/oauth-start"; }}

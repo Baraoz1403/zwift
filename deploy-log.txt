@@ -5343,3 +5343,35 @@ Tue 07/07/2026  1:52:51.03
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+[main b9d4afa] Auto deploy Tue 07/07/2026  1:52:51.73
+ 2 files changed, 168 insertions(+), 79 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   e57df14..b9d4afa  main -> main
+Tue 07/07/2026  1:52:53.82 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/07/2026  1:55:45.90 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

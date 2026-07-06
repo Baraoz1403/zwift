@@ -124,83 +124,64 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
   const isOk = status === "ok";
   const hasPrimaryBtn = action && action.primary !== false;
 
+  const btnStyle: React.CSSProperties = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    padding: "7px 13px", borderRadius: 5,
+    fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+    border: hasPrimaryBtn ? "1.5px solid #dc2626" : "1.5px solid var(--border)",
+    background: hasPrimaryBtn ? "#dc2626" : "transparent",
+    color: hasPrimaryBtn ? "#fff" : "var(--muted)",
+  };
+
   return (
     <div style={{
-      display: "flex", flexDirection: "column",
-      borderRadius: 14,
+      display: "flex", alignItems: "center", gap: 12,
+      padding: "15px 16px",
+      borderRadius: 12,
       border: "1px solid var(--border)",
-      borderTop: `3px solid ${bc.stripe}`,
       background: isOk ? bc.tint : "var(--panel, #fff)",
-      overflow: "hidden",
     }}>
 
-      {/* Platform icon + name + status badge */}
-      <div style={{ padding: "16px 16px 12px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-        <div
-          className={`brand-icon ${brand}`}
-          style={{
-            width: 50, height: 50, borderRadius: 13, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 3px 10px ${bc.stripe}33`,
-          }}
-        >
-          {icon}
-        </div>
-        <div style={{ flex: 1, minWidth: 0, paddingTop: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 7 }}>
-            {name}
-          </div>
-          <StatusDot status={status} />
-        </div>
+      {/* Brand icon */}
+      <div
+        className={`brand-icon ${brand}`}
+        style={{
+          width: 46, height: 46, borderRadius: 11, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: `0 3px 10px ${bc.stripe}2a`,
+        }}
+      >
+        {icon}
       </div>
 
-      {/* Description — athlete name or context info */}
-      <div style={{ padding: `0 16px ${action ? 4 : 16}px`, flex: 1 }}>
+      {/* Name + status + description */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)", marginBottom: 5 }}>
+          {name}
+        </div>
+        <StatusDot status={status} />
         <div style={{
-          fontSize: isOk ? 13 : 12,
+          fontSize: isOk ? 12.5 : 11.5,
           fontWeight: isOk ? 600 : 400,
           color: isOk ? "var(--text)" : "var(--muted)",
-          lineHeight: 1.5,
+          lineHeight: 1.4, marginTop: 4,
         }}>
           {description}
         </div>
       </div>
 
-      {/* Action button */}
+      {/* Action button — right side */}
       {action && (
-        <div style={{ padding: "12px 16px 16px" }}>
+        <div style={{ flexShrink: 0 }}>
           {action.href ? (
-            <a
-              href={action.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="header-card-btn"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: "100%", padding: "9px 16px", borderRadius: 8,
-                fontSize: 12.5, fontWeight: 600,
-                border: hasPrimaryBtn ? "1.5px solid #ea580c" : "1.5px solid var(--border)",
-                background: hasPrimaryBtn ? "#ea580c" : "transparent",
-                color: hasPrimaryBtn ? "#fff" : "var(--muted)",
-                textDecoration: "none",
-              }}
+            <a href={action.href} target="_blank" rel="noopener noreferrer"
+              style={{ ...btnStyle, textDecoration: "none" }}
             >
               {action.label}
             </a>
           ) : (
-            <button
-              type="button"
-              onClick={action.onClick}
-              className="header-card-btn"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: "100%", padding: "9px 16px", borderRadius: 8,
-                fontSize: 12.5, fontWeight: 600,
-                border: hasPrimaryBtn ? "1.5px solid #ea580c" : "1.5px solid var(--border)",
-                background: hasPrimaryBtn ? "#ea580c" : "transparent",
-                color: hasPrimaryBtn ? "#fff" : "var(--muted)",
-                cursor: "pointer", fontFamily: "inherit",
-              }}
+            <button type="button" onClick={action.onClick}
+              style={{ ...btnStyle, cursor: "pointer", fontFamily: "inherit" }}
             >
               {action.label}
             </button>
@@ -222,7 +203,7 @@ function PlatformChip({
       onClick={onToggle}
       style={{
         display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: "9px 10px", borderRadius: 22,
+        padding: "9px 10px", borderRadius: 5,
         border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
         background: active
           ? "color-mix(in srgb, var(--accent) 8%, var(--panel, #fff))"
