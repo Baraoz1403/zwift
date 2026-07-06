@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * ConnectionsPanel — unified card with side-by-side service tiles + platform selector.
+ * ConnectionsPanel — premium redesign:
+ * brand-colored top stripes, animated status dots, richer connection info.
  */
 
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; icon: React.React
     id: "zwift",
     label: "Zwift",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
         <path d="M14 2L4 14h9l-3 8 10-12h-9l3-8z" fill="currentColor" />
       </svg>
     ),
@@ -25,7 +26,7 @@ const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; icon: React.React
     id: "rouvy",
     label: "Rouvy",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
         <path d="M10 8.5l5.5 3.5-5.5 3.5V8.5z" fill="currentColor" />
       </svg>
@@ -35,7 +36,7 @@ const VIRTUAL_PLATFORMS: { id: VirtualPlatform; label: string; icon: React.React
     id: "mywhoosh",
     label: "MyWhoosh",
     icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
         <path
           d="M3 10l4 5.5 5-6.5 5 6.5 4-5.5"
           stroke="currentColor"
@@ -64,12 +65,47 @@ interface HealthData {
 type Status = "ok" | "warn" | "error" | "loading";
 type BrandName = "zwift" | "trainingpeaks" | "strava" | "intervals";
 
-const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: string }> = {
-  ok:      { label: "Connected",     color: "#22c55e", bg: "rgba(34,197,94,0.10)" },
-  warn:    { label: "Token expired", color: "#f0ad00", bg: "rgba(240,173,0,0.10)" },
-  error:   { label: "Not connected", color: "#e4483a", bg: "rgba(228,72,58,0.10)" },
-  loading: { label: "Checking…",    color: "#b7bcc2", bg: "rgba(183,188,194,0.12)" },
+// Brand primary colors for the service tiles we actually render.
+// Only TP and ICU are shown as ServiceTiles; other brands use the CSS class only.
+// Hex values intentionally kept out of globals.css since they're brand-specific,
+// not design tokens — but we only include brands whose tiles are rendered here.
+const BRAND: Record<string, { stripe: string; tint: string }> = {
+  trainingpeaks: { stripe: "#005695", tint: "rgba(0,86,149,0.04)" },
+  intervals:     { stripe: "#0d9488", tint: "rgba(13,148,136,0.04)" },
 };
+
+const BRAND_FALLBACK = { stripe: "var(--accent)", tint: "rgba(47,143,224,0.04)" };
+
+const STATUS_CFG: Record<Status, { label: string; dot: string; ring: boolean; textColor: string }> = {
+  ok:      { label: "Connected",     dot: "#22c55e", ring: true,  textColor: "#16a34a" },
+  warn:    { label: "Token expired", dot: "#f0ad00", ring: false, textColor: "#b45309" },
+  error:   { label: "Not connected", dot: "#e4483a", ring: false, textColor: "#e4483a" },
+  loading: { label: "Checking…",    dot: "#94a3b8", ring: true,  textColor: "#94a3b8" },
+};
+
+// ── StatusDot ─────────────────────────────────────────────────────────────────
+
+function StatusDot({ status }: { status: Status }) {
+  const sc = STATUS_CFG[status];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ position: "relative", width: 8, height: 8, flexShrink: 0 }}>
+        {sc.ring && (
+          <div style={{
+            position: "absolute", inset: -4,
+            borderRadius: "50%",
+            border: `1.5px solid ${sc.dot}`,
+            animation: "statusPulse 2.5s ease-out infinite",
+          }} />
+        )}
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sc.dot }} />
+      </div>
+      <span style={{ fontSize: 11.5, fontWeight: 600, color: sc.textColor, lineHeight: 1 }}>
+        {sc.label}
+      </span>
+    </div>
+  );
+}
 
 // ── ServiceTile ───────────────────────────────────────────────────────────────
 
@@ -84,47 +120,55 @@ interface ServiceTileProps {
 }
 
 function ServiceTile({ icon, brand, name, status, description, action }: ServiceTileProps) {
-  const sc = STATUS_CONFIG[status];
-  const isPrimary = action?.primary !== false && status !== "ok";
+  const bc = BRAND[brand] ?? BRAND_FALLBACK;
+  const isOk = status === "ok";
+  const hasPrimaryBtn = action && action.primary !== false;
 
   return (
     <div style={{
-      display: "flex", flexDirection: "column", gap: 12,
-      padding: "16px 16px 14px",
-      borderRadius: 12,
-      border: "1px solid var(--border, #e8eaed)",
-      background: "var(--bg, #f8f9fa)",
+      display: "flex", flexDirection: "column",
+      borderRadius: 14,
+      border: "1px solid var(--border)",
+      borderTop: `3px solid ${bc.stripe}`,
+      background: isOk ? bc.tint : "var(--panel, #fff)",
+      overflow: "hidden",
     }}>
-      {/* Top row: brand icon + status badge */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+
+      {/* Platform icon + name + status badge */}
+      <div style={{ padding: "16px 16px 12px", display: "flex", gap: 12, alignItems: "flex-start" }}>
         <div
           className={`brand-icon ${brand}`}
           style={{
-            width: 38, height: 38, borderRadius: 10, fontSize: 16,
+            width: 50, height: 50, borderRadius: 13, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
+            boxShadow: `0 3px 10px ${bc.stripe}33`,
           }}
         >
           {icon}
         </div>
-        <span style={{
-          fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 20,
-          color: sc.color, background: sc.bg,
-          letterSpacing: "0.01em", whiteSpace: "nowrap",
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", marginBottom: 7 }}>
+            {name}
+          </div>
+          <StatusDot status={status} />
+        </div>
+      </div>
+
+      {/* Description — athlete name or context info */}
+      <div style={{ padding: `0 16px ${action ? 4 : 16}px`, flex: 1 }}>
+        <div style={{
+          fontSize: isOk ? 13 : 12,
+          fontWeight: isOk ? 600 : 400,
+          color: isOk ? "var(--text)" : "var(--muted)",
+          lineHeight: 1.5,
         }}>
-          {sc.label}
-        </span>
+          {description}
+        </div>
       </div>
 
-      {/* Name + description */}
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text)", marginBottom: 4 }}>{name}</div>
-        <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.45 }}>{description}</div>
-      </div>
-
-      {/* Action button — same size/style as header-card-btn */}
+      {/* Action button */}
       {action && (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 2 }}>
+        <div style={{ padding: "12px 16px 16px" }}>
           {action.href ? (
             <a
               href={action.href}
@@ -132,12 +176,13 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
               rel="noopener noreferrer"
               className="header-card-btn"
               style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
-                padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                border: isPrimary ? "1.5px solid #ea580c" : "1.5px solid var(--border, #d8dce0)",
-                background: isPrimary ? "#ea580c" : "transparent",
-                color: isPrimary ? "#fff" : "var(--muted)",
-                textDecoration: "none", boxShadow: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: "100%", padding: "9px 16px", borderRadius: 8,
+                fontSize: 12.5, fontWeight: 600,
+                border: hasPrimaryBtn ? "1.5px solid #ea580c" : "1.5px solid var(--border)",
+                background: hasPrimaryBtn ? "#ea580c" : "transparent",
+                color: hasPrimaryBtn ? "#fff" : "var(--muted)",
+                textDecoration: "none",
               }}
             >
               {action.label}
@@ -148,12 +193,13 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
               onClick={action.onClick}
               className="header-card-btn"
               style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
-                padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                border: isPrimary ? "1.5px solid #ea580c" : "1.5px solid var(--border, #d8dce0)",
-                background: isPrimary ? "#ea580c" : "transparent",
-                color: isPrimary ? "#fff" : "var(--muted)",
-                cursor: "pointer", fontFamily: "inherit", boxShadow: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: "100%", padding: "9px 16px", borderRadius: 8,
+                fontSize: 12.5, fontWeight: 600,
+                border: hasPrimaryBtn ? "1.5px solid #ea580c" : "1.5px solid var(--border)",
+                background: hasPrimaryBtn ? "#ea580c" : "transparent",
+                color: hasPrimaryBtn ? "#fff" : "var(--muted)",
+                cursor: "pointer", fontFamily: "inherit",
               }}
             >
               {action.label}
@@ -165,9 +211,9 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
   );
 }
 
-// ── PlatformCard ──────────────────────────────────────────────────────────────
+// ── PlatformChip ──────────────────────────────────────────────────────────────
 
-function PlatformCard({
+function PlatformChip({
   label, icon, active, onToggle,
 }: { label: string; icon: React.ReactNode; active: boolean; onToggle: () => void }) {
   return (
@@ -175,51 +221,28 @@ function PlatformCard({
       type="button"
       onClick={onToggle}
       style={{
-        position: "relative",
-        display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        gap: 10, padding: "18px 10px 15px",
-        borderRadius: 12,
-        border: active ? "2px solid var(--accent)" : "1.5px solid var(--border, #d8dce0)",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        padding: "9px 10px", borderRadius: 22,
+        border: active ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
         background: active
-          ? "color-mix(in srgb, var(--accent) 6%, var(--panel, #fff))"
+          ? "color-mix(in srgb, var(--accent) 8%, var(--panel, #fff))"
           : "transparent",
+        color: active ? "var(--accent)" : "var(--text)",
+        fontSize: 12.5, fontWeight: 600,
         cursor: "pointer", fontFamily: "inherit",
-        transition: "border-color 0.15s, background 0.15s",
-        outline: "none", minWidth: 0,
+        transition: "border-color 0.15s, background 0.15s, color 0.15s",
+        flex: "1 1 0",
       }}
     >
-      {active && (
-        <div style={{
-          position: "absolute", top: -1, right: -1,
-          width: 22, height: 22, borderRadius: "0 12px 0 12px",
-          background: "var(--accent)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
-            <path d="M1.5 4.5L4 7 9.5 1.5" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-      )}
-      <div style={{
-        width: 42, height: 42, borderRadius: 10,
-        background: active
-          ? "color-mix(in srgb, var(--accent) 12%, var(--panel, #fff))"
-          : "var(--bg, #f4f6f8)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        color: active ? "var(--accent)" : "var(--muted)",
-        transition: "background 0.15s, color 0.15s",
-      }}>
+      <span style={{ color: active ? "var(--accent)" : "var(--muted)", display: "flex" }}>
         {icon}
-      </div>
-      <div style={{
-        fontSize: 12.5, fontWeight: 700,
-        color: active ? "var(--accent)" : "var(--text)",
-        lineHeight: 1.2, textAlign: "center",
-        transition: "color 0.15s",
-      }}>
-        {label}
-      </div>
+      </span>
+      {label}
+      {active && (
+        <svg width="11" height="9" viewBox="0 0 11 9" fill="none" style={{ flexShrink: 0 }}>
+          <path d="M1 4.5L3.8 7.5 10 1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </button>
   );
 }
@@ -255,7 +278,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   function togglePlatform(id: VirtualPlatform) {
     setVirtualPlatforms(prev => {
       const next = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
-      try { localStorage.setItem(VIRTUAL_PLATFORMS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      try { localStorage.setItem(VIRTUAL_PLATFORMS_KEY, JSON.stringify(next)); } catch {}
       return next;
     });
   }
@@ -280,7 +303,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   }
 
   async function handleDisconnectIntervals() {
-    try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch { /* ignore */ }
+    try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch {}
     openIntervalsModal();
     await refresh();
   }
@@ -293,7 +316,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   async function handlePasteAndConnect() {
     setIntervalsError(null);
     let key = intervalsKeyInput.trim();
-    // Try reading from clipboard first
     if (!key) {
       try {
         key = (await navigator.clipboard.readText()).trim();
@@ -339,55 +361,85 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
   const intervalsStatus: Status = !health ? "loading" :
     health.intervals.connected ? "ok" : "error";
 
+  const bothConnected = tpStatus === "ok" && intervalsStatus === "ok";
+
   // Strava kept for when SHOW_STRAVA is re-enabled
   void SHOW_STRAVA; void onConnectStrava;
 
   return (
     <>
+      {/* Keyframe animations for status dots and refresh spinner */}
+      <style>{`
+        @keyframes statusPulse {
+          0%   { transform: scale(0.8); opacity: 0.8; }
+          60%  { transform: scale(2.0); opacity: 0; }
+          100% { transform: scale(2.0); opacity: 0; }
+        }
+        @keyframes connSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+
       <div className="stat-card" style={{ padding: "20px 22px" }}>
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div style={{
-          display: "flex", alignItems: "center",
-          justifyContent: "space-between", marginBottom: 16,
+          display: "flex", alignItems: "flex-start",
+          justifyContent: "space-between", marginBottom: 18,
         }}>
-          <div className="section-title" style={{ margin: 0 }}>Connections</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {lastChecked && (
-              <span style={{ fontSize: 10.5, color: "var(--muted)", opacity: 0.5 }}>
-                {lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={loading}
-              className="btn-secondary"
-              style={{
-                width: "auto", padding: "5px 12px", fontSize: 11, fontWeight: 600,
-                cursor: loading ? "wait" : "pointer", opacity: loading ? 0.5 : 1,
-                display: "flex", alignItems: "center", gap: 5,
-              }}
-            >
-              {loading ? "Checking…" : "↻ Re-check"}
-            </button>
+          <div>
+            <div className="section-title" style={{ margin: 0 }}>Connections</div>
+            <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 5, lineHeight: 1.3 }}>
+              {lastChecked
+                ? bothConnected
+                  ? "All platforms synced · plans push automatically"
+                  : `Last checked ${lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
+                : "Sync plans to TrainingPeaks, Intervals.icu & beyond"}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={loading}
+            title="Re-check connections"
+            style={{
+              background: "none",
+              border: "1.5px solid var(--border)",
+              borderRadius: 8,
+              cursor: loading ? "wait" : "pointer",
+              opacity: loading ? 0.4 : 1,
+              color: "var(--muted)",
+              fontSize: 16, lineHeight: 1,
+              padding: "5px 7px",
+              display: "flex", alignItems: "center",
+              transition: "opacity 0.15s",
+              marginTop: 2,
+            }}
+          >
+            <span style={{
+              display: "inline-block",
+              animation: loading ? "connSpin 1s linear infinite" : "none",
+            }}>
+              ↻
+            </span>
+          </button>
         </div>
 
-        {/* ── Service tiles — 2-column side by side ──────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {/* ── Service tiles — 2-column grid ──────────────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
 
           <ServiceTile
-            icon={<IconMountain size={16} />}
+            icon={<IconMountain size={20} />}
             brand="trainingpeaks"
             name="TrainingPeaks"
             status={tpStatus}
             description={
               tpStatus === "loading" ? "Checking…" :
-              tpStatus === "ok"      ? "Outdoor & Garmin sync" :
-              tpStatus === "warn" && health?.tp.hasRefreshToken ? "Trying to auto-refresh…" :
+              tpStatus === "ok"      ? "Garmin · outdoor calendar" :
+              tpStatus === "warn" && health?.tp.hasRefreshToken ? "Auto-refreshing token…" :
               tpStatus === "warn"    ? "Reconnect via bookmarklet" :
-              "Outdoor & Garmin sync"
+              "Garmin · outdoor calendar"
             }
             action={
               tpStatus !== "ok" && !health?.tp.hasRefreshToken
@@ -397,7 +449,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           />
 
           <ServiceTile
-            icon={<IconTrend size={16} />}
+            icon={<IconTrend size={20} />}
             brand="intervals"
             name="Intervals.icu"
             status={intervalsStatus}
@@ -415,28 +467,35 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           />
         </div>
 
-        {/* ── Virtual platforms ───────────────────────────────────────────── */}
+        {/* ── Virtual platforms (shown only when ICU is connected) ────────── */}
         {intervalsStatus === "ok" && (
           <>
+            {/* Divider with label */}
             <div style={{
-              borderTop: "1px solid var(--border, #e8eaed)",
-              margin: "18px 0 16px",
-            }} />
-
-            <div style={{
-              fontSize: 10.5, fontWeight: 700, color: "var(--muted)",
-              letterSpacing: "0.07em", textTransform: "uppercase", marginBottom: 6,
+              display: "flex", alignItems: "center", gap: 10,
+              margin: "20px 0 14px",
             }}>
-              Virtual platforms via Intervals.icu
-            </div>
-            <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.55, marginBottom: 14 }}>
-              Select the platforms connected in your Intervals.icu account.
-              Workouts sync automatically when a new plan is generated.
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              <div style={{
+                fontSize: 10, fontWeight: 700, color: "var(--muted)",
+                letterSpacing: "0.08em", textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}>
+                Sync to virtual platforms
+              </div>
+              <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            <div style={{
+              fontSize: 11.5, color: "var(--muted)", lineHeight: 1.55,
+              marginBottom: 12, textAlign: "center",
+            }}>
+              Select platforms connected in your Intervals.icu account
+            </div>
+
+            <div style={{ display: "flex", gap: 8 }}>
               {VIRTUAL_PLATFORMS.map(({ id, label, icon }) => (
-                <PlatformCard
+                <PlatformChip
                   key={id}
                   label={label}
                   icon={icon}
@@ -447,8 +506,11 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
             </div>
 
             {virtualPlatforms.length === 0 && (
-              <div style={{ marginTop: 10, fontSize: 11, color: "#e4483a", lineHeight: 1.5 }}>
-                No platforms selected — workouts will push to ICU only.
+              <div style={{
+                marginTop: 10, fontSize: 11.5, color: "#e4483a",
+                lineHeight: 1.5, textAlign: "center",
+              }}>
+                No platforms selected — workouts will push to Intervals.icu only
               </div>
             )}
           </>
@@ -464,8 +526,11 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         }}>
           <div className="stat-card" style={{ maxWidth: 420, width: "100%", padding: "24px 26px" }}>
 
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            {/* Modal header */}
+            <div style={{
+              display: "flex", alignItems: "center",
+              justifyContent: "space-between", marginBottom: 20,
+            }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
                 Connect Intervals.icu
               </div>
@@ -482,9 +547,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
             {/* Step indicators */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 22 }}>
               {[0, 1].map(s => (
-                <div key={s} style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                }}>
+                <div key={s} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: "50%",
                     background: intervalsStep >= s ? "var(--accent)" : "var(--border, #e0e0e0)",
@@ -492,7 +555,11 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 700, flexShrink: 0,
                   }}>{s + 1}</div>
-                  <span style={{ fontSize: 11.5, color: intervalsStep >= s ? "var(--text)" : "var(--muted)", fontWeight: intervalsStep === s ? 600 : 400 }}>
+                  <span style={{
+                    fontSize: 11.5,
+                    color: intervalsStep >= s ? "var(--text)" : "var(--muted)",
+                    fontWeight: intervalsStep === s ? 600 : 400,
+                  }}>
                     {s === 0 ? "Open settings" : "Paste & connect"}
                   </span>
                   {s === 0 && <div style={{ width: 20, height: 1, background: "var(--border, #e0e0e0)" }} />}
@@ -518,7 +585,9 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                 >
                   Open Intervals.icu Settings →
                 </button>
-                <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
+                <div style={{
+                  fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10, lineHeight: 1.5,
+                }}>
                   Scroll to <strong>Developer Settings</strong> and click <strong>Generate API Key</strong>
                 </div>
               </>
@@ -537,7 +606,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                   then click the button below — we&apos;ll read it automatically.
                 </div>
 
-                {/* Primary: paste from clipboard */}
                 {clipboardSupported && (
                   <button
                     type="button"
@@ -554,7 +622,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                   </button>
                 )}
 
-                {/* Fallback: manual input */}
                 <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 8 }}>
                   {clipboardSupported ? "Or paste manually:" : "Paste your API key:"}
                 </div>
@@ -577,7 +644,10 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
                     onClick={() => doConnect(intervalsKeyInput)}
                     disabled={intervalsConnecting || !intervalsKeyInput.trim()}
                     className="btn"
-                    style={{ width: "100%", padding: "10px", fontSize: 13, boxShadow: "none", opacity: intervalsConnecting ? 0.6 : 1 }}
+                    style={{
+                      width: "100%", padding: "10px", fontSize: 13,
+                      boxShadow: "none", opacity: intervalsConnecting ? 0.6 : 1,
+                    }}
                   >
                     {intervalsConnecting ? "Connecting…" : "Connect"}
                   </button>

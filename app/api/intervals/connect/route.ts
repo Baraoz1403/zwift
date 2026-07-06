@@ -78,8 +78,7 @@ export async function DELETE() {
   cookieStore.delete("zwift_intervals_id");
   cookieStore.delete("zwift_intervals_name");
 
-  // Remove from KV too
-  const session = await decryptSession(raw);
+  // Remove from KV too (session was already decrypted above)
   if (session?.athleteId) {
     await kvDel(
       `zwift:${session.athleteId}:icu_key`,
