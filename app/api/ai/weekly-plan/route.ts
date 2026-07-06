@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   let previousPlan: { weekOf: string; workouts: WeeklyWorkout[] } | null = null;
   let riderProfile: RiderTrainingProfile | undefined;
   let riderNote: string | undefined;
+  let targetWeekOf: string | undefined;
   try {
     const body = await req.json();
     if (typeof body?.ageYears === "number" && body.ageYears > 0) {
@@ -53,6 +54,12 @@ export async function POST(req: NextRequest) {
     }
     if (typeof body?.riderNote === "string" && body.riderNote.trim()) {
       riderNote = body.riderNote.trim();
+    }
+    // Optional override so the dashboard can pre-generate *next* week's plan
+    // ahead of time (rolling 6-day-ahead window) - must be a real Monday
+    // ("YYYY-MM-DD"); anything else is ignored and we fall back to "now".
+    if (typeof body?.targetWeekOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.targetWeekOf)) {
+      targetWeekOf = body.targetWeekOf;
     }
   } catch {
     // No/invalid JSON body - fine, these all just stay unset.
@@ -116,7 +123,9 @@ export async function POST(req: NextRequest) {
     // weekOf must match exactly what generateWeeklyPlan computes internally
     // (same shared helper) so "is this a genuinely new week" is judged
     // consistently rather than against a separately-computed date.
-    const weekOf = mondayOfCurrentWeek();
+    // targetWeekOf (when provided) lets the caller request a specific future
+    // Monday - see lib/ai.ts's targetWeekOf doc comment.
+    const weekOf = targetWeekOf ?? mondayOfCurrentWeek();
     const macroCycle = advanceMacroCycle(incomingCycle, weekOf);
     const cycle = getPhaseForWeekIndex(macroCycle.weekIndex);
 
@@ -158,6 +167,7 @@ export async function POST(req: NextRequest) {
       lastWeekAdherence,
       riderProfile,
       riderNote,
+      targetWeekOf: weekOf,
     });
 
     return NextResponse.json({ ok: true, plan, macroCycle, cycle });

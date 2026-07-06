@@ -446,6 +446,12 @@ export async function generateWeeklyPlan(params: {
    *  today (e.g. "tired legs", "feeling great", "sore back"). The plan
    *  should take this into account when scheduling intensity. */
   riderNote?: string;
+  /** Override for which Monday this plan covers - "YYYY-MM-DD". Used by the
+   *  dashboard's rolling 6-day-ahead window to pre-generate *next* week's
+   *  plan a few days early (once the current week's remaining days can no
+   *  longer fill the display) without waiting for that week to actually
+   *  start. Defaults to the real current week when omitted. */
+  targetWeekOf?: string;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -459,7 +465,7 @@ export async function generateWeeklyPlan(params: {
   // instead of guessing what date "Wednesday" falls on. Shared with
   // lib/periodization.ts so the cached plan's weekOf, the macro-cycle
   // pointer, and this prompt's date math never drift apart.
-  const weekOfMonday = mondayOfCurrentWeek();
+  const weekOfMonday = params.targetWeekOf ?? mondayOfCurrentWeek();
 
   const userContent = JSON.stringify({
     rider: params.firstName ?? "Rider",

@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
@@ -66,6 +66,13 @@ interface WeeklyPlan {
 
 const STORAGE_KEY = "zwiftWeeklyPlan";
 const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
+/** Pre-fetched *next* week's plan, generated early once the rolling 6-day
+ *  window can no longer be filled from the current week alone. Bundled with
+ *  the macro-cycle state that generating it produced, so the periodization
+ *  pointer (lib/periodization.ts) only advances for real once this bundle is
+ *  actually promoted to become the active plan (its week arrives) - never
+ *  early, or the mesocycle count would drift ahead of real time. */
+const STORAGE_KEY_NEXT = "zwiftWeeklyPlanNext";
 const ACTIVITIES_CACHE_KEY = "zwiftWeekActivitiesCache";
 const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 /** localStorage key for the array of TP workoutIds pushed in the current plan */
@@ -107,6 +114,68 @@ function loadCachedCycle(): MacroCycleState | null {
   } catch {
     return null;
   }
+}
+
+/** A pre-generated next-week plan, bundled with the macro-cycle state that
+ *  generating it produced (see STORAGE_KEY_NEXT doc comment above). */
+interface NextWeekBundle {
+  plan: WeeklyPlan;
+  macroCycle: MacroCycleState | null;
+  cycle: PhaseInfo | null;
+}
+
+function loadCachedNextBundle(): NextWeekBundle | null {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_NEXT);
+    if (!raw) return null;
+    return JSON.parse(raw) as NextWeekBundle;
+  } catch {
+    return null;
+  }
+}
+
+function saveNextBundle(bundle: NextWeekBundle | null) {
+  try {
+    if (bundle) {
+      window.localStorage.setItem(STORAGE_KEY_NEXT, JSON.stringify(bundle));
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY_NEXT);
+    }
+  } catch {}
+}
+
+/** Adds `days` (may be negative) to an ISO "YYYY-MM-DD" date, UTC-safe. */
+function addDaysIso(dateIso: string, days: number): string {
+  const d = new Date(dateIso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Rolling 6-day-ahead window: merges the active plan's workouts with a
+ * pre-fetched next-week plan (if any), drops anything whose date has already
+ * passed, and returns the next `size` upcoming days in date order. This is
+ * what the dashboard actually renders - never `plan.workouts` directly -
+ * so a workout silently disappears from view the day after it happens, and
+ * the grid keeps showing a full week of what's coming up regardless of
+ * where "today" falls inside the calendar week.
+ */
+function computeForwardWindow(
+  current: WeeklyPlan | null,
+  next: WeeklyPlan | null,
+  today: string,
+  size = 6
+): WeeklyWorkout[] {
+  if (!current) return [];
+  const pool = [...current.workouts, ...(next?.workouts ?? [])];
+  const upcoming = pool
+    .filter((w) => (w.date ?? "") >= today)
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  return upcoming.slice(0, size);
 }
 
 const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
@@ -182,6 +251,10 @@ function currentWeekOf(): string {
 
 export default function WeeklyPlan() {
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
+  // Pre-fetched next week's plan (rolling 6-day-ahead window) - null until
+  // the current week's remaining days can no longer fill the display.
+  const [nextPlan, setNextPlan] = useState<WeeklyPlan | null>(null);
+  const [prefetchingNext, setPrefetchingNext] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
@@ -193,18 +266,48 @@ export default function WeeklyPlan() {
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
   useEffect(() => {
+    const thisWeek = currentWeekOf();
     const cached = loadCachedPlan();
-    if (cached) {
-      setPlan(ensureWorkoutDates(normalizeToSix(cached)));
-      setStale(cached.weekOf !== currentWeekOf());
+    const cachedNextBundle = loadCachedNextBundle();
+
+    let activePlan: WeeklyPlan | null = cached ? ensureWorkoutDates(normalizeToSix(cached)) : null;
+
+    // A pre-fetched next-week bundle whose week has actually arrived gets
+    // promoted to become the active plan - this is what makes the weekly
+    // rollover silent (no button click, no "plan ended" banner) in the
+    // common case where the rider opened the dashboard at least once during
+    // the previous week (giving the background prefetch time to run).
+    if (cachedNextBundle && cachedNextBundle.plan.weekOf <= thisWeek) {
+      activePlan = ensureWorkoutDates(normalizeToSix(cachedNextBundle.plan));
+      if (cachedNextBundle.macroCycle) {
+        try { window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(cachedNextBundle.macroCycle)); } catch {}
+        setCycleInfo(cachedNextBundle.cycle ?? getPhaseForWeekIndex(cachedNextBundle.macroCycle.weekIndex));
+      }
+      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(activePlan)); } catch {}
+      saveNextBundle(null); // consumed - a fresh "next" gets prefetched below once needed
+      pushPlanToTP(activePlan); // this plan is now live - sync it to TP same as a manual regenerate
+    } else {
+      const cachedCycle = loadCachedCycle();
+      if (cachedCycle) setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
-    const cachedCycle = loadCachedCycle();
-    if (cachedCycle) {
-      setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
+
+    if (activePlan) setPlan(activePlan);
+
+    const isFullyStale = !activePlan || activePlan.weekOf !== thisWeek;
+    if (isFullyStale) {
+      // Either no cached plan at all, or the week rolled over with nothing
+      // pre-fetched to cover it (e.g. the rider was away for 2+ weeks).
+      // Auto-generate the current week's plan now - no manual click needed.
+      // The stale banner + its "generate" button remain only as a fallback
+      // if this auto-attempt fails (shown once `loading` finishes).
+      setStale(true);
+      generateAndActivate(thisWeek, activePlan ?? undefined);
+    } else {
+      setStale(false);
+      prefetchNextWeekIfNeeded(activePlan!);
     }
 
     // Load cached activities immediately to prevent flash on refresh
-    const thisWeek = currentWeekOf();
     try {
       const cachedWeek = window.localStorage.getItem(ACTIVITIES_CACHE_WEEK_KEY);
       if (cachedWeek === thisWeek) {
@@ -275,12 +378,59 @@ export default function WeeklyPlan() {
       .catch(() => {});
   }, []);
 
-  async function handleGenerate() {
+  // Pushes every non-rest workout in `normalizedPlan` to TrainingPeaks, first
+  // deleting whatever the previously-active plan had pushed - the TP
+  // calendar should only ever reflect the plan currently shown here.
+  // Re-checks connection status live (fetch, not the `tpConnected` React
+  // state) because this can run from the mount effect before that state has
+  // had a chance to settle.
+  async function pushPlanToTP(normalizedPlan: WeeklyPlan) {
+    let connected = tpConnected;
+    try {
+      const r = await fetch("/api/trainingpeaks/status");
+      const d = await r.json();
+      connected = !!d.connected;
+    } catch { /* fall back to the React state above on network failure */ }
+    if (!connected) return;
+
+    // 0. Try to refresh the TP token proactively before pushing
+    try { await fetch("/api/trainingpeaks/refresh", { method: "POST" }); } catch {}
+
+    // 1. Delete previously pushed workouts from TP
+    try {
+      const prevRaw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
+      if (prevRaw) {
+        const prevIds = JSON.parse(prevRaw) as (string | number)[];
+        prevIds.forEach(id => {
+          fetch("/api/trainingpeaks/push-workout", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workoutId: id }),
+          }).catch(() => {});
+        });
+      }
+    } catch {}
+    // Clear old IDs from storage before pushing new ones
+    try { window.localStorage.removeItem(TP_PUSHED_IDS_KEY); } catch {}
+
+    // 2. Push new workouts
+    normalizedPlan.workouts
+      .filter(w => !isRestDay(w.type))
+      .forEach(w => { handlePushToTP(w); });
+  }
+
+  /**
+   * Generates a plan for `targetWeekOf` and makes it the active, on-screen
+   * plan (loading/error state, TP push, localStorage). Used both for the
+   * manual "generate new plan" button and for the automatic fallback when
+   * the rider returns to a fully stale dashboard (no pre-fetched plan could
+   * cover the current week).
+   */
+  async function generateAndActivate(targetWeekOf: string, previousPlanForAI?: WeeklyPlan | null) {
     setLoading(true);
     setError(null);
     try {
       const macroCycle = loadCachedCycle();
-      const previousPlan = plan && stale ? plan : null;
       let riderProfile = null;
       try {
         const raw = window.localStorage.getItem("zwiftRiderProfile");
@@ -289,7 +439,13 @@ export default function WeeklyPlan() {
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ macroCycle, previousPlan, riderProfile, riderNote: riderNote.trim() || undefined }),
+        body: JSON.stringify({
+          macroCycle,
+          previousPlan: previousPlanForAI ?? null,
+          riderProfile,
+          riderNote: riderNote.trim() || undefined,
+          targetWeekOf,
+        }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -299,41 +455,24 @@ export default function WeeklyPlan() {
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
         // Auto-push all non-rest workouts to TrainingPeaks if connected.
-        // Before pushing, delete any previously pushed workout IDs so the TP
-        // calendar only ever contains the current plan (not stale old entries).
         // TP syncs to Zwift + Garmin automatically — no manual step needed.
-        if (tpConnected) {
-          // 0. Try to refresh the TP token proactively before pushing
-          try { await fetch("/api/trainingpeaks/refresh", { method: "POST" }); } catch {}
-
-          // 1. Delete previously pushed workouts from TP
-          try {
-            const prevRaw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
-            if (prevRaw) {
-              const prevIds = JSON.parse(prevRaw) as (string | number)[];
-              prevIds.forEach(id => {
-                fetch("/api/trainingpeaks/push-workout", {
-                  method: "DELETE",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ workoutId: id }),
-                }).catch(() => {});
-              });
-            }
-          } catch {}
-          // Clear old IDs from storage before pushing new ones
-          try { window.localStorage.removeItem(TP_PUSHED_IDS_KEY); } catch {}
-
-          // 2. Push new workouts
-          normalizedPlan.workouts
-            .filter(w => !isRestDay(w.type))
-            .forEach(w => { handlePushToTP(w); });
-        }
+        await pushPlanToTP(normalizedPlan);
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
             window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(data.macroCycle));
           }
         } catch {}
+        // A freshly (re)generated active plan supersedes any pre-fetched
+        // "next" bundle, unless it happens to already be the week right
+        // after this one.
+        const cachedNextBundle = loadCachedNextBundle();
+        if (!cachedNextBundle || cachedNextBundle.plan.weekOf !== addDaysIso(targetWeekOf, 7)) {
+          saveNextBundle(null);
+          setNextPlan(null);
+        }
+        // Keep the rolling window topped up going forward.
+        prefetchNextWeekIfNeeded(normalizedPlan);
       } else {
         setError(data.error ?? "Could not generate a weekly plan.");
       }
@@ -343,6 +482,71 @@ export default function WeeklyPlan() {
       setLoading(false);
     }
   }
+
+  /**
+   * Background pre-fetch of next week's plan, so the rolling 6-day window
+   * (see computeForwardWindow) never has to fall back on empty days as the
+   * current week's remaining slots run out. Cheap to call speculatively -
+   * it no-ops unless the window would actually come up short and nothing
+   * matching is cached yet.
+   */
+  async function prefetchNextWeekIfNeeded(activePlan: WeeklyPlan) {
+    const today = todayIso();
+    const windowNow = computeForwardWindow(activePlan, null, today, 6);
+    if (windowNow.length >= 6) return; // current week alone still covers 6 upcoming days
+
+    const targetWeekOf = addDaysIso(activePlan.weekOf, 7);
+    const cachedNext = loadCachedNextBundle();
+    if (cachedNext && cachedNext.plan.weekOf === targetWeekOf) {
+      setNextPlan(cachedNext.plan);
+      return;
+    }
+
+    setPrefetchingNext(true);
+    try {
+      const macroCycle = loadCachedCycle();
+      let riderProfile = null;
+      try {
+        const raw = window.localStorage.getItem("zwiftRiderProfile");
+        if (raw) riderProfile = JSON.parse(raw);
+      } catch {}
+      const res = await fetch("/api/ai/weekly-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ macroCycle, previousPlan: activePlan, riderProfile, targetWeekOf }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const normalized = ensureWorkoutDates(normalizeToSix(data.plan));
+        saveNextBundle({ plan: normalized, macroCycle: data.macroCycle ?? null, cycle: data.cycle ?? null });
+        setNextPlan(normalized);
+      }
+    } catch {
+      // Silent — this is a background convenience prefetch. Worst case, the
+      // rolling window shows fewer than 6 days until the next successful
+      // attempt (next page load), or the full-stale fallback kicks in once
+      // the week actually rolls over with nothing cached.
+    } finally {
+      setPrefetchingNext(false);
+    }
+  }
+
+  /** Manual "generate new plan" button - always targets the real current week. */
+  async function handleGenerate() {
+    const targetWeekOf = currentWeekOf();
+    const previousPlanForAI = plan && stale ? plan : null;
+    await generateAndActivate(targetWeekOf, previousPlanForAI);
+  }
+
+  // Rolling 6-day-ahead window actually rendered below - see
+  // computeForwardWindow's doc comment. Recomputed whenever the active plan,
+  // the pre-fetched next-week plan changes (date doesn't need to be a
+  // dependency - a stale "today" only matters across a full page reload,
+  // which remounts this component anyway).
+  const displayWorkouts = useMemo(
+    () => computeForwardWindow(plan, nextPlan, todayIso(), 6),
+    [plan, nextPlan]
+  );
 
   function handleDownloadZwo(w: WeeklyWorkout) {
     const xml = generateZwoXml(w);
@@ -876,7 +1080,7 @@ export default function WeeklyPlan() {
           )}
 
           <div className="stat-grid workout-grid">
-            {plan.workouts.map((w, i) => {
+            {displayWorkouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
 
               // ── Completed: actual ride found for this day ──

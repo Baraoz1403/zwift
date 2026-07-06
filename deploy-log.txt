@@ -4542,3 +4542,132 @@ Mon 07/06/2026 14:43:32.91
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'CLAUDE.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'DESIGN_SYSTEM.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/ai/insights/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/ai/weekly-plan/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/login/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/logout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/refresh/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/health/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/strava/activities/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/strava/oauth-callback/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/strava/oauth-start/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/strava/status/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/connect/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/push-workout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/refresh/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/trainingpeaks/status/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift-plans/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/activities/[id]/detail/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/activities/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/chart-extras/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/debug-activity/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/debug-fields/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/diagnostics/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/fitness-trends/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/hr-alert/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/profile/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/push-workout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/zwift/workouts-diagnostic/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/activity-heatmap.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/ai-insights-link.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/ai-insights.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/avg-cadence-card.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/avg-hr-card.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/connections-panel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/diagnostics/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/fitness-status-chip.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/fitness-trends-chart.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/footer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/hr-alert-banner.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/icons.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/logout-button.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/multi-chart.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/personal-records.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/rides-table.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/rides/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/signal-chips.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/training-profile.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/trend-comparison.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/workout-editor.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/workout-thumbnail.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/legal/disclaimer/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/legal/privacy/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/legal/terms/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/login/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/zwift-plans/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'check-task.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'check.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'deploy_auto.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/ftp-testing.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/heart-rate-analysis.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/intensity-distribution.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/periodization.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/power-zones-reference.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/recovery-week.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/running-training-plans.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/structured-plan-templates.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/sweet-spot-training.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/vo2max-protocols.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/training-knowledge/zwift-official-plans.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/adherence.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/ai.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/fit-parser.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/periodization.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/rider-profile.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/session-constants.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/session.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/stats.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/strava.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/training-load.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/trainingpeaks.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/zwift-diagnostics.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/zwift-worlds.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/zwo.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'middleware.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'next.config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'run-prod.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'run.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'zwift-support-reply-draft.txt', LF will be replaced by CRLF the next time Git touches it
+[main 4cee0fc] Auto deploy Mon 07/06/2026 14:43:33.36
+ 7 files changed, 1235 insertions(+), 1118 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   2fa0e0e..4cee0fc  main -> main
+Mon 07/06/2026 14:43:35.62 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Mon 07/06/2026 14:56:06.19 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
