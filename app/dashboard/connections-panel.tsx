@@ -86,7 +86,7 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
             target="_blank"
             rel="noopener noreferrer"
             className="btn"
-            style={{ flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96 }}
+            style={{ width: "auto", flexShrink: 0, padding: "7px 14px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 88 }}
           >
             {action.label}
           </a>
@@ -95,7 +95,7 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
             type="button"
             onClick={action.onClick}
             className="btn"
-            style={{ flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", minWidth: 96, justifyContent: "center" }}
+            style={{ width: "auto", flexShrink: 0, padding: "7px 14px", fontSize: 12, boxShadow: "none", minWidth: 88 }}
           >
             {action.label}
           </button>
