@@ -1097,14 +1097,14 @@ export default function WeeklyPlan() {
               }}
               disabled={loading}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                padding: "9px 20px", borderRadius: 6,
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 6,
                 border: noteOpen ? "1.5px solid var(--accent)" : "1.5px solid #16a34a",
                 background: noteOpen
                   ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
                   : "#16a34a",
                 color: noteOpen ? "var(--accent)" : "#fff",
-                fontSize: 12.5, fontWeight: 600,
+                fontSize: 12, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
                 fontFamily: "inherit",
@@ -1143,12 +1143,12 @@ export default function WeeklyPlan() {
               onClick={handleGenerate}
               disabled={loading}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                padding: "9px 20px", borderRadius: 6,
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 6,
                 border: "1.5px solid #16a34a",
                 background: "#16a34a",
                 color: "#fff",
-                fontSize: 12.5, fontWeight: 600,
+                fontSize: 12, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
                 fontFamily: "inherit",

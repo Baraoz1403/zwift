@@ -258,12 +258,12 @@ export default function TrainingProfileCard() {
           </div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
             <button type="button" onClick={startEdit} className="header-card-btn" style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              padding: "9px 20px", borderRadius: 6,
+              display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "6px 14px", borderRadius: 6,
               border: "1.5px solid #16a34a",
               background: "#16a34a",
               color: "#fff",
-              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+              fontSize: 12, fontWeight: 600, cursor: "pointer",
               fontFamily: "inherit",
             }}>
               {profile ? "Update my profile" : "Set up my profile"}

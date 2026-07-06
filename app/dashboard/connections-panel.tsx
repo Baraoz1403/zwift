@@ -176,9 +176,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
 
   // ── Derive service statuses ───────────────────────────────────────────────
 
-  const zwiftStatus: Status = !health ? "loading" :
-    health.zwift.connected ? "ok" : "error";
-
   const tpStatus: Status = !health ? "loading" :
     health.tp.tokenExpired ? "warn" :
     health.tp.connected     ? "ok"  : "error";
@@ -216,21 +213,8 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         </div>
       )}
 
-      {/* Service cards — 3-column equal-width grid, same breakpoints as header-cards-grid */}
-      <div className="header-cards-grid" style={{ gap: 12 }}>
-
-        {/* Zwift */}
-        <ServiceCard
-          icon={<IconBolt size={17} />}
-          brand="zwift"
-          name="Zwift"
-          status={zwiftStatus}
-          line1={
-            zwiftStatus === "loading" ? "Checking…" :
-            zwiftStatus === "ok"      ? `Connected${health?.zwift.athleteId ? ` · ID ${health.zwift.athleteId}` : ""}` :
-            "Not connected — please log in to the dashboard"
-          }
-        />
+      {/* Service cards — 2-column equal-width grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
 
         {/* TrainingPeaks */}
         <ServiceCard

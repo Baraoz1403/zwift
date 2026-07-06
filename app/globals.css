@@ -1160,7 +1160,7 @@ tbody tr:hover {
 
 /* Header card action buttons — consistent size on all screen sizes */
 .header-card-btn {
-  min-width: 190px;
+  min-width: 150px;
   justify-content: center;
 }
 
