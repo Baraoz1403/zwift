@@ -505,23 +505,43 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   '(Monday..Sunday), "date": string (YYYY-MM-DD, the actual calendar date ' +
   'for that day in the upcoming week), "type": string, "title": string, ' +
   '"durationMin": number, "targetPowerPctFtp": string (e.g. "65-75%", ' +
-  'omit/empty for rest days), "description": string (1-2 sentence ' +
-  "plain-English goal — e.g. 'Build VO2max with hard 5-min efforts' " +
-  "or 'Foundation endurance at easy conversational pace'), " +
+  'omit/empty for rest days), ' +
+
+  // ── Description: the most important field for plan quality ──
+  '"description": string — THIS IS THE MOST IMPORTANT FIELD. ' +
+  'Write 2-3 sentences that feel like a personal message from a coach who actually looked at this rider\'s data. ' +
+  'SENTENCE 1 — WHY NOW: reference one specific data point from the input (e.g. their exact TSB, ' +
+  'the number of rides last week, their training phase/week, their age, a recent HR flag, or adherence from last week). ' +
+  'SENTENCE 2 — HOW: one sharp execution cue for the hardest part of this workout (exact zone, cadence, or pacing strategy). ' +
+  'SENTENCE 3 (optional) — FEEL: what success looks like or a heads-up about what will be hard. ' +
+  'WRONG (never write this): "Build aerobic base at easy pace." or "Improve fitness with structured intervals." ' +
+  'RIGHT example for a Foundation ride: "TSB is at +6 and you\'re in Base week 2 — your aerobic system is fresh and ready to absorb volume. ' +
+  'Hold 65-73% FTP the entire 40 minutes; cadence 90-95 rpm; if you drift above 75%, back off immediately. ' +
+  'You should finish this ride feeling like you could do another 30 minutes — that\'s the point." ' +
+  'RIGHT example for 4×8 Threshold: "Three consecutive hard weeks have dropped your TSB to -8, ' +
+  'so I\'m keeping the blocks short (4×8 min) rather than jumping to 2×20. ' +
+  'Target 97-100% FTP — start the first block at 97% and only push to 100% if legs feel good by block 3. ' +
+  'If power drops more than 5% in the last 2 minutes of any block, end it early; quality beats duration here." ' +
+  'The description MUST be specific to THIS rider on THIS week — not a Wikipedia entry about the workout type.), ' +
+
   '"structure": array of workout blocks (REQUIRED for all non-rest sessions, ' +
   "omit only for type='Rest' days). Each element: " +
   '{"type":"warmup"|"steadystate"|"intervals"|"cooldown",' +
   '"durationMin":number (total block minutes; for intervals: repeats*(onSec+offSec)/60),' +
   '"powerFtp":number (power as fraction of FTP — e.g. 0.90=90%, 1.10=110%),' +
-  '"label":string, and for intervals also: "repeats":number,"onSec":number,' +
+  '"label":string (use the exact interval format in the label, e.g. "4×8 min @ 100% FTP"), ' +
+  'and for intervals also: "repeats":number,"onSec":number,' +
   '"offSec":number,"recoveryPowerFtp":number}. ' +
   "CRITICAL: sum of all structure[].durationMin MUST equal the workout's durationMin. " +
+  "VARIETY: choose the specific library variant that matches this rider's current load and progression. " +
+  "If this rider had Sweet Spot Classic (3×10 min) last week, use Extended Sweet Spot (2×20 min) or Sweet Spot Progression (10+15+20 min) this week — never repeat the same interval pattern two weeks running. " +
+  "The structure should reflect the EXACT protocol from the named workout library (correct repeats, durations, power targets). " +
   "Example (75-min VO2max): structure:[" +
   '{"type":"warmup","durationMin":15,"powerFtp":0.60,"label":"Easy warm-up"},' +
   '{"type":"intervals","durationMin":50,"powerFtp":1.10,' +
   '"recoveryPowerFtp":0.50,"repeats":5,"onSec":300,"offSec":300,' +
-  '"label":"5x5 min VO2max"},{"type":"cooldown","durationMin":10,' +
-  '"powerFtp":0.55,"label":"Cool-down"}]}] ' +
+  '"label":"5×5 min @ 110% FTP"},{"type":"cooldown","durationMin":10,' +
+  '"powerFtp":0.55,"label":"Easy cool-down"}]}] ' +
   "(HARD LIMIT: always return EXACTLY 6 entries total. " +
   "Include actual sessions for riding/running days, and use " +
   "type='Rest', title='Rest Day', durationMin=0 for the remaining days " +
@@ -532,7 +552,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "with a structure array containing an intervals block with real " +
   "repeats, onSec, and offSec values (e.g. repeats:5, onSec:300, offSec:180). " +
   "Even in Base phase, 1 hard session with intervals is required. " +
-  "Riders should feel challenged and engaged, not bored.)}";
+  "Riders should feel challenged, engaged, and coached — not like they got a generic template.)}";
 
 export async function generateWeeklyPlan(params: {
   firstName?: string;
@@ -648,7 +668,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 4000,
+        max_tokens: 6000,
         system: WEEKLY_PLAN_SYSTEM_PROMPT,
         messages: [{ role: "user", content: userContent }],
       }),
