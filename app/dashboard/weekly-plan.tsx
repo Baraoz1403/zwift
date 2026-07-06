@@ -821,7 +821,7 @@ export default function WeeklyPlan() {
   return (
     <div>
 
-      {/* ── TrainingPeaks Connect Modal (bookmarklet flow) ───────────── */}
+      {/* ── TrainingPeaks Connect Modal ──────────────────────────────── */}
       {showTPModal && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
@@ -832,13 +832,24 @@ export default function WeeklyPlan() {
         >
           <div
             className="stat-card"
-            style={{ maxWidth: 460, width: "100%", padding: "28px 28px 24px" }}
+            style={{ maxWidth: 440, width: "100%", padding: "26px 26px 22px" }}
             onClick={e => e.stopPropagation()}
           >
+            <style>{`
+              @keyframes tpArrowBounce {
+                0%, 100% { transform: translateY(2px); opacity: 0.35; }
+                50%       { transform: translateY(-4px); opacity: 1; }
+              }
+              @keyframes connSpin {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+              }
+            `}</style>
+
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 10, background: "#e8264c",
+                width: 38, height: 38, borderRadius: 11, background: "#005695",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
@@ -848,118 +859,162 @@ export default function WeeklyPlan() {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700 }}>Connect TrainingPeaks</div>
                 <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>
-                  One time — after that, one click for every reconnect
+                  Two steps · takes about 30 seconds
                 </div>
               </div>
               <button
                 onClick={() => { setShowTPModal(false); setTpPolling(false); }}
-                style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 18, padding: 4 }}
-              >✕</button>
+                style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 20, lineHeight: 1, padding: "2px 6px" }}
+              >×</button>
             </div>
 
-            {/* Step 1 */}
+            {/* ── Step 1 ──────────────────────────────────────────────── */}
             <div style={{
-              marginBottom: 14, padding: "14px 16px", borderRadius: 10,
-              background: "rgba(20,23,26,0.04)", border: "1px solid var(--border)",
+              marginBottom: 10, padding: "16px", borderRadius: 12,
+              border: "1px solid var(--border)", background: "rgba(20,23,26,0.03)",
             }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-                Step 1 — Save the bookmark (one time only)
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: "50%", background: "var(--accent)",
+                  color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 700, flexShrink: 0,
+                }}>1</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>
+                  Save this button to your browser
+                  <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11.5, marginLeft: 6 }}>
+                    (one time only)
+                  </span>
+                </div>
               </div>
-              {/* Right-click instructions */}
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10, lineHeight: 1.6 }}>
-                <strong>Drag</strong> the button below to your bookmarks bar
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+
+              {/* Drag zone with animated arrows */}
+              <div style={{
+                borderRadius: 10, border: "1.5px dashed rgba(47,143,224,0.45)",
+                padding: "14px 14px 12px", marginBottom: 10,
+                background: "rgba(47,143,224,0.04)",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              }}>
+                {/* Bouncing arrows showing direction to drag */}
+                <div style={{ display: "flex", gap: 10 }}>
+                  {[0, 0.22, 0.44].map((delay, i) => (
+                    <svg key={i} width="11" height="16" viewBox="0 0 11 16" fill="none"
+                      style={{ animation: `tpArrowBounce 1.4s ease-in-out ${delay}s infinite` }}>
+                      <path d="M5.5 14V2M5.5 2L2 5.5M5.5 2L9 5.5"
+                        stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11.5, color: "var(--muted)", textAlign: "center" }}>
+                  Drag this button up to your bookmarks bar
+                </div>
                 <a
                   href={bookmarkletHref}
                   draggable
                   onClick={e => e.preventDefault()}
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "10px 20px", borderRadius: 8,
-                    border: "2px solid var(--accent)",
-                    background: "rgba(47,143,224,0.10)",
-                    color: "var(--accent)", fontSize: 13, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    width: "100%", padding: "13px 16px", borderRadius: 9,
+                    border: "2px solid var(--accent)", background: "rgba(47,143,224,0.10)",
+                    color: "var(--accent)", fontSize: 14, fontWeight: 700,
                     cursor: "grab", textDecoration: "none",
-                    userSelect: "none" as const, letterSpacing: "0.01em",
-                    flexShrink: 0,
+                    userSelect: "none" as const,
                   }}
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
                   Zwift AI → TP
                 </a>
-                <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.6 }}>
-                  ← drag this up to your bookmarks bar
+              </div>
+
+              <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.7 }}>
+                <strong>Bar not visible?</strong> Press{" "}
+                <code style={{ background: "rgba(20,23,26,0.07)", padding: "1px 6px", borderRadius: 4, fontSize: 10.5, fontFamily: "monospace" }}>
+                  Ctrl+Shift+B
+                </code>
+                {" "}to show it &nbsp;·&nbsp; Firefox / Safari: right-click the button → <strong>Bookmark Link</strong>
+              </div>
+            </div>
+
+            {/* ── Step 2 ──────────────────────────────────────────────── */}
+            <div style={{
+              padding: "16px", borderRadius: 12,
+              border: tpPolling ? "1.5px solid rgba(47,143,224,0.35)" : "1px solid var(--border)",
+              background: tpPolling ? "rgba(47,143,224,0.04)" : "rgba(20,23,26,0.03)",
+              transition: "border-color 0.2s, background 0.2s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: "50%",
+                  background: tpPolling ? "var(--accent)" : "var(--border, #d8dce0)",
+                  color: tpPolling ? "#fff" : "var(--muted)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 700, flexShrink: 0,
+                  transition: "background 0.2s, color 0.2s",
+                }}>2</div>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>
+                  Open TrainingPeaks and click the saved button
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8, opacity: 0.7 }}>
-                💡 Bookmarks bar not visible? Press <strong>Ctrl+Shift+B</strong> to show it first.
-                On Firefox/Safari: right-click → &ldquo;Bookmark Link&rdquo;
-              </div>
-            </div>
 
-            {/* Step 2 */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-                Step 2 — Open TrainingPeaks and click the bookmark
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  window.open("https://app.trainingpeaks.com", "_blank");
-                  setTpPolling(true);
-                }}
-                style={{
-                  width: "100%", padding: "11px 18px", borderRadius: 7, border: "none",
-                  background: "#e8264c", color: "#fff",
-                  fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  fontFamily: "inherit",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}
-              >
-                Open TrainingPeaks →
-              </button>
-              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.6 }}>
-                In the tab that opens — click the <strong>Zwift AI → TP</strong> bookmark you created.
-                The dashboard will connect automatically and you can close the tab.
-              </div>
+              {!tpPolling ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open("https://app.trainingpeaks.com", "_blank");
+                      setTpPolling(true);
+                    }}
+                    style={{
+                      width: "100%", padding: "12px 18px", borderRadius: 8, border: "none",
+                      background: "#005695", color: "#fff",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}
+                  >
+                    Open TrainingPeaks →
+                  </button>
+                  <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 8, lineHeight: 1.6 }}>
+                    In the tab that opens, click the <strong>Zwift AI → TP</strong> button you just saved.
+                    The dashboard connects automatically — you can close that tab.
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 14px", borderRadius: 8,
+                    background: "rgba(47,143,224,0.08)",
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      style={{ animation: "connSpin 1.5s linear infinite", flexShrink: 0 }}>
+                      <circle cx="12" cy="12" r="9" stroke="var(--accent)" strokeWidth="2.5" strokeDasharray="30 25"/>
+                    </svg>
+                    <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
+                      Waiting — click <strong>Zwift AI → TP</strong> in your bookmarks bar
+                    </span>
+                  </div>
+                  {tpPollSlow && (
+                    <div style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.55, padding: "0 2px" }}>
+                      Nothing yet? Make sure you&apos;re logged into TrainingPeaks in that tab, then click the saved button again.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-
-            {/* Waiting status */}
-            {tpPolling && (
-              <div style={{
-                display: "flex", flexDirection: "column", gap: 6, marginBottom: 14,
-                padding: "10px 14px", borderRadius: 7,
-                background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.2)",
-              }}>
-                <span style={{ fontSize: 12.5, color: "var(--accent)", fontWeight: 600 }}>
-                  ⏳ Waiting for connection… click the bookmark in the TrainingPeaks tab
-                </span>
-                {tpPollSlow && (
-                  <span style={{ fontSize: 11.5, color: "var(--muted)", lineHeight: 1.5 }}>
-                    Still nothing after a while — make sure you clicked the <strong>Zwift AI → TP</strong> bookmark
-                    itself (not just opened the tab), and that you&apos;re logged into TrainingPeaks there.
-                  </span>
-                )}
-              </div>
-            )}
 
             {/* Cancel */}
             <button
               type="button"
               onClick={() => { setShowTPModal(false); setTpPolling(false); }}
               style={{
-                width: "100%", padding: "8px 16px", borderRadius: 6,
+                width: "100%", marginTop: 10, padding: "8px 16px", borderRadius: 7,
                 border: "1px solid var(--border)", background: "transparent",
                 color: "var(--muted)", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
               }}
             >
               Cancel
             </button>
-
-            <div style={{ marginTop: 10, fontSize: 10.5, color: "var(--muted)", opacity: 0.55, lineHeight: 1.5 }}>
-              The bookmark exchanges your TrainingPeaks session for a temporary token and sends it over HTTPS to the dashboard.
-            </div>
           </div>
         </div>
       )}
