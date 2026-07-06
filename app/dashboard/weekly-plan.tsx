@@ -586,11 +586,17 @@ export default function WeeklyPlan() {
   // Build bookmarklet href on the client using the current dashboard origin.
   // The bookmarklet runs on app.trainingpeaks.com and:
   //   1. Exchanges the HttpOnly Production_tpAuth cookie for a gAAAA token (same-origin fetch to TP API)
-  //   2. Posts the token back here via credentialed CORS fetch
+  //   2. Navigates to /connect-tp on OUR origin with the token in a URL fragment
+  //      (fragments never touch the network, so this isn't a CORS/cross-origin
+  //      fetch at all — the previous cross-origin POST approach reliably failed
+  //      with "Failed to fetch" even with correct server-side CORS config, most
+  //      likely due to an edge/WAF layer flagging script-initiated cross-origin
+  //      credentialed POSTs. /connect-tp then completes the connection with a
+  //      normal same-origin fetch, which sidesteps that failure class entirely.
   const bookmarkletHref = typeof window !== "undefined"
     ? (() => {
         const origin = window.location.origin;
-        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||null;const exp=d?.token?.expires_in||null;if(!t){alert('Error: no TP token found');return;}const r2=await fetch('${origin}/api/trainingpeaks/connect',{method:'POST',mode:'cors',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({tpToken:t,refreshToken:rt,expiresIn:exp})});const d2=await r2.json();if(d2.ok){alert('Connected! Go back to the dashboard.')}else{alert('Error: '+(d2.error||'please try again'))}}catch(e){alert('Error: '+e.message)}})()`;
+        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('Error: no TP token found');return;}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp;}catch(e){alert('Error: '+e.message)}})()`;
         return `javascript:${encodeURIComponent(code)}`;
       })()
     : "#";
