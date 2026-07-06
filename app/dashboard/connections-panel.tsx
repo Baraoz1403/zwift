@@ -92,7 +92,7 @@ interface ServiceRowProps {
 function ServiceRow({ icon, brand, name, status, description, action }: ServiceRowProps) {
   const btnStyle: React.CSSProperties = {
     width: "auto", flexShrink: 0, padding: "7px 16px",
-    fontSize: 12, boxShadow: "none", minWidth: 90,
+    fontSize: 12, boxShadow: "none", minWidth: 110, textAlign: "center",
   };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

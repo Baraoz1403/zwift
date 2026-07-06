@@ -68,11 +68,8 @@ const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
 /** localStorage key for the array of Intervals.icu eventIds pushed in the current plan */
 const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
-/** Which platform(s) auto-sync targets on regenerate: "trainingpeaks" | "intervals" | "both".
- *  "both" pushes to whichever of the two is actually connected - harmless no-op for the
- *  disconnected one, so it's a safe default that never requires the rider to think about it. */
-const SYNC_TARGET_KEY = "zwiftSyncTarget";
-type SyncTarget = "trainingpeaks" | "intervals" | "both";
+// Sync always targets both platforms — whichever is connected receives the plan;
+// the other is a harmless no-op. No UI selector needed.
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -493,17 +490,14 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Single entry point for "sync this plan to whatever the rider chose" -
-   * respects the syncTarget selector (TrainingPeaks / Intervals.icu / both).
-   * Both underlying functions already no-op safely if their platform isn't
-   * actually connected, so "both" is always a safe default regardless of
-   * which one(s) the rider has set up.
+   * Push this plan to both platforms simultaneously.
+   * Each function no-ops safely if its platform isn't connected.
    */
   async function syncPlanToConnectedPlatforms(normalizedPlan: WeeklyPlan) {
-    const tasks: Promise<void>[] = [];
-    if (syncTarget === "trainingpeaks" || syncTarget === "both") tasks.push(pushPlanToTP(normalizedPlan));
-    if (syncTarget === "intervals" || syncTarget === "both") tasks.push(pushPlanToIntervals(normalizedPlan));
-    await Promise.all(tasks);
+    await Promise.all([
+      pushPlanToTP(normalizedPlan),
+      pushPlanToIntervals(normalizedPlan),
+    ]);
   }
 
   /**
@@ -667,20 +661,6 @@ export default function WeeklyPlan() {
   const [intervalsConnected, setIntervalsConnected] = useState(false);
   const [intervalsPushLog, setIntervalsPushLog] = useState<Record<string, string>>({});
 
-  // Which platform(s) to auto-sync to on regenerate - persisted so the
-  // rider's choice sticks across sessions. Defaults to "both" (push to
-  // whichever is connected) so this never requires a decision up front.
-  const [syncTarget, setSyncTargetState] = useState<SyncTarget>("both");
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(SYNC_TARGET_KEY) as SyncTarget | null;
-      if (saved === "trainingpeaks" || saved === "intervals" || saved === "both") setSyncTargetState(saved);
-    } catch {}
-  }, []);
-  function setSyncTarget(next: SyncTarget) {
-    setSyncTargetState(next);
-    try { window.localStorage.setItem(SYNC_TARGET_KEY, next); } catch {}
-  }
 
   // Build bookmarklet href on the client using the current dashboard origin.
   // The bookmarklet runs on app.trainingpeaks.com and:
@@ -1175,41 +1155,6 @@ export default function WeeklyPlan() {
         />
       </div>
 
-      {/* Sync-target selector — only matters once at least one platform is
-          connected; "both" (the default) just works either way, so this is
-          purely for riders who want to pick or switch deliberately. */}
-      {(tpConnected || intervalsConnected) && (
-        <div style={{
-          marginTop: 12, padding: "10px 16px", borderRadius: 10,
-          display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
-        }} className="stat-card">
-          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>
-            Auto-sync new plans to:
-          </span>
-          <div style={{ display: "flex", gap: 6 }}>
-            {([
-              { key: "both" as const, label: "Both" },
-              { key: "trainingpeaks" as const, label: "TrainingPeaks" },
-              { key: "intervals" as const, label: "Intervals.icu" },
-            ]).map(opt => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setSyncTarget(opt.key)}
-                style={{
-                  padding: "5px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 600,
-                  fontFamily: "inherit", cursor: "pointer",
-                  border: syncTarget === opt.key ? "1px solid var(--accent)" : "1px solid transparent",
-                  background: syncTarget === opt.key ? "var(--accent)" : "rgba(20,23,26,0.06)",
-                  color: syncTarget === opt.key ? "#fff" : "var(--text)",
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {stale && plan && !loading && (
         <div style={{
