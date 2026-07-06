@@ -434,10 +434,13 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
-    // 2. Push new workouts
-    normalizedPlan.workouts
-      .filter(w => !isRestDay(w.type))
-      .forEach(w => { handlePushToTP(w); });
+    // 2. Push new workouts (awaited so IDs are stored before this function returns,
+    //    preventing a race condition if the user regenerates quickly)
+    await Promise.all(
+      normalizedPlan.workouts
+        .filter(w => !isRestDay(w.type))
+        .map(w => handlePushToTP(w))
+    );
   }
 
   /**
@@ -482,9 +485,11 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
-    normalizedPlan.workouts
-      .filter(w => !isRestDay(w.type))
-      .forEach(w => { handlePushToIntervals(w); });
+    await Promise.all(
+      normalizedPlan.workouts
+        .filter(w => !isRestDay(w.type))
+        .map(w => handlePushToIntervals(w))
+    );
   }
 
   /**

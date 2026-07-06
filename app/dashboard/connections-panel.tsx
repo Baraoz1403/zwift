@@ -4,7 +4,7 @@
  * ConnectionsPanel
  *
  * Shows live status for every integration:
- *   Zwift · TrainingPeaks · Strava · Garmin
+ *   Zwift · TrainingPeaks · Intervals.icu
  *
  * Fetches /api/health once on mount and exposes a manual "Re-check" button.
  * Each icon badge uses that service's own real brand color (so the row is
@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { IconBolt, IconMountain, IconClock, IconTrend } from "./icons";
+import { IconBolt, IconMountain, IconTrend } from "./icons";
 
 /** Strava is currently out of scope for the push pipeline (it's a read-only,
  *  post-hoc activity log, not part of plan delivery) - hidden from this
@@ -44,7 +44,7 @@ const STATUS_DOT_COLOR: Record<Status, string> = {
  *  (.brand-icon.<name>) and referenced here by class name, the same
  *  documented exception to "never hard-code a color" that the c-* icon
  *  badges use. */
-type BrandName = "zwift" | "trainingpeaks" | "strava" | "garmin" | "intervals";
+type BrandName = "zwift" | "trainingpeaks" | "strava" | "intervals";
 
 interface ServiceCardProps {
   icon: React.ReactNode;
@@ -86,7 +86,7 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
             target="_blank"
             rel="noopener noreferrer"
             className="btn"
-            style={{ width: "auto", flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+            style={{ flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 96 }}
           >
             {action.label}
           </a>
@@ -95,7 +95,7 @@ function ServiceCard({ icon, brand, name, status, line1, action }: ServiceCardPr
             type="button"
             onClick={action.onClick}
             className="btn"
-            style={{ width: "auto", flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none" }}
+            style={{ flexShrink: 0, padding: "7px 16px", fontSize: 12, boxShadow: "none", minWidth: 96, justifyContent: "center" }}
           >
             {action.label}
           </button>
@@ -187,10 +187,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
     !health.strava.configured ? "error" :
     health.strava.connected   ? "ok"   : "warn";
 
-  // Garmin is "ok" if TP is connected (user still needs one-time TP↔Garmin link)
-  const garminStatus: Status = !health ? "loading" :
-    health.tp.connected ? "warn" : "error";
-
   const intervalsStatus: Status = !health ? "loading" :
     health.intervals.connected ? "ok" : "error";
 
@@ -220,8 +216,8 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
         </div>
       )}
 
-      {/* Service cards */}
-      <div className="stat-grid workout-grid" style={{ gap: 12 }}>
+      {/* Service cards — 3-column equal-width grid, same breakpoints as header-cards-grid */}
+      <div className="header-cards-grid" style={{ gap: 12 }}>
 
         {/* Zwift */}
         <ServiceCard
@@ -280,20 +276,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava }: Con
           />
         )}
 
-        {/* Garmin */}
-        <ServiceCard
-          icon={<IconClock size={17} />}
-          brand="garmin"
-          name="Garmin"
-          status={garminStatus}
-          line1={
-            garminStatus === "loading" ? "Checking…" :
-            health?.tp.connected
-              ? "Syncs via TrainingPeaks — check TP↔Garmin is linked there"
-              : "Requires TrainingPeaks connected first"
-          }
-          action={health?.tp.connected ? { label: "Open TP settings ↗", href: "https://app.trainingpeaks.com/athlete/settings/apps" } : undefined}
-        />
 
         {/* Intervals.icu — free, self-service alternative/backup to TrainingPeaks.
             No approval process, no bookmarklet: a personal API key generated
