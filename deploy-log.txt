@@ -5060,3 +5060,37 @@ Mon 07/06/2026 19:33:35.50
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/connect-tp/page.tsx', LF will be replaced by CRLF the next time Git touches it
+[main 3cf201f] Auto deploy Mon 07/06/2026 19:33:36.50
+ 3 files changed, 144 insertions(+), 2 deletions(-)
+ create mode 100644 app/connect-tp/page.tsx
+To https://github.com/Baraoz1403/zwift.git
+   424d062..3cf201f  main -> main
+Mon 07/06/2026 19:33:39.06 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Mon 07/06/2026 21:56:17.45 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

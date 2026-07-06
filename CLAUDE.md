@@ -53,6 +53,20 @@ Affected files: `lib/periodization.ts`, `lib/training-load.ts`,
 
 If a file looks missing to bash, use the `Read` tool instead.
 
+### Bash's view can be stale or garbled — don't trust it for verification
+
+Beyond the cloud-only files above, bash's view of *any* file in this OneDrive
+mount can lag behind the real file (missing the tail end of a recent edit) or
+mangle non-ASCII characters (em dashes, arrows like `→`/`↔`) into replacement
+characters. This has caused false "syntax error" results from running `tsc`
+or `grep` in bash right after an edit — the real file (confirmed via `Read`)
+was fine; bash's cached copy just hadn't caught up or had corrupted a comment.
+
+**When verifying a change you just made, trust the `Read` or `Grep` tool's
+output, not bash's.** If bash and Read disagree, Read is right. Real deploys
+(`deploy.bat`, Vercel's build) read the actual files directly on Windows, not
+through this sandbox's mount, so they aren't affected by this.
+
 ---
 
 ## Deploy process
@@ -107,6 +121,31 @@ Suspense boundary renders immediately; this section streams in afterwards.
 `lib/zwift.ts` exports `ZwiftActivity`. It has `[key: string]: unknown` to allow
 any API field, plus explicit typed fields for commonly-used properties:
 `avgCadence`, `avgHeartRate`, `fitFileBucket`, `fitFileKey`, etc.
+
+### Training-plan sync: TrainingPeaks + Intervals.icu
+
+The dashboard can auto-push each generated weekly plan to either or both of:
+
+- **TrainingPeaks** (`lib/trainingpeaks.ts`) — cookie/token based (`Production_tpAuth`
+  exchanged for a 1h Bearer token via the bookmarklet at `/connect-tp`). TP's own
+  *official* Partner API is OAuth2, approval-gated (7–10 day review), and explicitly
+  **not available for personal use** — so this integration deliberately uses TP's
+  internal `tpapi.trainingpeaks.com` API instead, discovered via the open-source
+  `trainingpeaks-mcp` project.
+- **Intervals.icu** (`lib/intervals.ts`) — a personal API key (Basic auth, generated
+  by the rider once at intervals.icu/settings → Developer Settings) with **no
+  approval process** — genuinely self-service, unlike TP. Workouts are pushed as a
+  real `.zwo` file (`generateZwoXml`), the same one used for the manual Zwift
+  download, so Intervals.icu parses real structure and can relay it on to Garmin/Zwift
+  via the sync the rider sets up once in their own Intervals.icu account.
+
+Which platform(s) auto-sync targets is a rider-facing choice — see the segmented
+control rendered under the Connections panel in `weekly-plan.tsx`
+(`syncTarget`, persisted under the `zwiftSyncTarget` localStorage key: `"trainingpeaks"
+| "intervals" | "both"`). `syncPlanToConnectedPlatforms()` is the single entry point
+that respects this choice; both underlying push functions (`pushPlanToTP`,
+`pushPlanToIntervals`) already no-op safely if their platform isn't connected, so
+`"both"` (the default) is always safe regardless of what the rider has set up.
 
 ---
 

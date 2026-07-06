@@ -99,13 +99,24 @@ export async function GET() {
   };
 
   // ── Garmin ─────────────────────────────────────────────────────────────────
-  // Garmin syncs through TrainingPeaks — we cannot probe it directly.
-  // We surface it as "active" when TP is connected (user still needs to
-  // link TP↔Garmin once in TrainingPeaks account settings).
+  // Garmin syncs through TrainingPeaks or Intervals.icu — we cannot probe it
+  // directly. We surface it as "active" when either is connected (user still
+  // needs to link the Garmin connection once in that platform's own settings).
   const garmin = {
     viaTp: true,
-    note: "Syncs automatically through TrainingPeaks once linked in TP account settings.",
+    note: "Syncs automatically through TrainingPeaks or Intervals.icu once linked in that platform's account settings.",
   };
 
-  return NextResponse.json({ zwift, tp, strava, garmin });
+  // ── Intervals.icu ────────────────────────────────────────────────────────
+  // Unlike TP, the personal API key doesn't expire on an hourly cycle, so
+  // presence of the cookie is a reasonable "connected" signal here - actual
+  // key validity is (re)checked whenever a push is attempted.
+  const intervalsKey = cookieStore.get("zwift_intervals_key")?.value;
+  const intervalsName = cookieStore.get("zwift_intervals_name")?.value;
+  const intervals = {
+    connected: !!intervalsKey,
+    athleteName: intervalsName ?? null,
+  };
+
+  return NextResponse.json({ zwift, tp, strava, garmin, intervals });
 }

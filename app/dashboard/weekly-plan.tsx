@@ -66,6 +66,13 @@ const ACTIVITIES_CACHE_KEY = "zwiftWeekActivitiesCache";
 const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 /** localStorage key for the array of TP workoutIds pushed in the current plan */
 const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
+/** localStorage key for the array of Intervals.icu eventIds pushed in the current plan */
+const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
+/** Which platform(s) auto-sync targets on regenerate: "trainingpeaks" | "intervals" | "both".
+ *  "both" pushes to whichever of the two is actually connected - harmless no-op for the
+ *  disconnected one, so it's a safe default that never requires the rider to think about it. */
+const SYNC_TARGET_KEY = "zwiftSyncTarget";
+type SyncTarget = "trainingpeaks" | "intervals" | "both";
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -274,7 +281,7 @@ export default function WeeklyPlan() {
       }
       try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(activePlan)); } catch {}
       saveNextBundle(null); // consumed - a fresh "next" gets prefetched below once needed
-      pushPlanToTP(activePlan); // this plan is now live - sync it to TP same as a manual regenerate
+      syncPlanToConnectedPlatforms(activePlan); // this plan is now live - sync it same as a manual regenerate
     } else {
       const cachedCycle = loadCachedCycle();
       if (cachedCycle) setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
@@ -311,6 +318,12 @@ export default function WeeklyPlan() {
     fetch("/api/trainingpeaks/status")
       .then(r => r.json())
       .then(d => { if (d.connected) setTpConnected(true); })
+      .catch(() => {});
+
+    // Check Intervals.icu connection status
+    fetch("/api/intervals/status")
+      .then(r => r.json())
+      .then(d => { if (d.connected) setIntervalsConnected(true); })
       .catch(() => {});
 
     // Check Strava connection status + handle redirect-back from OAuth
@@ -428,6 +441,67 @@ export default function WeeklyPlan() {
   }
 
   /**
+   * Mirrors pushPlanToTP above but for Intervals.icu - same delete-old /
+   * push-new shape, since the reliability lesson (awaited deletes, one
+   * retry, only clear truly-succeeded ids) applies just as much here.
+   * Intervals.icu API keys don't expire hourly like TP's tokens, so there's
+   * no refresh-before-push step needed.
+   */
+  async function pushPlanToIntervals(normalizedPlan: WeeklyPlan) {
+    let connected = intervalsConnected;
+    try {
+      const r = await fetch("/api/intervals/status");
+      const d = await r.json();
+      connected = !!d.connected;
+    } catch { /* fall back to the React state above on network failure */ }
+    if (!connected) return;
+
+    const deleteOne = (id: string | number) =>
+      fetch("/api/intervals/push-workout", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: id }),
+      }).then(r => r.ok).catch(() => false);
+
+    try {
+      const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
+      if (prevRaw) {
+        const prevIds = JSON.parse(prevRaw) as (string | number)[];
+        const firstPass = await Promise.all(prevIds.map(async id => ({ id, ok: await deleteOne(id) })));
+        const stillFailing = firstPass.filter(r => !r.ok);
+        const secondPass = stillFailing.length > 0
+          ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
+          : [];
+        const stillOrphaned = secondPass.filter(r => !r.ok).map(r => r.id);
+        window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(stillOrphaned));
+        if (stillOrphaned.length > 0) {
+          setIntervalsPushLog(l => ({ ...l, _cleanup: `${stillOrphaned.length} old workout(s) couldn't be removed from Intervals.icu - will retry next sync` }));
+        } else {
+          setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
+        }
+      }
+    } catch {}
+
+    normalizedPlan.workouts
+      .filter(w => !isRestDay(w.type))
+      .forEach(w => { handlePushToIntervals(w); });
+  }
+
+  /**
+   * Single entry point for "sync this plan to whatever the rider chose" -
+   * respects the syncTarget selector (TrainingPeaks / Intervals.icu / both).
+   * Both underlying functions already no-op safely if their platform isn't
+   * actually connected, so "both" is always a safe default regardless of
+   * which one(s) the rider has set up.
+   */
+  async function syncPlanToConnectedPlatforms(normalizedPlan: WeeklyPlan) {
+    const tasks: Promise<void>[] = [];
+    if (syncTarget === "trainingpeaks" || syncTarget === "both") tasks.push(pushPlanToTP(normalizedPlan));
+    if (syncTarget === "intervals" || syncTarget === "both") tasks.push(pushPlanToIntervals(normalizedPlan));
+    await Promise.all(tasks);
+  }
+
+  /**
    * Generates a plan for `targetWeekOf` and makes it the active, on-screen
    * plan (loading/error state, TP push, localStorage). Used both for the
    * manual "generate new plan" button and for the automatic fallback when
@@ -462,9 +536,10 @@ export default function WeeklyPlan() {
         setStale(false);
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
-        // Auto-push all non-rest workouts to TrainingPeaks if connected.
-        // TP syncs to Zwift + Garmin automatically — no manual step needed.
-        await pushPlanToTP(normalizedPlan);
+        // Auto-push all non-rest workouts to whichever platform(s) the rider
+        // has chosen (TrainingPeaks / Intervals.icu / both) - each syncs to
+        // Zwift + Garmin on its own once connected, no manual step needed.
+        await syncPlanToConnectedPlatforms(normalizedPlan);
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -583,6 +658,25 @@ export default function WeeklyPlan() {
   const [tpPushState, setTpPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
   const [tpPushLog, setTpPushLog]     = useState<Record<string, string>>({});
 
+  // ── Intervals.icu integration ──────────────────────────────────────────────
+  const [intervalsConnected, setIntervalsConnected] = useState(false);
+  const [intervalsPushLog, setIntervalsPushLog] = useState<Record<string, string>>({});
+
+  // Which platform(s) to auto-sync to on regenerate - persisted so the
+  // rider's choice sticks across sessions. Defaults to "both" (push to
+  // whichever is connected) so this never requires a decision up front.
+  const [syncTarget, setSyncTargetState] = useState<SyncTarget>("both");
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(SYNC_TARGET_KEY) as SyncTarget | null;
+      if (saved === "trainingpeaks" || saved === "intervals" || saved === "both") setSyncTargetState(saved);
+    } catch {}
+  }, []);
+  function setSyncTarget(next: SyncTarget) {
+    setSyncTargetState(next);
+    try { window.localStorage.setItem(SYNC_TARGET_KEY, next); } catch {}
+  }
+
   // Build bookmarklet href on the client using the current dashboard origin.
   // The bookmarklet runs on app.trainingpeaks.com and:
   //   1. Exchanges the HttpOnly Production_tpAuth cookie for a gAAAA token (same-origin fetch to TP API)
@@ -692,6 +786,48 @@ export default function WeeklyPlan() {
     } catch (e) {
       setTpPushState(s => ({ ...s, [key]: "error" }));
       setTpPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
+    }
+  }
+
+  /**
+   * Mirrors handlePushToTP - no refresh-then-retry step needed since
+   * Intervals.icu personal API keys don't expire on an hourly cycle like
+   * TP's tokens do.
+   */
+  async function handlePushToIntervals(w: WeeklyWorkout) {
+    const key = `icu_${w.date ?? w.title}`;
+    const pushBody = JSON.stringify({
+      workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
+      title: w.title,
+      description: w.description,
+      durationMin: w.durationMin,
+      type: w.type,
+      targetPower: w.targetPowerPctFtp,
+      structure: w.structure,
+    });
+    try {
+      const res = await fetch("/api/intervals/push-workout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: pushBody,
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setIntervalsPushLog(l => ({ ...l, [key]: `✓ ID: ${data.eventId ?? "pushed"}` }));
+        if (data.eventId != null) {
+          try {
+            const raw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
+            const ids: (string | number)[] = raw ? JSON.parse(raw) : [];
+            ids.push(data.eventId);
+            window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(ids));
+          } catch {}
+        }
+      } else {
+        setIntervalsPushLog(l => ({ ...l, [key]: data.error ?? "Error." }));
+        if (res.status === 401 || res.status === 403) setIntervalsConnected(false);
+      }
+    } catch (e) {
+      setIntervalsPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
     }
   }
 
@@ -1031,6 +1167,42 @@ export default function WeeklyPlan() {
           onConnectStrava={() => { window.location.href = "/api/strava/oauth-start"; }}
         />
       </div>
+
+      {/* Sync-target selector — only matters once at least one platform is
+          connected; "both" (the default) just works either way, so this is
+          purely for riders who want to pick or switch deliberately. */}
+      {(tpConnected || intervalsConnected) && (
+        <div style={{
+          marginTop: 12, padding: "10px 16px", borderRadius: 10,
+          display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+        }} className="stat-card">
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>
+            Auto-sync new plans to:
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {([
+              { key: "both" as const, label: "Both" },
+              { key: "trainingpeaks" as const, label: "TrainingPeaks" },
+              { key: "intervals" as const, label: "Intervals.icu" },
+            ]).map(opt => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setSyncTarget(opt.key)}
+                style={{
+                  padding: "5px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 600,
+                  fontFamily: "inherit", cursor: "pointer",
+                  border: syncTarget === opt.key ? "1px solid var(--accent)" : "1px solid transparent",
+                  background: syncTarget === opt.key ? "var(--accent)" : "rgba(20,23,26,0.06)",
+                  color: syncTarget === opt.key ? "#fff" : "var(--text)",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {stale && plan && !loading && (
         <div style={{
