@@ -1434,6 +1434,19 @@ export default function WeeklyPlan() {
         </div>
       )}
 
+      {/* ── Generating banner — visible across the full page while loading ── */}
+      {loading && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "var(--accent)", color: "#fff",
+          padding: "10px 20px", textAlign: "center",
+          fontSize: 13, fontWeight: 600, letterSpacing: 0.3,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}>
+          Generating your plan… this takes about 30 seconds
+        </div>
+      )}
+
       {/* ── 3-column header grid ────────────────────────────────────────── */}
       <div className="header-cards-grid">
 

@@ -321,6 +321,10 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
+  "CRITICAL: ALL output — every title, description, type, and rationale field — " +
+  "MUST be written in English only. Never use Hebrew or any other language, " +
+  "even if the rider's note is written in Hebrew. Translate any Hebrew input to " +
+  "English for internal understanding, but always respond in English.\n\n" +
   "You are a cycling coach building a personalized one-week Zwift training " +
   "plan for a rider, based on their recent ride history (avgWatts, " +
   "avgHeartRate, distanceKm, durationMin, elevationM, date per ride) and " +
