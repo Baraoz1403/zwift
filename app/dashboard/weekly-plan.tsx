@@ -68,8 +68,16 @@ const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
 /** localStorage key for the array of Intervals.icu eventIds pushed in the current plan */
 const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
+/** Stable hash of the last plan version that was fully synced to all platforms.
+ *  Used to avoid re-syncing on every page refresh — only syncs when the plan changes. */
+const SYNCED_HASH_KEY = "zwiftLastSyncedPlanHash";
 // Sync always targets both platforms — whichever is connected receives the plan;
 // the other is a harmless no-op. No UI selector needed.
+
+/** Stable identifier for a plan version — changes only when the AI generates a new plan. */
+function planHash(plan: WeeklyPlan): string {
+  return `${plan.weekOf}|${plan.workouts.map(w => w.title).join(",")}`;
+}
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -258,6 +266,10 @@ export default function WeeklyPlan() {
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
+  // Tracks which plan hash has already been auto-synced in this React session,
+  // so the auto-sync useEffect fires at most once per plan version per load.
+  const [autoSyncedHash, setAutoSyncedHash] = useState<string>("");
+
   // Connections panel visibility — hidden by default, toggled via header button
   const [showConnections, setShowConnections] = useState(false);
   useEffect(() => {
@@ -265,6 +277,29 @@ export default function WeeklyPlan() {
     window.addEventListener("zwift:toggle-connections", toggle);
     return () => window.removeEventListener("zwift:toggle-connections", toggle);
   }, []);
+
+  // Auto-sync: whenever the active plan changes (or loads from localStorage),
+  // push it to all connected platforms if it hasn't been synced yet for this
+  // plan version. Uses a hash saved in localStorage so a page refresh does NOT
+  // re-sync (only a new REGENERATE, which produces a different hash, triggers it).
+  useEffect(() => {
+    if (!plan) return;
+    const hash = planHash(plan);
+    if (autoSyncedHash === hash) return; // already triggered this session
+
+    let lastSynced = "";
+    try { lastSynced = window.localStorage.getItem(SYNCED_HASH_KEY) ?? ""; } catch {}
+    if (hash === lastSynced) return; // already synced in a prior session — nothing to do
+
+    setAutoSyncedHash(hash);
+    // Fire-and-forget (useEffect can't be async). Individual card states update
+    // in real-time as each push completes. Save hash on success so next refresh
+    // sees the plan as already-synced.
+    syncPlanToConnectedPlatforms(plan).then(() => {
+      try { window.localStorage.setItem(SYNCED_HASH_KEY, hash); } catch {}
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
 
   useEffect(() => {
     const thisWeek = currentWeekOf();
@@ -549,6 +584,10 @@ export default function WeeklyPlan() {
         // has chosen (TrainingPeaks / Intervals.icu / both) - each syncs to
         // Zwift + Garmin on its own once connected, no manual step needed.
         await syncPlanToConnectedPlatforms(normalizedPlan);
+        // Mark this plan version as synced so the auto-sync useEffect doesn't
+        // re-run it on the next page load (it only re-syncs when the plan changes).
+        try { window.localStorage.setItem(SYNCED_HASH_KEY, planHash(normalizedPlan)); } catch {}
+        setAutoSyncedHash(planHash(normalizedPlan));
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
