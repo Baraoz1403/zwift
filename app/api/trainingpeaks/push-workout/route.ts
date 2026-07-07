@@ -24,7 +24,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { pushWorkoutToTP, deleteWorkoutFromTP, refreshTPToken } from "@/lib/trainingpeaks";
+import { pushWorkoutToTP, deleteWorkoutFromTP, refreshTPToken, listTPWorkouts } from "@/lib/trainingpeaks";
 import type { WorkoutStructureBlock } from "@/lib/zwo";
 
 export async function POST(req: NextRequest) {
@@ -104,6 +104,41 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json(result);
+}
+
+/**
+ * GET /api/trainingpeaks/push-workout?oldest=YYYY-MM-DD&newest=YYYY-MM-DD
+ *
+ * Lists workouts on the rider's TrainingPeaks calendar in a date range - the
+ * server-truth source for finding and removing this app's own stale
+ * duplicate pushes on an ongoing basis. Does NOT filter for safety here -
+ * that filtering (title marker + no actual/completed data) happens
+ * client-side in weekly-plan.tsx's cleanupStaleTPWorkouts, matching the same
+ * pattern as the Intervals.icu listing endpoint.
+ */
+export async function GET(req: NextRequest) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
+
+  const session = await decryptSession(raw);
+  if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
+
+  const tpToken = cookieStore.get("zwift_tp_token")?.value;
+  const tpAthleteId = cookieStore.get("zwift_tp_id")?.value;
+  if (!tpToken || !tpAthleteId) {
+    return NextResponse.json({ ok: false, error: "TrainingPeaks not connected." }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const oldest = searchParams.get("oldest");
+  const newest = searchParams.get("newest");
+  if (!oldest || !newest) {
+    return NextResponse.json({ ok: false, error: "Missing oldest/newest query params." }, { status: 400 });
+  }
+
+  const workouts = await listTPWorkouts(tpToken, tpAthleteId, oldest, newest);
+  return NextResponse.json({ ok: true, workouts });
 }
 
 /**

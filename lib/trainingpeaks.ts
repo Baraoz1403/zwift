@@ -172,6 +172,59 @@ export interface DeleteWorkoutResult {
   error?: string;
 }
 
+export interface TPWorkoutSummary {
+  workoutId: string | number;
+  title?: string;
+  workoutDay?: string;
+  /** Hours - planned duration. */
+  totalTimePlanned?: number | null;
+  /** Hours - ACTUAL duration. Only present once a real ride (e.g. synced
+   *  from Garmin) has been attached to this workout slot. */
+  totalTime?: number | null;
+  distance?: number | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Lists workouts on the rider's TrainingPeaks calendar within a date range.
+ *
+ * Exists so the app can find and remove its OWN stale duplicate pushes on an
+ * ongoing basis (not a one-off pass) without ever risking a real completed
+ * outdoor Garmin ride. TP's workout list mixes planned and completed entries
+ * in the same collection - the safety rule enforced by the caller (see
+ * cleanupStaleTPWorkouts below) is to only ever touch a workout that BOTH
+ * carries our own title marker AND has no actual/completed data attached
+ * (totalTime/distance are empty) - i.e. something we planned that nothing
+ * real has ever been recorded against.
+ */
+export async function listTPWorkouts(
+  tpCookie: string,
+  tpAthleteId: string,
+  oldest: string,
+  newest: string
+): Promise<TPWorkoutSummary[]> {
+  let accessToken: string;
+  try {
+    accessToken = await exchangeCookieForToken(tpCookie);
+  } catch {
+    return [];
+  }
+  try {
+    const res = await fetch(
+      `${TP_API}/fitness/v6/athletes/${tpAthleteId}/workouts/${oldest}/${newest}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? (data as TPWorkoutSummary[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Delete a planned workout from TrainingPeaks by workoutId.
  * Returns ok:true also on 404 (already gone).

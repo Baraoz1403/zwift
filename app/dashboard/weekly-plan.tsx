@@ -159,24 +159,28 @@ function todayIso(): string {
 }
 
 /**
- * Rolling 7-day-ahead window: merges the active plan's workouts with a
+ * Rolling 6-day-ahead window: merges the active plan's workouts with a
  * pre-fetched next-week plan (if any), drops anything whose date has already
  * passed, and returns the next `size` upcoming days in date order. This is
  * what the dashboard actually renders - never `plan.workouts` directly -
  * so a workout silently disappears from view the day after it happens, and
- * the grid keeps showing a full week of what's coming up regardless of
+ * the grid always shows exactly 6 days of what's coming up regardless of
  * where "today" falls inside the calendar week.
  *
- * size defaults to 7 (a full real week) - it used to default to 6, which
- * combined with normalizeToSix trimming a rest day out of the plan meant a
- * real calendar day could be missing from the grid entirely (e.g. Friday,
- * Saturday, then straight to Monday with no Sunday shown at all).
+ * size stays 6 by design (that's the intended grid width) - the earlier
+ * "Sunday missing" bug wasn't the count, it was normalizeToSix silently
+ * dropping a REST day out of the underlying plan data (not just the
+ * display), which could open a gap in the middle of the week instead of at
+ * the edge of the 6-day slice. normalizeToSix now keeps all 7 real calendar
+ * days in the data model; this window still only ever *shows* 6 of them,
+ * but since the pool it slices from is always gap-free, the 6 it picks are
+ * always consecutive real days with no hole in the middle.
  */
 function computeForwardWindow(
   current: WeeklyPlan | null,
   next: WeeklyPlan | null,
   today: string,
-  size = 7
+  size = 6
 ): WeeklyWorkout[] {
   if (!current) return [];
   const pool = [...current.workouts, ...(next?.workouts ?? [])];
@@ -190,18 +194,36 @@ const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
 
 /**
  * Ensures every workout has a concrete ISO date string ("YYYY-MM-DD"),
- * computed from the plan's weekOf + the workout's day-of-week index.
- * The AI sometimes omits dates on active workouts (only day names are
- * returned), which breaks the "Ride done" detection in the plan grid.
+ * computed from the plan's weekOf (Monday, always set by our own code - see
+ * weekOfMonday in lib/ai.ts, never by the AI) plus the workout's day-of-week
+ * index.
+ *
+ * This USED to trust the AI's own `date` field whenever it supplied one
+ * ("if (w.date) return w"), only filling in a date when the AI omitted it.
+ * That was the actual root cause behind a whole family of confusing bugs:
+ * the AI's system prompt asks it to compute each date itself via arithmetic
+ * on weekOfMonday ("Tuesday = weekOfMonday+1", etc.) - LLM date arithmetic
+ * is unreliable, and it doesn't have to be *consistently* wrong to cause
+ * damage: a workout could come back with day="Tuesday" and date="2026-07-08"
+ * (actually a Wednesday) - internally self-contradictory. Everything keyed
+ * off `date` (ICU/TP pushes, Zwift's own calendar, weekActivities matching)
+ * then disagreed with everything keyed off `day`, which is exactly what
+ * surfaced as the dashboard showing "Tuesday (2026-07-08) - Surge Ride"
+ * while the same ride pushed through to Zwift correctly read "Wed Jul 8".
+ *
+ * The fix: never trust the AI's arithmetic for this. `day` (a weekday name)
+ * is a far simpler thing for the model to get right than full date math, and
+ * `weekOf` is deterministic (our own code, not the AI's). So `date` is now
+ * ALWAYS recomputed from those two - the AI's own `date` field, if present,
+ * is ignored entirely - guaranteeing day-name and date can never disagree.
  */
 function ensureWorkoutDates(plan: WeeklyPlan): WeeklyPlan {
   const base = new Date(plan.weekOf + "T00:00:00Z");
   return {
     ...plan,
     workouts: plan.workouts.map((w) => {
-      if (w.date) return w; // already populated — leave unchanged
       const dayIndex = WEEK_DAYS.indexOf(w.day);
-      if (dayIndex < 0) return w;
+      if (dayIndex < 0) return w; // unrecognized day name — leave whatever date it had, if any
       const d = new Date(base);
       d.setUTCDate(d.getUTCDate() + dayIndex);
       return { ...w, date: d.toISOString().slice(0, 10) };
@@ -435,33 +457,7 @@ export default function WeeklyPlan() {
         if (d.connected) {
           setTpConnected(true);
           setTpTokenExpired(false);
-
-          // One-time cleanup of duplicate workouts TP accumulated back when
-          // this app still auto-pushed the plan there (before that was
-          // disabled - see syncPlanToConnectedPlatforms). Deliberately NOT
-          // a range-based bulk delete like the ICU cleanup: TP's workout
-          // list can mix planned and real completed Garmin rides, so a
-          // blind date-range sweep risks deleting genuine training data.
-          // This only deletes the specific ids this browser itself recorded
-          // pushing (TP_PUSHED_IDS_KEY) - a known-safe, precise list, not a
-          // guess. Once cleared, there's nothing left to grow it back since
-          // auto-push to TP no longer happens at all.
-          try {
-            const raw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
-            const ids: (string | number)[] = raw ? JSON.parse(raw) : [];
-            if (ids.length > 0) {
-              Promise.all(ids.map(id =>
-                fetch("/api/trainingpeaks/push-workout", {
-                  method: "DELETE",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ workoutId: id }),
-                }).then(r => r.ok).catch(() => false)
-              )).then(results => {
-                const remaining = ids.filter((_, i) => !results[i]);
-                window.localStorage.setItem(TP_PUSHED_IDS_KEY, JSON.stringify(remaining));
-              });
-            }
-          } catch {}
+          cleanupStaleTPWorkouts();
         }
         else if (d.tokenExpired) { setTpTokenExpired(true); }
       })
@@ -589,6 +585,63 @@ export default function WeeklyPlan() {
         .filter(w => !isRestDay(w.type))
         .map(w => handlePushToTP(w))
     );
+  }
+
+  /**
+   * Ongoing (not one-time) cleanup of this app's own stale duplicate pushes
+   * on TrainingPeaks - runs every time TP is confirmed connected, same as
+   * the Intervals.icu cleanup runs every sync, rather than depending on a
+   * single browser's localStorage memory of what it once pushed. That
+   * one-off/local-only approach was the actual weak point: it only ever
+   * caught ids the CURRENT browser remembered, so a duplicate pushed from a
+   * different device/session, or surviving a cleared localStorage, would
+   * never get cleaned up and could look "fixed" only to resurface later.
+   *
+   * Server-truth queries always converge instead: list what TP actually has
+   * in a wide date range and delete every match, every time this runs - no
+   * memory required, so nothing can permanently slip through.
+   *
+   * Safety: TP's workout list mixes planned and completed entries in one
+   * collection, so this is deliberately conservative about what counts as
+   * "ours to delete." A workout is only removed if BOTH are true:
+   *   1. Its title carries the exact "Mon Jul 8 · " date-label prefix this
+   *      app always adds (see workoutDateLabel/handlePushToTP) - not a
+   *      pattern a rider or Garmin would produce on their own.
+   *   2. It has no actual/completed data attached (totalTime and distance
+   *      are both empty) - i.e. nothing real was ever recorded against it.
+   * A workout failing either check - including anything with real ride data
+   * merged in, planned or not - is left alone.
+   */
+  async function cleanupStaleTPWorkouts() {
+    const dateLabelPrefix = /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} · /;
+    const today = todayIso();
+    const oldest = addDaysIso(today, -90);
+    const newest = addDaysIso(today, 30);
+    try {
+      const r = await fetch(`/api/trainingpeaks/push-workout?oldest=${oldest}&newest=${newest}`);
+      const d = await r.json();
+      if (!d.ok || !Array.isArray(d.workouts)) return;
+      const stale = (d.workouts as {
+        workoutId: string | number;
+        title?: string;
+        totalTime?: number | null;
+        distance?: number | null;
+      }[]).filter(w =>
+        w.title && dateLabelPrefix.test(w.title) &&
+        !(w.totalTime && w.totalTime > 0) &&
+        !(w.distance && w.distance > 0)
+      );
+      if (stale.length === 0) return;
+      await Promise.all(stale.map(w =>
+        fetch("/api/trainingpeaks/push-workout", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workoutId: w.workoutId }),
+        }).catch(() => {})
+      ));
+    } catch {
+      // Best-effort - next time TP shows connected, this runs again.
+    }
   }
 
   /**
