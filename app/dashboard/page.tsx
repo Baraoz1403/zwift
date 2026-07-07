@@ -193,9 +193,11 @@ export default async function DashboardPage() {
         <div className="header-nav-row">
           {!activitiesError && activities.length > 0 && (
             <>
-              <a href="#weekly-plan" className="header-nav-chip">
-                <IconCalendar size={15} />
-                Weekly Plan
+              <a href="#training-profile" className="header-nav-chip">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)", opacity: 0.8 }}>
+                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+                Training Profile
               </a>
               <a href="#todays-note" className="header-nav-chip">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)", opacity: 0.8 }}>
