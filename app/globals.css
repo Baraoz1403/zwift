@@ -907,9 +907,11 @@ a:hover {
 
 /* Prose text inside cards — descriptions, summaries, etc. */
 .card-desc {
-  text-align: justify;
-  hyphens: auto;
-  line-height: 1.55;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ---------- Footer ---------- */

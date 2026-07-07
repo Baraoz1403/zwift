@@ -1918,7 +1918,7 @@ export default function WeeklyPlan() {
                       </span>
                     )}
                   </div>
-                  <div className="card-desc" style={{ fontSize: 13.5, lineHeight: 1.5, marginTop: 6, flexGrow: 1 }}>
+                  <div className="card-desc" style={{ fontSize: 13.5, marginTop: 6 }}>
                     {w.description}
                   </div>
                   {!isRestDay(w.type) && (() => {
