@@ -363,6 +363,25 @@ export default function WeeklyPlan() {
     return () => window.removeEventListener("zwift:toggle-connections", toggle);
   }, []);
 
+  // Immediate regenerate on profile save (see the dispatch in
+  // training-profile.tsx's saveProfile). Reuses the exact same path a daily
+  // note already used - handleGenerate() regenerates THIS week using
+  // whatever's currently in localStorage (so it picks up the profile edit
+  // that was just made) and, once the new plan lands, generateAndActivate's
+  // own syncPlanToConnectedPlatforms call carries it on to Intervals.icu ->
+  // Zwift automatically - no separate wiring needed for that part.
+  useEffect(() => {
+    const onProfileSaved = () => { handleGenerate(); };
+    window.addEventListener("zwift:profile-saved", onProfileSaved);
+    return () => window.removeEventListener("zwift:profile-saved", onProfileSaved);
+    // Re-subscribe whenever plan/stale change so the listener always closes
+    // over the current handleGenerate (which reads them) - an empty dep
+    // array here would freeze it on whatever plan/stale were at first
+    // mount (both still null/false that early), silently dropping
+    // "previousPlan" context from every profile-triggered regenerate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, stale]);
+
   // Auto-sync: whenever the active plan changes (or loads from localStorage),
   // reconcile it against Intervals.icu. This used to skip re-syncing on a
   // plain page refresh (via SYNCED_HASH_KEY in localStorage) on the theory
@@ -874,7 +893,7 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Background pre-fetch of next week's plan, so the rolling 7-day window
+   * Background pre-fetch of next week's plan, so the rolling 6-day window
    * (see computeForwardWindow) never has to fall back on empty days as the
    * current week's remaining slots run out. Cheap to call speculatively -
    * it no-ops unless the window would actually come up short and nothing
@@ -928,7 +947,7 @@ export default function WeeklyPlan() {
     await generateAndActivate(targetWeekOf, previousPlanForAI);
   }
 
-  // Rolling 7-day-ahead window actually rendered below - see
+  // Rolling 6-day-ahead window actually rendered below - see
   // computeForwardWindow's doc comment. Recomputed whenever the active plan,
   // the pre-fetched next-week plan changes (date doesn't need to be a
   // dependency - a stale "today" only matters across a full page reload,

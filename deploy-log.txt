@@ -5787,3 +5787,37 @@ Tue 07/07/2026 16:17:31.14
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/globals.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/ai.ts', LF will be replaced by CRLF the next time Git touches it
+[main 76df074] Auto deploy Tue 07/07/2026 16:17:32.06
+ 4 files changed, 84 insertions(+), 25 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   cb13cf7..76df074  main -> main
+Tue 07/07/2026 16:17:34.79 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/07/2026 16:28:56.15 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

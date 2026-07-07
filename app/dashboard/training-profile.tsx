@@ -34,6 +34,14 @@ function loadProfile(): RiderTrainingProfile | null {
 
 function saveProfile(p: RiderTrainingProfile) {
   try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch {}
+  // Tell WeeklyPlan a profile save just happened, so it can immediately
+  // regenerate this week's plan with the new values instead of waiting for
+  // some other unrelated trigger (a daily note, or the week rolling over)
+  // to happen to pick it up. This is the other half of "the system should
+  // understand new information and run a new plan immediately" - the daily
+  // note side of that already worked (see handleGenerate in weekly-plan.tsx);
+  // saving the profile itself never triggered anything on its own before.
+  try { window.dispatchEvent(new CustomEvent("zwift:profile-saved")); } catch {}
 }
 
 function loadPhaseLabel(): string | null {
