@@ -831,7 +831,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 6000,
+        max_tokens: 8000,
         system: WEEKLY_PLAN_SYSTEM_PROMPT,
         messages: [{ role: "user", content: userContent }],
       }),
@@ -865,7 +865,9 @@ export async function generateWeeklyPlan(params: {
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
+    // Include the tail of the raw response so we can diagnose truncation vs. malformed JSON.
+    const tail = cleaned.slice(-300);
+    throw new AiInsightsError(`Parse failed. Response tail: ${tail}`);
   }
 
   const obj = parsed as Partial<WeeklyPlan>;
