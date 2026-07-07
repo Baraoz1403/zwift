@@ -269,16 +269,8 @@ export default function WeeklyPlan() {
     return () => { cancelled = true; };
   }, [weekActivities, ftp, realPowerByRideId]);
 
-  // Tracks which plan hash has already been auto-synced in this React session,
-  // so the auto-sync useEffect fires at most once per plan version per load.
-  const [autoSyncedHash, setAutoSyncedHash] = useState<string>("");
-  // Debounce refs for auto-sync: prevent concurrent ICU pushes when the plan
-  // changes quickly (local cache → server plan on startup, or next-bundle
-  // promotion → server plan). Without this, two pushes take the same
-  // pre-push ICU snapshot, each push 6 new events, and neither cleans up
-  // the other's freshly created events → 12 events (duplicates in Zwift).
-  const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSyncPlanRef = useRef<WeeklyPlan | null>(null);
+  // Auto-sync to ICU is intentionally disabled on page load — see the comment
+  // below the connections useEffect for the full explanation.
 
   // Connections panel visibility — hidden by default, toggled via header button
   const [showConnections, setShowConnections] = useState(false);
@@ -314,43 +306,18 @@ export default function WeeklyPlan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, stale]);
 
-  // Auto-sync: whenever the plan changes, reconcile against Intervals.icu.
-  //
-  // Why debounce instead of syncing immediately on every plan state change:
-  // On page load the plan state can change quickly twice — first from the
-  // local localStorage cache, then from the KV server check (which may return
-  // a different plan). Without debouncing, both fire pushPlanToIntervals
-  // concurrently: both take the same pre-push ICU snapshot (same 6 events),
-  // both push 6 fresh events (12 total), but each only cleans up the snapshot
-  // IDs (the 6 old ones) and not the other concurrent push's 6 new IDs →
-  // 12 events on ICU → duplicates in Zwift. The same race happens on the
-  // first load of a new week when a pre-fetched next-bundle is promoted.
-  //
-  // An 800 ms debounce is long enough for the KV server check to complete
-  // (it's a fast Redis read, typically <200 ms) before we push anything.
-  // The plan that's current when the timer fires is the one we sync —
-  // so if the server plan replaced the local plan in that window, we sync
-  // the server plan only (never the stale local copy).
-  useEffect(() => {
-    if (!plan) return;
-    const hash = planHash(plan);
-    if (autoSyncedHash === hash) return; // already synced this plan version
-
-    // Record latest plan and reset the debounce timer.
-    pendingSyncPlanRef.current = plan;
-    if (syncDebounceRef.current) clearTimeout(syncDebounceRef.current);
-    syncDebounceRef.current = setTimeout(() => {
-      syncDebounceRef.current = null;
-      const planToSync = pendingSyncPlanRef.current;
-      if (!planToSync) return;
-      const syncHash = planHash(planToSync);
-      setAutoSyncedHash(syncHash);
-      syncPlanToConnectedPlatforms(planToSync).then(() => {
-        try { window.localStorage.setItem(SYNCED_HASH_KEY, syncHash); } catch {}
-      });
-    }, 800);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+  // Auto-sync on page load is intentionally DISABLED.
+  // The cron job (app/api/ai/weekly-plan/cron/route.ts) already pushes every
+  // plan to Intervals.icu right after generation. Syncing again on every page
+  // load from every browser/device caused a cross-device race: Mac and iPad
+  // each took the same pre-push ICU snapshot, each pushed 6 new events (12
+  // total), but each only deleted the original snapshot IDs — not the other
+  // device's newly-pushed events — leaving 12+ events on ICU → duplicates in
+  // Zwift that accumulated on every page load. Client-side ICU sync now
+  // happens ONLY when the user takes an explicit action:
+  //   • Generate / Regenerate → generateAndActivate → syncPlanToConnectedPlatforms
+  // The cron handles the autonomous weekly push; the client corrects ICU only
+  // when a new plan is actually produced in-session.
 
   useEffect(() => {
     const thisWeek = currentWeekOf();

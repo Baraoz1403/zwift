@@ -26,6 +26,46 @@ export interface HeadlessSyncResult {
   errors: string[];
 }
 
+/**
+ * Dedup-only pass: for each date in [oldest..newest] that already has more than
+ * one WORKOUT event on ICU, keep the most-recently-created one and delete the
+ * rest. Does NOT push any new events — safe to call mid-week without knowing
+ * which days the athlete has already ridden. Returns the count of events deleted.
+ */
+export async function cleanupIcuDuplicates(
+  apiKey: string,
+  athleteId: string | undefined,
+  oldest: string,
+  newest: string
+): Promise<{ deleted: number; errors: string[] }> {
+  const errors: string[] = [];
+  let deleted = 0;
+  try {
+    const existingEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    const byDate = new Map<string, (string | number)[]>();
+    for (const e of existingEvents) {
+      const day = (e.start_date_local ?? "").slice(0, 10);
+      if (!day) continue;
+      if (!byDate.has(day)) byDate.set(day, []);
+      byDate.get(day)!.push(e.id);
+    }
+    for (const [, ids] of byDate) {
+      if (ids.length <= 1) continue;
+      // Keep the highest ID (most recently created on ICU), delete older duplicates.
+      const keep = ids.reduce((a, b) => (String(b) > String(a) ? b : a));
+      for (const id of ids) {
+        if (id === keep) continue;
+        const r = await deleteEventFromIntervals(apiKey, id, athleteId);
+        if (r.ok) deleted++;
+        else if (r.error) errors.push(`delete ${id}: ${r.error}`);
+      }
+    }
+  } catch (e) {
+    errors.push(e instanceof Error ? e.message : String(e));
+  }
+  return { deleted, errors };
+}
+
 export async function syncPlanToIntervalsHeadless(
   apiKey: string,
   athleteId: string | undefined,

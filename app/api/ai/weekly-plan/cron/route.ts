@@ -3,7 +3,7 @@ import { refreshZwiftToken, ZwiftApiError } from "@/lib/zwift";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
-import { syncPlanToIntervalsHeadless } from "@/lib/headless-sync";
+import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates } from "@/lib/headless-sync";
 import {
   getKnownAthletes,
   getStoredZwiftRefreshToken,
@@ -105,9 +105,33 @@ export async function GET(req: NextRequest) {
 
       const state = await getStoredAthleteState(athleteId);
 
-      // Already have this week's plan - nothing to generate.
+      // Already have this week's plan — no need to regenerate, but run a
+      // dedup pass on ICU to clean up any duplicate events that may have
+      // accumulated from a previous cross-device race condition. This is a
+      // read-then-selective-delete: it never pushes new events, so it's safe
+      // to call mid-week without knowing which days the athlete has ridden.
       if (state.previousPlan?.weekOf === weekOf) {
-        results.push({ athleteId, status: "already-current", weekOf });
+        let icuCleaned: number | undefined;
+        if (state.icuKey && state.previousPlan) {
+          try {
+            const allDates = state.previousPlan.workouts
+              .map(w => (w as { date?: string }).date)
+              .filter(Boolean)
+              .sort() as string[];
+            if (allDates.length >= 2) {
+              const cleanResult = await cleanupIcuDuplicates(
+                state.icuKey,
+                state.icuId ?? undefined,
+                allDates[0],
+                allDates[allDates.length - 1]
+              );
+              icuCleaned = cleanResult.deleted;
+            }
+          } catch {
+            // best-effort — don't fail the whole cron run for a cleanup hiccup
+          }
+        }
+        results.push({ athleteId, status: "already-current", weekOf, deleted: icuCleaned });
         continue;
       }
 
