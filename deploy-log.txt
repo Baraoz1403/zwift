@@ -5954,3 +5954,26 @@ Tue 07/07/2026 18:28:54.72
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/api/ai/weekly-plan/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/login/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/refresh/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/ai-insights.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/ai.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/coaching-knowledge.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/periodization.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/plan-runner.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/ai/weekly-plan/cron/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/headless-sync.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/kv-plan-state.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/plan-shape.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'vercel.json', LF will be replaced by CRLF the next time Git touches it
+[main cbb6695] Auto deploy Tue 07/07/2026 18:28:56.67
+ 15 files changed, 783 insertions(+), 185 deletions(-)
+ create mode 100644 app/api/ai/weekly-plan/cron/route.ts
+ create mode 100644 lib/headless-sync.ts
+ create mode 100644 lib/kv-plan-state.ts
+ create mode 100644 lib/plan-shape.ts
+ create mode 100644 vercel.json
+To https://github.com/Baraoz1403/zwift.git
+   ebd8f67..cbb6695  main -> main
+Tue 07/07/2026 18:28:59.68 - SUCCESS: pushed. Vercel rebuilding. 

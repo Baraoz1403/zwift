@@ -353,19 +353,65 @@ export default function WeeklyPlan() {
 
     if (activePlan) setPlan(activePlan);
 
-    const isFullyStale = !activePlan || activePlan.weekOf !== thisWeek;
-    if (isFullyStale) {
-      // Either no cached plan at all, or the week rolled over with nothing
-      // pre-fetched to cover it (e.g. the rider was away for 2+ weeks).
-      // Auto-generate the current week's plan now - no manual click needed.
-      // The stale banner + its "generate" button remain only as a fallback
-      // if this auto-attempt fails (shown once `loading` finishes).
-      setStale(true);
-      generateAndActivate(thisWeek, activePlan ?? undefined);
-    } else {
-      setStale(false);
-      prefetchNextWeekIfNeeded(activePlan!);
-    }
+    const isLocallyStale = !activePlan || activePlan.weekOf !== thisWeek;
+
+    // Reconcile against the server (KV) before ever deciding to generate a
+    // brand-new plan. Previously this device would call the AI for a fresh
+    // plan any time ITS OWN localStorage looked stale for `thisWeek` - even
+    // when another device (or the cron job - see
+    // app/api/ai/weekly-plan/cron/route.ts) had already generated and
+    // pushed one for the exact same week. Two devices could then each hold
+    // a genuinely different AI-generated plan for the same week - which is
+    // exactly what surfaced as "the rides are different on my iPad." Now
+    // every load asks the server first (see /api/ai/weekly-plan/state's doc
+    // comment) and adopts whatever it already has for this week instead of
+    // silently forking a second, independent copy.
+    (async () => {
+      let serverPlan: WeeklyPlan | null = null;
+      let serverCycle: MacroCycleState | null = null;
+      try {
+        const r = await fetch("/api/ai/weekly-plan/state", { cache: "no-store" });
+        const d = await r.json();
+        if (d.ok && d.plan && d.plan.weekOf === thisWeek) {
+          serverPlan = ensureWorkoutDates(
+            normalizeToSix({ weekOf: d.plan.weekOf, summary: d.plan.summary ?? "", workouts: d.plan.workouts })
+          );
+          serverCycle = d.macroCycle ?? null;
+        }
+      } catch {
+        // No server reachable / no state yet - fall through to the
+        // local-only behavior below exactly as before this change.
+      }
+
+      if (
+        serverPlan &&
+        (!activePlan || activePlan.weekOf !== thisWeek || planHash(activePlan) !== planHash(serverPlan))
+      ) {
+        setPlan(serverPlan);
+        setStale(false);
+        try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(serverPlan)); } catch {}
+        if (serverCycle) {
+          try { window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(serverCycle)); } catch {}
+          setCycleInfo(getPhaseForWeekIndex(serverCycle.weekIndex));
+        }
+        prefetchNextWeekIfNeeded(serverPlan);
+        return;
+      }
+
+      if (isLocallyStale) {
+        // Either no cached plan at all, or the week rolled over with
+        // nothing pre-fetched to cover it (e.g. the rider was away for 2+
+        // weeks) AND the server has nothing either. Auto-generate the
+        // current week's plan now - no manual click needed. The stale
+        // banner + its "generate" button remain only as a fallback if this
+        // auto-attempt fails (shown once `loading` finishes).
+        setStale(true);
+        generateAndActivate(thisWeek, activePlan ?? undefined);
+      } else {
+        setStale(false);
+        prefetchNextWeekIfNeeded(activePlan!);
+      }
+    })();
 
     // Load cached activities immediately to prevent flash on refresh
     try {
@@ -1447,7 +1493,7 @@ export default function WeeklyPlan() {
       <div className="header-cards-grid">
 
         {/* Card 1: Training Profile */}
-        <TrainingProfileCard />
+        <div id="training-profile"><TrainingProfileCard /></div>
 
         {/* Card 2: Today's Note */}
         <div id="todays-note" className="stat-card" style={{
@@ -1574,11 +1620,9 @@ export default function WeeklyPlan() {
               : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
           </div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <button
-              type="button"
+            <a
+              href="#training-profile"
               className="header-card-btn"
-              onClick={handleGenerate}
-              disabled={loading}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 5,
                 padding: "6px 14px", borderRadius: 6,
@@ -1586,19 +1630,15 @@ export default function WeeklyPlan() {
                 background: "#16a34a",
                 color: "#fff",
                 fontSize: 12, fontWeight: 600,
-                cursor: loading ? "default" : "pointer",
-                opacity: loading ? 0.5 : 1,
                 fontFamily: "inherit",
-                transition: "opacity 0.15s",
+                textDecoration: "none",
               }}
             >
-              {loading ? "Building…" : plan ? "Regenerate plan" : "Generate this week's plan"}
-              {!loading && (
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              )}
-            </button>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+              My training profile
+            </a>
           </div>
         </div>
 

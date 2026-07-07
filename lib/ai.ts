@@ -325,13 +325,23 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "plan for a rider, based on their recent ride history (avgWatts, " +
   "avgHeartRate, distanceKm, durationMin, elevationM, date per ride) and " +
   "their FTP/weight/level/ageYears. The input also includes weekOfMonday " +
-  "(YYYY-MM-DD, the Monday of the upcoming week this plan covers) - use it " +
-  "to compute each workout's real calendar date (Monday=weekOfMonday, " +
-  "Tuesday=weekOfMonday+1, etc), and a separate today field (YYYY-MM-DD, " +
-  "the actual real-world current date) - use today, NOT weekOfMonday, to " +
-  "resolve any relative day reference in riderNote (see below) such as " +
-  "'today' or 'tomorrow', since today can fall anywhere inside or before " +
-  "the plan's week (e.g. requesting a mid-week update). The input also " +
+  "(YYYY-MM-DD, the Monday of the upcoming week this plan covers), a " +
+  "separate today field (YYYY-MM-DD, the actual real-world current date), " +
+  "and a weekDates object - a precomputed lookup mapping each day name " +
+  "(Monday..Sunday) directly to its exact calendar date for THIS plan's " +
+  "week, e.g. {\"Monday\":\"2026-07-06\",...,\"Sunday\":\"2026-07-12\"}. " +
+  "ALWAYS use weekDates directly for a workout's date field and for " +
+  "resolving any day name mentioned in riderNote (e.g. 'Sunday', " +
+  "'Wednesday') - never compute it yourself via addition on weekOfMonday. " +
+  "This matters: date arithmetic done in free-form reasoning has produced " +
+  "real, hard-to-notice bugs before (a request naming one day silently " +
+  "landing on the wrong one), which is exactly why weekDates is handed to " +
+  "you pre-computed. Use today (not weekOfMonday, not arithmetic) only to " +
+  "resolve a RELATIVE reference in riderNote such as 'today' or 'tomorrow' " +
+  "- for 'tomorrow', take the calendar date one day after today and match " +
+  "it against weekDates' values to find which day name that is, since " +
+  "today can fall anywhere inside or before the plan's week (e.g. " +
+  "requesting a mid-week update). The input also " +
   "includes a trainingLoad " +
   "object - {ctl, atl, tsb, freshness, ridesLast7Days, ridesPrior7Days} - " +
   "computed directly from the rider's ride history (a simplified version " +
@@ -486,10 +496,16 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "week's intensity/volume accordingly, same as a fatigue signal; " +
   "(2) an explicit scheduling request naming a day or relative date " +
   "(e.g. 'put a hard workout tomorrow', 'I need Thursday off', 'long ride " +
-  "on Saturday', or in Hebrew: 'אימון מחר', 'מנוחה ביום חמישי') - " +
-  "resolve it against the today field (NOT weekOfMonday) to get the exact " +
-  "calendar date, then UNCONDITIONALLY place the requested workout on that " +
-  "exact date, replacing whatever was there (rest day or otherwise). " +
+  "on Saturday', 'add a ride on Sunday in addition to what's already " +
+  "there', or in Hebrew: 'אימון מחר', 'מנוחה ביום חמישי', 'תוסיף רכיבה " +
+  "ביום ראשון') - resolve the named/relative day to its exact calendar " +
+  "date using weekDates (see above - a named day is a direct weekDates " +
+  "lookup; a relative day like 'tomorrow' resolves via today first, see " +
+  "above), then UNCONDITIONALLY place the requested workout on that exact " +
+  "date, replacing whatever was there (rest day or otherwise) - a request " +
+  "phrased as 'in addition to' or 'as well as' the existing plan still " +
+  "means: change ONLY that one day, leave every other day's session " +
+  "exactly as you'd otherwise have scheduled it. " +
   "If the rider asks for a workout tomorrow and tomorrow currently has no " +
   "workout, add one. If they ask for a rest day on a workout day, make it " +
   "rest. The only exceptions: two hard sessions back-to-back (insert easy " +
@@ -710,6 +726,28 @@ export async function generateWeeklyPlan(params: {
   // pointer, and this prompt's date math never drift apart.
   const weekOfMonday = params.targetWeekOf ?? mondayOfCurrentWeek();
 
+  // Precomputed day-name -> exact date lookup for this plan's week, handed
+  // to the model instead of asking it to add N days to weekOfMonday itself.
+  // This project has repeatedly hit real bugs from LLM-computed date
+  // arithmetic (see ensureWorkoutDates in lib/plan-shape.ts and resolvePhase
+  // in lib/periodization.ts for two earlier instances) - a rider note
+  // naming a specific day ("add a ride on Sunday") is the one remaining
+  // place that arithmetic could still happen inside the model's own
+  // reasoning rather than in code, since free-text day-name resolution
+  // can't be moved to code entirely. Removing the *arithmetic* step (a
+  // lookup instead of addition) closes that gap as much as possible for a
+  // model call that fundamentally still has to parse natural language.
+  const weekDates: Record<string, string> = {};
+  {
+    const base = new Date(weekOfMonday + "T00:00:00Z");
+    const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    dayNames.forEach((day, i) => {
+      const d = new Date(base);
+      d.setUTCDate(d.getUTCDate() + i);
+      weekDates[day] = d.toISOString().slice(0, 10);
+    });
+  }
+
   const userContent = JSON.stringify({
     rider: params.firstName ?? "Rider",
     ftpWatts: params.ftp ?? null,
@@ -766,6 +804,7 @@ export async function generateWeeklyPlan(params: {
       : null,
     runLevel: params.runLevel ?? null,
     weekOfMonday,
+    weekDates,
     today: new Date().toISOString().slice(0, 10),
     rides: params.rides,
     riderNote: params.riderNote ?? null,

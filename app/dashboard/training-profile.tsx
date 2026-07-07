@@ -230,6 +230,33 @@ export default function TrainingProfileCard() {
     if (!p) setEditing(true);
     else setDraft(p);
     setPhaseLabel(loadPhaseLabel());
+
+    // Reconcile against the server's copy (mirrored to KV whenever any
+    // device saves a profile - see saveProfile below). Local storage alone
+    // used to be the only source of truth, so an edit made on one device
+    // (say, a phone) was invisible to another (the work computer) until
+    // that second device happened to trigger its own regenerate - the same
+    // "not actually web-synced" gap that affected the weekly plan itself
+    // (see /api/ai/weekly-plan/state's doc comment). If the server has a
+    // profile and it differs from what's cached locally, the server wins.
+    (async () => {
+      try {
+        const r = await fetch("/api/ai/weekly-plan/state", { cache: "no-store" });
+        const d = await r.json();
+        if (!d.ok || !d.riderProfile) return;
+        const server = d.riderProfile as RiderTrainingProfile;
+        if (JSON.stringify(server) === JSON.stringify(p)) return; // already in sync
+        try { window.localStorage.setItem(PROFILE_KEY, JSON.stringify(server)); } catch {}
+        setProfile(server);
+        setDraft(server);
+        // A server-side profile means this isn't actually a new rider, even
+        // if this particular device's local cache was empty - don't show
+        // the "let's set up your profile" first-run wizard in that case.
+        setEditing(false);
+      } catch {
+        // No server reachable - local cache (if any) stands as-is.
+      }
+    })();
   }, []);
 
   const startEdit = useCallback(() => {
