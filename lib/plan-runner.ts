@@ -18,7 +18,7 @@
 
 import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift";
 import { parseFitRecords } from "@/lib/fit-parser";
-import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies } from "@/lib/stats";
+import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeNormalizedPower } from "@/lib/stats";
 import { generateWeeklyPlan, AiInsightsError, RideSummary, WeeklyWorkout } from "@/lib/ai";
 import { computeTrainingLoad } from "@/lib/training-load";
 import { advanceMacroCycle, getPhaseForWeekIndex, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
@@ -28,15 +28,21 @@ import type { RiderTrainingProfile } from "@/lib/rider-profile";
 export { AiInsightsError };
 
 /**
- * Estimates current FTP from recent rides using average-power duration scaling.
- * (Moved verbatim from the old inline copy in app/api/ai/weekly-plan/route.ts —
- * see that file's git history for the original reasoning comment.)
+ * Estimates current FTP from recent rides using power-duration scaling.
+ * Prefers each ride's Normalized Power over plain avgWatts when available
+ * (lib/stats.ts computeNormalizedPower) - FTP is by definition an estimate
+ * of sustainable *effort*, and NP is the physiologically correct measure of
+ * that for anything but a dead-steady ride (a 45-min ride with a few surges
+ * has a true sustainable-effort level closer to its NP than its avgWatts,
+ * which surges pull down relative to the steady portions). This directly
+ * improves the accuracy of effectiveFtp, which every power target in the
+ * generated plan is a percentage of - a meaningfully high-leverage fix.
  */
 function estimateFtpFromRides(rides: RideSummary[]): number | null {
   const qualifying = rides.filter(
     (r) =>
       (!r.sport || r.sport.toLowerCase().includes("cycling")) &&
-      r.avgWatts > 60 &&
+      (r.normalizedPower ?? r.avgWatts) > 60 &&
       r.durationMin >= 30 &&
       r.durationMin <= 100
   );
@@ -49,7 +55,7 @@ function estimateFtpFromRides(rides: RideSummary[]): number | null {
       : dur < 55 ? 0.95
       : dur < 75 ? 1.00
       : 1.05;
-    return Math.round(r.avgWatts * factor);
+    return Math.round((r.normalizedPower ?? r.avgWatts) * factor);
   });
 
   return Math.max(...estimates);
@@ -92,15 +98,23 @@ export async function runWeeklyPlanGeneration(
   const activities = await fetchActivities(opts.accessToken, athleteId);
   const recentActivities = selectChartActivities(activities);
 
-  const hrResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
+  // One FIT fetch per ride already happens here for heart rate - reuse the
+  // exact same parsed records to also compute Normalized Power, instead of
+  // fetching/parsing the same file twice. See computeNormalizedPower's doc
+  // comment in lib/stats.ts for why this materially improves training-load
+  // accuracy over the old plain-avgWatts proxy.
+  const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
     const buf = await fetchActivityFit(a);
     const fitRecords = parseFitRecords(buf);
     const hrVals = fitRecords
       .filter((r) => r.heartRate != null && r.heartRate > 0)
       .map((r) => r.heartRate as number);
-    return hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+    const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+    const normalizedPower = computeNormalizedPower(fitRecords);
+    return { avgHeartRate, normalizedPower };
   });
-  const avgHeartRates = hrResults.map((r) => (r.status === "fulfilled" ? r.value : null));
+  const avgHeartRates = fitResults.map((r) => (r.status === "fulfilled" ? r.value.avgHeartRate : null));
+  const normalizedPowers = fitResults.map((r) => (r.status === "fulfilled" ? r.value.normalizedPower : null));
 
   const rides: RideSummary[] = recentActivities.map((a, i) => ({
     date: a.startDate as string,
@@ -110,6 +124,7 @@ export async function runWeeklyPlanGeneration(
     avgWatts: Math.round((a.avgWatts ?? 0) as number),
     elevationM: Math.round((a.totalElevation ?? 0) as number),
     avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
+    normalizedPower: normalizedPowers[i] ?? null,
   }));
 
   const hrFlags = flagHeartRateAnomalies(rides);

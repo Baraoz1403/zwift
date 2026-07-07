@@ -40,6 +40,16 @@ export interface RideSummary {
   hrFlag?: "low" | "high";
   /** Average cadence (rpm) for the ride, from the activity API - null if unavailable. */
   avgCadence?: number | null;
+  /**
+   * Normalized Power (Coggan algorithm, see lib/stats.ts computeNormalizedPower)
+   * computed from this ride's per-second FIT power stream - null when no
+   * power-meter data was recorded that day (e.g. a run) or the ride was too
+   * short for a 30s rolling window. This is the physiologically-correct
+   * intensity measure for variable-effort rides (intervals, group rides) -
+   * a ride can have low avgWatts but high normalizedPower if it was spiky,
+   * and that gap is real training stress avgWatts alone hides.
+   */
+  normalizedPower?: number | null;
 }
 
 const SYSTEM_PROMPT =
@@ -110,6 +120,15 @@ const SYSTEM_PROMPT =
 
   "'stable' — HR/power relationship consistent with recent baseline. " +
   "Normal training response. Comment briefly on consistency. " +
+
+  // ── Normalized Power cross-reference ──
+  "Each ride may also include a normalizedPower field (watts, null if no " +
+  "power meter that day) alongside avgWatts. A large gap where " +
+  "normalizedPower is notably higher than avgWatts means the ride was " +
+  "spiky/variable (intervals, group ride surges, hilly terrain) and " +
+  "carried more real physiological stress than avgWatts alone suggests - " +
+  "prefer normalizedPower over avgWatts when judging how hard a ride " +
+  "actually was. A small gap means a steady, controlled effort. " +
 
   // ── Cadence cross-reference ──
   "Each ride may also include an avgCadence field (rpm, null if unavailable). " +
@@ -490,6 +509,14 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "Intermittent) sessions per week for recreational riders. " +
   "(6) Volume ramp: increase total weekly duration max 10% per week " +
   "during load blocks. Never increase volume AND intensity same week. " +
+  "Some rides may include a normalizedPower field (watts) alongside " +
+  "avgWatts - when normalizedPower is notably higher than avgWatts, that " +
+  "ride was variable/spiky (real interval or group-ride effort, not a " +
+  "steady spin) and carried more true stress than avgWatts implies; " +
+  "trainingLoad.ctl/atl/tsb already account for this (they're computed " +
+  "from normalizedPower when available), so you don't need to re-derive " +
+  "fatigue from it yourself - just use it, when present, to judge whether " +
+  "a specific recent ride was a hard effort worth acknowledging by name. " +
   "If ageYears is provided and is 40 or above, lean toward an extra " +
   "recovery day between hard sessions, since recovery generally slows with " +
   "age. Some rides may include an hrFlag field: 'low' means that ride's " +

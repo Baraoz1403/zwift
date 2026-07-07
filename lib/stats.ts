@@ -5,6 +5,75 @@
  * personal-records, activity-heatmap, and trend-comparison features.
  */
 import type { ZwiftActivity } from "./zwift";
+import type { FitRecord } from "./fit-parser";
+
+/**
+ * Normalized Power (Coggan's algorithm) from a ride's per-second FIT power
+ * stream: a 30-second rolling average of power, each rolling sample raised
+ * to the 4th power, averaged, then the 4th root taken. This weights the
+ * variability of an effort (a spiky interval ride) far more heavily than a
+ * plain average - two rides with identical avgWatts can have very different
+ * true physiological cost, and NP is what actually captures that gap.
+ *
+ * Returns null when there's not enough continuous power data to form even
+ * one 30-second window (e.g. no power meter that day, or a very short/sparse
+ * recording) - callers should fall back to plain avgWatts in that case.
+ *
+ * This was previously never computed anywhere in the app even though the FIT
+ * parser already extracts per-record power - lib/training-load.ts's TSS proxy
+ * used plain avgWatts from the activity summary API instead, which the
+ * module's own comment acknowledges *underestimates* true stress on anything
+ * but a dead-steady ride. Computing this properly directly improves the
+ * accuracy of the CTL/ATL/TSB readiness signal that the whole weekly plan is
+ * built on - the single highest-leverage "make the coaching brain smarter"
+ * change available, since the raw data was already being fetched and parsed
+ * for heart rate and just not used for this.
+ */
+export function computeNormalizedPower(records: FitRecord[]): number | null {
+  const withPower = records
+    .filter((r) => r.power != null && r.power >= 0)
+    .sort((a, b) => a.timestampMs - b.timestampMs);
+  if (withPower.length === 0) return null;
+
+  const windowMs = 30_000;
+  // Resample onto a simple 1-second-average series first so gaps/duplicate
+  // timestamps in the raw stream don't distort the rolling window.
+  const bySecond = new Map<number, { sum: number; n: number }>();
+  const startMs = withPower[0].timestampMs;
+  for (const r of withPower) {
+    const secondBucket = Math.floor((r.timestampMs - startMs) / 1000);
+    const entry = bySecond.get(secondBucket) ?? { sum: 0, n: 0 };
+    entry.sum += r.power as number;
+    entry.n += 1;
+    bySecond.set(secondBucket, entry);
+  }
+  const totalSeconds = Math.max(...bySecond.keys()) + 1;
+  if (totalSeconds < 30) return null; // too short for a meaningful 30s window
+
+  const perSecond: number[] = [];
+  for (let s = 0; s < totalSeconds; s++) {
+    const entry = bySecond.get(s);
+    perSecond.push(entry ? entry.sum / entry.n : 0);
+  }
+
+  // Rolling 30-second average at every second, then the 4th-power mean.
+  const windowSeconds = windowMs / 1000;
+  let rollingSum = 0;
+  const fourthPowers: number[] = [];
+  for (let i = 0; i < perSecond.length; i++) {
+    rollingSum += perSecond[i];
+    if (i >= windowSeconds) rollingSum -= perSecond[i - windowSeconds];
+    if (i >= windowSeconds - 1) {
+      const avg = rollingSum / windowSeconds;
+      fourthPowers.push(avg ** 4);
+    }
+  }
+  if (fourthPowers.length === 0) return null;
+
+  const meanFourthPower = fourthPowers.reduce((s, v) => s + v, 0) / fourthPowers.length;
+  const np = meanFourthPower ** 0.25;
+  return Number.isFinite(np) ? Math.round(np) : null;
+}
 
 function dayKey(iso?: string): string | null {
   if (!iso) return null;

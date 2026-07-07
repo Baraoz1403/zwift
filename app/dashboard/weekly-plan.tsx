@@ -724,12 +724,24 @@ export default function WeeklyPlan() {
     bookmarkletRef.current.setAttribute('href', `javascript:${encodeURIComponent(code)}`);
   }, [showTPModal]);
 
-  // Poll connection status every 2 s while modal is open waiting for bookmarklet
+  // Poll connection status every 2 s while modal is open waiting for bookmarklet.
+  //
+  // Two things used to make this hang indefinitely even after a genuinely
+  // successful connect:
+  //  1. The fetch had no cache option, so the browser's HTTP cache could
+  //     serve back a stale {connected:false} instead of hitting the network.
+  //  2. The whole flow requires switching to another tab (TrainingPeaks) to
+  //     click the saved bookmark - browsers throttle setInterval timers in
+  //     backgrounded tabs, so the poll could sit un-fired for a long time
+  //     while this tab was hidden. A "visibilitychange" listener forces an
+  //     immediate check the moment the rider switches back to this tab,
+  //     instead of waiting on a throttled interval to eventually tick.
   useEffect(() => {
     if (!tpPolling || tpConnected) return;
-    const id = setInterval(async () => {
+
+    const checkStatus = async () => {
       try {
-        const res = await fetch("/api/trainingpeaks/status");
+        const res = await fetch("/api/trainingpeaks/status", { cache: "no-store" });
         const data = await res.json() as { connected: boolean };
         if (data.connected) {
           setTpConnected(true);
@@ -738,8 +750,18 @@ export default function WeeklyPlan() {
           setTpTokenExpired(false);
         }
       } catch { /* ignore */ }
-    }, 2000);
-    return () => clearInterval(id);
+    };
+
+    const id = setInterval(checkStatus, 2000);
+    const onVisible = () => { if (document.visibilityState === "visible") checkStatus(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [tpPolling, tpConnected]);
 
   // After 45s of waiting with no success, most likely cause is the rider

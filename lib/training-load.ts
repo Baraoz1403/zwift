@@ -52,12 +52,21 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-/** Coggan TSS shape (durationHours * intensityFactor^2 * 100), using
- *  avgWatts as a plain-power stand-in for Normalized Power - see the
- *  module-level comment for why that's an acceptable simplification here. */
+/**
+ * Coggan TSS shape (durationHours * intensityFactor^2 * 100). Uses the
+ * ride's real Normalized Power (lib/stats.ts computeNormalizedPower, from
+ * the FIT file's per-second power stream) when available - that's what
+ * actual TSS is defined against, and it correctly assigns more stress to a
+ * spiky interval ride than a steady ride with the same average watts, which
+ * plain avgWatts cannot distinguish. Falls back to avgWatts only when NP
+ * couldn't be computed for that ride (no power meter that day, or too short
+ * for a 30s window) - still useful as a relative trend signal, just less
+ * precise, exactly as the old always-avgWatts version was for every ride.
+ */
 function tssProxy(ride: RideSummary, referenceWatts: number): number {
-  if (!ride.durationMin || ride.durationMin <= 0 || !ride.avgWatts || referenceWatts <= 0) return 0;
-  const intensityFactor = ride.avgWatts / referenceWatts;
+  const effortWatts = ride.normalizedPower ?? ride.avgWatts;
+  if (!ride.durationMin || ride.durationMin <= 0 || !effortWatts || referenceWatts <= 0) return 0;
+  const intensityFactor = effortWatts / referenceWatts;
   const durationHours = ride.durationMin / 60;
   return durationHours * intensityFactor * intensityFactor * 100;
 }

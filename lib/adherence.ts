@@ -74,11 +74,15 @@ export function computeAdherence(
     }
 
     // Only judge intensity when both an FTP and a parsed target % range
-    // exist - generous +/-15% bands since avgWatts (not NP) is being
-    // compared against a steady-state-style target range.
+    // exist - generous +/-15% bands to allow for real-world pacing
+    // variance. Prefers each ride's Normalized Power over plain avgWatts
+    // when available (lib/stats.ts computeNormalizedPower) - for an
+    // interval session in particular, whole-ride avgWatts is diluted by the
+    // recovery segments and will look "under target" even when the rider
+    // nailed every interval, whereas NP reflects the true session intensity.
     const pctRange = parsePctRange(w.targetPowerPctFtp);
     if (pctRange && ftp && ftp > 0) {
-      const bestWatts = Math.max(...dayRides.map((r) => r.avgWatts || 0));
+      const bestWatts = Math.max(...dayRides.map((r) => r.normalizedPower ?? r.avgWatts ?? 0));
       const [lowPct, highPct] = pctRange;
       const lowWatts = ftp * lowPct * 0.85;
       const highWatts = ftp * highPct * 1.15;

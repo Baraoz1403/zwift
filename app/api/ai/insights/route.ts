@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift";
 import { parseFitRecords } from "@/lib/fit-parser";
-import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeHRTrend } from "@/lib/stats";
+import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeHRTrend, computeNormalizedPower } from "@/lib/stats";
 import { generateInsights, AiInsightsError, RideSummary } from "@/lib/ai";
 
 export async function POST(_req: NextRequest) {
@@ -40,15 +40,18 @@ export async function POST(_req: NextRequest) {
     // combined trend chart. Bounded concurrency for the same reason noted in
     // lib/stats.ts (mapWithConcurrency): avoids firing ~20 large downloads
     // at once.
-    const hrResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
+    const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
       const buf = await fetchActivityFit(a);
       const fitRecords = parseFitRecords(buf);
       const hrVals = fitRecords
         .filter((r) => r.heartRate != null && r.heartRate > 0)
         .map((r) => r.heartRate as number);
-      return hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+      const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+      const normalizedPower = computeNormalizedPower(fitRecords);
+      return { avgHeartRate, normalizedPower };
     });
-    const avgHeartRates = hrResults.map((r) => (r.status === "fulfilled" ? r.value : null));
+    const avgHeartRates = fitResults.map((r) => (r.status === "fulfilled" ? r.value.avgHeartRate : null));
+    const normalizedPowers = fitResults.map((r) => (r.status === "fulfilled" ? r.value.normalizedPower : null));
 
     const rides: RideSummary[] = recentActivities.map((a, i) => ({
       date: a.startDate as string,
@@ -60,6 +63,7 @@ export async function POST(_req: NextRequest) {
       avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
       avgCadence: a.avgCadence && (a.avgCadence as number) > 0
         ? Math.round(a.avgCadence as number) : null,
+      normalizedPower: normalizedPowers[i] ?? null,
     }));
 
     // Flag individual rides where HR/power ratio is a statistical outlier.
