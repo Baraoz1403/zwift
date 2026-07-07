@@ -1578,25 +1578,26 @@ export default function WeeklyPlan() {
               : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
           </div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <a
-              href="#training-profile"
+            <button
+              type="button"
               className="header-card-btn"
+              onClick={handleGenerate}
+              disabled={loading}
               style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
+                display: "inline-flex", alignItems: "center", gap: 6,
                 padding: "6px 14px", borderRadius: 6,
-                border: "1.5px solid #16a34a",
-                background: "#16a34a",
-                color: "#fff",
+                border: `1.5px solid ${loading ? "rgba(47,143,224,0.4)" : "#16a34a"}`,
+                background: loading ? "rgba(22,163,74,0.12)" : "#16a34a",
+                color: loading ? "#16a34a" : "#fff",
                 fontSize: 12, fontWeight: 600,
                 fontFamily: "inherit",
-                textDecoration: "none",
+                cursor: loading ? "default" : "pointer",
+                transition: "all 0.2s ease",
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-              </svg>
-              My training profile
-            </a>
+              <IconBolt size={13} />
+              {loading ? "Building…" : "Generate new plan →"}
+            </button>
           </div>
         </div>
 
