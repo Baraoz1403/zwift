@@ -1482,7 +1482,7 @@ export default function WeeklyPlan() {
       )}
 
       {/* ── 3-column header grid ────────────────────────────────────────── */}
-      <div className="header-cards-grid">
+      <div className={`header-cards-grid${noteOpen ? " note-open" : ""}`}>
 
         {/* Card 1: Training Profile */}
         <div id="training-profile"><TrainingProfileCard /></div>
@@ -1686,7 +1686,7 @@ export default function WeeklyPlan() {
       {plan && (
         <>
           {plan.summary && (
-            <div style={{ marginTop: 16, marginBottom: 14 }}>
+            <div style={{ marginTop: 32, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
                 <div className="section-title" style={{ margin: 0 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

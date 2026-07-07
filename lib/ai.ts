@@ -308,12 +308,15 @@ function normalizeWeeklyPlan(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
     return { ...w, structure: cleanBlocks, durationMin };
   });
 
-  // Guarantee exactly 6 entries - the UI is a fixed 6-card grid.
-  while (normalized.length < 6) {
-    const day = DAY_ORDER[normalized.length % 7] ?? `Day ${normalized.length + 1}`;
+  // Guarantee exactly 7 entries (Mon-Sun) — the display layer
+  // (computeForwardWindow in weekly-plan.tsx) decides how many to show at
+  // once; cutting here to 6 silently drops Sunday, which is exactly the
+  // bug that caused "add Sunday workout" requests to never stick.
+  while (normalized.length < 7) {
+    const day = DAY_ORDER[normalized.length] ?? `Day ${normalized.length + 1}`;
     normalized.push({ day, type: "Rest", title: "Rest Day", durationMin: 0, description: "", structure: undefined });
   }
-  return normalized.slice(0, 6);
+  return normalized.slice(0, 7);
 }
 
 function isRestDayType(type: string | undefined): boolean {

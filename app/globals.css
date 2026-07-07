@@ -1174,7 +1174,13 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch; /* equal heights by default */
+}
+
+/* When note is expanded, keep cards 1 and 3 at their natural height */
+.header-cards-grid.note-open #training-profile,
+.header-cards-grid.note-open > div:nth-child(3) {
+  align-self: start;
 }
 
 /* Training profile wrapper spans full grid width when edit form is open.
