@@ -94,19 +94,22 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
+      // Always refresh the Zwift token on every cron run — even mid-week
+      // when this athlete already has a current plan. Without this, the
+      // "already-current" early-exit skips the refresh, and by Sunday night
+      // when a new plan is actually needed the token may have expired.
+      // The token refresh is cheap (one HTTP call) and keeps the token chain
+      // alive regardless of whether a plan is generated this run.
+      const refreshed = await refreshZwiftToken(storedRefreshToken);
+      await mirrorZwiftAuthToKv(athleteId, refreshed.refreshToken);
+
       const state = await getStoredAthleteState(athleteId);
 
-      // Already have this week's plan - nothing to generate. (Re-syncing an
-      // unchanged plan daily is deliberately left out of v1 - see the route
-      // doc comment above; the interactive dashboard path already
-      // self-heals sync drift whenever the rider does open it.)
+      // Already have this week's plan - nothing to generate.
       if (state.previousPlan?.weekOf === weekOf) {
         results.push({ athleteId, status: "already-current", weekOf });
         continue;
       }
-
-      const refreshed = await refreshZwiftToken(storedRefreshToken);
-      await mirrorZwiftAuthToKv(athleteId, refreshed.refreshToken);
 
       const result = await runWeeklyPlanGeneration({
         accessToken: refreshed.accessToken,
