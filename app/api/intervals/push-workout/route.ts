@@ -27,7 +27,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { pushWorkoutToIntervals, deleteEventFromIntervals } from "@/lib/intervals";
+import { pushWorkoutToIntervals, deleteEventFromIntervals, listIntervalsEvents } from "@/lib/intervals";
 import { generateZwoXml, computeIfTss, structureToBlocks, type WorkoutStructureBlock } from "@/lib/zwo";
 
 export async function POST(req: NextRequest) {
@@ -98,6 +98,48 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json(result);
+}
+
+/**
+ * GET /api/intervals/push-workout?oldest=YYYY-MM-DD&newest=YYYY-MM-DD
+ *
+ * Lists planned ("WORKOUT" category) events already on the rider's
+ * Intervals.icu calendar in a date range - the server-truth source used to
+ * clean up duplicates before a plan re-push, instead of relying only on the
+ * pushing browser's own localStorage record of what it pushed (which breaks
+ * down the moment a second device/browser/tab pushes the same plan and has
+ * no memory of the first one's event ids - the actual cause of workouts
+ * multiplying on the calendar across sessions).
+ */
+export async function GET(req: NextRequest) {
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
+
+  const session = await decryptSession(raw);
+  if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
+
+  const apiKey = cookieStore.get("zwift_intervals_key")?.value;
+  if (!apiKey) {
+    return NextResponse.json({ ok: false, error: "Intervals.icu not connected." }, { status: 403 });
+  }
+
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+
+  const { searchParams } = new URL(req.url);
+  const oldest = searchParams.get("oldest");
+  const newest = searchParams.get("newest");
+  if (!oldest || !newest) {
+    return NextResponse.json({ ok: false, error: "Missing oldest/newest query params." }, { status: 400 });
+  }
+
+  const events = await listIntervalsEvents(
+    apiKey,
+    oldest,
+    newest,
+    athleteId && athleteId !== "0" ? athleteId : undefined,
+  );
+  return NextResponse.json({ ok: true, events });
 }
 
 /**

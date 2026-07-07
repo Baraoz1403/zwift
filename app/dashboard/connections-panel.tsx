@@ -344,8 +344,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
   const intervalsStatus: Status = !health ? "loading" :
     health.intervals.connected ? "ok" : "error";
 
-  const bothConnected = tpStatus === "ok" && intervalsStatus === "ok";
-
   // Strava kept for when SHOW_STRAVA is re-enabled
   void SHOW_STRAVA; void onConnectStrava;
 
@@ -375,10 +373,10 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
             <div className="section-title" style={{ margin: 0 }}>Connections</div>
             <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 5, lineHeight: 1.3 }}>
               {lastChecked
-                ? bothConnected
-                  ? "All platforms synced · plans push automatically"
+                ? intervalsStatus === "ok"
+                  ? "Plans push to Intervals.icu automatically · TrainingPeaks is manual (outdoor/Garmin)"
                   : `Last checked ${lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
-                : "Sync plans to TrainingPeaks, Intervals.icu & beyond"}
+                : "Sync plans to Intervals.icu automatically · TrainingPeaks for outdoor/Garmin rides"}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>

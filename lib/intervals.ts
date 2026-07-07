@@ -164,6 +164,50 @@ export async function pushWorkoutToIntervals(opts: PushIntervalsOptions): Promis
   }
 }
 
+export interface IntervalsEvent {
+  id: string | number;
+  start_date_local?: string;
+  category?: string;
+  name?: string;
+  filename?: string;
+  type?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Lists planned-workout ("WORKOUT" category) events on the rider's
+ * Intervals.icu calendar within a date range (inclusive, YYYY-MM-DD).
+ *
+ * This exists so the app can ask Intervals.icu itself what's already on the
+ * calendar before pushing a new plan, rather than trusting only the
+ * push-tracking id list a single browser keeps in localStorage. That
+ * localStorage list is scoped to one browser/device - if the rider opens the
+ * dashboard from a second device or a fresh browser profile, that context
+ * has no record of what an *earlier* session already pushed, auto-syncs the
+ * same plan again, and has nothing to delete before doing so. Querying the
+ * real calendar state makes cleanup authoritative regardless of which
+ * device did the previous push - see pushPlanToIntervals in weekly-plan.tsx.
+ */
+export async function listIntervalsEvents(
+  apiKey: string,
+  oldest: string,
+  newest: string,
+  athleteId?: string
+): Promise<IntervalsEvent[]> {
+  try {
+    const url = `${INTERVALS_API}/athlete/${athleteId ?? "me"}/events?oldest=${oldest}&newest=${newest}&category=WORKOUT`;
+    const res = await fetch(url, {
+      headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? (data as IntervalsEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Delete a planned workout from Intervals.icu by event id. 404 counts as success (already gone). */
 export async function deleteEventFromIntervals(apiKey: string, eventId: string | number, athleteId?: string): Promise<DeleteIntervalsResult> {
   try {

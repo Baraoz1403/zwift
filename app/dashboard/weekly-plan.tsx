@@ -21,6 +21,7 @@ interface WeeklyWorkout {
 
 /** Actual Zwift ride detected for a planned workout day */
 interface ActualRide {
+  id?: string;
   name: string;
   startDate: string;
   durationInSeconds: number;
@@ -71,8 +72,9 @@ const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
 /** Stable hash of the last plan version that was fully synced to all platforms.
  *  Used to avoid re-syncing on every page refresh — only syncs when the plan changes. */
 const SYNCED_HASH_KEY = "zwiftLastSyncedPlanHash";
-// Sync always targets both platforms — whichever is connected receives the plan;
-// the other is a harmless no-op. No UI selector needed.
+// Automatic sync targets Intervals.icu only (see syncPlanToConnectedPlatforms
+// below for why TP was removed from the automatic path - it caused duplicate
+// entries on Zwift and on TP's own calendar).
 
 /** Stable identifier for a plan version — changes only when the AI generates a new plan. */
 function planHash(plan: WeeklyPlan): string {
@@ -266,6 +268,52 @@ export default function WeeklyPlan() {
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
+  // Rider's current FTP - needed to convert a completed ride's raw-watts FIT
+  // power stream into the FTP-fraction units WorkoutThumbnail draws in (same
+  // units generateDefaultBlocks/sampleWorkoutPower already use for planned
+  // workouts), so a real ride's bar graph lines up with the same zone colors.
+  const [ftp, setFtp] = useState<number | null>(null);
+  useEffect(() => {
+    fetch("/api/zwift/profile")
+      .then(r => r.json())
+      .then(d => { if (d.ok && d.profile?.ftp) setFtp(d.profile.ftp as number); })
+      .catch(() => {});
+  }, []);
+
+  // Real per-ride power stream (FTP fractions), keyed by activity id - filled
+  // in lazily below once both weekActivities and ftp are known. This is what
+  // lets the completed-ride thumbnail draw the shape of the ride actually
+  // performed instead of a shape inferred from the (possibly since-changed)
+  // plan slot - see the completedThumbWorkout comment further down.
+  const [realPowerByRideId, setRealPowerByRideId] = useState<Map<string, number[]>>(new Map());
+  useEffect(() => {
+    if (!ftp || ftp <= 0) return;
+    const idsNeeded = [...weekActivities.values()]
+      .map(a => a.id)
+      .filter((id): id is string => !!id && !realPowerByRideId.has(id));
+    if (idsNeeded.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      for (const id of idsNeeded) {
+        try {
+          const r = await fetch(`/api/zwift/activities/${id}/detail`);
+          const d = await r.json();
+          if (cancelled) return;
+          if (!d.ok || !d.fit?.ok || !Array.isArray(d.fit.points)) continue;
+          const watts = (d.fit.points as { power?: number }[])
+            .map(p => p.power)
+            .filter((p): p is number => typeof p === "number" && p > 0);
+          if (watts.length === 0) continue;
+          const fractions = watts.map(w => w / ftp);
+          setRealPowerByRideId(prev => new Map(prev).set(id, fractions));
+        } catch {
+          // Best-effort — thumbnail falls back to the inferred shape.
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [weekActivities, ftp, realPowerByRideId]);
+
   // Tracks which plan hash has already been auto-synced in this React session,
   // so the auto-sync useEffect fires at most once per plan version per load.
   const [autoSyncedHash, setAutoSyncedHash] = useState<string>("");
@@ -412,6 +460,7 @@ export default function WeeklyPlan() {
           const dateKey = startDate.slice(0, 10);
           if (!map.has(dateKey)) {
             map.set(dateKey, {
+              id: (a.id_str as string | undefined) ?? (a.id != null ? String(a.id) : undefined),
               name: (a.name as string) ?? "Zwift Ride",
               startDate,
               durationInSeconds: a.movingTimeInMs ? Math.round((a.movingTimeInMs as number) / 1000) : 0,
@@ -496,11 +545,23 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Mirrors pushPlanToTP above but for Intervals.icu - same delete-old /
-   * push-new shape, since the reliability lesson (awaited deletes, one
-   * retry, only clear truly-succeeded ids) applies just as much here.
-   * Intervals.icu API keys don't expire hourly like TP's tokens, so there's
-   * no refresh-before-push step needed.
+   * Pushes the plan to Intervals.icu - the sole automatic sync target (see
+   * syncPlanToConnectedPlatforms below for why TP was removed from this
+   * path). Cleanup is now range-based against Intervals.icu's own calendar
+   * (listIntervalsEvents), not just the localStorage id list from previous
+   * pushes in *this* browser.
+   *
+   * Why: the old delete-old step only knew about ids this browser itself had
+   * pushed. The auto-sync gate (SYNCED_HASH_KEY) is also per-browser, so
+   * opening the dashboard on a second device/browser/incognito window - or
+   * even just after clearing site data - looks like a "first sync" there
+   * too: it has no record of the earlier push and nothing to delete, so it
+   * pushes a fresh copy of the same day's workouts. That's the actual cause
+   * of the same day multiplying to 2, 3+ copies (confirmed happening on both
+   * Intervals.icu and TrainingPeaks). Querying Intervals.icu directly for
+   * whatever's already on the calendar in this plan's date range - and
+   * deleting all of it before pushing the fresh set - makes each push
+   * self-healing and correct regardless of which device did the last one.
    */
   async function pushPlanToIntervals(normalizedPlan: WeeklyPlan) {
     let connected = intervalsConnected;
@@ -511,6 +572,12 @@ export default function WeeklyPlan() {
     } catch { /* fall back to the React state above on network failure */ }
     if (!connected) return;
 
+    const activeDays = normalizedPlan.workouts.filter(w => !isRestDay(w.type) && w.date);
+    if (activeDays.length === 0) return;
+    const dates = activeDays.map(w => w.date as string).sort();
+    const oldest = dates[0];
+    const newest = dates[dates.length - 1];
+
     const deleteOne = (id: string | number) =>
       fetch("/api/intervals/push-workout", {
         method: "DELETE",
@@ -519,21 +586,35 @@ export default function WeeklyPlan() {
       }).then(r => r.ok).catch(() => false);
 
     try {
-      const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
-      if (prevRaw) {
-        const prevIds = JSON.parse(prevRaw) as (string | number)[];
-        const firstPass = await Promise.all(prevIds.map(async id => ({ id, ok: await deleteOne(id) })));
-        const stillFailing = firstPass.filter(r => !r.ok);
-        const secondPass = stillFailing.length > 0
-          ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
-          : [];
-        const stillOrphaned = secondPass.filter(r => !r.ok).map(r => r.id);
-        window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(stillOrphaned));
-        if (stillOrphaned.length > 0) {
-          setIntervalsPushLog(l => ({ ...l, _cleanup: `${stillOrphaned.length} old workout(s) couldn't be removed from Intervals.icu - will retry next sync` }));
-        } else {
-          setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
-        }
+      // Server truth: whatever Intervals.icu actually has on the calendar
+      // for this plan's date range, regardless of which device put it there.
+      const r = await fetch(`/api/intervals/push-workout?oldest=${oldest}&newest=${newest}`);
+      const d = await r.json();
+      const existingIds: (string | number)[] = (d.ok && Array.isArray(d.events))
+        ? d.events.map((e: { id: string | number }) => e.id)
+        : [];
+
+      // Union with anything this browser separately remembers pushing, in
+      // case it falls outside the plan's own date range (e.g. a stale entry
+      // from a previous, differently-shaped plan).
+      let localIds: (string | number)[] = [];
+      try {
+        const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
+        if (prevRaw) localIds = JSON.parse(prevRaw) as (string | number)[];
+      } catch {}
+      const allIds = [...new Set([...existingIds, ...localIds])];
+
+      const firstPass = await Promise.all(allIds.map(async id => ({ id, ok: await deleteOne(id) })));
+      const stillFailing = firstPass.filter(r => !r.ok);
+      const secondPass = stillFailing.length > 0
+        ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
+        : [];
+      const stillOrphaned = secondPass.filter(r => !r.ok).map(r => r.id);
+      window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(stillOrphaned));
+      if (stillOrphaned.length > 0) {
+        setIntervalsPushLog(l => ({ ...l, _cleanup: `${stillOrphaned.length} old workout(s) couldn't be removed from Intervals.icu - will retry next sync` }));
+      } else {
+        setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
       }
     } catch {}
 
@@ -545,15 +626,28 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Push this plan to both platforms simultaneously.
-   * Each function no-ops safely if its platform isn't connected.
+   * Automatic sync target: Intervals.icu only.
+   *
+   * TrainingPeaks used to get the same automatic push, but that caused two
+   * problems the rider hit directly: (1) TP and ICU both relay structured
+   * workouts onward to Zwift, so every AI-generated indoor session landed on
+   * Zwift's own workout list twice; (2) TP's push-tracking has the same
+   * per-browser-localStorage weakness described on pushPlanToIntervals
+   * above, and unlike ICU's cleanly separated WORKOUT/ACTIVITY categories,
+   * TP's workout list can't be safely bulk-deleted by date range without
+   * risking a real completed outdoor Garmin ride getting caught in the same
+   * sweep. The rider's own call: TP stays reserved for outdoor rides synced
+   * in from Garmin; every AI-planned indoor session goes to Intervals.icu
+   * only, which is what already relays cleanly to Zwift and (via the
+   * rider's own Intervals.icu → Garmin sync) to Garmin too.
+   *
+   * pushPlanToTP still exists below in case a manual per-workout TP push is
+   * wanted later, but it's no longer called automatically here.
    */
   async function syncPlanToConnectedPlatforms(normalizedPlan: WeeklyPlan) {
-    await Promise.all([
-      pushPlanToTP(normalizedPlan),
-      pushPlanToIntervals(normalizedPlan),
-    ]);
+    await pushPlanToIntervals(normalizedPlan);
   }
+  void pushPlanToTP; // kept for a possible future manual "push this day to TP" action; not auto-called
 
   /**
    * Generates a plan for `targetWeekOf` and makes it the active, on-screen
@@ -1540,7 +1634,11 @@ export default function WeeklyPlan() {
                   >
                     {/* Thumbnail — full-bleed, "flush" skips the -20px margin */}
                     <div style={{ position: "relative" }}>
-                      <WorkoutThumbnail workout={completedThumbWorkout} flush />
+                      <WorkoutThumbnail
+                        workout={completedThumbWorkout}
+                        flush
+                        realPowerSamples={actual.id ? realPowerByRideId.get(actual.id) : undefined}
+                      />
                       {/* "Ride done" pill badge overlaid on the thumbnail */}
                       <div style={{
                         position: "absolute", top: 8, left: 10,
@@ -1609,7 +1707,11 @@ export default function WeeklyPlan() {
                 return (
                   <div key={i} className="stat-card" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
                     <div style={{ position: "relative" }}>
-                      <WorkoutThumbnail workout={bonusWorkout} flush />
+                      <WorkoutThumbnail
+                        workout={bonusWorkout}
+                        flush
+                        realPowerSamples={actual.id ? realPowerByRideId.get(actual.id) : undefined}
+                      />
                       <div style={{
                         position: "absolute", top: 8, left: 10,
                         background: "rgba(26,143,76,0.88)", color: "#fff",
@@ -1666,10 +1768,7 @@ export default function WeeklyPlan() {
                     {w.description}
                   </div>
                   {!isRestDay(w.type) && (() => {
-                    const tpKey  = `tp_${w.date ?? w.title}`;
                     const icuKey = `icu_${w.date ?? w.title}`;
-                    const tps    = tpPushState[tpKey] ?? "idle";
-                    const tpLog  = tpPushLog[tpKey] ?? "";
                     const icus   = intervalsPushState[icuKey] ?? "idle";
                     const icuLog = intervalsPushLog[icuKey] ?? "";
                     return (
@@ -1700,29 +1799,14 @@ export default function WeeklyPlan() {
                           </div>
                         )}
 
-                        {/* TP sync status — shown when connected; no interactive button, auto-push handles it */}
+                        {/* TP is no longer part of the automatic push — reserved for
+                            outdoor Garmin rides instead, so pushing the AI indoor plan
+                            there too was landing every workout on Zwift twice (once via
+                            TP's own Garmin relay, once via Intervals.icu) and building
+                            up duplicate calendar entries on TP itself across devices. */}
                         {tpConnected && (
-                          <div style={{ marginBottom: 6, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
-                            {tps === "loading" && (
-                              <span style={{ color: "var(--muted)", opacity: 0.7 }}>
-                                ⏳ Syncing to TrainingPeaks…
-                              </span>
-                            )}
-                            {tps === "ok" && (
-                              <span style={{ color: "#e8264c" }}>
-                                ✓ Synced → TrainingPeaks → Zwift + Garmin
-                              </span>
-                            )}
-                            {tps === "error" && (
-                              <span style={{ color: "var(--danger)" }} title={tpLog}>
-                                ✗ TP sync failed
-                              </span>
-                            )}
-                            {tps === "idle" && (
-                              <span style={{ color: "var(--muted)", opacity: 0.4, fontSize: 10 }}>
-                                will sync on generate
-                              </span>
-                            )}
+                          <div style={{ marginBottom: 6, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
+                            TrainingPeaks: reserved for outdoor/Garmin rides — not auto-synced
                           </div>
                         )}
 
@@ -1746,13 +1830,13 @@ export default function WeeklyPlan() {
           </div>
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
-            {tpConnected
+            {intervalsConnected
               ? <>
-                  <strong style={{ opacity: 0.8, color: "#e8264c" }}>TrainingPeaks connected</strong> — workouts pushed here appear in your Zwift calendar automatically (connect Zwift to TrainingPeaks once in the Zwift Companion app if you haven&apos;t yet). Fall back to{" "}
+                  <strong style={{ opacity: 0.8, color: "var(--accent)" }}>Intervals.icu connected</strong> — workouts push here automatically and relay onward to Zwift (and Garmin, via the sync you set up once in your own Intervals.icu account). TrainingPeaks, if connected, stays reserved for your real outdoor Garmin rides and isn&apos;t auto-synced. Fall back to{" "}
                   <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> at any time.
                 </>
               : <>
-                  <strong style={{ opacity: 0.8 }}>Connect TrainingPeaks</strong> (above) for the easiest path — push workouts straight to your Zwift calendar. Or use{" "}
+                  <strong style={{ opacity: 0.8 }}>Connect Intervals.icu</strong> (above) for the easiest path — push workouts straight to your Zwift (and Garmin) calendar automatically. Or use{" "}
                   <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> and drop the file into{" "}
                   <code style={{ fontSize: 10 }}>Documents/Zwift/Workouts/&lt;your Zwift ID&gt;/</code>,
                   then open Zwift once.
