@@ -272,6 +272,13 @@ export default function WeeklyPlan() {
   // Tracks which plan hash has already been auto-synced in this React session,
   // so the auto-sync useEffect fires at most once per plan version per load.
   const [autoSyncedHash, setAutoSyncedHash] = useState<string>("");
+  // Debounce refs for auto-sync: prevent concurrent ICU pushes when the plan
+  // changes quickly (local cache → server plan on startup, or next-bundle
+  // promotion → server plan). Without this, two pushes take the same
+  // pre-push ICU snapshot, each push 6 new events, and neither cleans up
+  // the other's freshly created events → 12 events (duplicates in Zwift).
+  const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSyncPlanRef = useRef<WeeklyPlan | null>(null);
 
   // Connections panel visibility — hidden by default, toggled via header button
   const [showConnections, setShowConnections] = useState(false);
@@ -307,28 +314,41 @@ export default function WeeklyPlan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, stale]);
 
-  // Auto-sync: whenever the active plan changes (or loads from localStorage),
-  // reconcile it against Intervals.icu. This used to skip re-syncing on a
-  // plain page refresh (via SYNCED_HASH_KEY in localStorage) on the theory
-  // that "already synced" meant nothing left to do - but that's exactly what
-  // let duplicates pile up: SYNCED_HASH_KEY is per-browser, so a refresh in
-  // a *different* browser/device/tab never saw that flag and pushed a fresh
-  // copy with nothing to clean up first. Now that pushPlanToIntervals always
-  // reconciles against Intervals.icu's own calendar (server truth, not a
-  // local flag) before pushing, re-running it on every load is safe and
-  // self-correcting instead of additive - so the skip is gone. autoSyncedHash
-  // still guards against firing more than once per plan version per mount.
+  // Auto-sync: whenever the plan changes, reconcile against Intervals.icu.
+  //
+  // Why debounce instead of syncing immediately on every plan state change:
+  // On page load the plan state can change quickly twice — first from the
+  // local localStorage cache, then from the KV server check (which may return
+  // a different plan). Without debouncing, both fire pushPlanToIntervals
+  // concurrently: both take the same pre-push ICU snapshot (same 6 events),
+  // both push 6 fresh events (12 total), but each only cleans up the snapshot
+  // IDs (the 6 old ones) and not the other concurrent push's 6 new IDs →
+  // 12 events on ICU → duplicates in Zwift. The same race happens on the
+  // first load of a new week when a pre-fetched next-bundle is promoted.
+  //
+  // An 800 ms debounce is long enough for the KV server check to complete
+  // (it's a fast Redis read, typically <200 ms) before we push anything.
+  // The plan that's current when the timer fires is the one we sync —
+  // so if the server plan replaced the local plan in that window, we sync
+  // the server plan only (never the stale local copy).
   useEffect(() => {
     if (!plan) return;
     const hash = planHash(plan);
-    if (autoSyncedHash === hash) return; // already triggered this session/mount
+    if (autoSyncedHash === hash) return; // already synced this plan version
 
-    setAutoSyncedHash(hash);
-    // Fire-and-forget (useEffect can't be async). Individual card states update
-    // in real-time as each push completes.
-    syncPlanToConnectedPlatforms(plan).then(() => {
-      try { window.localStorage.setItem(SYNCED_HASH_KEY, hash); } catch {}
-    });
+    // Record latest plan and reset the debounce timer.
+    pendingSyncPlanRef.current = plan;
+    if (syncDebounceRef.current) clearTimeout(syncDebounceRef.current);
+    syncDebounceRef.current = setTimeout(() => {
+      syncDebounceRef.current = null;
+      const planToSync = pendingSyncPlanRef.current;
+      if (!planToSync) return;
+      const syncHash = planHash(planToSync);
+      setAutoSyncedHash(syncHash);
+      syncPlanToConnectedPlatforms(planToSync).then(() => {
+        try { window.localStorage.setItem(SYNCED_HASH_KEY, syncHash); } catch {}
+      });
+    }, 800);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
@@ -352,7 +372,9 @@ export default function WeeklyPlan() {
       }
       try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(activePlan)); } catch {}
       saveNextBundle(null); // consumed - a fresh "next" gets prefetched below once needed
-      syncPlanToConnectedPlatforms(activePlan); // this plan is now live - sync it same as a manual regenerate
+      // Sync is handled by the debounced auto-sync useEffect (via setPlan below).
+      // Don't call syncPlanToConnectedPlatforms here directly — it would race
+      // concurrently with the plan-state-change trigger and create duplicates.
     } else {
       const cachedCycle = loadCachedCycle();
       if (cachedCycle) setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
