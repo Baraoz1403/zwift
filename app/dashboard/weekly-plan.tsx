@@ -1447,6 +1447,30 @@ export default function WeeklyPlan() {
         </div>
       )}
 
+      {/* ── Error banner — fixed at top so it's always visible ── */}
+      {error && !loading && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#dc2626", color: "#fff",
+          padding: "10px 20px", textAlign: "center",
+          fontSize: 13, fontWeight: 600, letterSpacing: 0.3,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+        }}>
+          ⚠️ {error}
+          <button
+            onClick={() => setError(null)}
+            style={{
+              background: "rgba(255,255,255,0.2)", border: "none", color: "#fff",
+              borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 12,
+              fontFamily: "inherit", fontWeight: 600,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* ── 3-column header grid ────────────────────────────────────────── */}
       <div className="header-cards-grid">
 
