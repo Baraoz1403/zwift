@@ -1182,6 +1182,12 @@ tbody tr:hover {
   grid-column: 1 / -1;
 }
 
+/* Hide Today's Note and Weekly Plan cards while the profile edit form is open
+   so they don't wrap below it — the edit form gets the full row to itself. */
+#training-profile[data-editing="true"] ~ div {
+  display: none;
+}
+
 /* Header card action buttons — consistent size on all screen sizes */
 .header-card-btn {
   min-width: 150px;
