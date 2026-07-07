@@ -144,8 +144,11 @@ const SYSTEM_PROMPT =
   "relevant (e.g. a level-up), not as a routine mention. " +
   "OUTPUT FORMAT: return AT MOST 5 short points, one per line, separated " +
   "by a single newline character - nothing else. Each line must stand " +
-  "alone as a single complete thought, roughly 8-18 words, direct and " +
-  "specific (name the actual date/number/trend, don't generalize). Do NOT " +
+  "alone as a single complete thought, roughly 6-12 words - short and " +
+  "punchy, not a full sentence with clauses. Still be specific (name the " +
+  "actual date/number/trend, don't generalize) but say it in as few words " +
+  "as possible - cut connecting words rather than dropping the number or " +
+  "date itself. Do NOT " +
   "add bullet characters, dashes, numbers, or any other line prefix - " +
   "return the bare sentences only, the interface adds its own bullet " +
   "marker. Do NOT use markdown (no **, no #, no backticks). Lead with the " +

@@ -140,7 +140,9 @@ export default function AiInsights() {
               style={{
                 marginTop: 4,
                 marginBottom: 0,
-                paddingLeft: 0,
+                // Small indent off the box's own left edge, per the rider's
+                // note that the markers sat flush against the border.
+                paddingLeft: 6,
                 listStyle: "none",
                 color: "var(--text)",
                 lineHeight: 1.55,
@@ -161,19 +163,22 @@ export default function AiInsights() {
                     style={{
                       display: "flex",
                       alignItems: "baseline",
-                      gap: 9,
+                      gap: 10,
                       padding: i === 0 ? 0 : "7px 0 0",
                     }}
                   >
+                    {/* Small square marker, muted grey - not the round blue
+                        accent dot used elsewhere, so this list reads as its
+                        own quieter thing rather than another "signal" chip. */}
                     <span
                       style={{
                         flexShrink: 0,
-                        width: 5,
-                        height: 5,
-                        borderRadius: "50%",
-                        background: "var(--accent)",
-                        opacity: 0.7,
-                        transform: "translateY(-2px)",
+                        width: 4,
+                        height: 4,
+                        borderRadius: 1,
+                        background: "var(--muted)",
+                        opacity: 0.55,
+                        transform: "translateY(-2px) rotate(45deg)",
                       }}
                     />
                     <span>{line}</span>
