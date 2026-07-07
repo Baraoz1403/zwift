@@ -501,6 +501,25 @@ export function generateDefaultBlocks(w: ZwoWorkoutInput): ZwoBlock[] {
   ];
 }
 
+/**
+ * Suggested cadence (rpm) for an interval's ON phase, keyed to how hard the
+ * effort is. This exists specifically to reduce ERG-mode "death spiral" risk
+ * (cadence sags under a sudden high resistance target -> trainer raises
+ * resistance further to hold watts at the now-lower cadence -> cadence sags
+ * more -> pedals become extremely hard to turn, which is what a rider
+ * experiences as "pedals nearly locking up"). Zwift's own IntervalsT element
+ * supports Cadence/CadenceLow/CadenceHigh (see zwift-workout-file-reference)
+ * as an on-screen target the rider can actively hold into - it does not
+ * override ERG's own resistance control, but giving the rider a concrete
+ * cadence to spin at during the hard phase is the standard real-world
+ * mitigation for entering a hard interval already under-cadence.
+ */
+function suggestedOnCadence(onPowerFtp: number): number {
+  if (onPowerFtp >= 1.05) return 95; // VO2max/anaerobic - spin, don't grind
+  if (onPowerFtp >= 0.88) return 90; // threshold/sweet spot
+  return 85;
+}
+
 function blockToXml(b: ZwoBlock): string {
   const fmt = (n: number) => n.toFixed(2);
   switch (b.kind) {
@@ -508,9 +527,18 @@ function blockToXml(b: ZwoBlock): string {
     case "Cooldown":
       return `<${b.kind} Duration="${Math.round(b.durationSec)}" PowerLow="${fmt(b.powerLow)}" PowerHigh="${fmt(b.powerHigh)}"/>`;
     case "SteadyState":
-      return `<SteadyState Duration="${Math.round(b.durationSec)}" Power="${fmt(b.power)}" OverrideWithSlopeTarget="0"/>`;
-    case "IntervalsT":
-      return `<IntervalsT Repeat="${Math.round(b.repeat)}" OnDuration="${Math.round(b.onDuration)}" OffDuration="${Math.round(b.offDuration)}" OnPower="${fmt(b.onPower)}" OffPower="${fmt(b.offPower)}" OverrideWithSlopeTarget="0"/>`;
+      // NOTE: there is no real "OverrideWithSlopeTarget" attribute in
+      // Zwift's .zwo schema (it used to be set here but does nothing - see
+      // https://github.com/h4l/zwift-workout-file-reference, SteadyState's
+      // real attribute list has no such field). Power-targeted blocks like
+      // this one already run in ERG mode by default whenever the rider's
+      // own Zwift ERG setting is on; there is no file-level flag needed or
+      // available to force it further.
+      return `<SteadyState Duration="${Math.round(b.durationSec)}" Power="${fmt(b.power)}"/>`;
+    case "IntervalsT": {
+      const cadence = suggestedOnCadence(b.onPower);
+      return `<IntervalsT Repeat="${Math.round(b.repeat)}" OnDuration="${Math.round(b.onDuration)}" OffDuration="${Math.round(b.offDuration)}" OnPower="${fmt(b.onPower)}" OffPower="${fmt(b.offPower)}" Cadence="${cadence}" CadenceResting="85"/>`;
+    }
   }
 }
 

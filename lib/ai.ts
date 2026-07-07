@@ -449,6 +449,15 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "session in between) or Recovery-week volume cap - in those cases get as " +
   "close as safely possible and explain why in the summary. " +
   "Absent/null riderNote means no note - proceed normally. " +
+  "For any day at or before the today field that already has a matching " +
+  "ride in the rides array (same date), that day is already history, not " +
+  "a live prescription - do not invent an unrelated placeholder title/type " +
+  "for it (e.g. labelling it 'Foundation Ride' when the rider actually rode " +
+  "something else that day). Keep that day's title/type consistent with " +
+  "what the rides data suggests was actually done (infer session type from " +
+  "its avgWatts relative to ftpWatts if nothing more specific is knowable), " +
+  "and write its description as a short retrospective note on that ride " +
+  "rather than a forward-looking prescription. " +
 
   // ── Rider W/kg classification ──
   "The input includes a wPerKg field (FTP ÷ body weight in kg). Use it to " +

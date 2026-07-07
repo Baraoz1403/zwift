@@ -949,6 +949,102 @@ export default function WeeklyPlan() {
               >×</button>
             </div>
 
+            {/* ── Animated preview: shows the whole drag + click flow in
+                a loop before the rider tries it themselves, since "drag
+                this to your bookmarks bar" is an unfamiliar action for a
+                lot of riders and static arrows only go so far. Pure CSS/SVG,
+                no video asset - cheap to keep in sync if the real flow
+                ever changes shape. ────────────────────────────────────── */}
+            <style>{`
+              @keyframes tpdemoDrag {
+                0%   { transform: translate(0px,0px); opacity: 0; }
+                4%   { opacity: 1; }
+                20%  { transform: translate(-22px,-44px); opacity: 1; }
+                24%  { transform: translate(-22px,-44px); opacity: 0; }
+                100% { transform: translate(-22px,-44px); opacity: 0; }
+              }
+              @keyframes tpdemoSlot {
+                0%, 22%   { fill: transparent; stroke-dasharray: 3,2; opacity: 0.55; }
+                26%, 88%  { fill: var(--accent); stroke-dasharray: 0; opacity: 1; }
+                94%, 100% { fill: transparent; stroke-dasharray: 3,2; opacity: 0.55; }
+              }
+              @keyframes tpdemoArrow {
+                0%, 20%  { opacity: 0.3; }
+                32%, 42% { opacity: 1; }
+                52%, 100% { opacity: 0.3; }
+              }
+              @keyframes tpdemoClick {
+                0%, 42%   { opacity: 0; transform: scale(1); }
+                46%       { opacity: 1; transform: scale(1); }
+                50%       { opacity: 1; transform: scale(0.8); }
+                55%, 60%  { opacity: 1; transform: scale(1); }
+                65%, 100% { opacity: 0; transform: scale(1); }
+              }
+              @keyframes tpdemoCheck {
+                0%, 50%   { opacity: 0; transform: scale(0.4); }
+                57%       { opacity: 1; transform: scale(1.2); }
+                62%, 88%  { opacity: 1; transform: scale(1); }
+                95%, 100% { opacity: 0; transform: scale(0.4); }
+              }
+              .tpdemo-drag { animation: tpdemoDrag 7s ease-in-out infinite; }
+              .tpdemo-slot { animation: tpdemoSlot 7s ease-in-out infinite; }
+              .tpdemo-arrow { animation: tpdemoArrow 7s ease-in-out infinite; }
+              .tpdemo-click { animation: tpdemoClick 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+              .tpdemo-check { animation: tpdemoCheck 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+            `}</style>
+            <div style={{
+              marginBottom: 14, padding: "10px 8px", borderRadius: 12,
+              border: "1px solid var(--border)", background: "rgba(20,23,26,0.02)",
+            }}>
+              <svg viewBox="0 0 400 130" width="100%" height="auto" style={{ display: "block" }}>
+                {/* Panel A — this dashboard */}
+                <rect x="6" y="6" width="178" height="110" rx="10" fill="var(--bg)" stroke="var(--border)" />
+                <circle cx="16" cy="17" r="2.2" fill="var(--muted)" />
+                <circle cx="24" cy="17" r="2.2" fill="var(--muted)" />
+                <circle cx="32" cy="17" r="2.2" fill="var(--muted)" />
+                <rect x="44" y="24" width="36" height="11" rx="3" fill="none" stroke="var(--accent)" strokeWidth="1.3" className="tpdemo-slot" />
+                <rect x="36" y="64" width="118" height="28" rx="8" fill="rgba(47,143,224,0.10)" stroke="var(--accent)" strokeWidth="1.3" />
+                <path d="M91 71l-4 5h3l-1 4 4-5h-3l1-4z" fill="var(--accent)" />
+                <text x="106" y="82" fontSize="9" fontWeight="700" fill="var(--accent)" textAnchor="middle">Zwift AI → TP</text>
+
+                {/* dragging cursor + ghost copy of the button, animating up into the bookmarks slot */}
+                <g className="tpdemo-drag" style={{ transformOrigin: "95px 78px" } as React.CSSProperties}>
+                  <rect x="36" y="64" width="118" height="28" rx="8" fill="rgba(47,143,224,0.18)" stroke="var(--accent)" strokeWidth="1" opacity="0.7" />
+                  <circle cx="95" cy="78" r="5" fill="var(--text)" />
+                </g>
+
+                {/* connector */}
+                <path d="M186 62 C 198 62, 202 62, 214 62" stroke="var(--muted)" strokeWidth="1.5" fill="none" markerEnd="url(#tpdemoArrowHead)" className="tpdemo-arrow" />
+                <defs>
+                  <marker id="tpdemoArrowHead" markerWidth="6" markerHeight="6" refX="4" refY="2" orient="auto">
+                    <path d="M0,0 L4,2 L0,4 Z" fill="var(--muted)" />
+                  </marker>
+                </defs>
+
+                {/* Panel B — TrainingPeaks tab */}
+                <rect x="216" y="6" width="178" height="110" rx="10" fill="var(--bg)" stroke="var(--border)" />
+                <circle cx="226" cy="17" r="2.2" fill="var(--muted)" />
+                <circle cx="234" cy="17" r="2.2" fill="var(--muted)" />
+                <circle cx="242" cy="17" r="2.2" fill="var(--muted)" />
+                <rect x="254" y="24" width="36" height="11" rx="3" fill="none" stroke="var(--accent)" strokeWidth="1.3" className="tpdemo-slot" />
+                <rect x="290" y="52" width="20" height="20" rx="6" fill="#005695" />
+                <path d="M303 57l-5 6h4l-1 5 5-6h-4l1-5z" fill="white" />
+                <text x="305" y="90" fontSize="9" fill="var(--muted)" textAnchor="middle">TrainingPeaks</text>
+
+                {/* click on the saved bookmark in this tab */}
+                <g className="tpdemo-click">
+                  <circle cx="272" cy="29" r="7" fill="var(--accent)" opacity="0.25" />
+                  <circle cx="272" cy="29" r="3.2" fill="var(--text)" />
+                </g>
+
+                {/* connected checkmark badge */}
+                <g className="tpdemo-check">
+                  <circle cx="384" cy="18" r="12" fill="#22c55e" />
+                  <path d="M378 18l4 4 8-8" stroke="white" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </g>
+              </svg>
+            </div>
+
             {/* ── Step 1 ──────────────────────────────────────────────── */}
             <div style={{
               marginBottom: 10, padding: "16px", borderRadius: 12,
@@ -1396,6 +1492,29 @@ export default function WeeklyPlan() {
                   actual.avgHeartRate ? `${Math.round(actual.avgHeartRate)} bpm` : null,
                 ].filter(Boolean).join(" · ");
 
+                // The thumbnail graph must reflect what was actually ridden,
+                // not whatever the plan's slot for this date currently says.
+                // If the plan gets regenerated *after* a day is already
+                // completed (e.g. a mid-week profile-driven regenerate), the
+                // AI may synthesize a different placeholder workout for that
+                // already-past day (see WEEKLY_PLAN_SYSTEM_PROMPT's handling
+                // of a day matching riderNote/today) - real name "Sweet Spot
+                // Classic" next to a flat Foundation Ride graph is exactly
+                // that mismatch, and it reads as broken/mixed-up data even
+                // though each field is individually "correct" for its own
+                // source. Building the thumbnail from the real ride instead
+                // (same synthesis the bonus-ride branch below already does)
+                // guarantees the graph always agrees with the ride name
+                // above it, regardless of what the current plan slot says.
+                const completedThumbWorkout = {
+                  title: actual.name as string,
+                  type: (actual.sport as string) === "RUNNING" ? "Easy Run" : (w.type || "Endurance"),
+                  durationMin: actual.durationInSeconds > 0
+                    ? Math.round((actual.durationInSeconds as number) / 60)
+                    : w.durationMin,
+                  targetPowerPctFtp: w.targetPowerPctFtp || "65-75%",
+                };
+
                 return (
                   <div
                     key={i}
@@ -1407,7 +1526,7 @@ export default function WeeklyPlan() {
                   >
                     {/* Thumbnail — full-bleed, "flush" skips the -20px margin */}
                     <div style={{ position: "relative" }}>
-                      <WorkoutThumbnail workout={w} flush />
+                      <WorkoutThumbnail workout={completedThumbWorkout} flush />
                       {/* "Ride done" pill badge overlaid on the thumbnail */}
                       <div style={{
                         position: "absolute", top: 8, left: 10,
