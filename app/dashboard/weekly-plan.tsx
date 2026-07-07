@@ -719,12 +719,23 @@ export default function WeeklyPlan() {
     return () => clearTimeout(t);
   }, [tpPolling]);
 
+  /** "2026-07-08" → "Mon Jul 8" — shown as the workout prefix in Zwift/TP/ICU */
+  function workoutDateLabel(isoDate: string | undefined): string {
+    if (!isoDate) return "";
+    const d = new Date(isoDate + "T12:00:00");
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+  }
+
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
     setTpPushState(s => ({ ...s, [key]: "loading" }));
+    const dateLabel = workoutDateLabel(w.date);
+    const titledWorkout = dateLabel ? `${dateLabel} · ${w.title}` : w.title;
     const pushBody = JSON.stringify({
       workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
-      title: w.title,
+      title: titledWorkout,
       description: w.description,
       durationMin: w.durationMin,
       type: w.type,
@@ -791,9 +802,11 @@ export default function WeeklyPlan() {
    */
   async function handlePushToIntervals(w: WeeklyWorkout) {
     const key = `icu_${w.date ?? w.title}`;
+    const dateLabel = workoutDateLabel(w.date);
+    const titledWorkout = dateLabel ? `${dateLabel} · ${w.title}` : w.title;
     const pushBody = JSON.stringify({
       workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
-      title: w.title,
+      title: titledWorkout,
       description: w.description,
       durationMin: w.durationMin,
       type: w.type,
