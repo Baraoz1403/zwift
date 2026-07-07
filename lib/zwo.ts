@@ -508,9 +508,9 @@ function blockToXml(b: ZwoBlock): string {
     case "Cooldown":
       return `<${b.kind} Duration="${Math.round(b.durationSec)}" PowerLow="${fmt(b.powerLow)}" PowerHigh="${fmt(b.powerHigh)}"/>`;
     case "SteadyState":
-      return `<SteadyState Duration="${Math.round(b.durationSec)}" Power="${fmt(b.power)}"/>`;
+      return `<SteadyState Duration="${Math.round(b.durationSec)}" Power="${fmt(b.power)}" OverrideWithSlopeTarget="0"/>`;
     case "IntervalsT":
-      return `<IntervalsT Repeat="${Math.round(b.repeat)}" OnDuration="${Math.round(b.onDuration)}" OffDuration="${Math.round(b.offDuration)}" OnPower="${fmt(b.onPower)}" OffPower="${fmt(b.offPower)}"/>`;
+      return `<IntervalsT Repeat="${Math.round(b.repeat)}" OnDuration="${Math.round(b.onDuration)}" OffDuration="${Math.round(b.offDuration)}" OnPower="${fmt(b.onPower)}" OffPower="${fmt(b.offPower)}" OverrideWithSlopeTarget="0"/>`;
   }
 }
 

@@ -1,29 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift";
-import { parseFitRecords } from "@/lib/fit-parser";
-import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies } from "@/lib/stats";
-import { generateWeeklyPlan, AiInsightsError, RideSummary, WeeklyWorkout } from "@/lib/ai";
-import { computeTrainingLoad } from "@/lib/training-load";
-import { advanceMacroCycle, getPhaseForWeekIndex, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
-import { computeAdherence } from "@/lib/adherence";
+import { WeeklyWorkout } from "@/lib/ai";
+import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
+import { MacroCycleState } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
+import { kvSet, kvAvailable } from "@/lib/kv";
+
+/**
+ * Mirrors the state this endpoint just used/produced into KV, keyed by
+ * athlete ID, and registers the athlete in the "known athletes" registry.
+ * This is what lets app/api/ai/weekly-plan/cron/route.ts run the exact same
+ * pipeline headlessly overnight, without a browser session: it reads back
+ * whatever the rider's own browser last saved here (rider profile, macro
+ * cycle position, last generated plan) instead of needing them client-side.
+ *
+ * Best-effort / fire-and-forget in spirit (kvSet already no-ops silently if
+ * KV isn't configured) - a failure here must never break the interactive
+ * "Generate" flow for the person sitting at the dashboard.
+ */
+async function mirrorStateToKv(
+  athleteId: string,
+  data: {
+    riderProfile?: RiderTrainingProfile;
+    macroCycle: MacroCycleState;
+    plan: { weekOf: string; workouts: WeeklyWorkout[] };
+  }
+) {
+  if (!kvAvailable()) return;
+  try {
+    const registryRaw = await import("@/lib/kv").then((m) => m.kvGet("zwift:athletes"));
+    const registry: string[] = registryRaw ? JSON.parse(registryRaw) : [];
+    if (!registry.includes(athleteId)) {
+      registry.push(athleteId);
+      await kvSet("zwift:athletes", JSON.stringify(registry));
+    }
+    if (data.riderProfile) {
+      await kvSet(`zwift:${athleteId}:rider_profile`, JSON.stringify(data.riderProfile));
+    }
+    await kvSet(`zwift:${athleteId}:macro_cycle`, JSON.stringify(data.macroCycle));
+    await kvSet(`zwift:${athleteId}:last_plan`, JSON.stringify(data.plan));
+    await kvSet(`zwift:${athleteId}:last_plan_at`, String(Date.now()));
+  } catch {
+    // Never let KV mirroring failures affect the interactive response.
+  }
+}
 
 // Mirrors app/api/ai/insights/route.ts (same auth, same data-gathering
 // pattern) but calls generateWeeklyPlan instead of generateInsights, and
 // returns a structured weekly workout plan rather than free-text analysis.
+//
+// The actual generation pipeline lives in lib/plan-runner.ts so it can also
+// run headlessly from the nightly cron endpoint - this route is now just:
+// resolve the browser session -> parse the body -> call the shared runner ->
+// mirror the result to KV for the cron job's benefit -> respond.
 export async function POST(req: NextRequest) {
-  // ageYears is optional and never required - Zwift's API doesn't expose a
-  // birthdate, so this only arrives if the rider chose to type it in on the
-  // weekly-plan card (see app/dashboard/weekly-plan.tsx). macroCycle is the
-  // rider's own browser-stored periodization pointer (lib/periodization.ts)
-  // - absent on this rider's very first plan ever, in which case the cycle
-  // starts fresh at week 0 ("Base").
-  // previousPlan is the rider's own last cached plan (lib/adherence.ts
-  // compares it against what they actually rode) - the dashboard only sends
-  // it when it's genuinely from an earlier week, not when re-rolling the
-  // current week's plan.
   let ageYears: number | undefined;
   let incomingCycle: MacroCycleState | null = null;
   let previousPlan: { weekOf: string; workouts: WeeklyWorkout[] } | null = null;
@@ -77,100 +108,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const profile = await fetchOwnProfile(session.accessToken);
-    const athleteId = session.athleteId ?? (profile.id != null ? String(profile.id) : undefined);
-    if (!athleteId) {
-      return NextResponse.json(
-        { ok: false, error: "Could not determine your Zwift rider id." },
-        { status: 200 }
-      );
-    }
-
-    const activities = await fetchActivities(session.accessToken, athleteId);
-    const recentActivities = selectChartActivities(activities);
-
-    const hrResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
-      const buf = await fetchActivityFit(a);
-      const fitRecords = parseFitRecords(buf);
-      const hrVals = fitRecords
-        .filter((r) => r.heartRate != null && r.heartRate > 0)
-        .map((r) => r.heartRate as number);
-      return hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
-    });
-    const avgHeartRates = hrResults.map((r) => (r.status === "fulfilled" ? r.value : null));
-
-    const rides: RideSummary[] = recentActivities.map((a, i) => ({
-      date: a.startDate as string,
-      sport: a.sport as string | undefined,
-      distanceKm: Math.round(((a.distanceInMeters ?? 0) as number) / 100) / 10,
-      durationMin: Math.round(((a.movingTimeInMs ?? 0) as number) / 60000),
-      avgWatts: Math.round((a.avgWatts ?? 0) as number),
-      elevationM: Math.round((a.totalElevation ?? 0) as number),
-      avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
-    }));
-
-    const hrFlags = flagHeartRateAnomalies(rides);
-    for (const [index, direction] of hrFlags) {
-      rides[index].hrFlag = direction;
-    }
-
-    if (rides.length === 0) {
-      return NextResponse.json({ ok: false, error: "Not enough ride history yet to build a plan." });
-    }
-
-    const trainingLoad = computeTrainingLoad(rides, profile.ftp);
-
-    // weekOf must match exactly what generateWeeklyPlan computes internally
-    // (same shared helper) so "is this a genuinely new week" is judged
-    // consistently rather than against a separately-computed date.
-    // targetWeekOf (when provided) lets the caller request a specific future
-    // Monday - see lib/ai.ts's targetWeekOf doc comment.
-    const weekOf = targetWeekOf ?? mondayOfCurrentWeek();
-    const macroCycle = advanceMacroCycle(incomingCycle, weekOf);
-    const cycle = getPhaseForWeekIndex(macroCycle.weekIndex);
-
-    // Only compare against a genuinely earlier week - never against the
-    // plan currently being regenerated for this same week.
-    const lastWeekAdherence =
-      previousPlan && previousPlan.weekOf !== weekOf
-        ? computeAdherence(previousPlan, rides, profile.ftp)
-        : undefined;
-
-    // Age priority: (1) Zwift dateOfBirth auto-derived, (2) rider-entered
-    // in the training profile card, (3) body param (legacy compatibility).
-    let resolvedAge = ageYears;
-    if (!resolvedAge && riderProfile?.ageYears) {
-      resolvedAge = riderProfile.ageYears;
-    }
-    if (!resolvedAge && profile.dateOfBirth) {
-      const dob = new Date(profile.dateOfBirth);
-      const now = new Date();
-      const years = now.getUTCFullYear() - dob.getUTCFullYear();
-      const hadBirthday =
-        now.getUTCMonth() > dob.getUTCMonth() ||
-        (now.getUTCMonth() === dob.getUTCMonth() && now.getUTCDate() >= dob.getUTCDate());
-      resolvedAge = hadBirthday ? years : years - 1;
-    }
-
-    const plan = await generateWeeklyPlan({
-      firstName: profile.firstName,
-      ftp: profile.ftp,
-      weightKg: profile.weight ? profile.weight / 1000 : undefined,
-      cyclingLevel:
-        profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
-      runLevel:
-        profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
-      ageYears: resolvedAge,
-      rides,
-      trainingLoad,
-      cycle,
-      lastWeekAdherence,
+    const result = await runWeeklyPlanGeneration({
+      accessToken: session.accessToken,
+      ageYears,
+      incomingCycle,
+      previousPlan,
       riderProfile,
       riderNote,
-      targetWeekOf: weekOf,
+      targetWeekOf,
     });
 
-    return NextResponse.json({ ok: true, plan, macroCycle, cycle });
+    // Side effect only - never blocks or affects the response below.
+    await mirrorStateToKv(result.athleteId, {
+      riderProfile,
+      macroCycle: result.macroCycle,
+      plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
+    });
+
+    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle });
   } catch (e) {
     if (e instanceof AiInsightsError) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 200 });

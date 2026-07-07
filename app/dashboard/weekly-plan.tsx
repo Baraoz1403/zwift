@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
@@ -712,23 +712,17 @@ export default function WeeklyPlan() {
   const [intervalsPushLog, setIntervalsPushLog] = useState<Record<string, string>>({});
 
 
-  // Build bookmarklet href on the client using the current dashboard origin.
-  // The bookmarklet runs on app.trainingpeaks.com and:
-  //   1. Exchanges the HttpOnly Production_tpAuth cookie for a gAAAA token (same-origin fetch to TP API)
-  //   2. Navigates to /connect-tp on OUR origin with the token in a URL fragment
-  //      (fragments never touch the network, so this isn't a CORS/cross-origin
-  //      fetch at all — the previous cross-origin POST approach reliably failed
-  //      with "Failed to fetch" even with correct server-side CORS config, most
-  //      likely due to an edge/WAF layer flagging script-initiated cross-origin
-  //      credentialed POSTs. /connect-tp then completes the connection with a
-  //      normal same-origin fetch, which sidesteps that failure class entirely.
-  const bookmarkletHref = typeof window !== "undefined"
-    ? (() => {
-        const origin = window.location.origin;
-        const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('Error: no TP token found');return;}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp;}catch(e){alert('Error: '+e.message)}})()`;
-        return `javascript:${encodeURIComponent(code)}`;
-      })()
-    : "#";
+  // Ref for the bookmarklet anchor. We MUST set href via setAttribute after
+  // mount rather than as a JSX prop — React (Next.js) sanitizes javascript:
+  // URLs in JSX and replaces them with a throw-Error stub, which is exactly
+  // what was being saved to the user's bookmarks bar.
+  const bookmarkletRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (!bookmarkletRef.current) return;
+    const origin = window.location.origin;
+    const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('Error: no TP token found');return;}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp;}catch(e){alert('Error: '+e.message)}})()`;
+    bookmarkletRef.current.setAttribute('href', `javascript:${encodeURIComponent(code)}`);
+  }, [showTPModal]);
 
   // Poll connection status every 2 s while modal is open waiting for bookmarklet
   useEffect(() => {
@@ -973,7 +967,7 @@ export default function WeeklyPlan() {
                   Drag this button up to your bookmarks bar
                 </div>
                 <a
-                  href={bookmarkletHref}
+                  ref={bookmarkletRef}
                   draggable
                   onClick={e => e.preventDefault()}
                   style={{

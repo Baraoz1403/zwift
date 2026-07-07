@@ -612,4 +612,132 @@ export async function generateWeeklyPlan(params: {
    *  longer fill the display) without waiting for that week to actually
    *  start. Defaults to the real current week when omitted. */
   targetWeekOf?: string;
-}): Promise<WeeklyPlan> 
+}): Promise<WeeklyPlan> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new AiInsightsError(
+      "ANTHROPIC_API_KEY is not set. Add your own Anthropic API key to .env.local to enable AI-generated weekly plans."
+    );
+  }
+
+  // Monday of the week this plan covers (UTC) - computed up front and handed
+  // to the model so it can fill in each workout's real calendar "date"
+  // instead of guessing what date "Wednesday" falls on. Shared with
+  // lib/periodization.ts so the cached plan's weekOf, the macro-cycle
+  // pointer, and this prompt's date math never drift apart.
+  const weekOfMonday = params.targetWeekOf ?? mondayOfCurrentWeek();
+
+  const userContent = JSON.stringify({
+    rider: params.firstName ?? "Rider",
+    ftpWatts: params.ftp ?? null,
+    weightKg: params.weightKg ?? null,
+    /** W/kg rider level: < 2.5 beginner, 2.5-3.0 novice, 3.0-3.5 intermediate, 3.5+ trained/advanced */
+    wPerKg: (params.ftp && params.weightKg && params.weightKg > 0)
+      ? Math.round((params.ftp / params.weightKg) * 10) / 10
+      : null,
+    ageYears: params.ageYears ?? null,
+    cyclingLevel: params.cyclingLevel ?? null,
+    trainingLoad: params.trainingLoad
+      ? {
+          ctl: params.trainingLoad.ctl,
+          atl: params.trainingLoad.atl,
+          tsb: params.trainingLoad.tsb,
+          freshness: params.trainingLoad.freshness,
+          ridesLast7Days: params.trainingLoad.ridesLast7Days,
+          ridesPrior7Days: params.trainingLoad.ridesPrior7Days,
+        }
+      : null,
+    cycle: params.cycle
+      ? { phase: params.cycle.phase, weekInMesocycle: params.cycle.weekInMesocycle }
+      : null,
+    lastWeekAdherence: params.lastWeekAdherence
+      ? {
+          plannedSessions: params.lastWeekAdherence.plannedSessions,
+          completedSessions: params.lastWeekAdherence.completedSessions,
+          missedSessions: params.lastWeekAdherence.missedSessions,
+          notes: params.lastWeekAdherence.notes,
+        }
+      : null,
+    riderProfile: params.riderProfile
+      ? {
+          sports: (params.riderProfile.sports ?? (params.riderProfile.sport ? [params.riderProfile.sport] : ["cycling"]))
+            .map(s => SPORT_LABELS[s])
+            .join(" + "),
+          goals: (params.riderProfile.goals ?? (params.riderProfile.goal ? [params.riderProfile.goal] : ["fitness"]))
+            .map(g => GOAL_LABELS[g])
+            .join(", "),
+          daysPerWeek: params.riderProfile.daysRange
+            ? DAYS_RANGE_MID[params.riderProfile.daysRange]
+            : (params.riderProfile.daysPerWeek ?? null),
+          trainingEnvironment: params.riderProfile.environment ?? "indoor",
+          sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
+          sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
+          eventDate: params.riderProfile.eventDate ?? null,
+          ageYears: params.riderProfile.ageYears ?? null,
+          notes: params.riderProfile.notes ?? null,
+        }
+      : null,
+    runLevel: params.runLevel ?? null,
+    weekOfMonday,
+    today: new Date().toISOString().slice(0, 10),
+    rides: params.rides,
+    riderNote: params.riderNote ?? null,
+  });
+
+  let resp: Response;
+  try {
+    resp = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 6000,
+        system: WEEKLY_PLAN_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userContent }],
+      }),
+    });
+  } catch (e) {
+    throw new AiInsightsError(`Network error calling the Claude API: ${(e as Error).message}`);
+  }
+
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => "");
+    throw new AiInsightsError(`Claude API returned HTTP ${resp.status}: ${body.slice(0, 300)}`);
+  }
+
+  const data = await resp.json();
+  const text = data?.content?.[0]?.text;
+  if (typeof text !== "string") {
+    throw new AiInsightsError("Unexpected response shape from the Claude API.");
+  }
+
+  // Claude is instructed to return raw JSON, but strip a code-fence wrapper
+  // defensively in case it adds one anyway.
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
+  }
+
+  const obj = parsed as Partial<WeeklyPlan>;
+  if (!obj || !Array.isArray(obj.workouts)) {
+    throw new AiInsightsError("AI response was missing the expected weekly plan structure.");
+  }
+
+  return {
+    weekOf: weekOfMonday,
+    summary: typeof obj.summary === "string" ? obj.summary : "",
+    workouts: normalizeWeeklyPlan(obj.workouts as WeeklyWorkout[]),
+  };
+}
