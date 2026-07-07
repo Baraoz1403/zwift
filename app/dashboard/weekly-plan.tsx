@@ -327,22 +327,24 @@ export default function WeeklyPlan() {
   }, []);
 
   // Auto-sync: whenever the active plan changes (or loads from localStorage),
-  // push it to all connected platforms if it hasn't been synced yet for this
-  // plan version. Uses a hash saved in localStorage so a page refresh does NOT
-  // re-sync (only a new REGENERATE, which produces a different hash, triggers it).
+  // reconcile it against Intervals.icu. This used to skip re-syncing on a
+  // plain page refresh (via SYNCED_HASH_KEY in localStorage) on the theory
+  // that "already synced" meant nothing left to do - but that's exactly what
+  // let duplicates pile up: SYNCED_HASH_KEY is per-browser, so a refresh in
+  // a *different* browser/device/tab never saw that flag and pushed a fresh
+  // copy with nothing to clean up first. Now that pushPlanToIntervals always
+  // reconciles against Intervals.icu's own calendar (server truth, not a
+  // local flag) before pushing, re-running it on every load is safe and
+  // self-correcting instead of additive - so the skip is gone. autoSyncedHash
+  // still guards against firing more than once per plan version per mount.
   useEffect(() => {
     if (!plan) return;
     const hash = planHash(plan);
-    if (autoSyncedHash === hash) return; // already triggered this session
-
-    let lastSynced = "";
-    try { lastSynced = window.localStorage.getItem(SYNCED_HASH_KEY) ?? ""; } catch {}
-    if (hash === lastSynced) return; // already synced in a prior session — nothing to do
+    if (autoSyncedHash === hash) return; // already triggered this session/mount
 
     setAutoSyncedHash(hash);
     // Fire-and-forget (useEffect can't be async). Individual card states update
-    // in real-time as each push completes. Save hash on success so next refresh
-    // sees the plan as already-synced.
+    // in real-time as each push completes.
     syncPlanToConnectedPlatforms(plan).then(() => {
       try { window.localStorage.setItem(SYNCED_HASH_KEY, hash); } catch {}
     });
@@ -618,9 +620,20 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
+    // Only push days that haven't actually been ridden yet. A day already
+    // present in weekActivities has a real completed ride - queuing a
+    // "planned" workout for it on Zwift is pointless (the rider already did
+    // that day) and, worse, the plan's own structure for an already-past day
+    // can no longer be trusted to represent what happened (see the
+    // completedThumbWorkout comment on the dashboard card above) - it's what
+    // was producing a workout on Zwift with the wrong shape/graph even after
+    // the dashboard's own preview was showing the correct one. The cleanup
+    // pass above already covers the full date range including completed
+    // days, so any stale queued entry for a day that's since been ridden
+    // gets removed here rather than replaced.
     await Promise.all(
       normalizedPlan.workouts
-        .filter(w => !isRestDay(w.type))
+        .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)))
         .map(w => handlePushToIntervals(w))
     );
   }
@@ -1055,6 +1068,22 @@ export default function WeeklyPlan() {
               >×</button>
             </div>
 
+            {/* Sets correct expectations up front — this connection no longer
+                pushes the AI plan anywhere (that's Intervals.icu's job, see
+                syncPlanToConnectedPlatforms in this file). Without this line,
+                a rider connecting TP for their own outdoor/Garmin rides could
+                reasonably expect their indoor workouts to show up here too,
+                the way TP used to work in this app before. */}
+            <div style={{
+              fontSize: 11.5, color: "var(--muted)", lineHeight: 1.6,
+              background: "rgba(20,23,26,0.03)", border: "1px solid var(--border)",
+              borderRadius: 8, padding: "9px 12px", marginBottom: 18,
+            }}>
+              This just links your TrainingPeaks account for your own outdoor/Garmin rides.
+              Your AI training plan keeps syncing through Intervals.icu → Zwift either way —
+              connecting here won&apos;t add or duplicate anything on Zwift.
+            </div>
+
             {/* ── Animated preview: shows the whole drag + click flow in
                 a loop before the rider tries it themselves, since "drag
                 this to your bookmarks bar" is an unfamiliar action for a
@@ -1313,8 +1342,8 @@ export default function WeeklyPlan() {
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1, lineHeight: 1.5 }}>
-            TrainingPeaks token expired — this happens periodically since TP's token can't auto-renew.
-            {" "}Reconnect below if you want this week's workouts pushed through to Garmin.
+            TrainingPeaks token expired — this happens periodically since TP&apos;s token can&apos;t auto-renew.
+            {" "}Your AI training plan isn&apos;t affected (it syncs through Intervals.icu, not TP) — reconnecting only matters if you want this dashboard linked to your TrainingPeaks account for outdoor/Garmin rides.
           </span>
           <button
             type="button"
