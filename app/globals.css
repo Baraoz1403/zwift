@@ -1177,6 +1177,17 @@ tbody tr:hover {
   align-items: stretch; /* equal heights by default */
 }
 
+/* Card 1 is a wrapper div around the inner stat-card — make the wrapper a
+   flex column so the inner card stretches to fill it (matching cards 2 & 3
+   which ARE stat-cards directly and stretch naturally via the grid). */
+#training-profile {
+  display: flex;
+  flex-direction: column;
+}
+#training-profile > * {
+  flex: 1;
+}
+
 /* When note is expanded, keep cards 1 and 3 at their natural height */
 .header-cards-grid.note-open #training-profile,
 .header-cards-grid.note-open > div:nth-child(3) {
