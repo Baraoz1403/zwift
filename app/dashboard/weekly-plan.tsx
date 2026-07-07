@@ -669,6 +669,7 @@ export default function WeeklyPlan() {
 
   // ── Intervals.icu integration ──────────────────────────────────────────────
   const [intervalsConnected, setIntervalsConnected] = useState(false);
+  const [intervalsPushState, setIntervalsPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
   const [intervalsPushLog, setIntervalsPushLog] = useState<Record<string, string>>({});
 
 
@@ -802,6 +803,7 @@ export default function WeeklyPlan() {
    */
   async function handlePushToIntervals(w: WeeklyWorkout) {
     const key = `icu_${w.date ?? w.title}`;
+    setIntervalsPushState(s => ({ ...s, [key]: "loading" }));
     const dateLabel = workoutDateLabel(w.date);
     const titledWorkout = dateLabel ? `${dateLabel} · ${w.title}` : w.title;
     const pushBody = JSON.stringify({
@@ -821,6 +823,7 @@ export default function WeeklyPlan() {
       });
       const data = await res.json();
       if (data.ok) {
+        setIntervalsPushState(s => ({ ...s, [key]: "ok" }));
         setIntervalsPushLog(l => ({ ...l, [key]: `✓ ID: ${data.eventId ?? "pushed"}` }));
         if (data.eventId != null) {
           try {
@@ -831,10 +834,12 @@ export default function WeeklyPlan() {
           } catch {}
         }
       } else {
+        setIntervalsPushState(s => ({ ...s, [key]: "error" }));
         setIntervalsPushLog(l => ({ ...l, [key]: data.error ?? "Error." }));
         if (res.status === 401 || res.status === 403) setIntervalsConnected(false);
       }
     } catch (e) {
+      setIntervalsPushState(s => ({ ...s, [key]: "error" }));
       setIntervalsPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
     }
   }
@@ -1473,11 +1478,40 @@ export default function WeeklyPlan() {
                     {w.description}
                   </div>
                   {!isRestDay(w.type) && (() => {
-                    const tpKey = `tp_${w.date ?? w.title}`;
-                    const tps   = tpPushState[tpKey] ?? "idle";
-                    const tpLog = tpPushLog[tpKey] ?? "";
+                    const tpKey  = `tp_${w.date ?? w.title}`;
+                    const icuKey = `icu_${w.date ?? w.title}`;
+                    const tps    = tpPushState[tpKey] ?? "idle";
+                    const tpLog  = tpPushLog[tpKey] ?? "";
+                    const icus   = intervalsPushState[icuKey] ?? "idle";
+                    const icuLog = intervalsPushLog[icuKey] ?? "";
                     return (
                       <div style={{ marginTop: 14 }}>
+                        {/* ICU sync status — shown when connected */}
+                        {intervalsConnected && (
+                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                            {icus === "loading" && (
+                              <span style={{ color: "var(--muted)", opacity: 0.7 }}>
+                                ⏳ Syncing to Intervals.icu…
+                              </span>
+                            )}
+                            {icus === "ok" && (
+                              <span style={{ color: "var(--accent)" }}>
+                                ✓ Synced → ICU → Zwift
+                              </span>
+                            )}
+                            {icus === "error" && (
+                              <span style={{ color: "var(--danger)" }} title={icuLog}>
+                                ✗ ICU sync failed
+                              </span>
+                            )}
+                            {icus === "idle" && (
+                              <span style={{ color: "var(--muted)", opacity: 0.4, fontSize: 10 }}>
+                                will sync on generate
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* TP sync status — shown when connected; no interactive button, auto-push handles it */}
                         {tpConnected && (
                           <div style={{ marginBottom: 6, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
@@ -1493,7 +1527,7 @@ export default function WeeklyPlan() {
                             )}
                             {tps === "error" && (
                               <span style={{ color: "var(--danger)" }} title={tpLog}>
-                                ✗ Sync failed
+                                ✗ TP sync failed
                               </span>
                             )}
                             {tps === "idle" && (
