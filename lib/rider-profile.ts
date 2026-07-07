@@ -7,7 +7,7 @@
 export type TrainingGoal = "fitness" | "ftp" | "weight" | "event" | "fun";
 export type SessionLength = "45" | "60" | "90" | "90plus";
 export type Sport = "cycling" | "running" | "both";
-export type DaysRange = "1-2" | "2-3" | "3-4" | "4-5" | "5-6";
+export type DaysRange = "1-2" | "2-3" | "3-4" | "4-5" | "5-6" | "6-7";
 /** Where the rider actually trains: "indoor" = Zwift/trainer only, "outdoor"
  *  = real-world rides only (tracked via Garmin/Strava), "both" = a mix.
  *  This is distinct from `sports` (cycling vs running) - it's about venue,
@@ -56,6 +56,7 @@ export const DAYS_RANGE_LABELS: Record<DaysRange, string> = {
   "3-4": "3–4 days / week",
   "4-5": "4–5 days / week",
   "5-6": "5–6 days / week",
+  "6-7": "6–7 days / week",
 };
 
 /** Midpoint of each range - used to cap session count in the AI prompt. */
@@ -65,6 +66,7 @@ export const DAYS_RANGE_MID: Record<DaysRange, number> = {
   "3-4": 3.5,
   "4-5": 4.5,
   "5-6": 5.5,
+  "6-7": 6.5,
 };
 
 export const SESSION_LENGTH_LABELS: Record<SessionLength, string> = {

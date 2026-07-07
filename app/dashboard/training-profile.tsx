@@ -386,7 +386,7 @@ export default function TrainingProfileCard() {
                 <select className="select" style={{ width: "100%" }}
                   value={draft.daysRange ?? "3-4"}
                   onChange={e => setDraft(d => ({ ...d, daysRange: e.target.value as DaysRange }))}>
-                  {(["1-2","2-3","3-4","4-5","5-6"] as DaysRange[]).map(r => (
+                  {(["1-2","2-3","3-4","4-5","5-6","6-7"] as DaysRange[]).map(r => (
                     <option key={r} value={r}>{DAYS_RANGE_LABELS[r]}</option>
                   ))}
                 </select>
