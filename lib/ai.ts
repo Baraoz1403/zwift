@@ -523,6 +523,14 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "session in between) or Recovery-week volume cap - in those cases get as " +
   "close as safely possible and explain why in the summary. " +
   "Absent/null riderNote means no note - proceed normally. " +
+  "If currentPlan is present in the input AND riderNote is also present, " +
+  "treat this as a SURGICAL EDIT: start from currentPlan's schedule as the " +
+  "baseline and apply ONLY the change the rider requested in riderNote. " +
+  "Every day NOT mentioned in the note must keep exactly the workout it " +
+  "already has in currentPlan (same type, same title, same duration). " +
+  "Do not redesign or rebalance the week - only touch the day(s) the rider " +
+  "explicitly named. If currentPlan is present but riderNote is absent, " +
+  "ignore currentPlan and generate fresh. " +
   "For any day at or before the today field that already has a matching " +
   "ride in the rides array (same date), that day is already history, not " +
   "a live prescription - do not invent an unrelated placeholder title/type " +
@@ -721,6 +729,10 @@ export async function generateWeeklyPlan(params: {
    *  longer fill the display) without waiting for that week to actually
    *  start. Defaults to the real current week when omitted. */
   targetWeekOf?: string;
+  /** The plan currently active for THIS week. When present along with a
+   *  riderNote, the AI should treat it as a surgical edit: apply the note's
+   *  change to exactly the day(s) mentioned and leave every other day intact. */
+  currentPlan?: { workouts: WeeklyWorkout[] };
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -818,6 +830,9 @@ export async function generateWeeklyPlan(params: {
     today: new Date().toISOString().slice(0, 10),
     rides: params.rides,
     riderNote: params.riderNote ?? null,
+    currentPlan: params.currentPlan
+      ? params.currentPlan.workouts.map(w => ({ day: w.day, date: w.date, type: w.type, title: w.title }))
+      : null,
   });
 
   let resp: Response;

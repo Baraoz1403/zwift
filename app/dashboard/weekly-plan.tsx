@@ -869,7 +869,10 @@ export default function WeeklyPlan() {
   /** Manual "generate new plan" button - always targets the real current week. */
   async function handleGenerate() {
     const targetWeekOf = currentWeekOf();
-    const previousPlanForAI = plan && stale ? plan : null;
+    // Always pass the current plan so the AI can make incremental changes
+    // (e.g. "add Sunday" after already having changed Friday and Saturday).
+    // Without this, each generate starts from scratch and resets prior edits.
+    const previousPlanForAI = plan ?? null;
     await generateAndActivate(targetWeekOf, previousPlanForAI);
   }
 

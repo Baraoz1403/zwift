@@ -162,6 +162,13 @@ export async function runWeeklyPlanGeneration(
       ? computeAdherence(opts.previousPlan, rides, effectiveFtp ?? profile.ftp)
       : undefined;
 
+  // When the rider is editing the CURRENT week's plan (previousPlan.weekOf === weekOf),
+  // pass it as currentPlan so the AI does a surgical edit rather than a full regenerate.
+  const currentPlan =
+    opts.previousPlan && opts.previousPlan.weekOf === weekOf
+      ? opts.previousPlan
+      : undefined;
+
   let resolvedAge = opts.ageYears;
   if (!resolvedAge && opts.riderProfile?.ageYears) {
     resolvedAge = opts.riderProfile.ageYears;
@@ -192,6 +199,7 @@ export async function runWeeklyPlanGeneration(
     riderProfile: opts.riderProfile,
     riderNote: opts.riderNote,
     targetWeekOf: weekOf,
+    currentPlan,
   });
 
   return { athleteId, plan, macroCycle, cycle, weekOf, rides };
