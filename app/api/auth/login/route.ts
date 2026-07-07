@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { loginToZwift, fetchOwnProfile, ZwiftAuthError, ZwiftApiError } from "@/lib/zwift";
 import { encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { kvGet } from "@/lib/kv";
+import { mirrorZwiftAuthToKv } from "@/lib/kv-plan-state";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -46,6 +47,14 @@ export async function POST(req: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 30,
     });
+
+    // Mirror the refresh token to KV so the headless cron job (see
+    // app/api/ai/weekly-plan/cron/route.ts) can keep generating plans for
+    // this athlete even on weeks they never open the dashboard - best
+    // effort, never blocks the login response.
+    if (athleteId) {
+      await mirrorZwiftAuthToKv(athleteId, result.refreshToken);
+    }
 
     // ── Restore connections from KV (cross-device persistence) ──────────────
     // If the rider connected ICU or TP on another device, their credentials are

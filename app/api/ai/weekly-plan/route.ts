@@ -5,46 +5,12 @@ import { WeeklyWorkout } from "@/lib/ai";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { MacroCycleState } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { kvSet, kvAvailable } from "@/lib/kv";
+import { mirrorStateToKv, mirrorZwiftAuthToKv } from "@/lib/kv-plan-state";
 
-/**
- * Mirrors the state this endpoint just used/produced into KV, keyed by
- * athlete ID, and registers the athlete in the "known athletes" registry.
- * This is what lets app/api/ai/weekly-plan/cron/route.ts run the exact same
- * pipeline headlessly overnight, without a browser session: it reads back
- * whatever the rider's own browser last saved here (rider profile, macro
- * cycle position, last generated plan) instead of needing them client-side.
- *
- * Best-effort / fire-and-forget in spirit (kvSet already no-ops silently if
- * KV isn't configured) - a failure here must never break the interactive
- * "Generate" flow for the person sitting at the dashboard.
- */
-async function mirrorStateToKv(
-  athleteId: string,
-  data: {
-    riderProfile?: RiderTrainingProfile;
-    macroCycle: MacroCycleState;
-    plan: { weekOf: string; workouts: WeeklyWorkout[] };
-  }
-) {
-  if (!kvAvailable()) return;
-  try {
-    const registryRaw = await import("@/lib/kv").then((m) => m.kvGet("zwift:athletes"));
-    const registry: string[] = registryRaw ? JSON.parse(registryRaw) : [];
-    if (!registry.includes(athleteId)) {
-      registry.push(athleteId);
-      await kvSet("zwift:athletes", JSON.stringify(registry));
-    }
-    if (data.riderProfile) {
-      await kvSet(`zwift:${athleteId}:rider_profile`, JSON.stringify(data.riderProfile));
-    }
-    await kvSet(`zwift:${athleteId}:macro_cycle`, JSON.stringify(data.macroCycle));
-    await kvSet(`zwift:${athleteId}:last_plan`, JSON.stringify(data.plan));
-    await kvSet(`zwift:${athleteId}:last_plan_at`, String(Date.now()));
-  } catch {
-    // Never let KV mirroring failures affect the interactive response.
-  }
-}
+// mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
+// app/api/ai/weekly-plan/cron/route.ts can share the exact same KV
+// read/write logic instead of a second, drifting copy - see that file's
+// doc comment for the full explanation of what each key is for.
 
 // Mirrors app/api/ai/insights/route.ts (same auth, same data-gathering
 // pattern) but calls generateWeeklyPlan instead of generateInsights, and
@@ -118,12 +84,16 @@ export async function POST(req: NextRequest) {
       targetWeekOf,
     });
 
-    // Side effect only - never blocks or affects the response below.
+    // Side effects only - never block or affect the response below.
     await mirrorStateToKv(result.athleteId, {
       riderProfile,
       macroCycle: result.macroCycle,
       plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
     });
+    // Keep the athlete's Zwift refresh token mirrored to KV every time we
+    // see a live session - this is what lets the cron job obtain a fresh
+    // access token headlessly later, without ever needing a browser here.
+    await mirrorZwiftAuthToKv(result.athleteId, session.refreshToken);
 
     return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle });
   } catch (e) {

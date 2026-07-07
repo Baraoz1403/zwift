@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decryptSession, encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { refreshZwiftToken, ZwiftApiError } from "@/lib/zwift";
+import { mirrorZwiftAuthToKv } from "@/lib/kv-plan-state";
 
 /**
  * GET /api/auth/refresh?next=/dashboard
@@ -31,6 +32,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const refreshed = await refreshZwiftToken(session.refreshToken);
+
+    // Zwift may rotate the refresh token on every use - mirror whatever the
+    // newest one is to KV so the cron job's own refresh call later doesn't
+    // try to reuse an already-spent token (see lib/kv-plan-state.ts).
+    if (session.athleteId) {
+      await mirrorZwiftAuthToKv(session.athleteId, refreshed.refreshToken);
+    }
 
     const newCookieValue = await encryptSession({
       accessToken: refreshed.accessToken,

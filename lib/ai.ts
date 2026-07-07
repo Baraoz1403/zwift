@@ -364,24 +364,47 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "rides otherwise look stable or improving, a normal 5-10% progression in " +
   "total weekly volume is appropriate. When freshness is 'neutral', hold " +
   "this week's volume roughly steady. " +
-  "The input also includes a cycle object - {phase, weekInMesocycle} - " +
-  "tracking where this week sits in a recurring 4-week mesocycle: 'Base' " +
-  "(early mesocycle, building aerobic foundation), 'Build' (later " +
-  "mesocycles, progressive overload), or 'Recovery' (the scheduled lighter " +
-  "4th week of the mesocycle). When phase is 'Recovery', this week's plan " +
+  "The input also includes a cycle object - {phase, weekInMesocycle, " +
+  "weeksToEvent} - tracking where this week sits in a recurring 4-week " +
+  "mesocycle: 'Base' (early mesocycle, building aerobic foundation), " +
+  "'Build' (later mesocycles, progressive overload), 'Recovery' (the " +
+  "scheduled lighter 4th week of the mesocycle), 'Taper', or 'RaceWeek'. " +
+  "weeksToEvent (whole weeks until the rider's target event, already " +
+  "computed - never recompute it yourself from eventDate) is only non-null " +
+  "when phase is 'Taper' or 'RaceWeek', or as informational context " +
+  "otherwise; ignore it when null. " +
+  "When phase is 'Recovery', this week's plan " +
   "MUST be a deliberately reduced-load week - cut total weekly volume by " +
   "roughly 40-60% versus this rider's recent normal week while keeping a " +
   "small amount of intensity (not a total off week) - regardless of how " +
   "fresh trainingLoad says they are - and the summary must say this is a " +
-  "scheduled recovery week. Otherwise, use phase only as light supporting " +
-  "context alongside trainingLoad: an early 'Build' week can lean into " +
-  "progression a bit more confidently than a later one, and 'Base' weeks " +
-  "should lean toward easy endurance riding plus a small amount of " +
-  "genuinely hard work with little time at in-between threshold/sweet-spot " +
-  "intensity, while 'Build' weeks can bring in more threshold/sweet-spot " +
-  "sessions alongside the endurance and hard intervals. " +
-  "trainingLoad/ridesLast7Days remain the primary drivers of this week's " +
-  "actual content. " +
+  "scheduled recovery week. " +
+  "When phase is 'Taper' (event is 2-3 weeks away): reduce total weekly " +
+  "volume progressively (roughly 20-30% below this rider's recent normal " +
+  "week, more the closer weeksToEvent gets to 0) while KEEPING some " +
+  "race-pace intensity - short, sharp touches of threshold/VO2max work, " +
+  "not high volume of it. Losing fitness during a short taper is a much " +
+  "smaller risk than carrying fatigue into the event; when in doubt, cut " +
+  "volume before cutting intensity. State clearly in the summary that " +
+  "this is a taper week counting down to their event. " +
+  "When phase is 'RaceWeek' (event is this week or next): this week's " +
+  "training load must be minimal - short, easy rides plus at most one " +
+  "brief activation session ('Race Day Opener' from the workout library) " +
+  "placed 1-2 days before the event date itself; the event day and the day " +
+  "immediately after should be full rest (schedule the event day itself as " +
+  "a Rest Day in the plan - the rider records the actual event separately). " +
+  "No new training stress this week under any circumstances, regardless of " +
+  "how fresh trainingLoad looks. State the event is imminent in the summary " +
+  "and wish them well. " +
+  "Otherwise (Base/Build, no imminent event), use phase only as light " +
+  "supporting context alongside trainingLoad: an early 'Build' week can " +
+  "lean into progression a bit more confidently than a later one, and " +
+  "'Base' weeks should lean toward easy endurance riding plus a small " +
+  "amount of genuinely hard work with little time at in-between " +
+  "threshold/sweet-spot intensity, while 'Build' weeks can bring in more " +
+  "threshold/sweet-spot sessions alongside the endurance and hard " +
+  "intervals. trainingLoad/ridesLast7Days remain the primary drivers of " +
+  "this week's actual content outside Taper/RaceWeek. " +
   "The input may also include a lastWeekAdherence object - " +
   "{plannedSessions, completedSessions, missedSessions, notes} - comparing " +
   "last week's plan against what the rider actually rode (notes are short, " +
@@ -407,10 +430,12 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(3) let goal colour session type emphasis: 'Increase FTP' -> more " +
   "threshold/sweet-spot blocks; 'Lose weight / body composition' -> more " +
   "moderate-duration aerobic rides; 'Prepare for an event' -> build toward " +
-  "event-specific demands and check eventDate to judge how close the event " +
-  "is; 'General fitness' or 'Fun/enjoyment' -> balanced variety; " +
-  "(4) if eventDate is present and within 4 weeks, note it in the summary " +
-  "and shift toward a taper (cut volume, keep race-pace intensity); " +
+  "event-specific demands; 'General fitness' or 'Fun/enjoyment' -> balanced " +
+  "variety; " +
+  "(4) whether and how close a target event is comes from cycle.phase/" +
+  "weeksToEvent (see above), already computed - Taper/RaceWeek phase " +
+  "handling there is authoritative, don't separately judge closeness from " +
+  "the raw eventDate string here; " +
   "(5) if notes is present and non-empty, read it for extra rider context " +
   "(injuries, preferences, schedule constraints) and adjust accordingly. " +
   "The sport field tells you the rider's primary discipline: 'Cycling' " +
@@ -706,7 +731,11 @@ export async function generateWeeklyPlan(params: {
         }
       : null,
     cycle: params.cycle
-      ? { phase: params.cycle.phase, weekInMesocycle: params.cycle.weekInMesocycle }
+      ? {
+          phase: params.cycle.phase,
+          weekInMesocycle: params.cycle.weekInMesocycle,
+          weeksToEvent: params.cycle.weeksToEvent ?? null,
+        }
       : null,
     lastWeekAdherence: params.lastWeekAdherence
       ? {

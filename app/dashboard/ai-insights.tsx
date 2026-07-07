@@ -3,6 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { IconBolt } from "./icons";
 
+// Rotation of the app's existing colorful icon-badge classes (see
+// .stat-card-icon.c-* in globals.css - the same palette used on the header
+// stat cards and record grid) for the numbered insight markers below. Blue
+// is deliberately skipped - the rider asked for these markers to read as
+// their own distinct thing, not another blue accent dot like the rest of
+// the dashboard uses.
+const INSIGHT_MARKER_COLORS = ["c-teal", "c-purple", "c-amber", "c-pink", "c-green"];
+
 // Reusable toggle pill — same visual language as the AI signal cards
 function TogglePill({ open, onToggle, label }: { open: boolean; onToggle: () => void; label?: string }) {
   return (
@@ -140,9 +148,10 @@ export default function AiInsights() {
               style={{
                 marginTop: 4,
                 marginBottom: 0,
-                // Small indent off the box's own left edge, per the rider's
-                // note that the markers sat flush against the border.
-                paddingLeft: 6,
+                // Rider asked for the markers moved further right - more
+                // breathing room off the box's own left edge than the
+                // earlier 6px indent gave it.
+                paddingLeft: 16,
                 listStyle: "none",
                 color: "var(--text)",
                 lineHeight: 1.55,
@@ -162,25 +171,30 @@ export default function AiInsights() {
                     key={i}
                     style={{
                       display: "flex",
-                      alignItems: "baseline",
-                      gap: 10,
-                      padding: i === 0 ? 0 : "7px 0 0",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: i === 0 ? 0 : "9px 0 0",
                     }}
                   >
-                    {/* Small square marker, muted grey - not the round blue
-                        accent dot used elsewhere, so this list reads as its
-                        own quieter thing rather than another "signal" chip. */}
+                    {/* Bold numbered marker cycling through the app's own
+                        colorful icon-badge palette (same .stat-card-icon
+                        c-* gradient classes as the header stat cards and
+                        record grid) - reads as a deliberate, modern design
+                        element instead of a plain grey bullet, with no new
+                        hardcoded color added to this component. */}
                     <span
+                      className={`stat-card-icon ${INSIGHT_MARKER_COLORS[i % INSIGHT_MARKER_COLORS.length]}`}
                       style={{
-                        flexShrink: 0,
-                        width: 4,
-                        height: 4,
-                        borderRadius: 1,
-                        background: "var(--muted)",
-                        opacity: 0.55,
-                        transform: "translateY(-2px) rotate(45deg)",
+                        width: 20,
+                        height: 20,
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
                       }}
-                    />
+                    >
+                      {i + 1}
+                    </span>
                     <span>{line}</span>
                   </li>
                 ))}

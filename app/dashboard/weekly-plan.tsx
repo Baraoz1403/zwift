@@ -4,6 +4,7 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import { IconCalendar, IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
+import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from "@/lib/plan-shape";
 import WorkoutThumbnail from "./workout-thumbnail";
 import TrainingProfileCard from "./training-profile";
 import ConnectionsPanel from "./connections-panel";
@@ -105,8 +106,9 @@ interface MacroCycleState {
 }
 
 interface PhaseInfo {
-  phase: "Base" | "Build" | "Recovery";
+  phase: "Base" | "Build" | "Recovery" | "Taper" | "RaceWeek";
   weekInMesocycle: number;
+  weeksToEvent?: number | null;
 }
 
 function loadCachedCycle(): MacroCycleState | null {
@@ -190,95 +192,11 @@ function computeForwardWindow(
   return upcoming.slice(0, size);
 }
 
-const WEEK_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-
-/**
- * Ensures every workout has a concrete ISO date string ("YYYY-MM-DD"),
- * computed from the plan's weekOf (Monday, always set by our own code - see
- * weekOfMonday in lib/ai.ts, never by the AI) plus the workout's day-of-week
- * index.
- *
- * This USED to trust the AI's own `date` field whenever it supplied one
- * ("if (w.date) return w"), only filling in a date when the AI omitted it.
- * That was the actual root cause behind a whole family of confusing bugs:
- * the AI's system prompt asks it to compute each date itself via arithmetic
- * on weekOfMonday ("Tuesday = weekOfMonday+1", etc.) - LLM date arithmetic
- * is unreliable, and it doesn't have to be *consistently* wrong to cause
- * damage: a workout could come back with day="Tuesday" and date="2026-07-08"
- * (actually a Wednesday) - internally self-contradictory. Everything keyed
- * off `date` (ICU/TP pushes, Zwift's own calendar, weekActivities matching)
- * then disagreed with everything keyed off `day`, which is exactly what
- * surfaced as the dashboard showing "Tuesday (2026-07-08) - Surge Ride"
- * while the same ride pushed through to Zwift correctly read "Wed Jul 8".
- *
- * The fix: never trust the AI's arithmetic for this. `day` (a weekday name)
- * is a far simpler thing for the model to get right than full date math, and
- * `weekOf` is deterministic (our own code, not the AI's). So `date` is now
- * ALWAYS recomputed from those two - the AI's own `date` field, if present,
- * is ignored entirely - guaranteeing day-name and date can never disagree.
- */
-function ensureWorkoutDates(plan: WeeklyPlan): WeeklyPlan {
-  const base = new Date(plan.weekOf + "T00:00:00Z");
-  return {
-    ...plan,
-    workouts: plan.workouts.map((w) => {
-      const dayIndex = WEEK_DAYS.indexOf(w.day);
-      if (dayIndex < 0) return w; // unrecognized day name — leave whatever date it had, if any
-      const d = new Date(base);
-      d.setUTCDate(d.getUTCDate() + dayIndex);
-      return { ...w, date: d.toISOString().slice(0, 10) };
-    }),
-  };
-}
-
-/**
- * Normalizes the AI's response to exactly one entry per real calendar day
- * (7 - Monday through Sunday). This used to trim down to 6 and silently
- * drop a rest day whenever the AI returned a full 7-day week - the rest
- * day was picked because it seemed like the "least important" one to lose,
- * but from the rider's side it just made a real calendar day vanish with no
- * card at all (a rider hit this directly: Friday, Saturday, then Monday -
- * Sunday simply wasn't there). A rest day is still a real day and belongs
- * on the grid like any other.
- */
-function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
-  let workouts = [...plan.workouts].sort(
-    (a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day)
-  );
-
-  while (workouts.length > 7) {
-    const restIdx = workouts.findIndex(w => isRestDay(w.type));
-    if (restIdx >= 0) {
-      workouts.splice(restIdx, 1);
-    } else {
-      workouts.pop();
-    }
-  }
-
-  if (workouts.length < 7) {
-    const usedDays = new Set(workouts.map(w => w.day));
-    for (const day of WEEK_DAYS) {
-      if (workouts.length >= 7) break;
-      if (!usedDays.has(day)) {
-        const dayIndex = WEEK_DAYS.indexOf(day);
-        const base = new Date(plan.weekOf + "T00:00:00Z");
-        base.setUTCDate(base.getUTCDate() + dayIndex);
-        workouts.push({
-          day,
-          date: base.toISOString().slice(0, 10),
-          type: "Rest",
-          title: "Rest Day",
-          durationMin: 0,
-          description: "Active recovery — light walking or stretching is fine.",
-        });
-        usedDays.add(day);
-      }
-    }
-    workouts.sort((a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day));
-  }
-
-  return { ...plan, workouts };
-}
+// WEEK_DAYS / ensureWorkoutDates / normalizeToSix now live in
+// lib/plan-shape.ts (imported above) so the exact same logic runs for both
+// this client component and the headless cron plan generator - see that
+// file's doc comment for why a second, drifting copy is exactly what caused
+// the day-name/date mismatch bug this project already fixed once.
 
 function currentWeekOf(): string {
   const now = new Date();
@@ -696,9 +614,19 @@ export default function WeeklyPlan() {
 
     const activeDays = normalizedPlan.workouts.filter(w => !isRestDay(w.type) && w.date);
     if (activeDays.length === 0) return;
-    const dates = activeDays.map(w => w.date as string).sort();
-    const oldest = dates[0];
-    const newest = dates[dates.length - 1];
+    // Cleanup range spans the FULL plan (all 7 real calendar days -
+    // normalizeToSix guarantees every day has a date, rest days included),
+    // not just the active/non-rest days. Bug this fixed: a day that was
+    // active in an earlier generation of this same week (and got pushed to
+    // ICU/Zwift then) but is Rest in the current plan fell entirely outside
+    // an active-only [oldest, newest] range - the cleanup query never even
+    // looked at that date, so a stale entry sat there forever even though
+    // the dashboard correctly showed nothing planned for it. Using the
+    // whole week's date span means every day the plan has an opinion about
+    // - including "this is now a rest day" - gets checked and reconciled.
+    const allDates = normalizedPlan.workouts.map(w => w.date).filter(Boolean).sort() as string[];
+    const oldest = allDates[0];
+    const newest = allDates[allDates.length - 1];
 
     // 1. Push fresh copies FIRST for every day that hasn't actually been
     // ridden yet. A day already present in weekActivities has a real
@@ -1053,14 +981,7 @@ export default function WeeklyPlan() {
     return () => clearTimeout(t);
   }, [tpPolling]);
 
-  /** "2026-07-08" → "Mon Jul 8" — shown as the workout prefix in Zwift/TP/ICU */
-  function workoutDateLabel(isoDate: string | undefined): string {
-    if (!isoDate) return "";
-    const d = new Date(isoDate + "T12:00:00");
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
-  }
+  // workoutDateLabel now imported from lib/plan-shape.ts (see import above).
 
   async function handlePushToTP(w: WeeklyWorkout) {
     const key = `tp_${w.date ?? w.title}`;
@@ -1647,7 +1568,9 @@ export default function WeeklyPlan() {
           </div>
           <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, flex: 1 }}>
             {cycleInfo
-              ? `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4 — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
+              ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
+                ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`} — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
+                : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4 — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
               : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
           </div>
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>

@@ -389,6 +389,20 @@ export const PHASE_GUIDELINES = {
     avoid: ["Threshold Development", "2×20 FTP Blocks", "Norwegian 4×4", "5×5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression"],
     note: "Volume cut 40-60%. At most one short quality session (Tempo Cruise). The body adapts DURING recovery weeks — this is not wasted time, it is when fitness from the load block is consolidated.",
   },
+  Taper: {
+    focus: "shed fatigue, keep race-pace sharpness, target event 2-3 weeks out",
+    primary: ["Foundation Ride", "Tempo Cruise", "Sweet Spot Classic"],
+    supporting: ["Long Endurance", "Micro Intervals", "Surge Ride"],
+    avoid: ["Norwegian 4×4", "2×20 FTP Blocks", "Over-Under Intervals", "5×5 VO2max", "Descending Threshold", "Extended Sweet Spot"],
+    note: "Cut total volume ~20-30% below the rider's recent normal week, more as the event gets closer. Keep 1-2 SHORT touches of race-pace intensity (Sweet Spot Classic or a shortened threshold touch, not a full hard session) so sharpness isn't lost. When in doubt, cut duration before cutting intensity — a shorter version of a familiar session beats a novel hard one this close to the event.",
+  },
+  RaceWeek: {
+    focus: "arrive fresh, event this week or next",
+    primary: ["Spin & Recover", "Race Day Opener"],
+    supporting: ["Foundation Ride"],
+    avoid: ["Threshold Development", "2×20 FTP Blocks", "Norwegian 4×4", "5×5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression", "Sweet Spot Classic", "Tempo Ladder", "30/30 Blitz"],
+    note: "No new training stress. Short easy rides only, plus one 'Race Day Opener' 1-2 days before the event to stay activated without adding fatigue. Schedule the event day itself as a Rest Day in the plan (the rider logs the real event separately) and keep the day after light too.",
+  },
 } as const;
 
 /**
@@ -471,8 +485,8 @@ SESSION READINESS — substitute when TSB is below threshold (cite the actual TS
 • Neuromuscular/Sprint: need TSB ≥ -15. Below that → substitute Sprint Builder (shorter) or Foundation Ride.
 • Tempo, Foundation, Recovery: always appropriate regardless of TSB.
 
-PROGRESSION LADDER — follow this order, never skip rungs:
-Foundation Ride → Tempo Cruise → Sweet Spot Classic → Extended Sweet Spot → Threshold Development → Over-Under Intervals → Norwegian 4×4
+PROGRESSION LADDER — follow this order, never skip rungs. When lastWeekAdherence shows a workout category was completed at full target power/duration, grow it WITHIN the same category before jumping to the next rung - this is how Zwift's own official plans (e.g. Build Me Up) visibly progress sweet spot from 3×12 min one week to 2×20 min a few weeks later, rather than swapping to an unrelated session. A rider should be able to see their own sessions getting incrementally longer/harder week over week, not just a different name each time:
+Foundation Ride → Tempo Cruise → Sweet Spot Classic → Sweet Spot Progression → Extended Sweet Spot → Threshold Development → Over-Under Intervals → Norwegian 4×4
 
 WEEKLY SEQUENCING — the week shape matters as much as individual sessions:
 • Hardest session: schedule on the day when TSB is highest (typically day 2-3 of the week, after the rest day that started the week).
@@ -485,4 +499,6 @@ PHASE SELECTION:
 • Base → Foundation Ride, Long Endurance, Surge Ride, Z2 Cadence Drills, Sprint Builder, Tempo Cruise. Maximum 1 hard structured session/week.
 • Build → Sweet Spot, Threshold, VO2max series. Bookend with Foundation. 2-3 hard sessions/week maximum. Never increase volume AND intensity in the same week.
 • Recovery → Spin & Recover, Easy Flush, Foundation Ride only. At most one Tempo Cruise. Cut volume 40-60%. The body adapts during recovery — this is not wasted time.
+• Taper (event 2-3 weeks out, cycle.weeksToEvent tells you exactly how many) → Foundation Ride, Tempo Cruise, Sweet Spot Classic. Cut volume ~20-30% below the rider's recent normal, more as weeksToEvent approaches 0. Keep 1-2 short race-pace touches so sharpness isn't lost — cut duration before cutting intensity.
+• RaceWeek (event this week or next) → Spin & Recover, Foundation Ride, and one "Race Day Opener" 1-2 days before the event. No new training stress. The event day itself is a Rest Day in the plan.
 `.trim();

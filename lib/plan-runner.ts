@@ -21,7 +21,7 @@ import { parseFitRecords } from "@/lib/fit-parser";
 import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeNormalizedPower } from "@/lib/stats";
 import { generateWeeklyPlan, AiInsightsError, RideSummary, WeeklyWorkout } from "@/lib/ai";
 import { computeTrainingLoad } from "@/lib/training-load";
-import { advanceMacroCycle, getPhaseForWeekIndex, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
+import { advanceMacroCycle, getPhaseForWeekIndex, resolvePhase, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
 import { computeAdherence } from "@/lib/adherence";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
 
@@ -77,6 +77,11 @@ export interface RunWeeklyPlanResult {
   macroCycle: MacroCycleState;
   cycle: ReturnType<typeof getPhaseForWeekIndex>;
   weekOf: string;
+  /** The rides fetched/used for this generation - exposed so a headless
+   *  caller (the cron endpoint) can tell which days this week already have
+   *  a real completed ride, the same "don't push a planned workout over an
+   *  already-ridden day" check the browser does via weekActivities. */
+  rides: RideSummary[];
 }
 
 /**
@@ -146,7 +151,11 @@ export async function runWeeklyPlanGeneration(
 
   const weekOf = opts.targetWeekOf ?? mondayOfCurrentWeek();
   const macroCycle = advanceMacroCycle(opts.incomingCycle ?? null, weekOf);
-  const cycle = getPhaseForWeekIndex(macroCycle.weekIndex);
+  // resolvePhase overrides the normal Base/Build/Recovery rotation with a
+  // real Taper/RaceWeek phase when the rider's stated event date is close -
+  // see the doc comment on resolvePhase for why this replaced the old
+  // prompt-only "if eventDate is within 4 weeks..." handling.
+  const cycle = resolvePhase(macroCycle.weekIndex, weekOf, opts.riderProfile?.eventDate ?? null);
 
   const lastWeekAdherence =
     opts.previousPlan && opts.previousPlan.weekOf !== weekOf
@@ -185,5 +194,5 @@ export async function runWeeklyPlanGeneration(
     targetWeekOf: weekOf,
   });
 
-  return { athleteId, plan, macroCycle, cycle, weekOf };
+  return { athleteId, plan, macroCycle, cycle, weekOf, rides };
 }
