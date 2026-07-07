@@ -321,47 +321,36 @@ export default function WeeklyPlan() {
 
   useEffect(() => {
     const thisWeek = currentWeekOf();
-    const cached = loadCachedPlan();
+
+    // localStorage is WRITE-ONLY from the dashboard's perspective.
+    // The server (KV / /api/ai/weekly-plan/state) is the single source of
+    // truth for the plan. We read localStorage only for:
+    //   1. The pre-fetched next-week bundle — a fallback if the server has
+    //      no entry yet for the new week (e.g. cron hasn't run yet this
+    //      Monday morning). It is NEVER shown until the server check says
+    //      there's nothing better.
+    //   2. Macro-cycle state and activity cache — display-only, no
+    //      correctness impact.
+    // We never display a plan from localStorage directly; showing a stale
+    // local plan while waiting for the server caused cross-device
+    // discrepancies (Mac sees Sunday workout, iPad doesn't) and auto-sync
+    // races (two devices simultaneously re-pushing to ICU).
     const cachedNextBundle = loadCachedNextBundle();
+    const localNextWeekPlan: WeeklyPlan | null =
+      cachedNextBundle && cachedNextBundle.plan.weekOf <= thisWeek
+        ? ensureWorkoutDates(normalizeToSix(cachedNextBundle.plan))
+        : null;
 
-    let activePlan: WeeklyPlan | null = cached ? ensureWorkoutDates(normalizeToSix(cached)) : null;
-
-    // A pre-fetched next-week bundle whose week has actually arrived gets
-    // promoted to become the active plan - this is what makes the weekly
-    // rollover silent (no button click, no "plan ended" banner) in the
-    // common case where the rider opened the dashboard at least once during
-    // the previous week (giving the background prefetch time to run).
-    if (cachedNextBundle && cachedNextBundle.plan.weekOf <= thisWeek) {
-      activePlan = ensureWorkoutDates(normalizeToSix(cachedNextBundle.plan));
-      if (cachedNextBundle.macroCycle) {
-        try { window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(cachedNextBundle.macroCycle)); } catch {}
-        setCycleInfo(cachedNextBundle.cycle ?? getPhaseForWeekIndex(cachedNextBundle.macroCycle.weekIndex));
-      }
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(activePlan)); } catch {}
-      saveNextBundle(null); // consumed - a fresh "next" gets prefetched below once needed
-      // Sync is handled by the debounced auto-sync useEffect (via setPlan below).
-      // Don't call syncPlanToConnectedPlatforms here directly — it would race
-      // concurrently with the plan-state-change trigger and create duplicates.
+    if (localNextWeekPlan && cachedNextBundle?.macroCycle) {
+      try { window.localStorage.setItem(CYCLE_STORAGE_KEY, JSON.stringify(cachedNextBundle.macroCycle)); } catch {}
+      setCycleInfo(cachedNextBundle.cycle ?? getPhaseForWeekIndex(cachedNextBundle.macroCycle.weekIndex));
+      saveNextBundle(null); // consumed — clear so we don't re-promote next load
     } else {
       const cachedCycle = loadCachedCycle();
       if (cachedCycle) setCycleInfo(getPhaseForWeekIndex(cachedCycle.weekIndex));
     }
 
-    if (activePlan) setPlan(activePlan);
-
-    const isLocallyStale = !activePlan || activePlan.weekOf !== thisWeek;
-
-    // Reconcile against the server (KV) before ever deciding to generate a
-    // brand-new plan. Previously this device would call the AI for a fresh
-    // plan any time ITS OWN localStorage looked stale for `thisWeek` - even
-    // when another device (or the cron job - see
-    // app/api/ai/weekly-plan/cron/route.ts) had already generated and
-    // pushed one for the exact same week. Two devices could then each hold
-    // a genuinely different AI-generated plan for the same week - which is
-    // exactly what surfaced as "the rides are different on my iPad." Now
-    // every load asks the server first (see /api/ai/weekly-plan/state's doc
-    // comment) and adopts whatever it already has for this week instead of
-    // silently forking a second, independent copy.
+    // Server is authority. Wait for it before rendering any plan.
     (async () => {
       let serverPlan: WeeklyPlan | null = null;
       let serverCycle: MacroCycleState | null = null;
@@ -375,14 +364,12 @@ export default function WeeklyPlan() {
           serverCycle = d.macroCycle ?? null;
         }
       } catch {
-        // No server reachable / no state yet - fall through to the
-        // local-only behavior below exactly as before this change.
+        // Network failure — fall through to local fallback below.
       }
 
-      if (
-        serverPlan &&
-        (!activePlan || activePlan.weekOf !== thisWeek || planHash(activePlan) !== planHash(serverPlan))
-      ) {
+      if (serverPlan) {
+        // Server has a plan for this week — always use it. No comparison
+        // against local needed: server is truth.
         setPlan(serverPlan);
         setStale(false);
         try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(serverPlan)); } catch {}
@@ -394,19 +381,24 @@ export default function WeeklyPlan() {
         return;
       }
 
-      if (isLocallyStale) {
-        // Either no cached plan at all, or the week rolled over with
-        // nothing pre-fetched to cover it (e.g. the rider was away for 2+
-        // weeks) AND the server has nothing either. Auto-generate the
-        // current week's plan now - no manual click needed. The stale
-        // banner + its "generate" button remain only as a fallback if this
-        // auto-attempt fails (shown once `loading` finishes).
-        setStale(true);
-        generateAndActivate(thisWeek, activePlan ?? undefined);
-      } else {
+      // Server has nothing for this week. Check if we have a local
+      // next-bundle plan that was pre-fetched last week (smooth rollover).
+      if (localNextWeekPlan) {
+        // Use the pre-fetched plan and immediately save it to KV so all
+        // other devices see it too.
+        setPlan(localNextWeekPlan);
         setStale(false);
-        prefetchNextWeekIfNeeded(activePlan!);
+        try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localNextWeekPlan)); } catch {}
+        // Trigger a background Generate to officially persist this week's
+        // plan to KV (with the pre-fetched plan as context so AI doesn't
+        // start from scratch).
+        generateAndActivate(thisWeek, localNextWeekPlan);
+        return;
       }
+
+      // No server plan, no local fallback — generate fresh.
+      setStale(true);
+      generateAndActivate(thisWeek, null);
     })();
 
     // Load cached activities immediately to prevent flash on refresh
