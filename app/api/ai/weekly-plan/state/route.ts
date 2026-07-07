@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getStoredAthleteState } from "@/lib/kv-plan-state";
+import { fetchOwnProfile } from "@/lib/zwift";
 
 /**
  * GET /api/ai/weekly-plan/state
@@ -36,15 +37,27 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
   }
-  if (!session.athleteId) {
-    // Older session predating athleteId capture, or the one-off profile
-    // lookup at login failed - nothing to key KV state on, so just report
-    // "no server state" rather than erroring; the client falls back to its
-    // normal local-cache/generate behavior.
+  // Try to resolve athleteId — either from the session (happy path) or by
+  // fetching the Zwift profile live (older sessions that were created before
+  // athleteId was stored). Without this, any device with a pre-athleteId
+  // session cookie would always get plan:null, auto-generate a fresh plan,
+  // and diverge from every other device. A live profile fetch is cheap (~1
+  // round-trip) and only runs when athleteId is missing from the session.
+  let athleteId = session.athleteId;
+  if (!athleteId && session.accessToken) {
+    try {
+      const profile = await fetchOwnProfile(session.accessToken);
+      athleteId = profile.id != null ? String(profile.id) : undefined;
+    } catch {
+      // best-effort — if this fails we report no plan rather than erroring
+    }
+  }
+
+  if (!athleteId) {
     return NextResponse.json({ ok: true, riderProfile: null, macroCycle: null, plan: null });
   }
 
-  const state = await getStoredAthleteState(session.athleteId);
+  const state = await getStoredAthleteState(athleteId);
   return NextResponse.json({
     ok: true,
     riderProfile: state.riderProfile ?? null,

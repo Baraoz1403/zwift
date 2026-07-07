@@ -381,24 +381,22 @@ export default function WeeklyPlan() {
         return;
       }
 
-      // Server has nothing for this week. Check if we have a local
-      // next-bundle plan that was pre-fetched last week (smooth rollover).
+      // Server has nothing for this week. Check if we have a pre-fetched
+      // next-week bundle (smooth rollover from last week's prefetch).
       if (localNextWeekPlan) {
-        // Use the pre-fetched plan and immediately save it to KV so all
-        // other devices see it too.
+        // Show the pre-fetched plan but DO NOT auto-generate. Refresh must
+        // never trigger AI calls — that is reserved for explicit user action
+        // (the Generate / Regenerate button). The cron job (4am UTC daily)
+        // will pick this up if the user never clicks Generate this week.
         setPlan(localNextWeekPlan);
         setStale(false);
         try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localNextWeekPlan)); } catch {}
-        // Trigger a background Generate to officially persist this week's
-        // plan to KV (with the pre-fetched plan as context so AI doesn't
-        // start from scratch).
-        generateAndActivate(thisWeek, localNextWeekPlan);
         return;
       }
 
-      // No server plan, no local fallback — generate fresh.
+      // No server plan, no local fallback — show the Generate button.
+      // Never auto-generate: refresh must be a read-only operation.
       setStale(true);
-      generateAndActivate(thisWeek, null);
     })();
 
     // Load cached activities immediately to prevent flash on refresh
