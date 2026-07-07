@@ -1710,7 +1710,7 @@ export default function WeeklyPlan() {
             </div>
           )}
 
-          <div className="stat-grid workout-grid">
+          <div className="stat-grid workout-grid" style={{ marginTop: 32 }}>
             {displayWorkouts.map((w, i) => {
               const actual = w.date ? weekActivities.get(w.date) : undefined;
 
