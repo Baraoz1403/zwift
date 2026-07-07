@@ -298,6 +298,7 @@ a:hover {
    out the same way, same convention as .header-cards-grid below. */
 .workout-grid {
   grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 @media (max-width: 900px) {
@@ -1173,7 +1174,7 @@ tbody tr:hover {
 .header-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 24px;
   align-items: stretch; /* equal heights by default */
 }
 
