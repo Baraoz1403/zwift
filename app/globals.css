@@ -1175,6 +1175,13 @@ tbody tr:hover {
   gap: 16px;
 }
 
+/* Training profile wrapper spans full grid width when edit form is open.
+   The inner stat-card cannot set grid-column itself because only direct
+   grid children respond to it — the #training-profile div is the real child. */
+#training-profile[data-editing="true"] {
+  grid-column: 1 / -1;
+}
+
 /* Header card action buttons — consistent size on all screen sizes */
 .header-card-btn {
   min-width: 150px;

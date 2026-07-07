@@ -258,6 +258,14 @@ export default function TrainingProfileCard() {
     })();
   }, []);
 
+  // Tell the wrapper div in weekly-plan.tsx when we're editing so it can
+  // span the full grid width (grid-column only works on direct grid children;
+  // our inner stat-card is one level too deep for gridColumn to take effect).
+  useEffect(() => {
+    const el = document.getElementById('training-profile');
+    if (el) el.setAttribute('data-editing', String(editing));
+  }, [editing]);
+
   const startEdit = useCallback(() => {
     setDraft(profile ?? DEFAULT);
     setEditing(true);
