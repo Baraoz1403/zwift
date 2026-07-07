@@ -442,12 +442,19 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
             description={
               tpStatus === "loading" ? "Checking…" :
               tpStatus === "ok"      ? "Garmin · outdoor calendar" :
-              tpStatus === "warn" && health?.tp.hasRefreshToken ? "Auto-refreshing token…" :
-              tpStatus === "warn"    ? "Reconnect via bookmarklet" :
+              tpStatus === "warn"    ? "Token expired — reconnect to resume Garmin sync" :
               "Garmin · outdoor calendar"
             }
             action={
-              tpStatus !== "ok" && !health?.tp.hasRefreshToken
+              // TP's token can't actually be auto-refreshed (its own server
+              // rejects the refresh grant - confirmed empirically, not just
+              // theoretical) regardless of whether hasRefreshToken is true,
+              // so the manual "Connect" button must always be offered
+              // whenever tpStatus isn't "ok" - hiding it whenever a
+              // (non-functional) refresh token happened to be on file was
+              // exactly what left riders with no way to reconnect once the
+              // token expired.
+              tpStatus !== "ok"
                 ? { label: "Connect", onClick: onOpenTPModal }
                 : undefined
             }

@@ -354,10 +354,22 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
-    // Check TrainingPeaks connection status
-    fetch("/api/trainingpeaks/status")
+    // Check TrainingPeaks connection status. Previously this only ever set
+    // tpConnected=true and never touched tpTokenExpired, so the red
+    // "reconnect" banner (and its button) only appeared reactively, when a
+    // push happened to fail mid-session - on a fresh page load with an
+    // already-expired token (the normal case, since TP's ~1h token can't
+    // actually be refreshed - see lib/trainingpeaks.ts), tpTokenExpired
+    // stayed at its initial `false` and the banner/button never showed up
+    // at all, leaving no way to reconnect from the dashboard. Reading
+    // tokenExpired here too means the banner now reflects real persisted
+    // state on every load, not just this session's push attempts.
+    fetch("/api/trainingpeaks/status", { cache: "no-store" })
       .then(r => r.json())
-      .then(d => { if (d.connected) setTpConnected(true); })
+      .then(d => {
+        if (d.connected) { setTpConnected(true); setTpTokenExpired(false); }
+        else if (d.tokenExpired) { setTpTokenExpired(true); }
+      })
       .catch(() => {});
 
     // Check Intervals.icu connection status
@@ -1206,8 +1218,9 @@ export default function WeeklyPlan() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8264c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1 }}>
-            TrainingPeaks token expired — please reconnect
+          <span style={{ fontSize: 12.5, color: "#e8264c", fontWeight: 600, flex: 1, lineHeight: 1.5 }}>
+            TrainingPeaks token expired — this happens periodically since TP's token can't auto-renew.
+            {" "}Reconnect below if you want this week's workouts pushed through to Garmin.
           </span>
           <button
             type="button"
@@ -1216,6 +1229,7 @@ export default function WeeklyPlan() {
               padding: "5px 12px", borderRadius: 6, border: "1px solid rgba(232,38,76,0.4)",
               background: "rgba(232,38,76,0.12)", color: "#e8264c",
               fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              flexShrink: 0,
             }}
           >
             Reconnect →
