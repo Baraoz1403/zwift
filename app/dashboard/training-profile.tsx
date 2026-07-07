@@ -266,6 +266,13 @@ export default function TrainingProfileCard() {
     if (el) el.setAttribute('data-editing', String(editing));
   }, [editing]);
 
+  // Nav chip event — open the edit form when the header button is clicked
+  useEffect(() => {
+    const open = () => startEdit();
+    window.addEventListener("zwift:open-training-profile", open);
+    return () => window.removeEventListener("zwift:open-training-profile", open);
+  }, [startEdit]);
+
   const startEdit = useCallback(() => {
     setDraft(profile ?? DEFAULT);
     setEditing(true);

@@ -15,6 +15,8 @@ import {
 } from "@/lib/stats";
 import LogoutButton from "./logout-button";
 import ConnectionsNavChip from "./connections-nav-chip";
+import TrainingProfileNavChip from "./training-profile-nav-chip";
+import TodaysNoteNavChip from "./todays-note-nav-chip";
 import DashboardFooter from "./footer";
 import ActivityCharts from "./activity-chart";
 import RidesTable from "./rides-table";
@@ -193,18 +195,8 @@ export default async function DashboardPage() {
         <div className="header-nav-row">
           {!activitiesError && activities.length > 0 && (
             <>
-              <a href="#training-profile" className="header-nav-chip">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)", opacity: 0.8 }}>
-                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                </svg>
-                Training Profile
-              </a>
-              <a href="#todays-note" className="header-nav-chip">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)", opacity: 0.8 }}>
-                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                </svg>
-                Today&apos;s Note
-              </a>
+              <TrainingProfileNavChip />
+              <TodaysNoteNavChip />
               <AiInsightsLink />
             </>
           )}

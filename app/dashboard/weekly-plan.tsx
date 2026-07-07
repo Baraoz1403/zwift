@@ -281,6 +281,13 @@ export default function WeeklyPlan() {
     return () => window.removeEventListener("zwift:toggle-connections", toggle);
   }, []);
 
+  // Today's Note nav chip — open the note panel when the header button is clicked
+  useEffect(() => {
+    const open = () => setNoteOpen(true);
+    window.addEventListener("zwift:open-todays-note", open);
+    return () => window.removeEventListener("zwift:open-todays-note", open);
+  }, []);
+
   // Immediate regenerate on profile save (see the dispatch in
   // training-profile.tsx's saveProfile). Reuses the exact same path a daily
   // note already used - handleGenerate() regenerates THIS week using
