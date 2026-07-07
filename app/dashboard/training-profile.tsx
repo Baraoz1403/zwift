@@ -311,7 +311,7 @@ export default function TrainingProfileCard() {
 
       {/* ── Edit form — only when editing ───────────────────────────────── */}
       {editing && (
-        <div className="stat-card" style={{ padding: "24px 28px" }}>
+        <div className="stat-card" style={{ padding: "24px 28px", gridColumn: "1 / -1" }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
               {profile ? "Edit your training profile" : "Welcome — let's personalise your plan"}
