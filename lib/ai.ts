@@ -502,20 +502,23 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(2) an explicit scheduling request naming a day or relative date " +
   "(e.g. 'put a hard workout tomorrow', 'I need Thursday off', 'long ride " +
   "on Saturday', 'add a ride on Sunday in addition to what's already " +
-  "there', or in Hebrew: 'אימון מחר', 'מנוחה ביום חמישי', 'תוסיף רכיבה " +
-  "ביום ראשון') - resolve the named/relative day to its exact calendar " +
-  "date using weekDates (see above - a named day is a direct weekDates " +
-  "lookup; a relative day like 'tomorrow' resolves via today first, see " +
-  "above), then UNCONDITIONALLY place the requested workout on that exact " +
-  "date, replacing whatever was there (rest day or otherwise) - a request " +
-  "phrased as 'in addition to' or 'as well as' the existing plan still " +
-  "means: change ONLY that one day, leave every other day's session " +
-  "exactly as you'd otherwise have scheduled it. " +
+  "there', 'cancel Friday', or in Hebrew: 'אימון מחר', 'מנוחה ביום חמישי', " +
+  "'תוסיף רכיבה ביום ראשון', 'בטל פעילות בשישי', 'תכניס פעילות בשבת') - " +
+  "Hebrew day names map directly to English weekDates keys: " +
+  "ראשון=Sunday, שני=Monday, שלישי=Tuesday, רביעי=Wednesday, " +
+  "חמישי=Thursday, שישי=Friday, שבת=Saturday. " +
+  "Resolve the named/relative day to its exact calendar date using weekDates " +
+  "(a named day is a direct weekDates lookup; a relative day like 'tomorrow' " +
+  "resolves via today first), then UNCONDITIONALLY apply the change on that " +
+  "exact date: 'cancel'/'בטל'/'הסר' means make it a rest day; " +
+  "'add'/'תכניס'/'הוסף' means add a workout (replacing rest if needed). " +
+  "A request phrased as 'in addition to' or 'as well as' the existing plan " +
+  "means: change ONLY that one day, leave every other day's session exactly " +
+  "as you'd otherwise have scheduled it. " +
   "If the rider asks for a workout tomorrow and tomorrow currently has no " +
   "workout, add one. If they ask for a rest day on a workout day, make it " +
-  "rest. A day-specific workout request ALWAYS overrides the daysPerWeek " +
-  "session count cap - add the day even if it would push the total above " +
-  "daysPerWeek. The rider knows their own schedule. " +
+  "rest. A day-specific request ALWAYS overrides the daysPerWeek session " +
+  "count cap. The rider knows their own schedule. " +
   "The only exceptions: two hard sessions back-to-back (insert easy " +
   "session in between) or Recovery-week volume cap - in those cases get as " +
   "close as safely possible and explain why in the summary. " +
@@ -848,13 +851,15 @@ export async function generateWeeklyPlan(params: {
     throw new AiInsightsError("Unexpected response shape from the Claude API.");
   }
 
-  // Claude is instructed to return raw JSON, but strip a code-fence wrapper
-  // defensively in case it adds one anyway.
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
+  // Extract the JSON object robustly: find the outermost { ... } block.
+  // This handles code-fence wrappers, preamble text, or any other extra
+  // content the model may add around the JSON object.
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
+  }
+  const cleaned = text.slice(start, end + 1);
 
   let parsed: unknown;
   try {
