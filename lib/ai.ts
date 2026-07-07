@@ -326,19 +326,32 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "of the standard cycling ATL/CTL/TSB training-load model: ctl is " +
   "longer-window 'fitness', atl is short-window recent 'fatigue', tsb = " +
   "ctl - atl is the freshness balance). Treat this object as the " +
-  "authoritative signal for how fresh or fatigued the rider currently is " +
-  "and how often they've actually been riding lately - do not re-derive " +
-  "frequency or fatigue yourself from the raw ride list, and do not " +
-  "default to a workout every day or a fixed session count. Base this " +
-  "week's session COUNT (anywhere from 2 to 6) primarily on " +
-  "ridesLast7Days/ridesPrior7Days, rounded to a sensible number - a rider " +
-  "whose ridesLast7Days is around 3 should get roughly that, not suddenly " +
-  "6. When freshness is 'fatigued' or tsb is clearly negative, build a " +
-  "lighter week (fewer and/or easier sessions, more recovery) and say so " +
-  "briefly in the summary. When freshness is 'fresh' (clearly positive " +
-  "tsb) and recent rides otherwise look stable or improving, a normal " +
-  "5-10% progression in total weekly volume is appropriate. When " +
-  "freshness is 'neutral', hold this week's volume roughly steady. " +
+  "authoritative signal for how fresh or fatigued the rider currently is - " +
+  "do not re-derive fatigue yourself from the raw ride list. " +
+  "SESSION COUNT: if riderProfile.daysPerWeek is present, that is the " +
+  "rider's own deliberate, explicitly-configured choice and is the " +
+  "AUTHORITATIVE target for this week's session count starting with THIS " +
+  "plan - schedule that many training days now, not a gradual ramp toward " +
+  "it over future weeks. Only schedule fewer than daysPerWeek when " +
+  "trainingLoad clearly justifies it (freshness is 'fatigued', or tsb is " +
+  "clearly negative, or this is a scheduled Recovery week - see cycle " +
+  "below) - and when you do, the summary MUST say so explicitly and by " +
+  "name, e.g. 'You asked for 5-6 sessions this week; your current fatigue " +
+  "signal (TSB -18) suggests scaling back to 4 for now - back to your full " +
+  "target once you're fresher.' Never silently schedule fewer sessions " +
+  "than daysPerWeek without stating the specific reason in the summary - a " +
+  "rider who set a target and gets fewer days with no explanation has no " +
+  "way to tell a deliberate decision from a bug. If riderProfile is absent " +
+  "or daysPerWeek is null, fall back to basing session COUNT (anywhere " +
+  "from 2 to 6) on ridesLast7Days/ridesPrior7Days instead, rounded to a " +
+  "sensible number - a rider whose ridesLast7Days is around 3 should get " +
+  "roughly that, not suddenly 6. In either case: when freshness is " +
+  "'fatigued' or tsb is clearly negative, build a lighter week (fewer " +
+  "and/or easier sessions, more recovery) and say so briefly in the " +
+  "summary. When freshness is 'fresh' (clearly positive tsb) and recent " +
+  "rides otherwise look stable or improving, a normal 5-10% progression in " +
+  "total weekly volume is appropriate. When freshness is 'neutral', hold " +
+  "this week's volume roughly steady. " +
   "The input also includes a cycle object - {phase, weekInMesocycle} - " +
   "tracking where this week sits in a recurring 4-week mesocycle: 'Base' " +
   "(early mesocycle, building aerobic foundation), 'Build' (later " +
@@ -375,11 +388,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "The input may also include a riderProfile object - {sport, goal, daysPerWeek, " +
   "sessionLengthLabel, sessionLengthMinutes, eventDate, notes} - containing " +
   "the rider's own stated training intent. When present, use it as a strong " +
-  "personalisation signal: (1) treat daysPerWeek as the rider's target " +
-  "weekly session count - use it as the primary driver of how many sessions " +
-  "to schedule, treating ridesLast7Days as a reality-check (if they've " +
-  "been riding far fewer days than stated, don't suddenly jump up to " +
-  "daysPerWeek in one week - step toward it gradually over 2-3 weeks); " +
+  "personalisation signal: (1) daysPerWeek is handled above under SESSION " +
+  "COUNT - it's authoritative starting with this plan, not a gradual ramp; " +
   "(2) cap every planned session at sessionLengthMinutes - never schedule a " +
   "session longer than this value; " +
   "(3) let goal colour session type emphasis: 'Increase FTP' -> more " +

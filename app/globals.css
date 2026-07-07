@@ -290,11 +290,26 @@ a:hover {
 }
 
 /* The weekly-plan workout cards need much more room than the compact
-   header stats (a bar-graph thumbnail, description, two buttons) - a
-   wider minimum so 2-6 AI-planned sessions read like a small gallery of
-   Zwift-style workout cards instead of squeezing into 6 equal columns. */
+   header stats (a bar-graph thumbnail, description, two buttons). Fixed
+   3-column layout (2 rows of 3 for the 6-day rolling window - see
+   computeForwardWindow in weekly-plan.tsx) rather than auto-fit: auto-fit
+   would show a different number of cards per row depending on window width,
+   which read as arbitrary/inconsistent - a fixed 3 always lays the 6 days
+   out the same way, same convention as .header-cards-grid below. */
 .workout-grid {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 900px) {
+  .workout-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .workout-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {

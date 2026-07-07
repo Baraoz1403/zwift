@@ -882,8 +882,8 @@ export default function WeeklyPlan() {
    */
   async function prefetchNextWeekIfNeeded(activePlan: WeeklyPlan) {
     const today = todayIso();
-    const windowNow = computeForwardWindow(activePlan, null, today, 7);
-    if (windowNow.length >= 7) return; // current week alone still covers 7 upcoming days
+    const windowNow = computeForwardWindow(activePlan, null, today, 6);
+    if (windowNow.length >= 6) return; // current week alone still covers 6 upcoming days
 
     const targetWeekOf = addDaysIso(activePlan.weekOf, 7);
     const cachedNext = loadCachedNextBundle();
@@ -934,7 +934,7 @@ export default function WeeklyPlan() {
   // dependency - a stale "today" only matters across a full page reload,
   // which remounts this component anyway).
   const displayWorkouts = useMemo(
-    () => computeForwardWindow(plan, nextPlan, todayIso(), 7),
+    () => computeForwardWindow(plan, nextPlan, todayIso(), 6),
     [plan, nextPlan]
   );
 
