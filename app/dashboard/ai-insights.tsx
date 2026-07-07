@@ -135,18 +135,51 @@ export default function AiInsights() {
             </div>
           )}
           {text && !loading && (
-            <div
+            <ul
               className="notice"
               style={{
                 marginTop: 4,
+                marginBottom: 0,
+                paddingLeft: 0,
+                listStyle: "none",
                 color: "var(--text)",
-                whiteSpace: "pre-wrap",
-                textAlign: "justify",
-                lineHeight: 1.6,
+                lineHeight: 1.55,
               }}
             >
-              {text}
-            </div>
+              {text
+                .split("\n")
+                .map(line => line.trim())
+                // Strip a leading bullet/dash/number if the model added one
+                // anyway despite the prompt asking it not to - keeps the
+                // rendered marker consistent either way.
+                .map(line => line.replace(/^[-•*]\s+|^\d+[.)]\s+/, ""))
+                .filter(Boolean)
+                .slice(0, 5)
+                .map((line, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: 9,
+                      padding: i === 0 ? 0 : "7px 0 0",
+                    }}
+                  >
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        width: 5,
+                        height: 5,
+                        borderRadius: "50%",
+                        background: "var(--accent)",
+                        opacity: 0.7,
+                        transform: "translateY(-2px)",
+                      }}
+                    />
+                    <span>{line}</span>
+                  </li>
+                ))}
+            </ul>
           )}
         </>
       )}

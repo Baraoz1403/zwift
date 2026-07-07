@@ -140,12 +140,21 @@ const SYSTEM_PROMPT =
 
   // ── General coaching instructions ──
   "The rider's data may also include cyclingLevel and/or runLevel (Zwift " +
-  "XP levels) — weave a brief natural mention into the analysis. " +
-  "Identify trends, call out notable rides with dates, and give 2-3 " +
-  "specific actionable suggestions. Lead with the most important signal " +
-  "(if hrTrend.trend is 'suppressed', that MUST be the first and most " +
-  "prominent point — do not bury it). Be direct, encouraging, and " +
-  "evidence-based. Under 220 words, plain prose, no markdown.";
+  "XP levels) — weave it into a point below only if it's genuinely " +
+  "relevant (e.g. a level-up), not as a routine mention. " +
+  "OUTPUT FORMAT: return AT MOST 5 short points, one per line, separated " +
+  "by a single newline character - nothing else. Each line must stand " +
+  "alone as a single complete thought, roughly 8-18 words, direct and " +
+  "specific (name the actual date/number/trend, don't generalize). Do NOT " +
+  "add bullet characters, dashes, numbers, or any other line prefix - " +
+  "return the bare sentences only, the interface adds its own bullet " +
+  "marker. Do NOT use markdown (no **, no #, no backticks). Lead with the " +
+  "most important signal: if hrTrend.trend is 'suppressed', that MUST be " +
+  "the first line and must not be softened. Otherwise order points by " +
+  "how actionable/important they are for this specific week, most " +
+  "important first. Only include a point that adds real information - " +
+  "skip filler like generic encouragement with no data behind it. Be " +
+  "direct, encouraging, and evidence-based.";
 
 export async function generateInsights(params: {
   firstName?: string;
