@@ -227,8 +227,7 @@ export default function TrainingProfileCard() {
   useEffect(() => {
     const p = loadProfile();
     setProfile(p);
-    if (!p) setEditing(true);
-    else setDraft(p);
+    if (p) setDraft(p);
     setPhaseLabel(loadPhaseLabel());
 
     // Reconcile against the server's copy (mirrored to KV whenever any

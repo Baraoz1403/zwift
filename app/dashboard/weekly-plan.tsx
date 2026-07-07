@@ -628,26 +628,16 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Pushes the plan to Intervals.icu - the sole automatic sync target (see
-   * syncPlanToConnectedPlatforms below for why TP was removed from this
-   * path). PUSH-THEN-DELETE order, on purpose:
+   * Pushes the plan to Intervals.icu — the sole automatic sync target.
    *
-   * An earlier version of this function deleted everything found in the
-   * plan's date range *before* pushing the fresh set. That's what caused a
-   * real outage: if the push step then failed for any reason (a transient
-   * API error, a bad structure, anything), the calendar was left with
-   * nothing at all - emptier than before the "fix", not just duplicated.
-   * Pushing first and only deleting old entries once the new ones are
-   * confirmed on the calendar means the worst case is a leftover duplicate
-   * (annoying, self-heals next sync) instead of an empty week (much worse).
-   *
-   * The duplicate root cause itself is unchanged from before: cleanup is
-   * range-based against Intervals.icu's own calendar (listIntervalsEvents),
-   * not just the localStorage id list from previous pushes in *this*
-   * browser - a second device/tab/incognito window has no memory of an
-   * earlier push and nothing to delete, so it used to just add another
-   * copy. Querying Intervals.icu directly for what's actually there is what
-   * makes this self-healing regardless of which device pushed last.
+   * Key fix (duplicate-in-Zwift bug): we now query ICU for existing events
+   * BEFORE pushing, not after. The previous post-push query had a timing
+   * issue: newly-created ICU events don't always appear in the list
+   * immediately (API caching), so the cleanup saw only the OLD entry,
+   * kept it as "the most recent one", and the fresh event we just pushed
+   * silently piled up alongside it → two copies in Zwift every sync.
+   * Querying first gives us a clean pre-push baseline: every ID we see
+   * there is definitively stale once we've pushed fresh replacements.
    */
   async function pushPlanToIntervals(normalizedPlan: WeeklyPlan) {
     let connected = intervalsConnected;
@@ -660,51 +650,13 @@ export default function WeeklyPlan() {
 
     const activeDays = normalizedPlan.workouts.filter(w => !isRestDay(w.type) && w.date);
     if (activeDays.length === 0) return;
-    // Cleanup range spans the FULL plan (all 7 real calendar days -
-    // normalizeToSix guarantees every day has a date, rest days included),
-    // not just the active/non-rest days. Bug this fixed: a day that was
-    // active in an earlier generation of this same week (and got pushed to
-    // ICU/Zwift then) but is Rest in the current plan fell entirely outside
-    // an active-only [oldest, newest] range - the cleanup query never even
-    // looked at that date, so a stale entry sat there forever even though
-    // the dashboard correctly showed nothing planned for it. Using the
-    // whole week's date span means every day the plan has an opinion about
-    // - including "this is now a rest day" - gets checked and reconciled.
+
+    // Cleanup range spans the full plan week so rest-day slots (which we
+    // don't push to) still get their stale planned entries swept up.
     const allDates = normalizedPlan.workouts.map(w => w.date).filter(Boolean).sort() as string[];
     const oldest = allDates[0];
     const newest = allDates[allDates.length - 1];
 
-    // 1. Push fresh copies FIRST for every day that hasn't actually been
-    // ridden yet. A day already present in weekActivities has a real
-    // completed ride - queuing a "planned" workout for it on Zwift is
-    // pointless (the rider already did that day) and the plan's own
-    // structure for an already-past day can no longer be trusted to match
-    // what happened (see the completedThumbWorkout comment on the dashboard
-    // card above) - that mismatch was producing a workout on Zwift with the
-    // wrong shape/graph even after the dashboard's own preview was already
-    // showing the correct one.
-    const daysToPush = normalizedPlan.workouts
-      .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)));
-    const pushResults = await Promise.all(daysToPush.map(w => handlePushToIntervals(w)));
-    const newlyPushedIds = new Set(
-      pushResults.filter(r => r.ok && r.eventId != null).map(r => r.eventId as string | number)
-    );
-    // Also track which *dates* got a successful push this cycle, even when
-    // Intervals.icu's response happened not to include a usable id (rare,
-    // but seen in practice) - without this, the cleanup step below has no
-    // way to know "a fresh copy exists for this date" and can end up
-    // deleting the very entry it just created, one cycle after pushing it.
-    const pushedDates = new Set(
-      daysToPush.filter((_, i) => pushResults[i].ok).map(w => w.date).filter(Boolean) as string[]
-    );
-
-    // 2. Only now clean up, matched by date rather than blind id lists:
-    // for a date we just pushed this cycle, keep exactly one event (prefer
-    // the one whose id we captured; otherwise keep the highest id as a
-    // best-effort "that's the one we just made") and remove any others - a
-    // real duplicate. For a date we deliberately did NOT push (a rest day,
-    // or a day already ridden - see step 1) any existing entry is stale and
-    // safe to remove outright.
     const deleteOne = (id: string | number) =>
       fetch("/api/intervals/push-workout", {
         method: "DELETE",
@@ -712,62 +664,55 @@ export default function WeeklyPlan() {
         body: JSON.stringify({ eventId: id }),
       }).then(r => r.ok).catch(() => false);
 
+    // Step 1: Snapshot what's on ICU right now (PRE-push baseline).
+    const prePushIds = new Set<string | number>();
     try {
       const r = await fetch(`/api/intervals/push-workout?oldest=${oldest}&newest=${newest}`);
       const d = await r.json();
-      const existingEvents: { id: string | number; start_date_local?: string }[] =
-        (d.ok && Array.isArray(d.events)) ? d.events : [];
-
-      const byDate = new Map<string, (string | number)[]>();
-      for (const e of existingEvents) {
-        const day = (e.start_date_local ?? "").slice(0, 10);
-        if (!byDate.has(day)) byDate.set(day, []);
-        byDate.get(day)!.push(e.id);
+      if (d.ok && Array.isArray(d.events)) {
+        for (const e of d.events as { id: string | number }[]) prePushIds.add(e.id);
       }
+    } catch {}
 
-      const idsToDeleteSet = new Set<string | number>();
-      for (const [day, ids] of byDate) {
-        if (pushedDates.has(day)) {
-          const known = ids.filter(id => newlyPushedIds.has(id));
-          const keep = known.length > 0
-            ? known[0]
-            : ids.reduce((a, b) => (String(b) > String(a) ? b : a));
-          for (const id of ids) if (id !== keep) idsToDeleteSet.add(id);
-        } else {
-          for (const id of ids) idsToDeleteSet.add(id);
-        }
+    // Step 2: Push fresh planned events for every non-rest, not-yet-ridden day.
+    const daysToPush = normalizedPlan.workouts
+      .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)));
+    const pushResults = await Promise.all(daysToPush.map(w => handlePushToIntervals(w)));
+    const newlyPushedIds = new Set(
+      pushResults.filter(r => r.ok && r.eventId != null).map(r => r.eventId as string | number)
+    );
+
+    // Step 3: Delete everything in the pre-push snapshot (all now stale —
+    // either replaced by a fresh copy or a rest/completed day with no new event).
+    // Also clean up any out-of-range IDs tracked in localStorage from prior sessions.
+    const idsToDelete = new Set<string | number>(prePushIds);
+    try {
+      const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
+      if (prevRaw) {
+        for (const id of JSON.parse(prevRaw) as (string | number)[]) idsToDelete.add(id);
       }
+    } catch {}
+    // Safety: never delete a freshly-pushed event (ICU creates new IDs,
+    // but guard against any edge-case reuse).
+    for (const id of newlyPushedIds) idsToDelete.delete(id);
 
-      // Union with anything this browser separately remembers pushing, in
-      // case it falls outside the plan's own date range (e.g. a stale entry
-      // from a previous, differently-shaped plan) - still never touches
-      // anything we just confirmed pushing this cycle.
-      let localIds: (string | number)[] = [];
-      try {
-        const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
-        if (prevRaw) localIds = JSON.parse(prevRaw) as (string | number)[];
-      } catch {}
-      for (const id of localIds) {
-        if (!newlyPushedIds.has(id)) idsToDeleteSet.add(id);
-      }
-
-      const idsToDelete = [...idsToDeleteSet];
-      const firstPass = await Promise.all(idsToDelete.map(async id => ({ id, ok: await deleteOne(id) })));
+    if (idsToDelete.size > 0) {
+      const toDelete = [...idsToDelete];
+      const firstPass = await Promise.all(toDelete.map(async id => ({ id, ok: await deleteOne(id) })));
       const stillFailing = firstPass.filter(r => !r.ok);
-      const secondPass = stillFailing.length > 0
-        ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
+      const orphaned = stillFailing.length > 0
+        ? (await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) }))))
+            .filter(r => !r.ok).map(r => r.id)
         : [];
-      const stillOrphaned = secondPass.filter(r => !r.ok).map(r => r.id);
-      window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(stillOrphaned));
-      if (stillOrphaned.length > 0) {
-        setIntervalsPushLog(l => ({ ...l, _cleanup: `${stillOrphaned.length} old workout(s) couldn't be removed from Intervals.icu - will retry next sync` }));
+      if (orphaned.length > 0) {
+        setIntervalsPushLog(l => ({ ...l, _cleanup: `${orphaned.length} old workout(s) couldn't be removed from Intervals.icu — will retry next sync` }));
+        try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(orphaned)); } catch {}
       } else {
         setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
+        try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify([...newlyPushedIds])); } catch {}
       }
-    } catch {
-      // Cleanup failing is fine - the fresh workouts from step 1 are
-      // already live. Worst case here is a leftover duplicate, not an
-      // empty calendar, and the next sync will retry the cleanup.
+    } else {
+      try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify([...newlyPushedIds])); } catch {}
     }
   }
 
