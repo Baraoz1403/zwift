@@ -56,7 +56,7 @@ interface WeeklyPlan {
 
 const STORAGE_KEY = "zwiftWeeklyPlan";
 const CYCLE_STORAGE_KEY = "zwiftMacroCycle";
-/** Pre-fetched *next* week's plan, generated early once the rolling 6-day
+/** Pre-fetched *next* week's plan, generated early once the rolling 7-day
  *  window can no longer be filled from the current week alone. Bundled with
  *  the macro-cycle state that generating it produced, so the periodization
  *  pointer (lib/periodization.ts) only advances for real once this bundle is
@@ -159,19 +159,24 @@ function todayIso(): string {
 }
 
 /**
- * Rolling 6-day-ahead window: merges the active plan's workouts with a
+ * Rolling 7-day-ahead window: merges the active plan's workouts with a
  * pre-fetched next-week plan (if any), drops anything whose date has already
  * passed, and returns the next `size` upcoming days in date order. This is
  * what the dashboard actually renders - never `plan.workouts` directly -
  * so a workout silently disappears from view the day after it happens, and
  * the grid keeps showing a full week of what's coming up regardless of
  * where "today" falls inside the calendar week.
+ *
+ * size defaults to 7 (a full real week) - it used to default to 6, which
+ * combined with normalizeToSix trimming a rest day out of the plan meant a
+ * real calendar day could be missing from the grid entirely (e.g. Friday,
+ * Saturday, then straight to Monday with no Sunday shown at all).
  */
 function computeForwardWindow(
   current: WeeklyPlan | null,
   next: WeeklyPlan | null,
   today: string,
-  size = 6
+  size = 7
 ): WeeklyWorkout[] {
   if (!current) return [];
   const pool = [...current.workouts, ...(next?.workouts ?? [])];
@@ -204,12 +209,22 @@ function ensureWorkoutDates(plan: WeeklyPlan): WeeklyPlan {
   };
 }
 
+/**
+ * Normalizes the AI's response to exactly one entry per real calendar day
+ * (7 - Monday through Sunday). This used to trim down to 6 and silently
+ * drop a rest day whenever the AI returned a full 7-day week - the rest
+ * day was picked because it seemed like the "least important" one to lose,
+ * but from the rider's side it just made a real calendar day vanish with no
+ * card at all (a rider hit this directly: Friday, Saturday, then Monday -
+ * Sunday simply wasn't there). A rest day is still a real day and belongs
+ * on the grid like any other.
+ */
 function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
   let workouts = [...plan.workouts].sort(
     (a, b) => WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day)
   );
 
-  while (workouts.length > 6) {
+  while (workouts.length > 7) {
     const restIdx = workouts.findIndex(w => isRestDay(w.type));
     if (restIdx >= 0) {
       workouts.splice(restIdx, 1);
@@ -218,10 +233,10 @@ function normalizeToSix(plan: WeeklyPlan): WeeklyPlan {
     }
   }
 
-  if (workouts.length < 6) {
+  if (workouts.length < 7) {
     const usedDays = new Set(workouts.map(w => w.day));
     for (const day of WEEK_DAYS) {
-      if (workouts.length >= 6) break;
+      if (workouts.length >= 7) break;
       if (!usedDays.has(day)) {
         const dayIndex = WEEK_DAYS.indexOf(day);
         const base = new Date(plan.weekOf + "T00:00:00Z");
@@ -254,7 +269,7 @@ function currentWeekOf(): string {
 
 export default function WeeklyPlan() {
   const [plan, setPlan] = useState<WeeklyPlan | null>(null);
-  // Pre-fetched next week's plan (rolling 6-day-ahead window) - null until
+  // Pre-fetched next week's plan (rolling 7-day-ahead window) - null until
   // the current week's remaining days can no longer fill the display.
   const [nextPlan, setNextPlan] = useState<WeeklyPlan | null>(null);
   const [prefetchingNext, setPrefetchingNext] = useState(false);
@@ -417,7 +432,37 @@ export default function WeeklyPlan() {
     fetch("/api/trainingpeaks/status", { cache: "no-store" })
       .then(r => r.json())
       .then(d => {
-        if (d.connected) { setTpConnected(true); setTpTokenExpired(false); }
+        if (d.connected) {
+          setTpConnected(true);
+          setTpTokenExpired(false);
+
+          // One-time cleanup of duplicate workouts TP accumulated back when
+          // this app still auto-pushed the plan there (before that was
+          // disabled - see syncPlanToConnectedPlatforms). Deliberately NOT
+          // a range-based bulk delete like the ICU cleanup: TP's workout
+          // list can mix planned and real completed Garmin rides, so a
+          // blind date-range sweep risks deleting genuine training data.
+          // This only deletes the specific ids this browser itself recorded
+          // pushing (TP_PUSHED_IDS_KEY) - a known-safe, precise list, not a
+          // guess. Once cleared, there's nothing left to grow it back since
+          // auto-push to TP no longer happens at all.
+          try {
+            const raw = window.localStorage.getItem(TP_PUSHED_IDS_KEY);
+            const ids: (string | number)[] = raw ? JSON.parse(raw) : [];
+            if (ids.length > 0) {
+              Promise.all(ids.map(id =>
+                fetch("/api/trainingpeaks/push-workout", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ workoutId: id }),
+                }).then(r => r.ok).catch(() => false)
+              )).then(results => {
+                const remaining = ids.filter((_, i) => !results[i]);
+                window.localStorage.setItem(TP_PUSHED_IDS_KEY, JSON.stringify(remaining));
+              });
+            }
+          } catch {}
+        }
         else if (d.tokenExpired) { setTpTokenExpired(true); }
       })
       .catch(() => {});
@@ -549,21 +594,24 @@ export default function WeeklyPlan() {
   /**
    * Pushes the plan to Intervals.icu - the sole automatic sync target (see
    * syncPlanToConnectedPlatforms below for why TP was removed from this
-   * path). Cleanup is now range-based against Intervals.icu's own calendar
-   * (listIntervalsEvents), not just the localStorage id list from previous
-   * pushes in *this* browser.
+   * path). PUSH-THEN-DELETE order, on purpose:
    *
-   * Why: the old delete-old step only knew about ids this browser itself had
-   * pushed. The auto-sync gate (SYNCED_HASH_KEY) is also per-browser, so
-   * opening the dashboard on a second device/browser/incognito window - or
-   * even just after clearing site data - looks like a "first sync" there
-   * too: it has no record of the earlier push and nothing to delete, so it
-   * pushes a fresh copy of the same day's workouts. That's the actual cause
-   * of the same day multiplying to 2, 3+ copies (confirmed happening on both
-   * Intervals.icu and TrainingPeaks). Querying Intervals.icu directly for
-   * whatever's already on the calendar in this plan's date range - and
-   * deleting all of it before pushing the fresh set - makes each push
-   * self-healing and correct regardless of which device did the last one.
+   * An earlier version of this function deleted everything found in the
+   * plan's date range *before* pushing the fresh set. That's what caused a
+   * real outage: if the push step then failed for any reason (a transient
+   * API error, a bad structure, anything), the calendar was left with
+   * nothing at all - emptier than before the "fix", not just duplicated.
+   * Pushing first and only deleting old entries once the new ones are
+   * confirmed on the calendar means the worst case is a leftover duplicate
+   * (annoying, self-heals next sync) instead of an empty week (much worse).
+   *
+   * The duplicate root cause itself is unchanged from before: cleanup is
+   * range-based against Intervals.icu's own calendar (listIntervalsEvents),
+   * not just the localStorage id list from previous pushes in *this*
+   * browser - a second device/tab/incognito window has no memory of an
+   * earlier push and nothing to delete, so it used to just add another
+   * copy. Querying Intervals.icu directly for what's actually there is what
+   * makes this self-healing regardless of which device pushed last.
    */
   async function pushPlanToIntervals(normalizedPlan: WeeklyPlan) {
     let connected = intervalsConnected;
@@ -580,6 +628,37 @@ export default function WeeklyPlan() {
     const oldest = dates[0];
     const newest = dates[dates.length - 1];
 
+    // 1. Push fresh copies FIRST for every day that hasn't actually been
+    // ridden yet. A day already present in weekActivities has a real
+    // completed ride - queuing a "planned" workout for it on Zwift is
+    // pointless (the rider already did that day) and the plan's own
+    // structure for an already-past day can no longer be trusted to match
+    // what happened (see the completedThumbWorkout comment on the dashboard
+    // card above) - that mismatch was producing a workout on Zwift with the
+    // wrong shape/graph even after the dashboard's own preview was already
+    // showing the correct one.
+    const daysToPush = normalizedPlan.workouts
+      .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)));
+    const pushResults = await Promise.all(daysToPush.map(w => handlePushToIntervals(w)));
+    const newlyPushedIds = new Set(
+      pushResults.filter(r => r.ok && r.eventId != null).map(r => r.eventId as string | number)
+    );
+    // Also track which *dates* got a successful push this cycle, even when
+    // Intervals.icu's response happened not to include a usable id (rare,
+    // but seen in practice) - without this, the cleanup step below has no
+    // way to know "a fresh copy exists for this date" and can end up
+    // deleting the very entry it just created, one cycle after pushing it.
+    const pushedDates = new Set(
+      daysToPush.filter((_, i) => pushResults[i].ok).map(w => w.date).filter(Boolean) as string[]
+    );
+
+    // 2. Only now clean up, matched by date rather than blind id lists:
+    // for a date we just pushed this cycle, keep exactly one event (prefer
+    // the one whose id we captured; otherwise keep the highest id as a
+    // best-effort "that's the one we just made") and remove any others - a
+    // real duplicate. For a date we deliberately did NOT push (a rest day,
+    // or a day already ridden - see step 1) any existing entry is stale and
+    // safe to remove outright.
     const deleteOne = (id: string | number) =>
       fetch("/api/intervals/push-workout", {
         method: "DELETE",
@@ -588,25 +667,46 @@ export default function WeeklyPlan() {
       }).then(r => r.ok).catch(() => false);
 
     try {
-      // Server truth: whatever Intervals.icu actually has on the calendar
-      // for this plan's date range, regardless of which device put it there.
       const r = await fetch(`/api/intervals/push-workout?oldest=${oldest}&newest=${newest}`);
       const d = await r.json();
-      const existingIds: (string | number)[] = (d.ok && Array.isArray(d.events))
-        ? d.events.map((e: { id: string | number }) => e.id)
-        : [];
+      const existingEvents: { id: string | number; start_date_local?: string }[] =
+        (d.ok && Array.isArray(d.events)) ? d.events : [];
+
+      const byDate = new Map<string, (string | number)[]>();
+      for (const e of existingEvents) {
+        const day = (e.start_date_local ?? "").slice(0, 10);
+        if (!byDate.has(day)) byDate.set(day, []);
+        byDate.get(day)!.push(e.id);
+      }
+
+      const idsToDeleteSet = new Set<string | number>();
+      for (const [day, ids] of byDate) {
+        if (pushedDates.has(day)) {
+          const known = ids.filter(id => newlyPushedIds.has(id));
+          const keep = known.length > 0
+            ? known[0]
+            : ids.reduce((a, b) => (String(b) > String(a) ? b : a));
+          for (const id of ids) if (id !== keep) idsToDeleteSet.add(id);
+        } else {
+          for (const id of ids) idsToDeleteSet.add(id);
+        }
+      }
 
       // Union with anything this browser separately remembers pushing, in
       // case it falls outside the plan's own date range (e.g. a stale entry
-      // from a previous, differently-shaped plan).
+      // from a previous, differently-shaped plan) - still never touches
+      // anything we just confirmed pushing this cycle.
       let localIds: (string | number)[] = [];
       try {
         const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
         if (prevRaw) localIds = JSON.parse(prevRaw) as (string | number)[];
       } catch {}
-      const allIds = [...new Set([...existingIds, ...localIds])];
+      for (const id of localIds) {
+        if (!newlyPushedIds.has(id)) idsToDeleteSet.add(id);
+      }
 
-      const firstPass = await Promise.all(allIds.map(async id => ({ id, ok: await deleteOne(id) })));
+      const idsToDelete = [...idsToDeleteSet];
+      const firstPass = await Promise.all(idsToDelete.map(async id => ({ id, ok: await deleteOne(id) })));
       const stillFailing = firstPass.filter(r => !r.ok);
       const secondPass = stillFailing.length > 0
         ? await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) })))
@@ -618,24 +718,11 @@ export default function WeeklyPlan() {
       } else {
         setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
       }
-    } catch {}
-
-    // Only push days that haven't actually been ridden yet. A day already
-    // present in weekActivities has a real completed ride - queuing a
-    // "planned" workout for it on Zwift is pointless (the rider already did
-    // that day) and, worse, the plan's own structure for an already-past day
-    // can no longer be trusted to represent what happened (see the
-    // completedThumbWorkout comment on the dashboard card above) - it's what
-    // was producing a workout on Zwift with the wrong shape/graph even after
-    // the dashboard's own preview was showing the correct one. The cleanup
-    // pass above already covers the full date range including completed
-    // days, so any stale queued entry for a day that's since been ridden
-    // gets removed here rather than replaced.
-    await Promise.all(
-      normalizedPlan.workouts
-        .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)))
-        .map(w => handlePushToIntervals(w))
-    );
+    } catch {
+      // Cleanup failing is fine - the fresh workouts from step 1 are
+      // already live. Worst case here is a leftover duplicate, not an
+      // empty calendar, and the next sync will retry the cleanup.
+    }
   }
 
   /**
@@ -734,7 +821,7 @@ export default function WeeklyPlan() {
   }
 
   /**
-   * Background pre-fetch of next week's plan, so the rolling 6-day window
+   * Background pre-fetch of next week's plan, so the rolling 7-day window
    * (see computeForwardWindow) never has to fall back on empty days as the
    * current week's remaining slots run out. Cheap to call speculatively -
    * it no-ops unless the window would actually come up short and nothing
@@ -742,8 +829,8 @@ export default function WeeklyPlan() {
    */
   async function prefetchNextWeekIfNeeded(activePlan: WeeklyPlan) {
     const today = todayIso();
-    const windowNow = computeForwardWindow(activePlan, null, today, 6);
-    if (windowNow.length >= 6) return; // current week alone still covers 6 upcoming days
+    const windowNow = computeForwardWindow(activePlan, null, today, 7);
+    if (windowNow.length >= 7) return; // current week alone still covers 7 upcoming days
 
     const targetWeekOf = addDaysIso(activePlan.weekOf, 7);
     const cachedNext = loadCachedNextBundle();
@@ -788,13 +875,13 @@ export default function WeeklyPlan() {
     await generateAndActivate(targetWeekOf, previousPlanForAI);
   }
 
-  // Rolling 6-day-ahead window actually rendered below - see
+  // Rolling 7-day-ahead window actually rendered below - see
   // computeForwardWindow's doc comment. Recomputed whenever the active plan,
   // the pre-fetched next-week plan changes (date doesn't need to be a
   // dependency - a stale "today" only matters across a full page reload,
   // which remounts this component anyway).
   const displayWorkouts = useMemo(
-    () => computeForwardWindow(plan, nextPlan, todayIso(), 6),
+    () => computeForwardWindow(plan, nextPlan, todayIso(), 7),
     [plan, nextPlan]
   );
 
@@ -975,7 +1062,7 @@ export default function WeeklyPlan() {
    * Intervals.icu personal API keys don't expire on an hourly cycle like
    * TP's tokens do.
    */
-  async function handlePushToIntervals(w: WeeklyWorkout) {
+  async function handlePushToIntervals(w: WeeklyWorkout): Promise<{ ok: boolean; eventId?: string | number }> {
     const key = `icu_${w.date ?? w.title}`;
     setIntervalsPushState(s => ({ ...s, [key]: "loading" }));
     const dateLabel = workoutDateLabel(w.date);
@@ -1007,14 +1094,17 @@ export default function WeeklyPlan() {
             window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(ids));
           } catch {}
         }
+        return { ok: true, eventId: data.eventId };
       } else {
         setIntervalsPushState(s => ({ ...s, [key]: "error" }));
         setIntervalsPushLog(l => ({ ...l, [key]: data.error ?? "Error." }));
         if (res.status === 401 || res.status === 403) setIntervalsConnected(false);
+        return { ok: false };
       }
     } catch (e) {
       setIntervalsPushState(s => ({ ...s, [key]: "error" }));
       setIntervalsPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
+      return { ok: false };
     }
   }
 
