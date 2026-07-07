@@ -431,6 +431,22 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "close as safely possible and explain why in the summary. " +
   "Absent/null riderNote means no note - proceed normally. " +
 
+  // ── Rider W/kg classification ──
+  "The input includes a wPerKg field (FTP ÷ body weight in kg). Use it to " +
+  "classify the rider before choosing sessions: " +
+  "< 2.5 W/kg = beginner (Foundation, Tempo, Sprint Builder only; no threshold or VO2max; " +
+  "sweet spot maximum 3×10 min in late Build); " +
+  "2.5-3.0 W/kg = novice (add Sweet Spot Classic, Micro Intervals, 30/30 Blitz; " +
+  "Threshold Cruise Intervals only in late Build at TSB ≥ -8); " +
+  "3.0-3.5 W/kg = intermediate (full sweet spot range + Threshold Development + " +
+  "Threshold Cruise Intervals + 4×4 Two-Set; Norwegian 4×4 only if TSB ≥ 0); " +
+  "3.5+ W/kg = trained/advanced (full library including Norwegian 4×4, 2×20 FTP Blocks, " +
+  "Over-Under Intervals, Descending Threshold). " +
+  "If wPerKg is null, infer from ftpWatts: < 150 W = beginner, " +
+  "150-220 W = novice/intermediate, > 220 W = trained. " +
+  "Always mention the rider's W/kg level in the plan summary (e.g. 'At 3.2 W/kg " +
+  "you're in the intermediate range — this week introduces Threshold Development.') " +
+
   // ── Named workout library ──
   WORKOUT_LIBRARY_PROMPT + " " +
 
@@ -509,19 +525,26 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 
   // ── Description: the most important field for plan quality ──
   '"description": string — THIS IS THE MOST IMPORTANT FIELD. ' +
-  'Write 2-3 sentences that feel like a personal message from a coach who actually looked at this rider\'s data. ' +
-  'SENTENCE 1 — WHY NOW: reference one specific data point from the input (e.g. their exact TSB, ' +
-  'the number of rides last week, their training phase/week, their age, a recent HR flag, or adherence from last week). ' +
-  'SENTENCE 2 — HOW: one sharp execution cue for the hardest part of this workout (exact zone, cadence, or pacing strategy). ' +
-  'SENTENCE 3 (optional) — FEEL: what success looks like or a heads-up about what will be hard. ' +
-  'WRONG (never write this): "Build aerobic base at easy pace." or "Improve fitness with structured intervals." ' +
-  'RIGHT example for a Foundation ride: "TSB is at +6 and you\'re in Base week 2 — your aerobic system is fresh and ready to absorb volume. ' +
-  'Hold 65-73% FTP the entire 40 minutes; cadence 90-95 rpm; if you drift above 75%, back off immediately. ' +
-  'You should finish this ride feeling like you could do another 30 minutes — that\'s the point." ' +
-  'RIGHT example for 4×8 Threshold: "Three consecutive hard weeks have dropped your TSB to -8, ' +
-  'so I\'m keeping the blocks short (4×8 min) rather than jumping to 2×20. ' +
-  'Target 97-100% FTP — start the first block at 97% and only push to 100% if legs feel good by block 3. ' +
-  'If power drops more than 5% in the last 2 minutes of any block, end it early; quality beats duration here." ' +
+  'Write 2-3 sentences that feel like a personal message from a coach who actually studied this rider\'s data. ' +
+  'SENTENCE 1 — WHY NOW: reference one specific data point (e.g. their exact TSB value, the number of rides last ' +
+  'week, their training phase/week number, their age, their W/kg level, a recent HR flag, or an adherence note from last week). ' +
+  'SENTENCE 2 — HOW: one sharp, precise execution cue for the hardest part of this workout — exact % FTP target, ' +
+  'cadence, pacing strategy, or what to do if power fades (draw from the workout\'s own execution cue in the library). ' +
+  'SENTENCE 3 (optional but strongly encouraged) — FEEL: what success looks like, or a heads-up about what will be hard ' +
+  'and what to do if it is (draw from the workout\'s successFeel in the library). ' +
+  'NEVER write generic statements like "Build aerobic base at easy pace," "Improve fitness with intervals," or ' +
+  '"This session targets your aerobic system." These are content-free and destroy plan quality. ' +
+  'RIGHT example — Foundation ride, TSB +6, Base wk 2: "TSB is at +6 and you\'re in Base week 2 — ' +
+  'your aerobic system is fresh and ready to absorb volume without fatiguing. ' +
+  'Hold 65-73% FTP for the full 40 minutes; cadence 88-95 rpm; if you can\'t speak in full sentences, ' +
+  'you\'re above Z2 — back off. ' +
+  'You should finish feeling like you could ride 30 more minutes — if you do, the pace was exactly right." ' +
+  'RIGHT example — Threshold Development, TSB -8, 3 consecutive hard weeks: "Three hard weeks in a row have ' +
+  'dropped your TSB to -8, so I\'m keeping the blocks short (4×8 min) rather than jumping to 2×20 — ' +
+  'you\'ll get the same threshold stimulus with less recovery debt. ' +
+  'Start block 1 at 97% FTP — your ego will want to push harder immediately, don\'t; ' +
+  'the first block is a calibration, not a sprint. ' +
+  'If power fades more than 5% in the last 2 minutes of any block, end that block early — quality beats duration here." ' +
   'The description MUST be specific to THIS rider on THIS week — not a Wikipedia entry about the workout type.), ' +
 
   '"structure": array of workout blocks (REQUIRED for all non-rest sessions, ' +
@@ -589,128 +612,4 @@ export async function generateWeeklyPlan(params: {
    *  longer fill the display) without waiting for that week to actually
    *  start. Defaults to the real current week when omitted. */
   targetWeekOf?: string;
-}): Promise<WeeklyPlan> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new AiInsightsError(
-      "ANTHROPIC_API_KEY is not set. Add your own Anthropic API key to .env.local to enable AI-generated weekly plans."
-    );
-  }
-
-  // Monday of the week this plan covers (UTC) - computed up front and handed
-  // to the model so it can fill in each workout's real calendar "date"
-  // instead of guessing what date "Wednesday" falls on. Shared with
-  // lib/periodization.ts so the cached plan's weekOf, the macro-cycle
-  // pointer, and this prompt's date math never drift apart.
-  const weekOfMonday = params.targetWeekOf ?? mondayOfCurrentWeek();
-
-  const userContent = JSON.stringify({
-    rider: params.firstName ?? "Rider",
-    ftpWatts: params.ftp ?? null,
-    weightKg: params.weightKg ?? null,
-    ageYears: params.ageYears ?? null,
-    cyclingLevel: params.cyclingLevel ?? null,
-    trainingLoad: params.trainingLoad
-      ? {
-          ctl: params.trainingLoad.ctl,
-          atl: params.trainingLoad.atl,
-          tsb: params.trainingLoad.tsb,
-          freshness: params.trainingLoad.freshness,
-          ridesLast7Days: params.trainingLoad.ridesLast7Days,
-          ridesPrior7Days: params.trainingLoad.ridesPrior7Days,
-        }
-      : null,
-    cycle: params.cycle
-      ? { phase: params.cycle.phase, weekInMesocycle: params.cycle.weekInMesocycle }
-      : null,
-    lastWeekAdherence: params.lastWeekAdherence
-      ? {
-          plannedSessions: params.lastWeekAdherence.plannedSessions,
-          completedSessions: params.lastWeekAdherence.completedSessions,
-          missedSessions: params.lastWeekAdherence.missedSessions,
-          notes: params.lastWeekAdherence.notes,
-        }
-      : null,
-    riderProfile: params.riderProfile
-      ? {
-          sports: (params.riderProfile.sports ?? (params.riderProfile.sport ? [params.riderProfile.sport] : ["cycling"]))
-            .map(s => SPORT_LABELS[s])
-            .join(" + "),
-          goals: (params.riderProfile.goals ?? (params.riderProfile.goal ? [params.riderProfile.goal] : ["fitness"]))
-            .map(g => GOAL_LABELS[g])
-            .join(", "),
-          daysPerWeek: params.riderProfile.daysRange
-            ? DAYS_RANGE_MID[params.riderProfile.daysRange]
-            : (params.riderProfile.daysPerWeek ?? null),
-          trainingEnvironment: params.riderProfile.environment ?? "indoor",
-          sessionLengthLabel: SESSION_LENGTH_LABELS[params.riderProfile.sessionLength],
-          sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
-          eventDate: params.riderProfile.eventDate ?? null,
-          ageYears: params.riderProfile.ageYears ?? null,
-          notes: params.riderProfile.notes ?? null,
-        }
-      : null,
-    runLevel: params.runLevel ?? null,
-    weekOfMonday,
-    today: new Date().toISOString().slice(0, 10),
-    rides: params.rides,
-    riderNote: params.riderNote ?? null,
-  });
-
-  let resp: Response;
-  try {
-    resp = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 6000,
-        system: WEEKLY_PLAN_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userContent }],
-      }),
-    });
-  } catch (e) {
-    throw new AiInsightsError(`Network error calling the Claude API: ${(e as Error).message}`);
-  }
-
-  if (!resp.ok) {
-    const body = await resp.text().catch(() => "");
-    throw new AiInsightsError(`Claude API returned HTTP ${resp.status}: ${body.slice(0, 300)}`);
-  }
-
-  const data = await resp.json();
-  const text = data?.content?.[0]?.text;
-  if (typeof text !== "string") {
-    throw new AiInsightsError("Unexpected response shape from the Claude API.");
-  }
-
-  // Claude is instructed to return raw JSON, but strip a code-fence wrapper
-  // defensively in case it adds one anyway.
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/, "")
-    .trim();
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
-  }
-
-  const obj = parsed as Partial<WeeklyPlan>;
-  if (!obj || !Array.isArray(obj.workouts)) {
-    throw new AiInsightsError("AI response was missing the expected weekly plan structure.");
-  }
-
-  return {
-    weekOf: weekOfMonday,
-    summary: typeof obj.summary === "string" ? obj.summary : "",
-    workouts: normalizeWeeklyPlan(obj.workouts as WeeklyWorkout[]),
-  };
-}
+}): Promise<WeeklyPlan> 
