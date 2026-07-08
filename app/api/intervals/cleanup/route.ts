@@ -47,6 +47,8 @@ export async function POST() {
   const oldest = oldestDate.toISOString().slice(0, 10);
   const newest = newestDate.toISOString().slice(0, 10);
 
-  const result = await cleanupIcuDuplicates(icuKey, icuId ?? undefined, oldest, newest);
+  // Guard against "0" — that's the fallback value set at login when the ICU
+  // athlete ID wasn't available, and /athlete/0/events would return 404.
+  const result = await cleanupIcuDuplicates(icuKey, icuId && icuId !== "0" ? icuId : undefined, oldest, newest);
   return NextResponse.json({ ok: true, deleted: result.deleted, errors: result.errors, range: { oldest, newest } });
 }

@@ -249,6 +249,9 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
   const [intervalsError,      setIntervalsError]      = useState<string | null>(null);
   const [clipboardSupported,  setClipboardSupported]  = useState(true);
 
+  const [cleanupRunning,  setCleanupRunning]  = useState(false);
+  const [cleanupResult,   setCleanupResult]   = useState<{ deleted: number; errors: string[] } | null>(null);
+
 
   const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>([]);
   useEffect(() => {
@@ -290,6 +293,24 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
     try { await fetch("/api/intervals/connect", { method: "DELETE" }); } catch {}
     openIntervalsModal();
     await refresh();
+  }
+
+  async function handleCleanupCalendar() {
+    setCleanupRunning(true);
+    setCleanupResult(null);
+    try {
+      const r = await fetch("/api/intervals/cleanup", { method: "POST" });
+      const d = await r.json() as { ok: boolean; deleted?: number; errors?: string[]; error?: string };
+      if (d.ok) {
+        setCleanupResult({ deleted: d.deleted ?? 0, errors: d.errors ?? [] });
+      } else {
+        setCleanupResult({ deleted: 0, errors: [d.error ?? "Unknown error"] });
+      }
+    } catch (e) {
+      setCleanupResult({ deleted: 0, errors: [e instanceof Error ? e.message : "Network error"] });
+    } finally {
+      setCleanupRunning(false);
+    }
   }
 
   function handleOpenICUSettings() {
@@ -518,6 +539,49 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
                 lineHeight: 1.5, textAlign: "center",
               }}>
                 No platforms selected — workouts will push to Intervals.icu only
+              </div>
+            )}
+
+            {/* Duplicate cleanup — shown as a quiet utility row */}
+            <div style={{
+              marginTop: 16,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 12px",
+              borderRadius: 8,
+              background: "var(--bg, #f8f9fa)",
+              border: "1px solid var(--border)",
+            }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.4 }}>
+                Seeing duplicate workouts in Zwift?
+              </div>
+              <button
+                type="button"
+                onClick={handleCleanupCalendar}
+                disabled={cleanupRunning}
+                style={{
+                  fontSize: 12, fontWeight: 600,
+                  padding: "5px 12px", borderRadius: 5,
+                  border: "1.5px solid var(--border)",
+                  background: "transparent", color: "var(--text)",
+                  cursor: cleanupRunning ? "wait" : "pointer",
+                  opacity: cleanupRunning ? 0.5 : 1,
+                  fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0, marginLeft: 12,
+                }}
+              >
+                {cleanupRunning ? "Cleaning…" : "Fix calendar"}
+              </button>
+            </div>
+            {cleanupResult && (
+              <div style={{
+                marginTop: 6, fontSize: 11.5, lineHeight: 1.45,
+                color: cleanupResult.errors.length > 0 ? "#e4483a" : "#16a34a",
+                padding: "0 2px",
+              }}>
+                {cleanupResult.errors.length > 0
+                  ? `Error: ${cleanupResult.errors.join("; ")}`
+                  : cleanupResult.deleted > 0
+                    ? `Removed ${cleanupResult.deleted} duplicate${cleanupResult.deleted !== 1 ? "s" : ""} — restart Zwift to sync`
+                    : "No duplicates found in your calendar"}
               </div>
             )}
           </>

@@ -41,7 +41,10 @@ export async function cleanupIcuDuplicates(
   const errors: string[] = [];
   let deleted = 0;
   try {
-    const existingEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    const allEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    // Filter to WORKOUT events only — don't touch races, notes, or other
+    // calendar entries that happen to share a date with a workout.
+    const existingEvents = allEvents.filter(e => e.category === "WORKOUT");
     const byDate = new Map<string, (string | number)[]>();
     for (const e of existingEvents) {
       const day = (e.start_date_local ?? "").slice(0, 10);
@@ -121,7 +124,9 @@ export async function syncPlanToIntervalsHeadless(
 
   let deleted = 0;
   try {
-    const existingEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    const allEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    // Filter to WORKOUT category only — same reason as cleanupIcuDuplicates above.
+    const existingEvents = allEvents.filter(e => e.category === "WORKOUT");
     const byDate = new Map<string, (string | number)[]>();
     for (const e of existingEvents) {
       const day = (e.start_date_local ?? "").slice(0, 10);

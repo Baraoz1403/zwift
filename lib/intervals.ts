@@ -195,14 +195,23 @@ export async function listIntervalsEvents(
   athleteId?: string
 ): Promise<IntervalsEvent[]> {
   try {
-    const url = `${INTERVALS_API}/athlete/${athleteId ?? "me"}/events?oldest=${oldest}&newest=${newest}&category=WORKOUT`;
+    // Do NOT include ?category=WORKOUT in the URL — the ICU API doesn't
+    // document that filter and may return [] or a non-array wrapper when it
+    // doesn't recognise it, silently killing all cleanup. Fetch all events in
+    // the date range; callers filter by category in JS instead.
+    const url = `${INTERVALS_API}/athlete/${athleteId ?? "me"}/events?oldest=${oldest}&newest=${newest}`;
     const res = await fetch(url, {
       headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return [];
     const data = await res.json();
-    return Array.isArray(data) ? (data as IntervalsEvent[]) : [];
+    // ICU may return a plain array OR a wrapped object { events: [...] }.
+    // Handle both so a shape change never silently kills cleanup.
+    if (Array.isArray(data)) return data as IntervalsEvent[];
+    if (data && Array.isArray((data as Record<string, unknown>).events))
+      return (data as { events: IntervalsEvent[] }).events;
+    return [];
   } catch {
     return [];
   }
