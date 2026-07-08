@@ -24,6 +24,7 @@ import { computeTrainingLoad } from "@/lib/training-load";
 import { advanceMacroCycle, getPhaseForWeekIndex, resolvePhase, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
 import { computeAdherence } from "@/lib/adherence";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
+import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerprint";
 
 export { AiInsightsError };
 
@@ -194,6 +195,10 @@ export async function runWeeklyPlanGeneration(
           .filter(Boolean)
       : undefined;
 
+  // Load the rider's accumulated fingerprint (best-effort — null = no data yet or KV down)
+  const fingerprint = await getFingerprint(athleteId);
+  const riderFingerprint = fingerprintToPromptSummary(fingerprint);
+
   const plan = await generateWeeklyPlan({
     firstName: profile.firstName,
     ftp: effectiveFtp,
@@ -212,6 +217,7 @@ export async function runWeeklyPlanGeneration(
     targetWeekOf: weekOf,
     currentPlan,
     previousWeekTitles,
+    riderFingerprint,
   });
 
   return { athleteId, plan, macroCycle, cycle, weekOf, rides };

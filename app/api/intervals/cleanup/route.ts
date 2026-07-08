@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { fetchOwnProfile } from "@/lib/zwift";
-import { getStoredAthleteState } from "@/lib/kv-plan-state";
 import { cleanupIcuDuplicates } from "@/lib/headless-sync";
 
 /**
@@ -29,42 +27,23 @@ export async function POST() {
   const icuId  = cookieStore.get("zwift_intervals_id")?.value;
   if (!icuKey) return NextResponse.json({ ok: false, error: "Intervals.icu not connected." });
 
-  // Resolve athleteId (same fallback logic as the state endpoint)
-  let athleteId = session.athleteId;
-  if (!athleteId && session.accessToken) {
-    try {
-      const profile = await fetchOwnProfile(session.accessToken);
-      athleteId = profile.id != null ? String(profile.id) : undefined;
-    } catch { /* best-effort */ }
-  }
-
-  // Get date range from the stored plan
-  let oldest: string | undefined;
-  let newest: string | undefined;
-  if (athleteId) {
-    const state = await getStoredAthleteState(athleteId);
-    if (state.previousPlan?.workouts?.length) {
-      const dates = state.previousPlan.workouts
-        .map(w => (w as { date?: string }).date)
-        .filter((d): d is string => !!d)
-        .sort();
-      oldest = dates[0];
-      newest = dates[dates.length - 1];
-    }
-  }
-
-  // If no stored plan, clean the current calendar week as fallback
-  if (!oldest || !newest) {
-    const now = new Date();
-    const dow = now.getUTCDay();
-    const diffToMonday = dow === 0 ? -6 : 1 - dow;
-    const monday = new Date(now);
-    monday.setUTCDate(now.getUTCDate() + diffToMonday);
-    oldest = monday.toISOString().slice(0, 10);
-    const sunday = new Date(monday);
-    sunday.setUTCDate(monday.getUTCDate() + 6);
-    newest = sunday.toISOString().slice(0, 10);
-  }
+  // Scan a 5-week window (4 past weeks + current week) so accumulated
+  // duplicates from prior plan pushes are swept up, not just today's week.
+  // The rider's Zwift calendar shows workouts from all these weeks, so
+  // a narrow current-week-only range leaves old duplicates behind.
+  const now = new Date();
+  const dow = now.getUTCDay();
+  const diffToMonday = dow === 0 ? -6 : 1 - dow;
+  const thisMonday = new Date(now);
+  thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
+  // oldest = 4 weeks before this Monday
+  const oldestDate = new Date(thisMonday);
+  oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
+  // newest = this Sunday
+  const newestDate = new Date(thisMonday);
+  newestDate.setUTCDate(thisMonday.getUTCDate() + 6);
+  const oldest = oldestDate.toISOString().slice(0, 10);
+  const newest = newestDate.toISOString().slice(0, 10);
 
   const result = await cleanupIcuDuplicates(icuKey, icuId ?? undefined, oldest, newest);
   return NextResponse.json({ ok: true, deleted: result.deleted, errors: result.errors, range: { oldest, newest } });

@@ -768,6 +768,15 @@ export async function generateWeeklyPlan(params: {
    *  the AI uses this to vary session choices and avoid repeating the same
    *  named workout in consecutive weeks. */
   previousWeekTitles?: string[];
+  /**
+   * Pre-formatted rider fingerprint summary produced by
+   * lib/rider-fingerprint.ts#fingerprintToPromptSummary(). When present,
+   * appended to the coaching system prompt so the AI can personalise the plan
+   * based on how this specific rider has responded to past workouts. Null or
+   * absent = first-ever plan or KV unavailable; both are fine, the prompt
+   * just won't have the accumulated-memory section.
+   */
+  riderFingerprint?: string | null;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -871,6 +880,14 @@ export async function generateWeeklyPlan(params: {
     previousWeekTitles: params.previousWeekTitles ?? null,
   });
 
+  // Build system prompt — append accumulated rider fingerprint when available.
+  // The fingerprint is coach context ("this rider struggles with VO2max, excels
+  // at sweet spot") rather than per-request input data, so it belongs in the
+  // system prompt rather than the user message.
+  const systemPrompt = params.riderFingerprint
+    ? WEEKLY_PLAN_SYSTEM_PROMPT + "\n\n" + params.riderFingerprint
+    : WEEKLY_PLAN_SYSTEM_PROMPT;
+
   let resp: Response;
   try {
     resp = await fetch(ANTHROPIC_API_URL, {
@@ -882,8 +899,8 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8000,
-        system: WEEKLY_PLAN_SYSTEM_PROMPT,
+        max_tokens: 16000,
+        system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
       }),
     });

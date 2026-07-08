@@ -223,6 +223,21 @@ export default function WeeklyPlan() {
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
+  // Post-workout feeling scores: date → 1–5. Persisted to localStorage so the
+  // picker shows the saved value on reload, even before the KV write confirms.
+  const [feelingScores, setFeelingScores] = useState<Record<string, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem("zwift:feelingScores");
+      return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    } catch { return {}; }
+  });
+  const [feelingSubmitting, setFeelingSubmitting] = useState<Set<string>>(new Set());
+
+  // ICU calendar cleanup — user-triggered "fix Zwift duplicates" action
+  const [cleanupRunning, setCleanupRunning] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<string | null>(null);
+
   // Rider's current FTP - needed to convert a completed ride's raw-watts FIT
   // power stream into the FTP-fraction units WorkoutThumbnail draws in (same
   // units generateDefaultBlocks/sampleWorkoutPower already use for planned
@@ -441,12 +456,10 @@ export default function WeeklyPlan() {
       .then(d => {
         if (d.connected) {
           setIntervalsConnected(true);
-          const CLEANUP_KEY = "zwiftLastIcuCleanup";
-          const last = Number(window.localStorage.getItem(CLEANUP_KEY) ?? 0);
-          if (Date.now() - last > 4 * 60 * 60 * 1000) {
-            window.localStorage.setItem(CLEANUP_KEY, String(Date.now()));
-            fetch("/api/intervals/cleanup", { method: "POST" }).catch(() => {});
-          }
+          // Always clean up on page load — the endpoint is cheap (list + delete
+          // duplicates only, no new pushes) and covers the past 5 weeks so any
+          // old duplicate from a prior regeneration gets swept up immediately.
+          fetch("/api/intervals/cleanup", { method: "POST" }).catch(() => {});
         }
       })
       .catch(() => {});
@@ -855,6 +868,33 @@ export default function WeeklyPlan() {
       // the week actually rolls over with nothing cached.
     } finally {
       setPrefetchingNext(false);
+    }
+  }
+
+  /** Submit a post-workout feeling score (1–5) for a completed session. */
+  async function submitFeelingScore(
+    date: string,
+    workoutTitle: string,
+    category: string,
+    score: number,
+  ) {
+    // Optimistic update
+    setFeelingScores(prev => {
+      const next = { ...prev, [date]: score };
+      try { localStorage.setItem("zwift:feelingScores", JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setFeelingSubmitting(prev => new Set(prev).add(date));
+    try {
+      await fetch("/api/ai/session-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, workoutTitle, category, feelingScore: score }),
+      });
+    } catch {
+      // best-effort — the score is already saved in localStorage
+    } finally {
+      setFeelingSubmitting(prev => { const s = new Set(prev); s.delete(date); return s; });
     }
   }
 
@@ -1814,9 +1854,60 @@ export default function WeeklyPlan() {
                           {stats}
                         </div>
                       )}
+                      {/* Post-workout feeling picker */}
+                      {w.date && (() => {
+                        const saved = feelingScores[w.date];
+                        const submitting = feelingSubmitting.has(w.date);
+                        const labels = ["💀", "😓", "😐", "💪", "🚀"];
+                        const tips = [
+                          "Couldn't finish",
+                          "Harder than expected",
+                          "Challenging but done",
+                          "Strong & controlled",
+                          "Felt great!",
+                        ];
+                        return (
+                          <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
+                            <div style={{ fontSize: 10.5, color: "var(--muted)", marginBottom: 6, fontWeight: 600, letterSpacing: "0.04em" }}>
+                              HOW DID IT FEEL?
+                            </div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              {labels.map((emoji, idx) => {
+                                const score = idx + 1;
+                                const isSelected = saved === score;
+                                return (
+                                  <button
+                                    key={score}
+                                    type="button"
+                                    title={tips[idx]}
+                                    onClick={() => !submitting && submitFeelingScore(w.date!, w.title || actual!.name as string, w.type, score)}
+                                    style={{
+                                      flex: 1,
+                                      padding: "4px 2px",
+                                      border: isSelected
+                                        ? "1.5px solid var(--accent)"
+                                        : "1.5px solid var(--border)",
+                                      borderRadius: 6,
+                                      background: isSelected ? "rgba(47,143,224,0.12)" : "transparent",
+                                      cursor: submitting ? "default" : "pointer",
+                                      fontSize: 15,
+                                      lineHeight: 1,
+                                      opacity: submitting ? 0.6 : 1,
+                                      transition: "all 0.15s",
+                                    }}
+                                  >
+                                    {emoji}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {/* "Planned" footnote — bottom of card */}
                       <div style={{
-                        marginTop: "auto", paddingTop: 10,
+                        marginTop: 10, paddingTop: 8,
                         borderTop: "1px solid var(--border)",
                         fontSize: 10.5, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.4,
                       }}>
@@ -1967,6 +2058,109 @@ export default function WeeklyPlan() {
               );
             })}
           </div>
+
+          {/* Past-sessions feeling log ─────────────────────────────────────────
+              Shows planned workouts from days already past this week where
+              an actual ride was completed. These don't appear in displayWorkouts
+              (which only shows today-forward) but we still want the rider to be
+              able to rate them so the fingerprint accumulates historical data.
+           ─────────────────────────────────────────────────────────────────── */}
+          {plan && (() => {
+            const today = todayIso();
+            const pastCompleted = plan.workouts
+              .filter(w => w.date && w.date < today && !isRestDay(w.type) && weekActivities.has(w.date))
+              .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+            if (pastCompleted.length === 0) return null;
+            return (
+              <div style={{ marginTop: 24, padding: "14px 16px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.06em", marginBottom: 12 }}>
+                  RATE THIS WEEK&apos;S COMPLETED SESSIONS
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {pastCompleted.map((w) => {
+                    const saved = w.date ? feelingScores[w.date] : undefined;
+                    const submitting = w.date ? feelingSubmitting.has(w.date) : false;
+                    const labels = ["💀", "😓", "😐", "💪", "🚀"];
+                    const tips = ["Couldn't finish", "Harder than expected", "Challenging but done", "Strong & controlled", "Felt great!"];
+                    return (
+                      <div key={w.date} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ minWidth: 120 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{w.title}</div>
+                          <div style={{ fontSize: 10.5, color: "var(--muted)" }}>{w.day} · {w.date}</div>
+                        </div>
+                        <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "flex-end" }}>
+                          {labels.map((emoji, idx) => {
+                            const score = idx + 1;
+                            const isSelected = saved === score;
+                            return (
+                              <button
+                                key={score}
+                                type="button"
+                                title={tips[idx]}
+                                onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, score)}
+                                style={{
+                                  width: 34, height: 30,
+                                  border: isSelected ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
+                                  borderRadius: 6,
+                                  background: isSelected ? "rgba(47,143,224,0.12)" : "transparent",
+                                  cursor: submitting ? "default" : "pointer",
+                                  fontSize: 14, lineHeight: 1,
+                                  opacity: submitting ? 0.6 : 1,
+                                  transition: "all 0.15s",
+                                }}
+                              >
+                                {emoji}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Clean up Zwift calendar — fixes duplicate workouts from old plan pushes */}
+          {intervalsConnected && (
+            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: "5px 12px", fontSize: 11, opacity: cleanupRunning ? 0.6 : 1 }}
+                disabled={cleanupRunning}
+                onClick={async () => {
+                  setCleanupRunning(true);
+                  setCleanupResult(null);
+                  try {
+                    const r = await fetch("/api/intervals/cleanup", { method: "POST" });
+                    const d = await r.json() as { ok: boolean; deleted?: number; errors?: string[] };
+                    if (d.ok) {
+                      setCleanupResult(
+                        d.deleted && d.deleted > 0
+                          ? `✓ Removed ${d.deleted} duplicate workout${d.deleted === 1 ? "" : "s"} from your Zwift calendar. Open Zwift to confirm.`
+                          : "✓ Calendar is clean — no duplicates found."
+                      );
+                    } else {
+                      setCleanupResult("Could not run cleanup — check Intervals.icu connection.");
+                    }
+                  } catch {
+                    setCleanupResult("Network error during cleanup.");
+                  } finally {
+                    setCleanupRunning(false);
+                  }
+                }}
+              >
+                {cleanupRunning ? "Cleaning…" : "🧹 Fix Zwift duplicates"}
+              </button>
+              {cleanupResult && (
+                <span style={{ fontSize: 11, color: cleanupResult.startsWith("✓") ? "var(--accent)" : "var(--danger)", fontWeight: 500 }}>
+                  {cleanupResult}
+                </span>
+              )}
+            </div>
+          )}
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
             {intervalsConnected
