@@ -21,6 +21,11 @@ import { kvGet } from "@/lib/kv";
 // run headlessly from the nightly cron endpoint - this route is now just:
 // resolve the browser session -> parse the body -> call the shared runner ->
 // mirror the result to KV for the cron job's benefit -> respond.
+
+// AI plan generation takes 30-60 seconds (FIT file downloads + Claude API).
+// Without this, Vercel cuts the function at the default 10s hobby-plan limit.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   let ageYears: number | undefined;
   let incomingCycle: MacroCycleState | null = null;
