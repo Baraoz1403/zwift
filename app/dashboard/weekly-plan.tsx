@@ -1865,52 +1865,65 @@ export default function WeeklyPlan() {
                           {stats}
                         </div>
                       )}
-                      {/* Post-workout feeling picker */}
+                      {/* Post-workout feeling — WhatsApp-style mini chat */}
                       {w.date && (() => {
                         const saved = feelingScores[w.date];
                         const submitting = feelingSubmitting.has(w.date);
-                        const labels = ["💀", "😓", "😐", "💪", "🚀"];
-                        const tips = [
-                          "Couldn't finish",
-                          "Harder than expected",
-                          "Challenging but done",
-                          "Strong & controlled",
-                          "Felt great!",
+                        const SCORES = [
+                          { emoji: "💀", label: "Couldn't finish" },
+                          { emoji: "😓", label: "Harder than expected" },
+                          { emoji: "😐", label: "Got it done" },
+                          { emoji: "💪", label: "Strong & controlled" },
+                          { emoji: "🚀", label: "Felt great!" },
                         ];
+                        const savedScore = saved ? SCORES[saved - 1] : null;
                         return (
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
-                            <div style={{ fontSize: 10.5, color: "var(--muted)", marginBottom: 6, fontWeight: 600, letterSpacing: "0.04em" }}>
-                              HOW DID IT FEEL?
+                            {/* Coach prompt — left bubble */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
+                              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>🏋️</div>
+                              <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500 }}>
+                                How did that feel?
+                              </div>
                             </div>
-                            <div style={{ display: "flex", gap: 4 }}>
-                              {labels.map((emoji, idx) => {
-                                const score = idx + 1;
-                                const isSelected = saved === score;
-                                return (
-                                  <button
-                                    key={score}
-                                    type="button"
-                                    title={tips[idx]}
-                                    onClick={() => !submitting && submitFeelingScore(w.date!, w.title || actual!.name as string, w.type, score)}
-                                    style={{
-                                      flex: 1,
-                                      padding: "4px 2px",
-                                      border: isSelected
-                                        ? "1.5px solid var(--accent)"
-                                        : "1.5px solid var(--border)",
-                                      borderRadius: 6,
-                                      background: isSelected ? "rgba(47,143,224,0.12)" : "transparent",
-                                      cursor: submitting ? "default" : "pointer",
-                                      fontSize: 15,
-                                      lineHeight: 1,
-                                      opacity: submitting ? 0.6 : 1,
-                                      transition: "all 0.15s",
-                                    }}
-                                  >
-                                    {emoji}
-                                  </button>
-                                );
-                              })}
+                            {/* Rider reply — right side */}
+                            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                              {savedScore ? (
+                                <div style={{
+                                  display: "flex", alignItems: "center", gap: 7,
+                                  background: "rgba(47,143,224,0.13)",
+                                  border: "1px solid rgba(47,143,224,0.25)",
+                                  borderRadius: "10px 10px 3px 10px",
+                                  padding: "6px 11px",
+                                }}>
+                                  <span style={{ fontSize: 17 }}>{savedScore.emoji}</span>
+                                  <div>
+                                    <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text)" }}>{savedScore.label}</div>
+                                    <div style={{ fontSize: 9.5, color: "var(--muted)" }}>✓ Saved</div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  {SCORES.map((s, idx) => (
+                                    <button
+                                      key={idx + 1}
+                                      type="button"
+                                      title={s.label}
+                                      onClick={() => !submitting && submitFeelingScore(w.date!, w.title || (actual?.name as string) || "", w.type, idx + 1)}
+                                      style={{
+                                        width: 34, height: 30,
+                                        border: "1px solid var(--border)",
+                                        borderRadius: 7,
+                                        background: "transparent",
+                                        cursor: submitting ? "default" : "pointer",
+                                        fontSize: 15, lineHeight: 1,
+                                        opacity: submitting ? 0.4 : 1,
+                                        transition: "transform 0.1s",
+                                      }}
+                                    >{s.emoji}</button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -2066,11 +2079,12 @@ export default function WeeklyPlan() {
             })}
           </div>
 
-          {/* Past-sessions feeling log ─────────────────────────────────────────
-              Shows planned workouts from days already past this week where
-              an actual ride was completed. These don't appear in displayWorkouts
-              (which only shows today-forward) but we still want the rider to be
-              able to rate them so the fingerprint accumulates historical data.
+          {/* ── Session chat feedback ──────────────────────────────────────────
+              Past completed sessions appear as a WhatsApp-style coach↔rider
+              exchange. The coach bubble shows the planned workout + prescription;
+              the rider replies with a 1-5 feeling score. These scores feed the
+              rider fingerprint in KV, which the AI injects into future coaching
+              prompts so the plan can actually learn this rider over time.
            ─────────────────────────────────────────────────────────────────── */}
           {plan && (() => {
             const today = todayIso();
@@ -2078,48 +2092,121 @@ export default function WeeklyPlan() {
               .filter(w => w.date && w.date < today && !isRestDay(w.type) && weekActivities.has(w.date))
               .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
             if (pastCompleted.length === 0) return null;
+
+            const SCORES = [
+              { emoji: "💀", label: "Couldn't finish" },
+              { emoji: "😓", label: "Harder than expected" },
+              { emoji: "😐", label: "Got it done" },
+              { emoji: "💪", label: "Strong & controlled" },
+              { emoji: "🚀", label: "Felt great!" },
+            ];
+
             return (
-              <div style={{ marginTop: 24, padding: "14px 16px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.06em", marginBottom: 12 }}>
-                  RATE THIS WEEK&apos;S COMPLETED SESSIONS
+              <div style={{ marginTop: 28 }}>
+                {/* Chat header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 18, paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: "50%",
+                    background: "var(--accent)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16, flexShrink: 0,
+                  }}>🏋️</div>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>Your Coach</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                      {pastCompleted.filter(w => w.date && feelingScores[w.date]).length}/{pastCompleted.length} sessions rated
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                   {pastCompleted.map((w) => {
                     const saved = w.date ? feelingScores[w.date] : undefined;
                     const submitting = w.date ? feelingSubmitting.has(w.date) : false;
-                    const labels = ["💀", "😓", "😐", "💪", "🚀"];
-                    const tips = ["Couldn't finish", "Harder than expected", "Challenging but done", "Strong & controlled", "Felt great!"];
+                    const savedScore = saved ? SCORES[saved - 1] : null;
+
                     return (
-                      <div key={w.date} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ minWidth: 120 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", lineHeight: 1.3 }}>{w.title}</div>
-                          <div style={{ fontSize: 10.5, color: "var(--muted)" }}>{w.day} · {w.date}</div>
+                      <div key={w.date}>
+                        {/* ── Coach bubble (left) ── */}
+                        <div style={{ display: "flex", gap: 9, alignItems: "flex-start", marginBottom: 10 }}>
+                          <div style={{
+                            width: 28, height: 28, borderRadius: "50%",
+                            background: "var(--accent)", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 13, marginTop: 2,
+                          }}>🏋️</div>
+                          <div style={{
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "3px 12px 12px 12px",
+                            padding: "11px 14px",
+                            maxWidth: "85%",
+                          }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginBottom: 2 }}>
+                              {w.title}
+                            </div>
+                            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: w.description ? 8 : 0 }}>
+                              {w.day} · {w.date} · {w.durationMin} min
+                            </div>
+                            {w.description && (
+                              <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.8, lineHeight: 1.55, fontStyle: "italic" }}>
+                                &ldquo;{w.description}&rdquo;
+                              </div>
+                            )}
+                            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 9, fontWeight: 600 }}>
+                              How did it feel?
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ display: "flex", gap: 4, flex: 1, justifyContent: "flex-end" }}>
-                          {labels.map((emoji, idx) => {
-                            const score = idx + 1;
-                            const isSelected = saved === score;
-                            return (
-                              <button
-                                key={score}
-                                type="button"
-                                title={tips[idx]}
-                                onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, score)}
-                                style={{
-                                  width: 34, height: 30,
-                                  border: isSelected ? "1.5px solid var(--accent)" : "1.5px solid var(--border)",
-                                  borderRadius: 6,
-                                  background: isSelected ? "rgba(47,143,224,0.12)" : "transparent",
-                                  cursor: submitting ? "default" : "pointer",
-                                  fontSize: 14, lineHeight: 1,
-                                  opacity: submitting ? 0.6 : 1,
-                                  transition: "all 0.15s",
-                                }}
-                              >
-                                {emoji}
-                              </button>
-                            );
-                          })}
+
+                        {/* ── Rider reply (right) ── */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", paddingRight: 4 }}>
+                          {savedScore ? (
+                            <div style={{
+                              display: "flex", alignItems: "center", gap: 9,
+                              background: "rgba(47,143,224,0.14)",
+                              border: "1px solid rgba(47,143,224,0.28)",
+                              borderRadius: "12px 12px 3px 12px",
+                              padding: "9px 14px",
+                            }}>
+                              <span style={{ fontSize: 22 }}>{savedScore.emoji}</span>
+                              <div>
+                                <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{savedScore.label}</div>
+                                <div style={{ fontSize: 10, color: "var(--muted)" }}>✓ Your coach will remember this</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{
+                              background: "rgba(47,143,224,0.06)",
+                              border: "1px solid var(--border)",
+                              borderRadius: "12px 12px 3px 12px",
+                              padding: "9px 12px",
+                            }}>
+                              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 7, textAlign: "right" }}>
+                                Tap to reply
+                              </div>
+                              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                                {SCORES.map((s, idx) => (
+                                  <button
+                                    key={idx + 1}
+                                    type="button"
+                                    title={s.label}
+                                    onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, idx + 1)}
+                                    style={{
+                                      width: 38, height: 34,
+                                      border: "1px solid var(--border)",
+                                      borderRadius: 9,
+                                      background: "transparent",
+                                      cursor: submitting ? "default" : "pointer",
+                                      fontSize: 17, lineHeight: 1,
+                                      opacity: submitting ? 0.4 : 1,
+                                      transition: "transform 0.1s, opacity 0.15s",
+                                    }}
+                                  >{s.emoji}</button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

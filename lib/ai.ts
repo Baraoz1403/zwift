@@ -609,8 +609,15 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(NOT short sprint efforts). " +
   "Apply standard periodization following Zwift's own official plan " +
   "structure (FTP Builder, Build Me Up). Key rules: " +
-  "(1) 80% of weekly volume in Z1-Z2 (Foundation/Recovery sessions), " +
-  "only 20% hard - never invert this ratio. " +
+  "(1) The 80/20 rule means 80% of total weekly TIME (minutes) at Z1-Z2 " +
+  "— NOT 80% of sessions. For a 4-session week this means: one 90-min " +
+  "Foundation Ride + the warmup/cooldown time embedded in structured sessions " +
+  "satisfies the Z1-Z2 volume requirement while leaving room for 2-3 genuinely " +
+  "different structured sessions. A plan with 3 Foundation/Long Endurance rides " +
+  "and only 1 structured session is NOT correct 80/20 — it is a boring, " +
+  "flat plan that fails to provide adequate training stimulus. Vary the week: " +
+  "use Foundation/Recovery rides AS BOOKENDS between hard days, not as " +
+  "the primary content. " +
   "(2) Never schedule two hard sessions on consecutive days. Always put " +
   "a Foundation or Recovery session between hard efforts. " +
   "(3) Weekly sequence: hard day -> easy day -> hard day -> easy day. " +
@@ -626,8 +633,14 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "stimulus: one hard-ish day makes the easy days actually count. " +
   "Event goal: 4+ weeks out = volume; 2-3 weeks out = Sweet Spot/Threshold; " +
   "1 week out = taper (cut volume 40-50%, keep one short sharp effort). " +
-  "(5) Session count cap: max 2-3 hard (Threshold/VO2/Sweet Spot/ " +
-  "Intermittent) sessions per week for recreational riders. " +
+  "(5) SESSION VARIETY — the single biggest predictor of plan quality: " +
+  "For riders doing 3-5 sessions/week, include 2-3 DISTINCTLY DIFFERENT " +
+  "structured sessions drawn from different categories (e.g. one Sweet Spot " +
+  "+ one Threshold, or one Tempo + one VO2max + one Neuromuscular). " +
+  "Foundation/Recovery sessions are support — they should be clearly " +
+  "outnumbered by interesting structured work in any 4-5 day plan. " +
+  "If you count the session types in your plan and see 2+ Foundation/Long " +
+  "Endurance sessions, ask yourself: is this plan actually engaging? " +
   "(6) Volume ramp: increase total weekly duration max 10% per week " +
   "during load blocks. Never increase volume AND intensity same week. " +
   "Some rides may include a normalizedPower field (watts) alongside " +
@@ -682,6 +695,18 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   'and what to do if it is (draw from the workout\'s successFeel in the library). ' +
   'NEVER write generic statements like "Build aerobic base at easy pace," "Improve fitness with intervals," or ' +
   '"This session targets your aerobic system." These are content-free and destroy plan quality. ' +
+  'EASY SESSIONS REQUIRE THE SAME COACHING INTELLIGENCE AS HARD ONES. A rider can ride easy alone — ' +
+  'the coach\'s job is to make them understand WHY this easy session is here TODAY, between these specific ' +
+  'hard sessions, and what physiological work is actually happening. ' +
+  'For Foundation/Recovery/Endurance sessions: SENTENCE 1 must name the specific hard sessions this ride ' +
+  'sits between and explain its role (e.g. "You put in 3×15 Sweet Spot yesterday — today\'s Z2 ride ' +
+  'accelerates lactate clearance and glycogen replenishment, so Thursday\'s Threshold blocks land on fresh legs." ' +
+  'or "TSB is -14 after a 3-week push — this Foundation ride is the stimulus that triggers the adaptation ' +
+  'from last week\'s work; cutting it short would waste the hard sessions that earned it."). ' +
+  'SENTENCE 2 must give one execution signal that separates a well-ridden easy session from just spinning ' +
+  '(e.g. cadence, breathing test, a specific feel signal). ' +
+  'SENTENCE 3 must tell them what a correctly-executed easy session feels like at the END — ' +
+  'so they can tell the difference between "easy done right" and "just went too slow." ' +
   'RIGHT example — Foundation ride, TSB +6, Base wk 2: "TSB is at +6 and you\'re in Base week 2 — ' +
   'your aerobic system is fresh and ready to absorb volume without fatiguing. ' +
   'Hold 65-73% FTP for the full 40 minutes; cadence 88-95 rpm; if you can\'t speak in full sentences, ' +
@@ -723,6 +748,15 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "with a structure array containing an intervals block with real " +
   "repeats, onSec, and offSec values (e.g. repeats:5, onSec:300, offSec:180). " +
   "Even in Base phase, 1 hard session with intervals is required. " +
+  "FINAL PLAN QUALITY CHECK - before returning JSON, verify: " +
+  "(a) At least 2 sessions this week are from DIFFERENT structured categories " +
+  "(not Foundation + Foundation + Foundation; not Sweet Spot as the only hard session in a 4-day week). " +
+  "(b) Every description names at least one specific data point from this rider's actual input - " +
+  "exact TSB value, CTL number, phase week number, their W/kg, or a title from previousWeekTitles. " +
+  "Generic statements like 'Build aerobic base' or 'Improve your fitness with intervals' are NOT descriptions - " +
+  "they are placeholder text that makes a rider feel they received a template, not coaching. Replace them. " +
+  "(c) If previousWeekTitles is present: structured sessions must use different names AND progress logically. " +
+  "A plan that fails (a)-(c) is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template.)}";
 
 export async function generateWeeklyPlan(params: {
