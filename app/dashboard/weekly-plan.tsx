@@ -726,6 +726,15 @@ export default function WeeklyPlan() {
     } else {
       try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify([...newlyPushedIds])); } catch {}
     }
+
+    // Step 4: Trigger the server-side extended cleanup (7-week window, +2 future
+    // weeks) to catch any orphaned events from previous plan generations that
+    // targeted a different week. The pre-push snapshot above only covers this
+    // plan's date range; if the user previously generated a "next week" plan
+    // and then generated a "this week" plan, those future-week events survive
+    // the snapshot and cause Zwift to show two different workouts per day.
+    // Fire-and-forget — don't await; this is best-effort dedup.
+    fetch("/api/intervals/cleanup", { method: "POST" }).catch(() => {});
   }
 
   /**

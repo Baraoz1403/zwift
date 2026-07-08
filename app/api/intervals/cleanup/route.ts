@@ -27,10 +27,12 @@ export async function POST() {
   const icuId  = cookieStore.get("zwift_intervals_id")?.value;
   if (!icuKey) return NextResponse.json({ ok: false, error: "Intervals.icu not connected." });
 
-  // Scan a 5-week window (4 past weeks + current week) so accumulated
-  // duplicates from prior plan pushes are swept up, not just today's week.
-  // The rider's Zwift calendar shows workouts from all these weeks, so
-  // a narrow current-week-only range leaves old duplicates behind.
+  // Scan a 7-week window (4 past weeks + current week + 2 future weeks).
+  // The +2 future weeks is critical: if the rider generated a plan for
+  // "next week" and then generated another one, the stale next-week events
+  // sit *beyond* this Sunday and are invisible to a current-week-only range,
+  // causing Zwift to show two different workouts per day. Covering 2 weeks
+  // ahead catches those orphaned future events and removes duplicates there too.
   const now = new Date();
   const dow = now.getUTCDay();
   const diffToMonday = dow === 0 ? -6 : 1 - dow;
@@ -39,9 +41,9 @@ export async function POST() {
   // oldest = 4 weeks before this Monday
   const oldestDate = new Date(thisMonday);
   oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
-  // newest = this Sunday
+  // newest = 2 weeks from this Sunday (covers next week + week after)
   const newestDate = new Date(thisMonday);
-  newestDate.setUTCDate(thisMonday.getUTCDate() + 6);
+  newestDate.setUTCDate(thisMonday.getUTCDate() + 6 + 14);
   const oldest = oldestDate.toISOString().slice(0, 10);
   const newest = newestDate.toISOString().slice(0, 10);
 

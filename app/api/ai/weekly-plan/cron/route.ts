@@ -112,21 +112,30 @@ export async function GET(req: NextRequest) {
       // to call mid-week without knowing which days the athlete has ridden.
       if (state.previousPlan?.weekOf === weekOf) {
         let icuCleaned: number | undefined;
-        if (state.icuKey && state.previousPlan) {
+        if (state.icuKey) {
           try {
-            const allDates = state.previousPlan.workouts
-              .map(w => (w as { date?: string }).date)
-              .filter(Boolean)
-              .sort() as string[];
-            if (allDates.length >= 2) {
-              const cleanResult = await cleanupIcuDuplicates(
-                state.icuKey,
-                state.icuId ?? undefined,
-                allDates[0],
-                allDates[allDates.length - 1]
-              );
-              icuCleaned = cleanResult.deleted;
-            }
+            // Scan 4 weeks back + 3 weeks ahead so stale events from a
+            // previously-generated "next week" plan are also cleaned up.
+            // Using only the current plan's date range misses future-week
+            // orphans that cause Zwift to show two different workouts per day.
+            const now = new Date();
+            const dow = now.getUTCDay();
+            const diffToMonday = dow === 0 ? -6 : 1 - dow;
+            const thisMonday = new Date(now);
+            thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
+            const oldestDate = new Date(thisMonday);
+            oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
+            const newestDate = new Date(thisMonday);
+            newestDate.setUTCDate(thisMonday.getUTCDate() + 6 + 14); // +2 future weeks
+            const oldest = oldestDate.toISOString().slice(0, 10);
+            const newest = newestDate.toISOString().slice(0, 10);
+            const cleanResult = await cleanupIcuDuplicates(
+              state.icuKey,
+              state.icuId ?? undefined,
+              oldest,
+              newest
+            );
+            icuCleaned = cleanResult.deleted;
           } catch {
             // best-effort — don't fail the whole cron run for a cleanup hiccup
           }
