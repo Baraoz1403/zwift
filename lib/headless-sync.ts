@@ -52,7 +52,9 @@ export async function cleanupIcuDuplicates(
     for (const [, ids] of byDate) {
       if (ids.length <= 1) continue;
       // Keep the highest ID (most recently created on ICU), delete older duplicates.
-      const keep = ids.reduce((a, b) => (String(b) > String(a) ? b : a));
+      // Use numeric comparison — string comparison breaks for IDs of different lengths
+      // (e.g. "9" > "10" as strings, but 10 > 9 as numbers).
+      const keep = ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
       for (const id of ids) {
         if (id === keep) continue;
         const r = await deleteEventFromIntervals(apiKey, id, athleteId);
@@ -131,7 +133,7 @@ export async function syncPlanToIntervalsHeadless(
     for (const [day, ids] of byDate) {
       if (pushedDates.has(day)) {
         const known = ids.filter((id) => newlyPushedIds.has(id));
-        const keep = known.length > 0 ? known[0] : ids.reduce((a, b) => (String(b) > String(a) ? b : a));
+        const keep = known.length > 0 ? known[0] : ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
         for (const id of ids) if (id !== keep) idsToDelete.add(id);
       } else {
         // Not a date we pushed this cycle (rest day, or already ridden) -

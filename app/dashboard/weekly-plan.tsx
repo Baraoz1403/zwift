@@ -234,9 +234,7 @@ export default function WeeklyPlan() {
   });
   const [feelingSubmitting, setFeelingSubmitting] = useState<Set<string>>(new Set());
 
-  // ICU calendar cleanup — user-triggered "fix Zwift duplicates" action
-  const [cleanupRunning, setCleanupRunning] = useState(false);
-  const [cleanupResult, setCleanupResult] = useState<string | null>(null);
+  // ICU calendar cleanup runs automatically on page load and after every push — no user action needed.
 
   // Rider's current FTP - needed to convert a completed ride's raw-watts FIT
   // power stream into the FTP-fraction units WorkoutThumbnail draws in (same
@@ -968,7 +966,12 @@ export default function WeeklyPlan() {
   useEffect(() => {
     if (!bookmarkletRef.current) return;
     const origin = window.location.origin;
-    const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include'});if(!r.ok){alert('TrainingPeaks: not logged in — please log in first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('Error: no TP token found');return;}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp;}catch(e){alert('Error: '+e.message)}})()`;
+    // The bookmarklet runs on app.trainingpeaks.com (same origin as TP cookies),
+    // so it can fetch both the token and the athlete profile directly from TP's
+    // API without CORS issues. Fetching the profile client-side here avoids a
+    // server-to-server call from Vercel to TP (which TP may block or rate-limit).
+    const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include',headers:{Accept:'application/json'}});if(!r.ok){alert('TrainingPeaks: not logged in (HTTP '+r.status+') — please log in at app.trainingpeaks.com first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('TrainingPeaks error: no access_token in response. Please try again.');return;}let aid='';try{const pr=await fetch('https://tpapi.trainingpeaks.com/users/v3/user',{headers:{Authorization:'Bearer '+t,Accept:'application/json'}});if(pr.ok){const pd=await pr.json();const p=pd?.user??pd;aid=String(p?.personId??p?.athleteId??p?.userId??'');}}catch(pe){console.warn('TP profile fetch failed:',pe);}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp+'&aid='+encodeURIComponent(aid);}catch(e){alert('TrainingPeaks connection error: '+e.message)}})()`;
+
     bookmarkletRef.current.setAttribute('href', `javascript:${encodeURIComponent(code)}`);
   }, [showTPModal]);
 
@@ -2131,45 +2134,6 @@ export default function WeeklyPlan() {
             );
           })()}
 
-          {/* Clean up Zwift calendar — fixes duplicate workouts from old plan pushes */}
-          {intervalsConnected && (
-            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ padding: "5px 12px", fontSize: 11, opacity: cleanupRunning ? 0.6 : 1 }}
-                disabled={cleanupRunning}
-                onClick={async () => {
-                  setCleanupRunning(true);
-                  setCleanupResult(null);
-                  try {
-                    const r = await fetch("/api/intervals/cleanup", { method: "POST" });
-                    const d = await r.json() as { ok: boolean; deleted?: number; errors?: string[] };
-                    if (d.ok) {
-                      setCleanupResult(
-                        d.deleted && d.deleted > 0
-                          ? `✓ Removed ${d.deleted} duplicate workout${d.deleted === 1 ? "" : "s"} from your Zwift calendar. Open Zwift to confirm.`
-                          : "✓ Calendar is clean — no duplicates found."
-                      );
-                    } else {
-                      setCleanupResult("Could not run cleanup — check Intervals.icu connection.");
-                    }
-                  } catch {
-                    setCleanupResult("Network error during cleanup.");
-                  } finally {
-                    setCleanupRunning(false);
-                  }
-                }}
-              >
-                {cleanupRunning ? "Cleaning…" : "🧹 Fix Zwift duplicates"}
-              </button>
-              {cleanupResult && (
-                <span style={{ fontSize: 11, color: cleanupResult.startsWith("✓") ? "var(--accent)" : "var(--danger)", fontWeight: 500 }}>
-                  {cleanupResult}
-                </span>
-              )}
-            </div>
-          )}
 
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
             {intervalsConnected

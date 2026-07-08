@@ -44,29 +44,43 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ ok: false, error: "Session expired." }, { status: 401 });
 
   // ── Parse body ────────────────────────────────────────────────────────────
-  const { tpToken, refreshToken, expiresIn } = await req.json() as {
+  const { tpToken, refreshToken, expiresIn, athleteId: clientAthleteId } = await req.json() as {
     tpToken?: string;
     refreshToken?: string | null;
     expiresIn?: number | null;
+    athleteId?: string | null;
   };
   if (!tpToken?.trim()) {
     return NextResponse.json({ ok: false, error: "No token provided." });
   }
 
-  // ── Validate token with TrainingPeaks ─────────────────────────────────────
-  let profile;
-  try {
-    profile = await fetchTPProfile(tpToken.trim());
-  } catch (e) {
-    return NextResponse.json({
-      ok: false,
-      error: e instanceof Error ? e.message : "TrainingPeaks validation failed.",
-    });
-  }
+  // ── Validate / identify athlete ──────────────────────────────────────────
+  // Prefer the athleteId the bookmarklet fetched client-side (on app.trainingpeaks.com).
+  // That call runs same-origin with the TP session and reliably succeeds.
+  // The server-side fetchTPProfile makes a Vercel→TP call that TP may block
+  // or rate-limit; fall back to it only when the client didn't send an id.
+  let tpAthleteId: string;
+  let athleteName: string;
 
-  // tpapi returns personId/athleteId (not legacy .Id)
-  const tpAthleteId = String(profile.personId ?? profile.athleteId ?? profile.userId ?? "");
-  const athleteName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "TrainingPeaks user";
+  if (clientAthleteId?.trim()) {
+    // Client already resolved the profile — skip server-side round-trip.
+    tpAthleteId = clientAthleteId.trim();
+    athleteName = "TrainingPeaks user"; // no name available in this path
+  } else {
+    // Legacy path (bookmarklet didn't send aid=) or direct API calls.
+    let profile;
+    try {
+      profile = await fetchTPProfile(tpToken.trim());
+    } catch (e) {
+      return NextResponse.json({
+        ok: false,
+        error: e instanceof Error ? e.message : "TrainingPeaks validation failed.",
+      });
+    }
+    // tpapi returns personId/athleteId (not legacy .Id)
+    tpAthleteId = String(profile.personId ?? profile.athleteId ?? profile.userId ?? "");
+    athleteName = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "TrainingPeaks user";
+  }
 
   // ── Store TP credentials in a separate cookie to avoid 4KB session limit ──
   // The Zwift session already contains large tokens; adding the gAAAA TP token

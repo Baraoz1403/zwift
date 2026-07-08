@@ -1,6 +1,10 @@
 @echo off
 cd /d "C:\Users\barak\Zwift Project"
 
+echo Killing any hanging git processes...
+taskkill /f /im git.exe 2>nul
+timeout /t 1 /nobreak >nul
+
 echo Removing git lock if exists...
 if exist ".git\index.lock" del /f ".git\index.lock"
 

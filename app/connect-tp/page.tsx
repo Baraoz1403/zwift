@@ -37,6 +37,7 @@ export default function ConnectTPPage() {
     const t = params.get("t");
     const rt = params.get("rt");
     const exp = params.get("exp");
+    const aid = params.get("aid"); // athlete ID fetched client-side by the bookmarklet
 
     // Clear the fragment from the address bar immediately so the token
     // never lingers in browser history/autocomplete.
@@ -58,6 +59,7 @@ export default function ConnectTPPage() {
             tpToken: t,
             refreshToken: rt || null,
             expiresIn: exp ? Number(exp) : null,
+            athleteId: aid || null,
           }),
         });
         const data = await res.json();
