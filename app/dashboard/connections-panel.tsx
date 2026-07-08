@@ -231,7 +231,7 @@ function PlatformChip({
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface ConnectionsPanelProps {
-  onOpenTPModal:   () => void;
+  onOpenTPModal?:  () => void; // TP_DISABLED: optional until TP UI is re-enabled
   onConnectStrava: () => void;
   /** Called when the user clicks the HIDE button — lets the parent collapse the panel. */
   onHide?: () => void;
@@ -433,6 +433,8 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
         {/* ── Service tiles — 2-column grid ──────────────────────────────── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
 
+          {/* TP_DISABLED: tile hidden — restore by removing the `false &&` wrapper */}
+          {false /* TP_DISABLED */ && (
           <ServiceTile
             icon={<IconMountain size={20} />}
             brand="trainingpeaks"
@@ -445,19 +447,12 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
               "Garmin · outdoor calendar"
             }
             action={
-              // TP's token can't actually be auto-refreshed (its own server
-              // rejects the refresh grant - confirmed empirically, not just
-              // theoretical) regardless of whether hasRefreshToken is true,
-              // so the manual "Connect" button must always be offered
-              // whenever tpStatus isn't "ok" - hiding it whenever a
-              // (non-functional) refresh token happened to be on file was
-              // exactly what left riders with no way to reconnect once the
-              // token expired.
               tpStatus !== "ok"
                 ? { label: "Connect", onClick: onOpenTPModal }
                 : undefined
             }
           />
+          )}
 
           <ServiceTile
             icon={<IconTrend size={20} />}

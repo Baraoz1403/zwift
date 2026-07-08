@@ -423,27 +423,18 @@ export default function WeeklyPlan() {
       }
     } catch {}
 
-    // Check TrainingPeaks connection status. Previously this only ever set
-    // tpConnected=true and never touched tpTokenExpired, so the red
-    // "reconnect" banner (and its button) only appeared reactively, when a
-    // push happened to fail mid-session - on a fresh page load with an
-    // already-expired token (the normal case, since TP's ~1h token can't
-    // actually be refreshed - see lib/trainingpeaks.ts), tpTokenExpired
-    // stayed at its initial `false` and the banner/button never showed up
-    // at all, leaving no way to reconnect from the dashboard. Reading
-    // tokenExpired here too means the banner now reflects real persisted
-    // state on every load, not just this session's push attempts.
-    fetch("/api/trainingpeaks/status", { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => {
-        if (d.connected) {
-          setTpConnected(true);
-          setTpTokenExpired(false);
-          cleanupStaleTPWorkouts();
-        }
-        else if (d.tokenExpired) { setTpTokenExpired(true); }
-      })
-      .catch(() => {});
+    // TP_DISABLED: TrainingPeaks UI removed — backend code preserved in
+    // lib/trainingpeaks.ts + app/connect-tp/ for quick re-enabling.
+    // To restore: uncomment the block below and re-enable the UI sections
+    // marked TP_DISABLED throughout this file and connections-panel.tsx.
+    //
+    // fetch("/api/trainingpeaks/status", { cache: "no-store" })
+    //   .then(r => r.json())
+    //   .then(d => {
+    //     if (d.connected) { setTpConnected(true); setTpTokenExpired(false); cleanupStaleTPWorkouts(); }
+    //     else if (d.tokenExpired) { setTpTokenExpired(true); }
+    //   })
+    //   .catch(() => {});
 
     // Check Intervals.icu connection status; if connected, silently clean up
     // any duplicate events that may have accumulated from a past cross-device
@@ -1157,8 +1148,8 @@ export default function WeeklyPlan() {
   return (
     <div>
 
-      {/* ── TrainingPeaks Connect Modal ──────────────────────────────── */}
-      {showTPModal && (
+      {/* TP_DISABLED: modal kept for quick re-enable — just remove the `false &&` */}
+      {false /* TP_DISABLED */ && showTPModal && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 1000,
           background: "rgba(14,17,20,0.72)",
@@ -1467,8 +1458,8 @@ export default function WeeklyPlan() {
         </div>
       )}
 
-      {/* ── Token-expired reconnect banner ─────────────────────────────── */}
-      {tpTokenExpired && (
+      {/* TP_DISABLED: banner kept for quick re-enable — just remove the `false &&` */}
+      {false /* TP_DISABLED */ && tpTokenExpired && (
         <div style={{
           display: "flex", alignItems: "center", gap: 10, marginBottom: 12,
           padding: "10px 16px", borderRadius: 8,
@@ -2049,12 +2040,8 @@ export default function WeeklyPlan() {
                           </div>
                         )}
 
-                        {/* TP is no longer part of the automatic push — reserved for
-                            outdoor Garmin rides instead, so pushing the AI indoor plan
-                            there too was landing every workout on Zwift twice (once via
-                            TP's own Garmin relay, once via Intervals.icu) and building
-                            up duplicate calendar entries on TP itself across devices. */}
-                        {tpConnected && (
+                        {/* TP_DISABLED: tpConnected block hidden — restore by removing `false &&` */}
+                        {false /* TP_DISABLED */ && tpConnected && (
                           <div style={{ marginBottom: 6, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
                             TrainingPeaks: reserved for outdoor/Garmin rides — not auto-synced
                           </div>
@@ -2146,7 +2133,7 @@ export default function WeeklyPlan() {
           <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
             {intervalsConnected
               ? <>
-                  <strong style={{ opacity: 0.8, color: "var(--accent)" }}>Intervals.icu connected</strong> — workouts push here automatically and relay onward to Zwift (and Garmin, via the sync you set up once in your own Intervals.icu account). TrainingPeaks, if connected, stays reserved for your real outdoor Garmin rides and isn&apos;t auto-synced. Fall back to{" "}
+                  <strong style={{ opacity: 0.8, color: "var(--accent)" }}>Intervals.icu connected</strong> — workouts push here automatically and relay onward to Zwift (and Garmin, via the sync you set up once in your own Intervals.icu account). Fall back to{" "}
                   <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> at any time.
                 </>
               : <>
