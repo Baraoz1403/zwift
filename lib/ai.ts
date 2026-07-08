@@ -896,11 +896,25 @@ export async function generateWeeklyPlan(params: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
+        // Prompt caching: the system prompt is ~10,000 tokens and identical
+        // across all calls. With this header Anthropic caches it for 5 min —
+        // any second call within that window pays only 10% of normal input
+        // price for the system prompt (~$0.025 saved per call).
+        "anthropic-beta": "prompt-caching-2024-07-31",
       },
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 8000, // 16000 was overly generous — a 7-workout weekly plan fits well within 8000 tokens and halves API cost
-        system: systemPrompt,
+        // System as an array of content blocks (required for cache_control).
+        // The ephemeral cache_control marks this block for caching on the
+        // Anthropic side; subsequent calls within 5 min get it for free.
+        system: [
+          {
+            type: "text",
+            text: systemPrompt,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
         messages: [{ role: "user", content: userContent }],
       }),
     });

@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { WeeklyWorkout } from "@/lib/ai";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
-import { MacroCycleState } from "@/lib/periodization";
+import { MacroCycleState, mondayOfCurrentWeek } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { mirrorStateToKv, mirrorZwiftAuthToKv } from "@/lib/kv-plan-state";
+import { mirrorStateToKv, mirrorZwiftAuthToKv, getCachedPlan, setCachedPlan } from "@/lib/kv-plan-state";
+import { kvGet } from "@/lib/kv";
 
 // mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
 // app/api/ai/weekly-plan/cron/route.ts can share the exact same KV
@@ -73,6 +74,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
   }
 
+  // ── KV plan cache check ────────────────────────────────────────────────────
+  // If a plan for this exact week is already in KV (from a prior Generate on
+  // any device, or from the nightly cron), return it immediately without
+  // calling the AI. This eliminates the main cost driver: the rolling 6-day
+  // "prefetch next week" that fires on every page load from every device once
+  // fewer than 6 days remain in the current week. Without this cache, each
+  // device independently hits the AI for the same next-week plan because
+  // localStorage (where the prefetch result is stored) is device-specific.
+  //
+  // Bypass conditions — always regenerate when:
+  //   1. riderNote is set: the rider explicitly typed a change request (surgical edit).
+  //   2. No athleteId in session: can't key the cache, just generate.
+  const effectiveWeekOf = targetWeekOf ?? mondayOfCurrentWeek();
+  if (session.athleteId && !riderNote) {
+    const cached = await getCachedPlan(session.athleteId, effectiveWeekOf);
+    if (cached) {
+      // Also return the stored macro cycle so the client can update its cycle display.
+      let cachedMacroCycle: MacroCycleState | null = null;
+      try {
+        const macroRaw = await kvGet(`zwift:${session.athleteId}:macro_cycle`);
+        cachedMacroCycle = macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null;
+      } catch { /* best-effort */ }
+      return NextResponse.json({ ok: true, plan: cached, macroCycle: cachedMacroCycle, cycle: null });
+    }
+  }
+
   try {
     const result = await runWeeklyPlanGeneration({
       accessToken: session.accessToken,
@@ -84,12 +111,29 @@ export async function POST(req: NextRequest) {
       targetWeekOf,
     });
 
-    // Side effects only - never block or affect the response below.
-    await mirrorStateToKv(result.athleteId, {
-      riderProfile,
-      macroCycle: result.macroCycle,
-      plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
+    // ── Post-generation KV writes ──────────────────────────────────────────
+    // Always write to the per-week cache so subsequent requests for the same
+    // week (from other devices, or the cron) get the result without re-calling
+    // the AI. TTL = 14 days (auto-cleans stale entries).
+    await setCachedPlan(result.athleteId, {
+      weekOf: result.weekOf,
+      summary: result.plan.summary,
+      workouts: result.plan.workouts,
     });
+
+    // Mirror state to KV for the cron job — but ONLY for the current week.
+    // The prefetch generates next week's plan with targetWeekOf = next Monday;
+    // mirroring that to last_plan would overwrite the current week's entry,
+    // causing the cron's "already-current" check to false-positive on next
+    // week before that week has actually started.
+    const currentWeek = mondayOfCurrentWeek();
+    if (result.weekOf === currentWeek) {
+      await mirrorStateToKv(result.athleteId, {
+        riderProfile,
+        macroCycle: result.macroCycle,
+        plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
+      });
+    }
     // Keep the athlete's Zwift refresh token mirrored to KV every time we
     // see a live session - this is what lets the cron job obtain a fresh
     // access token headlessly later, without ever needing a browser here.

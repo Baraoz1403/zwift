@@ -117,6 +117,40 @@ export interface StoredAthleteState {
   icuId: string | null;
 }
 
+// ── Per-week plan cache ───────────────────────────────────────────────────────
+// The interactive POST route and the prefetch both write here so any device
+// that asks for the same week gets the cached result without an AI call.
+// TTL is 14 days so stale plans are cleaned up automatically.
+// Key format: zwift:{athleteId}:plan:{weekOf}  (e.g. zwift:12345:plan:2026-07-06)
+const PLAN_CACHE_TTL_SECONDS = 14 * 24 * 60 * 60; // 14 days
+
+export interface CachedWeeklyPlan {
+  weekOf: string;
+  summary: string;
+  workouts: WeeklyWorkout[];
+}
+
+/** Read the cached plan for a specific week. Returns null if not cached or KV unavailable. */
+export async function getCachedPlan(athleteId: string, weekOf: string): Promise<CachedWeeklyPlan | null> {
+  if (!kvAvailable() || !athleteId || !weekOf) return null;
+  try {
+    const raw = await kvGet(`zwift:${athleteId}:plan:${weekOf}`);
+    return raw ? (JSON.parse(raw) as CachedWeeklyPlan) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Cache a generated plan for a specific week. 14-day TTL auto-cleans stale entries. */
+export async function setCachedPlan(athleteId: string, plan: CachedWeeklyPlan): Promise<void> {
+  if (!kvAvailable() || !athleteId || !plan.weekOf) return;
+  try {
+    await kvSet(`zwift:${athleteId}:plan:${plan.weekOf}`, JSON.stringify(plan), PLAN_CACHE_TTL_SECONDS);
+  } catch {
+    // best-effort — never block the response
+  }
+}
+
 /** Reads back everything the cron job needs to regenerate + push a plan for one athlete. */
 export async function getStoredAthleteState(athleteId: string): Promise<StoredAthleteState> {
   const [profileRaw, macroRaw, planRaw, icuKey, icuId] = await Promise.all([

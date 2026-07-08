@@ -10,6 +10,7 @@ import {
   getStoredAthleteState,
   mirrorZwiftAuthToKv,
   mirrorStateToKv,
+  setCachedPlan,
 } from "@/lib/kv-plan-state";
 
 /**
@@ -156,6 +157,14 @@ export async function GET(req: NextRequest) {
         riderProfile: state.riderProfile,
         macroCycle: result.macroCycle,
         plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
+      });
+      // Populate the per-week cache so interactive requests from the browser
+      // (including next-week prefetch from another device) get this result
+      // without re-calling the AI.
+      await setCachedPlan(athleteId, {
+        weekOf: result.weekOf,
+        summary: result.plan.summary,
+        workouts: result.plan.workouts,
       });
 
       let pushed: number | undefined;
