@@ -970,7 +970,15 @@ export default function WeeklyPlan() {
     // so it can fetch both the token and the athlete profile directly from TP's
     // API without CORS issues. Fetching the profile client-side here avoids a
     // server-to-server call from Vercel to TP (which TP may block or rate-limit).
-    const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include',headers:{Accept:'application/json'}});if(!r.ok){alert('TrainingPeaks: not logged in (HTTP '+r.status+') — please log in at app.trainingpeaks.com first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('TrainingPeaks error: no access_token in response. Please try again.');return;}let aid='';try{const pr=await fetch('https://tpapi.trainingpeaks.com/users/v3/user',{headers:{Authorization:'Bearer '+t,Accept:'application/json'}});if(pr.ok){const pd=await pr.json();const p=pd?.user??pd;aid=String(p?.personId??p?.athleteId??p?.userId??'');}}catch(pe){console.warn('TP profile fetch failed:',pe);}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp+'&aid='+encodeURIComponent(aid);}catch(e){alert('TrainingPeaks connection error: '+e.message)}})()`;
+    // Strategy for getting the TP athlete ID without CORS preflight:
+    // 1. /users/v3/token  — GET with credentials:'include' (cookies) → works, gives access_token
+    // 2. /users/v3/user   — first try GET with credentials:'include' (cookies, no Authorization
+    //    header) → same "simple request" pattern as #1, no preflight. If TP supports cookie auth
+    //    on this endpoint too, this is all we need.
+    // 3. Fallback: try with Authorization header (triggers preflight — may fail on CORS, but
+    //    worth a shot in case TP relaxed their policy).
+    // The server never needs to call TP at all when aid is present in the redirect URL.
+    const code = `(async()=>{try{const r=await fetch('https://tpapi.trainingpeaks.com/users/v3/token',{credentials:'include',headers:{Accept:'application/json'}});if(!r.ok){alert('TrainingPeaks: not logged in (HTTP '+r.status+') — please log in at app.trainingpeaks.com first');return;}const d=await r.json();const t=d?.token?.access_token;const rt=d?.token?.refresh_token||'';const exp=d?.token?.expires_in||'';if(!t){alert('TrainingPeaks error: no access_token in response. Please try again.');return;}let aid='';try{let pr=await fetch('https://tpapi.trainingpeaks.com/users/v3/user',{credentials:'include',headers:{Accept:'application/json'}});if(!pr.ok)pr=await fetch('https://tpapi.trainingpeaks.com/users/v3/user',{headers:{Authorization:'Bearer '+t,Accept:'application/json'}});if(pr.ok){const pd=await pr.json();const p=pd?.user??pd;aid=String(p?.personId??p?.athleteId??p?.userId??'');}}catch(pe){console.warn('TP profile:',pe);}location.href='${origin}/connect-tp#t='+encodeURIComponent(t)+'&rt='+encodeURIComponent(rt)+'&exp='+exp+'&aid='+encodeURIComponent(aid);}catch(e){alert('TrainingPeaks connection error: '+e.message)}})()`;
 
     bookmarkletRef.current.setAttribute('href', `javascript:${encodeURIComponent(code)}`);
   }, [showTPModal]);

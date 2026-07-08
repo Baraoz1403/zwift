@@ -55,19 +55,34 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Validate / identify athlete ──────────────────────────────────────────
-  // Prefer the athleteId the bookmarklet fetched client-side (on app.trainingpeaks.com).
-  // That call runs same-origin with the TP session and reliably succeeds.
-  // The server-side fetchTPProfile makes a Vercel→TP call that TP may block
-  // or rate-limit; fall back to it only when the client didn't send an id.
+  // The bookmarklet (running on app.trainingpeaks.com) always sends `athleteId`
+  // in the POST body, even when empty — its presence signals "the user ran the
+  // bookmarklet and obtained a real TP token client-side, so we trust it without
+  // a server-side round-trip to TP's API".
+  //
+  // Server-side calls to TP from Vercel can fail silently (TP may block
+  // AWS/Vercel IPs, or rate-limit cross-server calls) and are avoided whenever
+  // the bookmarklet path already did the work.
+  //
+  // athleteId can be empty string if the client-side profile fetch failed (e.g.
+  // CORS on the user endpoint) — still skip server-side validation and store
+  // the token. The athlete ID will be resolved on the first actual TP push via
+  // the refreshTPToken / profile re-fetch path, or can remain empty if TP pushes
+  // are not used.
+  // `clientAthleteId` is `undefined` only when the `athleteId` key was absent
+  // from the POST body entirely (old bookmarklet / direct API call).
+  // When the new bookmarklet sends it — even as null or "" — it's defined,
+  // which signals "user ran the bookmarklet and the token is real; skip server
+  // validation".
   let tpAthleteId: string;
   let athleteName: string;
 
-  if (clientAthleteId?.trim()) {
-    // Client already resolved the profile — skip server-side round-trip.
-    tpAthleteId = clientAthleteId.trim();
-    athleteName = "TrainingPeaks user"; // no name available in this path
+  if (clientAthleteId !== undefined) {
+    // Bookmarklet path — trust the token, use whatever athlete ID the client got.
+    tpAthleteId = clientAthleteId?.trim() ?? "";
+    athleteName = "TrainingPeaks user";
   } else {
-    // Legacy path (bookmarklet didn't send aid=) or direct API calls.
+    // Direct API / legacy path — try to validate server-side.
     let profile;
     try {
       profile = await fetchTPProfile(tpToken.trim());
