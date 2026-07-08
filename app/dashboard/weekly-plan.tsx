@@ -787,14 +787,19 @@ export default function WeeklyPlan() {
         setStale(false);
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
-        // Auto-push all non-rest workouts to whichever platform(s) the rider
-        // has chosen (TrainingPeaks / Intervals.icu / both) - each syncs to
-        // Zwift + Garmin on its own once connected, no manual step needed.
-        await syncPlanToConnectedPlatforms(normalizedPlan);
+        // Sync to Intervals.icu (→ Zwift). Wrapped in its own try/catch so a
+        // sync error never shows "Network error reaching the server" — the plan
+        // is already rendered at this point; a sync failure is recoverable and
+        // the cron will push again tonight anyway.
+        try {
+          await syncPlanToConnectedPlatforms(normalizedPlan);
+        } catch {
+          // Sync failed — plan is displayed, don't surface a misleading error.
+        }
         // Mark this plan version as synced so the auto-sync useEffect doesn't
         // re-run it on the next page load (it only re-syncs when the plan changes).
         try { window.localStorage.setItem(SYNCED_HASH_KEY, planHash(normalizedPlan)); } catch {}
-        setAutoSyncedHash(planHash(normalizedPlan));
+        try { setAutoSyncedHash(planHash(normalizedPlan)); } catch {}
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -804,13 +809,15 @@ export default function WeeklyPlan() {
         // A freshly (re)generated active plan supersedes any pre-fetched
         // "next" bundle, unless it happens to already be the week right
         // after this one.
-        const cachedNextBundle = loadCachedNextBundle();
-        if (!cachedNextBundle || cachedNextBundle.plan.weekOf !== addDaysIso(targetWeekOf, 7)) {
-          saveNextBundle(null);
-          setNextPlan(null);
-        }
+        try {
+          const cachedNextBundle = loadCachedNextBundle();
+          if (!cachedNextBundle || cachedNextBundle.plan.weekOf !== addDaysIso(targetWeekOf, 7)) {
+            saveNextBundle(null);
+            setNextPlan(null);
+          }
+        } catch {}
         // Keep the rolling window topped up going forward.
-        prefetchNextWeekIfNeeded(normalizedPlan);
+        try { prefetchNextWeekIfNeeded(normalizedPlan); } catch {}
       } else {
         setError(data.error ?? "Could not generate a weekly plan.");
       }
