@@ -183,6 +183,17 @@ export async function runWeeklyPlanGeneration(
     resolvedAge = hadBirthday ? years : years - 1;
   }
 
+  // Extract last week's workout titles for variety enforcement — only non-rest
+  // days, and only when previousPlan covers a DIFFERENT week from this one
+  // (same-week previousPlan is for surgical edits, not variety tracking).
+  const previousWeekTitles =
+    opts.previousPlan && opts.previousPlan.weekOf !== weekOf
+      ? opts.previousPlan.workouts
+          .filter((w) => w.type !== "Rest" && !w.type.toLowerCase().includes("rest"))
+          .map((w) => w.title)
+          .filter(Boolean)
+      : undefined;
+
   const plan = await generateWeeklyPlan({
     firstName: profile.firstName,
     ftp: effectiveFtp,
@@ -200,6 +211,7 @@ export async function runWeeklyPlanGeneration(
     riderNote: opts.riderNote,
     targetWeekOf: weekOf,
     currentPlan,
+    previousWeekTitles,
   });
 
   return { athleteId, plan, macroCycle, cycle, weekOf, rides };

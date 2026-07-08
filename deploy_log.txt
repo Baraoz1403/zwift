@@ -75,3 +75,11 @@ To https://github.com/Baraoz1403/zwift.git
 Tue 07/07/2026  7:35:27.42 - Auto-deploy finished 
  
 Wed 07/08/2026 10:10:43.25 - Auto-deploy starting 
+warning: in the working copy of 'app/dashboard/connections-panel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/training-profile.tsx', LF will be replaced by CRLF the next time Git touches it
+[main e44fe5d] Auto-deploy update
+ 4 files changed, 41 insertions(+), 54 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   683a587..e44fe5d  main -> main
+Wed 07/08/2026 10:12:44.47 - Auto-deploy finished 
+ 

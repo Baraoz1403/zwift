@@ -14,7 +14,7 @@ import type { RiderTrainingProfile } from "./rider-profile";
 import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABELS, DAYS_RANGE_MID } from "./rider-profile";
 import type { HRTrendAnalysis } from "./stats";
 import type { WorkoutStructureBlock } from "./zwo";
-import { WORKOUT_LIBRARY_PROMPT } from "./coaching-knowledge";
+import { WORKOUT_LIBRARY_PROMPT, resolveCanonicalStructure } from "./coaching-knowledge";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -291,6 +291,19 @@ function normalizeWeeklyPlan(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
         : b.recoveryPowerFtp,
     }));
 
+    // ── Canonical structure injection ──────────────────────────────────────
+    // For any workout whose title matches a named entry in the coaching
+    // knowledge library, replace the AI's structure with the pre-computed
+    // canonical blocks. This guarantees correct repeats, exact durations, and
+    // accurate power targets regardless of any drift in the AI's JSON output.
+    // The canonical definition is derived from the library documentation and
+    // is always more precise than what the AI generates by translating text.
+    const canonical = resolveCanonicalStructure(w.title, w.durationMin);
+    if (canonical) {
+      const canonicalMin = canonical.reduce((s, b) => s + b.durationMin, 0);
+      return { ...w, structure: canonical, durationMin: Math.round(canonicalMin) };
+    }
+
     if (cleanBlocks.length === 0) {
       // Nothing usable survived validation - fall back to type-based
       // inference (generateDefaultBlocks) rather than pushing garbage.
@@ -534,6 +547,21 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "Do not redesign or rebalance the week - only touch the day(s) the rider " +
   "explicitly named. If currentPlan is present but riderNote is absent, " +
   "ignore currentPlan and generate fresh. " +
+  "The input may also include a previousWeekTitles array — the named " +
+  "workout titles from last week's plan (non-rest days only). When present, " +
+  "use it to ensure week-over-week variety and progression: " +
+  "(1) Never repeat the exact same named title in consecutive weeks for " +
+  "hard sessions (Threshold, Sweet Spot, VO2max, Intermittent) — " +
+  "either progress up the ladder (Sweet Spot Classic → Extended Sweet Spot " +
+  "or Sweet Spot Progression; Threshold Development → Threshold Cruise " +
+  "Intervals; Norwegian 4×4 → 5×5 VO2max) or choose a different session " +
+  "from the same category if TSB demands scaling back. " +
+  "(2) Foundation/Recovery/Endurance sessions may repeat (Foundation Ride " +
+  "twice in a row is fine); hard sessions must rotate. " +
+  "(3) If previousWeekTitles shows 3+ consecutive weeks of sweet spot, " +
+  "progress to threshold or add a VO2max session this week. " +
+  "Absent/null previousWeekTitles means this is the first plan — proceed " +
+  "normally using only phase/TSB guidance. " +
   "For any day at or before the today field that already has a matching " +
   "ride in the rides array (same date), that day is already history, not " +
   "a live prescription - do not invent an unrelated placeholder title/type " +
@@ -736,6 +764,10 @@ export async function generateWeeklyPlan(params: {
    *  riderNote, the AI should treat it as a surgical edit: apply the note's
    *  change to exactly the day(s) mentioned and leave every other day intact. */
   currentPlan?: { workouts: WeeklyWorkout[] };
+  /** Workout titles from LAST week's plan (non-rest days only). When present,
+   *  the AI uses this to vary session choices and avoid repeating the same
+   *  named workout in consecutive weeks. */
+  previousWeekTitles?: string[];
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -836,6 +868,7 @@ export async function generateWeeklyPlan(params: {
     currentPlan: params.currentPlan
       ? params.currentPlan.workouts.map(w => ({ day: w.day, date: w.date, type: w.type, title: w.title }))
       : null,
+    previousWeekTitles: params.previousWeekTitles ?? null,
   });
 
   let resp: Response;
