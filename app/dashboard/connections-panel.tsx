@@ -249,26 +249,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
   const [intervalsError,      setIntervalsError]      = useState<string | null>(null);
   const [clipboardSupported,  setClipboardSupported]  = useState(true);
 
-  const [cleaningUp,   setCleaningUp]   = useState(false);
-  const [cleanupMsg,   setCleanupMsg]   = useState<string | null>(null);
-
-  async function handleCleanupDuplicates() {
-    setCleaningUp(true);
-    setCleanupMsg(null);
-    try {
-      const r = await fetch("/api/intervals/cleanup", { method: "POST" });
-      const d = await r.json();
-      if (d.ok) {
-        setCleanupMsg(d.deleted > 0 ? `Removed ${d.deleted} duplicate${d.deleted > 1 ? "s" : ""} from your Zwift calendar.` : "No duplicates found.");
-      } else {
-        setCleanupMsg(d.error ?? "Cleanup failed.");
-      }
-    } catch {
-      setCleanupMsg("Network error — try again.");
-    } finally {
-      setCleaningUp(false);
-    }
-  }
 
   const [virtualPlatforms, setVirtualPlatforms] = useState<VirtualPlatform[]>([]);
   useEffect(() => {
@@ -497,30 +477,6 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
             }
           />
 
-          {/* Clean up duplicates — shown only when ICU is connected */}
-          {intervalsStatus === "ok" && (
-            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
-              <button
-                type="button"
-                onClick={handleCleanupDuplicates}
-                disabled={cleaningUp}
-                style={{
-                  padding: "7px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                  border: "1px solid var(--border)", background: "var(--panel)",
-                  color: "var(--text)", cursor: cleaningUp ? "default" : "pointer",
-                  fontFamily: "inherit", opacity: cleaningUp ? 0.6 : 1,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {cleaningUp ? "Cleaning…" : "🧹 Clean up Zwift calendar"}
-              </button>
-              {cleanupMsg && (
-                <span style={{ fontSize: 12, color: cleanupMsg.startsWith("No") ? "var(--muted)" : "#16a34a" }}>
-                  {cleanupMsg}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* ── Virtual platforms (shown only when ICU is connected) ────────── */}

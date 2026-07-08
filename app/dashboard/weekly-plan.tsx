@@ -432,10 +432,23 @@ export default function WeeklyPlan() {
       })
       .catch(() => {});
 
-    // Check Intervals.icu connection status
+    // Check Intervals.icu connection status; if connected, silently clean up
+    // any duplicate events that may have accumulated from a past cross-device
+    // race. Throttled to once per 4 hours via localStorage so it doesn't run
+    // on every single page load — but the user never sees any of this.
     fetch("/api/intervals/status")
       .then(r => r.json())
-      .then(d => { if (d.connected) setIntervalsConnected(true); })
+      .then(d => {
+        if (d.connected) {
+          setIntervalsConnected(true);
+          const CLEANUP_KEY = "zwiftLastIcuCleanup";
+          const last = Number(window.localStorage.getItem(CLEANUP_KEY) ?? 0);
+          if (Date.now() - last > 4 * 60 * 60 * 1000) {
+            window.localStorage.setItem(CLEANUP_KEY, String(Date.now()));
+            fetch("/api/intervals/cleanup", { method: "POST" }).catch(() => {});
+          }
+        }
+      })
       .catch(() => {});
 
     // Check Strava connection status + handle redirect-back from OAuth

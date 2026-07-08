@@ -327,15 +327,32 @@ export default function TrainingProfileCard() {
       {/* ── Edit form — only when editing ───────────────────────────────── */}
       {editing && (
         <div className="stat-card" style={{ padding: "24px 28px", gridColumn: "1 / -1" }}>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
-              {profile ? "Edit your training profile" : "Welcome — let's personalise your plan"}
-            </div>
-            {!profile && (
-              <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-                Tell me about your goals and schedule so I can build a training plan that fits your life.
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
+                {profile ? "Edit your training profile" : "Welcome — let's personalise your plan"}
               </div>
-            )}
+              {!profile && (
+                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
+                  Tell me about your goals and schedule so I can build a training plan that fits your life.
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              style={{
+                flexShrink: 0, marginLeft: 12,
+                padding: "4px 12px", borderRadius: 6,
+                border: "1px solid var(--border)",
+                background: "var(--panel)",
+                fontSize: 11.5, fontWeight: 600,
+                color: "var(--muted)", cursor: "pointer",
+                fontFamily: "inherit", letterSpacing: "0.03em",
+              }}
+            >
+              Hide ✕
+            </button>
           </div>
 
           <Divider />
