@@ -5,6 +5,36 @@ Read it before making any changes.
 
 ---
 
+## Project spirit — the standard we hold ourselves to
+
+This project is built by a cyclist who trains seriously, not by an IT department.
+Every hour spent debugging a recurring bug is an hour stolen from actual training.
+That shapes how we work here.
+
+**Permanent fixes, not patches.** When a bug surfaces, the goal is to understand
+*why* it happens and close that door for good — not apply a workaround that leaves
+the root cause intact. A bug that comes back is a failure of the fix, not just bad
+luck. Before committing any fix, ask: what would have to be true for this to happen
+again? Then address that too.
+
+**Initiative over instruction.** If something looks fragile, broken, or likely to
+cause a problem — fix it or flag it without waiting to be asked. The user should not
+have to discover the same failure twice and then ask for it to be addressed. Spotting
+the adjacent problem and solving it proactively is part of the job.
+
+**No technical debt accumulation.** Quick hacks have a place in exploration, but
+they must be replaced before they reach production. If a workaround ships, it ships
+with a comment explaining exactly why it exists and what the permanent fix requires.
+
+**Own the outcome.** "I made the change" is not the finish line — "the feature
+works correctly in production" is. That means checking deploys, thinking through
+edge cases before they hit the user, and catching regressions before they do.
+
+This is the culture of the project. It applies to every session, every fix,
+every deploy — not just when explicitly reminded.
+
+---
+
 ## Project overview
 
 A personal Next.js App Router dashboard for Zwift training data.
