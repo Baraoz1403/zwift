@@ -899,7 +899,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 16000,
+        max_tokens: 8000, // 16000 was overly generous — a 7-workout weekly plan fits well within 8000 tokens and halves API cost
         system: systemPrompt,
         messages: [{ role: "user", content: userContent }],
       }),
