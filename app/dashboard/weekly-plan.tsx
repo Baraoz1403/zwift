@@ -821,8 +821,9 @@ export default function WeeklyPlan() {
       } else {
         setError(data.error ?? "Could not generate a weekly plan.");
       }
-    } catch {
-      setError("Network error reaching the server.");
+    } catch (e) {
+      const detail = e instanceof Error ? `: ${e.message}` : (e ? `: ${String(e)}` : "");
+      setError(`Network error reaching the server${detail}.`);
     } finally {
       setLoading(false);
     }
