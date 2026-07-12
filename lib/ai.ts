@@ -462,7 +462,12 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(2) cap every planned session at sessionLengthMinutes - never schedule a " +
   "session longer than this value; " +
   "(3) let goal colour session type emphasis: 'Increase FTP' -> more " +
-  "threshold/sweet-spot blocks; 'Lose weight / body composition' -> STILL requires 2+ structured intensity sessions (Sweet Spot/Threshold/VO2max) per week — fat burning is maximized by high-intensity intervals, not just aerobic volume. Add one longer Z2 ride but never replace hard sessions with easy rides; 'Prepare for an event' -> build toward " +
+  "threshold/sweet-spot blocks; 'Lose weight / body composition' -> lean " +
+  "on longer moderate-duration aerobic rides for total caloric burn, but " +
+  "this NEVER reduces the mandatory minimum of 2 structured intensity " +
+  "sessions per week (see INTERVAL QUALITY below) - high-intensity work " +
+  "raises EPOC/metabolic rate and is part of what actually drives fat " +
+  "loss, not a distraction from it; 'Prepare for an event' -> build toward " +
   "event-specific demands; 'General fitness' or 'Fun/enjoyment' -> balanced " +
   "variety; " +
   "(4) whether and how close a target event is comes from cycle.phase/" +
@@ -627,12 +632,16 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "FTP goal beginner (weeks 1-3): Foundation + Strength + Tempo only. " +
   "FTP goal weeks 4+: add Intermittent (30s on/off). " +
   "FTP goal weeks 5+: add Threshold Development (4-8min Z4 intervals). " +
-  "Weight/fitness goal: prioritize long Z2 Foundation blocks (fat-burning), " +
-  "add Tempo for caloric burn, keep Strength for metabolism. " +
-  "IMPORTANT: even for weight/fitness goals, always include at least 1 " +
-  "structured session per week (Tempo or Sweet Spot) - a week of pure " +
-  "Z2 rides is monotonous and less effective for adaptation. Vary the " +
-  "stimulus: one hard-ish day makes the easy days actually count. " +
+  "Weight/fitness goal: prioritize long Z2 Foundation blocks (fat-burning) " +
+  "and keep Strength for metabolism, but this is ADDITIVE to, never a " +
+  "replacement for, the mandatory minimum of 2 genuine structured intensity " +
+  "sessions per week (Sweet Spot, Threshold, VO2max, or a named interval " +
+  "protocol - see INTERVAL QUALITY below; Tempo alone does not satisfy this " +
+  "minimum). A weight-loss plan of pure Z2 Foundation rides is monotonous, " +
+  "less effective for adaptation, and actually worse for fat loss than a " +
+  "week that includes real intensity - EPOC from hard intervals burns " +
+  "calories for hours after the session ends. Vary the stimulus: one " +
+  "hard-ish day makes the easy days actually count. " +
   "Event goal: 4+ weeks out = volume; 2-3 weeks out = Sweet Spot/Threshold; " +
   "1 week out = taper (cut volume 40-50%, keep one short sharp effort). " +
   "(5) SESSION VARIETY — the single biggest predictor of plan quality: " +
@@ -745,14 +754,39 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "type='Rest', title='Rest Day', durationMin=0 for the remaining days " +
   "until you have 6 total. The UI displays a fixed 6-card grid — " +
   "returning fewer breaks the layout. " +
-  "INTERVAL QUALITY: at least 1 session per week must be a genuine " +
-  "interval workout (Threshold, Sweet Spot, VO2, or Intermittent) " +
-  "with a structure array containing an intervals block with real " +
-  "repeats, onSec, and offSec values (e.g. repeats:5, onSec:300, offSec:180). " +
-  "Even in Base phase, 1 hard session with intervals is required. " +
+  "INTERVAL QUALITY: at least 2 sessions per week - not 1 - must be genuine " +
+  "structured intensity workouts (Threshold, Sweet Spot, VO2, or Intermittent), " +
+  "each with a structure array containing an intervals (or, for sweet " +
+  "spot/threshold blocks long enough to be a single sustained effort, " +
+  "steadystate) block with real repeats/onSec/offSec or a sustained powerFtp " +
+  "at genuine sweet-spot-or-above intensity (>= 0.84 FTP) - e.g. repeats:5, " +
+  "onSec:300, offSec:180. Foundation, Recovery, Tempo (< 0.84 FTP), and " +
+  "Strength/Neuromuscular sessions do NOT count toward this minimum of 2. " +
+  "This 2-session minimum is the DEFAULT and holds regardless of stated " +
+  "goal (including 'Lose weight / body composition' - see above) and " +
+  "regardless of phase (Base included - even a Base week needs 2 real hard " +
+  "sessions, not 1). It flexes only in the specific cases already covered " +
+  "above: Recovery week (reduced load but still 'a small amount of " +
+  "intensity', not zero), Taper (reduced volume, keep short race-pace " +
+  "touches), RaceWeek (no new stress at all), a trainingLoad/hrTrend signal " +
+  "that explicitly calls for a very light or recovery week, or a rider " +
+  "whose daysPerWeek/riderNote genuinely leaves fewer than 2 non-rest days " +
+  "this week - in every one of those cases the summary MUST say explicitly " +
+  "why the plan has fewer than 2 structured intensity sessions. " +
+  "EXCEPTION for beginners (<2.5 W/kg) outside late Build: Threshold/VO2max/ " +
+  "extended Sweet Spot aren't yet appropriate (see W/kg classification " +
+  "above), so the 2-session minimum is satisfied instead by Sprint Builder " +
+  "(neuromuscular intervals - a real interval structure, just at a lower " +
+  "power ceiling) plus Tempo intervals; once in late Build, replace one of " +
+  "those with Sweet Spot up to 3x10 min. Never leave a beginner with zero " +
+  "structured session work either. " +
   "FINAL PLAN QUALITY CHECK - before returning JSON, verify: " +
-  "(a) At least 2 sessions this week are from DIFFERENT structured categories " +
-  "(not Foundation + Foundation + Foundation; not Sweet Spot as the only hard session in a 4-day week). " +
+  "(a) At least 2 sessions this week are genuine structured INTENSITY " +
+  "sessions per the INTERVAL QUALITY rule above (Sweet Spot, Threshold, " +
+  "VO2max, or a named interval protocol - Foundation, Recovery, Tempo, and " +
+  "Strength/Neuromuscular do NOT count except under the beginner exception " +
+  "above), and are not the exact same title repeated (vary categories where " +
+  "possible; not Sweet Spot as the only hard session type in the whole week). " +
   "(b) Every description names at least one specific data point from this rider's actual input - " +
   "exact TSB value, CTL number, phase week number, their W/kg, or a title from previousWeekTitles. " +
   "Generic statements like 'Build aerobic base' or 'Improve your fitness with intervals' are NOT descriptions - " +
