@@ -15,6 +15,7 @@ import { GOAL_LABELS, SESSION_LENGTH_LABELS, SESSION_LENGTH_MINUTES, SPORT_LABEL
 import type { HRTrendAnalysis } from "./stats";
 import type { WorkoutStructureBlock } from "./zwo";
 import { WORKOUT_LIBRARY_PROMPT, resolveCanonicalStructure } from "./coaching-knowledge";
+import { selectWeeklyWorkouts, type SelectedDay } from "./workout-selector";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
@@ -884,13 +885,61 @@ export async function generateWeeklyPlan(params: {
     });
   }
 
+  // W/kg is needed both in the prompt payload below AND (when applicable)
+  // by the deterministic selector, so it's computed once, up front.
+  const wPerKg = (params.ftp && params.weightKg && params.weightKg > 0)
+    ? Math.round((params.ftp / params.weightKg) * 10) / 10
+    : null;
+
+  // ── Deterministic session selection (lib/workout-selector.ts) ───────────
+  // For the standard Base/Build/Recovery week, WHICH named workouts land on
+  // WHICH days is now decided in code, not by the AI - see that module's top
+  // doc comment for why (session selection is a rules problem; plans kept
+  // coming back flat despite explicit prompt rules because an LLM juggling
+  // W/kg gating + TSB + progression + variety on every call drifts). This is
+  // intentionally NOT used for a riderNote-driven request (the rider typed
+  // something specific - "tired legs", "hard workout tomorrow" - that this
+  // fixed table has no way to honor) or for Taper/RaceWeek (event-driven
+  // volume cuts the table doesn't model) - those keep the full AI-driven
+  // path below, unchanged.
+  const useSelector =
+    !params.riderNote &&
+    params.cycle != null &&
+    (params.cycle.phase === "Base" || params.cycle.phase === "Build" || params.cycle.phase === "Recovery");
+
+  const selectedDays: SelectedDay[] | null = useSelector
+    ? selectWeeklyWorkouts({
+        phase: params.cycle!.phase as "Base" | "Build" | "Recovery",
+        weekInMesocycle: params.cycle!.weekInMesocycle as 1 | 2 | 3 | 4,
+        daysPerWeek: params.riderProfile?.daysRange
+          ? DAYS_RANGE_MID[params.riderProfile.daysRange]
+          : params.riderProfile?.daysPerWeek
+          ?? (params.trainingLoad?.ridesLast7Days != null
+                ? Math.max(2, Math.min(7, Math.round(params.trainingLoad.ridesLast7Days)))
+                : 4),
+        wPerKg,
+        tsb: params.trainingLoad?.tsb ?? null,
+      })
+    : null;
+
   const userContent = JSON.stringify({
     rider: params.firstName ?? "Rider",
     ftpWatts: params.ftp ?? null,
     weightKg: params.weightKg ?? null,
     /** W/kg rider level: < 2.5 beginner, 2.5-3.0 novice, 3.0-3.5 intermediate, 3.5+ trained/advanced */
-    wPerKg: (params.ftp && params.weightKg && params.weightKg > 0)
-      ? Math.round((params.ftp / params.weightKg) * 10) / 10
+    wPerKg,
+    // When present, these sessions are ALREADY DECIDED (lib/workout-selector.ts)
+    // - the AI must not change type/title/durationMin/targetPowerPctFtp for
+    // any entry here. Its only job for these days is writing "description".
+    // See the override instruction prepended to the system prompt below.
+    preSelectedWorkouts: selectedDays
+      ? selectedDays.map((d) => ({
+          day: d.day,
+          type: d.workout ? d.workout.category : "Rest",
+          title: d.workout ? d.workout.title : "Rest Day",
+          durationMin: d.workout ? d.workout.durationMin : 0,
+          targetPowerPctFtp: d.workout ? d.workout.targetPowerPctFtp : "",
+        }))
       : null,
     ageYears: params.ageYears ?? null,
     cyclingLevel: params.cyclingLevel ?? null,
@@ -950,13 +999,34 @@ export async function generateWeeklyPlan(params: {
     previousWeekTitles: params.previousWeekTitles ?? null,
   });
 
+  // When the deterministic selector ran, prepend a hard override so the huge
+  // instruction block below (session count, IRON LAW, W/kg gating, variety)
+  // is superseded rather than fought - the AI's actual output is still
+  // force-merged with the selector's choices after parsing (see below), so
+  // this is belt-and-suspenders: even if the model ignores this and tries to
+  // choose its own sessions anyway, the code merge is what actually decides
+  // what reaches the rider, not the model's compliance.
+  const selectorOverride = selectedDays
+    ? "OVERRIDE: preSelectedWorkouts in the input JSON contains the EXACT " +
+      "workout for every day this week, already chosen by the coaching " +
+      "engine (type, title, durationMin, targetPowerPctFtp). IGNORE every " +
+      "instruction below about choosing/counting/varying sessions, IRON LAW, " +
+      "W/kg gating, or session count - all of that is already decided. Your " +
+      "ONLY job is: for each entry in preSelectedWorkouts, write that day's " +
+      "'description' (using the exact same coaching-voice rules below - " +
+      "specific data references, execution cues, feel cues) and one overall " +
+      "'summary'. Return every day from preSelectedWorkouts with its type/" +
+      "title/durationMin/targetPowerPctFtp copied through UNCHANGED - do not " +
+      "rename, resize, or re-select any of them even if you would have " +
+      "chosen differently.\n\n"
+    : "";
+
   // Build system prompt — append accumulated rider fingerprint when available.
   // The fingerprint is coach context ("this rider struggles with VO2max, excels
   // at sweet spot") rather than per-request input data, so it belongs in the
   // system prompt rather than the user message.
-  const systemPrompt = params.riderFingerprint
-    ? WEEKLY_PLAN_SYSTEM_PROMPT + "\n\n" + params.riderFingerprint
-    : WEEKLY_PLAN_SYSTEM_PROMPT;
+  const systemPrompt = selectorOverride + WEEKLY_PLAN_SYSTEM_PROMPT +
+    (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "");
 
   let resp: Response;
   try {
@@ -1027,9 +1097,38 @@ export async function generateWeeklyPlan(params: {
     throw new AiInsightsError("AI response was missing the expected weekly plan structure.");
   }
 
+  // ── Force-merge the deterministic selection back in ──────────────────────
+  // This is the actual enforcement (the system prompt override above is only
+  // a hint the model could ignore): for every day the selector decided,
+  // rebuild that day's workout from the selector's own type/title/
+  // durationMin/targetPowerPctFtp/structure, keeping ONLY the AI's
+  // description (and date, if it supplied one - ensureWorkoutDates
+  // downstream corrects it either way from the day name regardless). A
+  // model that renamed, resized, or re-picked a preSelectedWorkouts day gets
+  // silently overruled here rather than reaching the rider.
+  const finalWorkouts: WeeklyWorkout[] = selectedDays
+    ? selectedDays.map((d) => {
+        const aiMatch = (obj.workouts as WeeklyWorkout[]).find((w) => w?.day === d.day);
+        const description = typeof aiMatch?.description === "string" ? aiMatch.description : "";
+        if (!d.workout) {
+          return { day: d.day, date: aiMatch?.date, type: "Rest", title: "Rest Day", durationMin: 0, description };
+        }
+        return {
+          day: d.day,
+          date: aiMatch?.date,
+          type: d.workout.category,
+          title: d.workout.title,
+          durationMin: d.workout.durationMin,
+          targetPowerPctFtp: d.workout.targetPowerPctFtp || undefined,
+          description,
+          structure: d.workout.structure,
+        };
+      })
+    : (obj.workouts as WeeklyWorkout[]);
+
   return {
     weekOf: weekOfMonday,
     summary: typeof obj.summary === "string" ? obj.summary : "",
-    workouts: normalizeWeeklyPlan(obj.workouts as WeeklyWorkout[]),
+    workouts: normalizeWeeklyPlan(finalWorkouts),
   };
 }
