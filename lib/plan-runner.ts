@@ -29,32 +29,32 @@ import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerpr
 export { AiInsightsError };
 
 /**
- * Coggan Power-Duration FTP Estimation — applied to last 30 CYCLING rides.
+ * Coggan Power-Duration FTP Estimation â applied to last 30 CYCLING rides.
  *
  * METHODOLOGY (Coggan, 2003):
  * Every ride duration has an anaerobic contribution that inflates avgWatts
  * above true FTP. We divide by a duration-specific factor to remove that
  * contribution and recover the underlying FTP estimate.
  *
- *   < 20 min → ÷ 1.10  (high anaerobic contribution)
- *   < 30 min → ÷ 1.05
- *   < 45 min → ÷ 1.00  (≈ FTP effort zone)
- *   < 60 min → ÷ 0.97
- *   < 75 min → ÷ 0.95
- *   < 90 min → ÷ 0.93
- *   < 120 min → ÷ 0.91
- *   ≥ 120 min → ÷ 0.88 (group ride / draft — discounted)
+ *   < 20 min â Ã· 1.10  (high anaerobic contribution)
+ *   < 30 min â Ã· 1.05
+ *   < 45 min â Ã· 1.00  (â FTP effort zone)
+ *   < 60 min â Ã· 0.97
+ *   < 75 min â Ã· 0.95
+ *   < 90 min â Ã· 0.93
+ *   < 120 min â Ã· 0.91
+ *   â¥ 120 min â Ã· 0.88 (group ride / draft â discounted)
  *
- * Uses Normalized Power (NP) over avgWatts when available — NP is the
+ * Uses Normalized Power (NP) over avgWatts when available â NP is the
  * physiologically correct measure of sustained effort for variable-pace rides.
  *
- * Result: weighted average of TOP 5 estimates. Group rides (≥120 min) are
- * weighted at 0.5× to reduce draft-inflated outliers.
+ * Result: weighted average of TOP 5 estimates. Group rides (â¥120 min) are
+ * weighted at 0.5Ã to reduce draft-inflated outliers.
  *
  * HARD RULES:
- * - Requires ≥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
- * - Result < 100W → suspect data → returns null (falls back to profile.ftp)
- * - This function's result ALWAYS overrides manual profile.ftp when ≥ 100W
+ * - Requires â¥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
+ * - Result < 100W â suspect data â returns null (falls back to profile.ftp)
+ * - This function's result ALWAYS overrides manual profile.ftp when â¥ 100W
  */
 function estimateFtpFromRides(rides: RideSummary[]): number | null {
   function cogganFactor(durMin: number): number {
@@ -162,7 +162,7 @@ export async function runWeeklyPlanGeneration(
   }
 
   // Coggan Protocol: computed FTP from last 30 rides ALWAYS overrides manual entry.
-  // Manual profile.ftp is a stale fallback only — never the primary source.
+  // Manual profile.ftp is a stale fallback only â never the primary source.
   // See estimateFtpFromRides() doc for the full methodology.
   const estimatedFtp = estimateFtpFromRides(rides);
   const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
@@ -213,9 +213,9 @@ export async function runWeeklyPlanGeneration(
     ftp: effectiveFtp,
     weightKg: profile.weight ? profile.weight / 1000 : undefined,
     cyclingLevel:
-      profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined;
+      profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
     runLevel:
-      profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined;
+      profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
     ageYears: resolvedAge,
     rides,
     trainingLoad,
