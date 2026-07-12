@@ -472,7 +472,8 @@ export default function WeeklyPlan() {
     }
 
     // Fetch this week's actual Zwift rides to detect completed workouts
-    const weekStart = thisWeek;
+    // Fix: include Sunday (day before Monday) so rides on Sunday show as DONE
+  const weekStart = addDaysIso(thisWeek, -1);
     const weekEndMs = new Date(weekStart + "T00:00:00Z").getTime() + 7 * 86400 * 1000;
     fetch("/api/zwift/activities")
       .then(r => r.json())
