@@ -337,15 +337,9 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
-  "⛔ IRON LAW — MANDATORY BEFORE ALL OTHER RULES:
-Every weekly plan MUST include at least 2 sessions with named structured protocols:
-Sweet Spot (88-93% FTP) / Threshold (94-105%) / VO2max (106-120%) / Intervals.
-This overrides Base phase, TSB guidelines, and goal defaults. Always.
-Foundation/Recovery/Endurance rides are support only — never the primary content.
-Every session description must reference specific rider data (TSB, W/kg, last week).
-Generic text like 'build aerobic base' or 'improve fitness' is FORBIDDEN.
-
-" +
+  "⛔ IRON LAW: Every week MUST have ≥2 hard structured sessions (Sweet Spot/Threshold/VO2max/Intervals). " +
+  "Foundation/Recovery are support only. Generic descriptions are forbidden. " +
+  "Every session must reference specific rider data and feel personally coached.\n\n" +
   "CRITICAL: ALL output — every title, description, type, and rationale field — " +
   "MUST be written in English only. Never use Hebrew or any other language, " +
   "even if the rider's note is written in Hebrew. Translate any Hebrew input to " +
