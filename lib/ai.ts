@@ -760,12 +760,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "they are placeholder text that makes a rider feel they received a template, not coaching. Replace them. " +
   "(c) If previousWeekTitles is present: structured sessions must use different names AND progress logically. " +
   "A plan that fails (a)-(c) is a template, not coaching. Fix before responding. " +
-  "Riders should feel challenged, engaged, and coached — not like they got a generic template. " +
-  "—— IRON LAW: Every week MUST include at least 2 genuinely hard structured sessions " +
-  "(Sweet Spot, Threshold, VO2max, or Intervals with exact repeats and power targets). " +
-  "A plan with only Foundation/Easy/Recovery rides is a FAILURE regardless of TSB or phase. " +
-  "The entire purpose of this AI coaching system is to give riders training they cannot build themselves. " +
-  "Foundation rides are support sessions only — never the primary content of the week.)}";
+  "Riders should feel challenged, engaged, and coached — not like they got a generic template..)}";
 
 export async function generateWeeklyPlan(params: {
   firstName?: string;
