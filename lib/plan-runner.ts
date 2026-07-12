@@ -143,10 +143,13 @@ export async function runWeeklyPlanGeneration(
   }
 
   const estimatedFtp = estimateFtpFromRides(rides);
-  const effectiveFtp =
-    estimatedFtp && profile.ftp && estimatedFtp < profile.ftp - 10
-      ? estimatedFtp
-      : (profile.ftp ?? estimatedFtp ?? undefined);
+  // FTP computed from actual rides always wins over the manually-entered value.
+  // The manual entry is often stale, outdated, or wrong (e.g. 276W entered years
+  // ago while actual performance is 200W) — which directly causes workouts to be
+  // built at impossible wattages (150% of 276W = 414W instead of 150% of 200W = 300W).
+  // Only fall back to the manual profile.ftp when there is not enough ride data
+  // to estimate (fewer than 3 qualifying rides of 30-100 min duration).
+  const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
 
   const trainingLoad = computeTrainingLoad(rides, effectiveFtp ?? profile.ftp);
 
@@ -184,7 +187,7 @@ export async function runWeeklyPlanGeneration(
     resolvedAge = hadBirthday ? years : years - 1;
   }
 
-  // Extract last week's workout titles for variety enforcement — only non-rest
+  // Extract last week's workout titles for variety enforcement â only non-rest
   // days, and only when previousPlan covers a DIFFERENT week from this one
   // (same-week previousPlan is for surgical edits, not variety tracking).
   const previousWeekTitles =
@@ -195,7 +198,7 @@ export async function runWeeklyPlanGeneration(
           .filter(Boolean)
       : undefined;
 
-  // Load the rider's accumulated fingerprint (best-effort — null = no data yet or KV down)
+  // Load the rider's accumulated fingerprint (best-effort â null = no data yet or KV down)
   const fingerprint = await getFingerprint(athleteId);
   const riderFingerprint = fingerprintToPromptSummary(fingerprint);
 
