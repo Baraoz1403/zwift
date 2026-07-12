@@ -403,18 +403,21 @@ export default function WeeklyPlan() {
       // Server has nothing for this week. Check if we have a pre-fetched
       // next-week bundle (smooth rollover from last week's prefetch).
       if (localNextWeekPlan) {
-        // Show the pre-fetched plan but DO NOT auto-generate. Refresh must
-        // never trigger AI calls — that is reserved for explicit user action
-        // (the Generate / Regenerate button). The cron job (4am UTC daily)
-        // will pick this up if the user never clicks Generate this week.
+        // Show the pre-fetched plan. There is no manual Generate button
+        // anymore - plan generation is entirely automatic (the Sunday-night
+        // cron, plus ensurePlanProvisioned running server-side on every
+        // login/connect/dashboard load - see lib/plan-runner.ts). This read
+        // stays read-only; it never itself triggers generation.
         setPlan(localNextWeekPlan);
         setStale(false);
         try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(localNextWeekPlan)); } catch {}
         return;
       }
 
-      // No server plan, no local fallback — show the Generate button.
-      // Never auto-generate: refresh must be a read-only operation.
+      // No server plan, no local fallback yet - this is now a rare transient
+      // state (e.g. a brand-new athlete whose background auto-provisioning
+      // is still running). Nothing to click; the GET call above already
+      // triggered provisioning server-side, so a later reload will show it.
       setStale(true);
     })();
 
@@ -1501,27 +1504,9 @@ export default function WeeklyPlan() {
                 : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4 — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
               : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
           </div>
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <button
-              type="button"
-              className="header-card-btn"
-              onClick={handleGenerate}
-              disabled={loading}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                padding: "6px 14px", borderRadius: 6,
-                border: `1.5px solid ${loading ? "rgba(47,143,224,0.4)" : "#16a34a"}`,
-                background: loading ? "rgba(22,163,74,0.12)" : "#16a34a",
-                color: loading ? "#16a34a" : "#fff",
-                fontSize: 12, fontWeight: 600,
-                fontFamily: "inherit",
-                cursor: loading ? "default" : "pointer",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <IconBolt size={13} />
-              {loading ? "Building…" : "Generate new plan →"}
-            </button>
+          <div style={{ marginTop: 16, textAlign: "center", fontSize: 11.5, color: "var(--muted)", opacity: 0.75 }}>
+            Generated automatically every Sunday night — no action needed. Use{" "}
+            <strong style={{ opacity: 0.9 }}>Today&apos;s note</strong> above to adjust this week.
           </div>
         </div>
 
@@ -1544,26 +1529,11 @@ export default function WeeklyPlan() {
           marginTop: 16, marginBottom: 12,
           padding: "14px 18px", borderRadius: 10,
           background: "rgba(47,143,224,0.07)", border: "1px solid rgba(47,143,224,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14,
         }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>📅 This week's plan has ended</div>
-            <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-              The plan from {plan.weekOf} has ended — generate a new plan for the current week
-            </div>
+          <div style={{ fontWeight: 700, fontSize: 13 }}>📅 This week's plan has ended</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+            The plan from {plan.weekOf} has ended — next week's plan is generated automatically; check back shortly.
           </div>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={loading}
-            style={{
-              flexShrink: 0, padding: "8px 16px", borderRadius: 7,
-              background: "var(--accent)", color: "#fff", border: "none",
-              fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
-            {loading ? "Generating…" : "Generate new plan →"}
-          </button>
         </div>
       )}
 

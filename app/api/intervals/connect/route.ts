@@ -16,6 +16,12 @@ import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchIntervalsAthlete } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { kvSet, kvDel } from "@/lib/kv";
+import { ensurePlanProvisioned } from "@/lib/plan-runner";
+
+// ensurePlanProvisioned can involve a full AI plan generation (30-60s) for an
+// athlete connecting ICU before ever having a plan - without this, Vercel
+// would cut the function at the default 10s hobby-plan limit mid-connect.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -82,6 +88,14 @@ export async function POST(req: NextRequest) {
     await kvSet(`zwift:${resolvedAthleteId}:icu_key`, apiKey.trim());
     await kvSet(`zwift:${resolvedAthleteId}:icu_id`, athleteId);
     await kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName);
+
+    // ── Auto-provision: first plan + first sync, no button needed ─────────
+    // Handles two cases: a brand-new athlete connecting ICU before ever
+    // having a plan (generates + pushes their first one now), and an
+    // existing athlete whose plan predates this connection (pushes the
+    // already-cached plan using the key that just landed in KV, rather than
+    // waiting for the athlete's next login or the nightly cron).
+    await ensurePlanProvisioned(resolvedAthleteId, session.accessToken);
   }
 
   return NextResponse.json({ ok: true, athleteName, athleteId, kvSynced: !!resolvedAthleteId });

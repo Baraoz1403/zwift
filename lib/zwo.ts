@@ -407,6 +407,20 @@ export function isRestDay(type: string): boolean {
 }
 
 /**
+ * Matches the AI's running-type conventions (see WEEKLY_PLAN_SYSTEM_PROMPT's
+ * "Running plan structure" section in lib/ai.ts: 'Easy Run', 'Long Run',
+ * 'Tempo Run'). Used to exclude running sessions from the Intervals.icu/Zwift
+ * bike-ZWO push - generateZwoXml always emits <sportType>bike</sportType>,
+ * so pushing a run under that structure produces a nonsensical fake cycling
+ * workout on a platform (Zwift) that doesn't support structured running
+ * workouts via ZWO anyway. Running sessions still appear in the dashboard
+ * plan itself; they just don't get pushed to the cycling-only ICU/Zwift sync.
+ */
+export function isRunWorkout(type: string): boolean {
+  return type.toLowerCase().includes("run");
+}
+
+/**
  * Turns the AI's plain-language suggestion (type + duration + target power)
  * into a concrete, editable block list - a single steady block for
  * endurance/tempo/recovery, warmup + repeated on/off intervals + cooldown

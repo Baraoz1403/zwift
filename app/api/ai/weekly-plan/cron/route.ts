@@ -16,37 +16,58 @@ import {
 /**
  * GET /api/ai/weekly-plan/cron
  *
- * Headless plan-continuation job - the whole point of this endpoint is that
- * a rider's weekly plan keeps generating and pushing to Intervals.icu/Zwift
- * even if they never open the dashboard that week. Before this existed, the
- * app's entire plan pipeline only ever ran as a side effect of someone
- * sitting at the dashboard and clicking "Generate" - so a rider who skipped
- * a week of checking in got a stale plan (or no plan at all) for however
- * long they stayed away.
+ * Headless plan-continuation job. The dashboard has NO manual "Generate new
+ * plan" button - a rider's only interaction with plan content is Today's
+ * Note. This endpoint is therefore the sole scheduled source of a rider's
+ * plan for a week they never explicitly requested via a note: without it,
+ * a rider who never types a note would never get a plan for a new week at
+ * all.
  *
- * Intended trigger: Vercel Cron (see vercel.json - runs once daily). Auth
- * is a shared secret, not a browser session - there is no rider sitting at
- * a keyboard for this request. Vercel automatically sends
+ * Intended trigger: Vercel Cron (see vercel.json), scheduled for Sundays at
+ * 17:00 UTC = 20:00 Israel Daylight Time (UTC+3, roughly late March-late
+ * October). During Israel Standard Time (UTC+2, the rest of the year) this
+ * lands at 19:00 local instead of 20:00 - Vercel Cron schedules run in fixed
+ * UTC and can't shift for a target timezone's DST, so this is a deliberate,
+ * documented ~1-hour seasonal drift rather than a bug. The day (Sunday) is
+ * unaffected either way since Israel is always ahead of UTC.
+ *
+ * Auth is a shared secret, not a browser session - there is no rider sitting
+ * at a keyboard for this request. Vercel automatically sends
  * `Authorization: Bearer $CRON_SECRET` for cron jobs defined in vercel.json
  * once the CRON_SECRET env var is set in the Vercel project (Project ->
  * Settings -> Environment Variables) - that's the one manual setup step
  * this needs; nothing here can set that env var itself.
  *
  * Per-athlete flow, all of it best-effort/isolated (one athlete's failure
- * never stops the run for anyone else):
+ * never stops the run for anyone else - see the try/catch per iteration and
+ * the `results` array logging a status for every single athlete):
  *   1. Read the athlete's Zwift refresh token from KV, exchange it for a
  *      fresh access token (and re-mirror whatever token Zwift returns -
  *      it may rotate the refresh token on every use).
- *   2. If a plan for the CURRENT week already exists in KV, there's nothing
- *      to do - this cron run's job is to notice a new week has started, not
- *      to needlessly regenerate an unchanged plan every day.
- *   3. Otherwise, run the exact same generation pipeline the interactive
- *      "Generate" button uses (lib/plan-runner.ts), mirror the result back
- *      to KV, then push it to Intervals.icu using the athlete's stored API
- *      key - the same push-then-delete, full-week-range dedup algorithm the
- *      interactive route uses (lib/headless-sync.ts - see its doc comment),
- *      so a plan that arrived via cron behaves identically to one generated
- *      by hand.
+ *   2. Compute the COMING week's Monday (tomorrow, since this always runs
+ *      on a Sunday) - NOT mondayOfCurrentWeek(), which on a Sunday returns
+ *      the week that's ENDING. Running this proactively the night before a
+ *      new week starts, for the coming week specifically, is the whole
+ *      point of the Sunday-night schedule; using "today's" week here would
+ *      silently regenerate the week that's already almost over instead.
+ *   3. If a plan for that coming week already exists in KV (e.g. the rider
+ *      already used Today's Note this week, or a prior cron run already
+ *      succeeded), skip regeneration but still run a dedup pass on ICU to
+ *      clean up any duplicate events that may have accumulated - read-then-
+ *      selective-delete, never pushes new events, safe to call redundantly.
+ *   4. Otherwise, run the exact same generation pipeline the interactive
+ *      route/Today's Note flow uses (lib/plan-runner.ts), mirror the result
+ *      back to KV, then push it to Intervals.icu using the athlete's stored
+ *      API key - the same push-then-delete, full-week-range dedup algorithm
+ *      every sync path uses (lib/headless-sync.ts - see its doc comment).
+ *
+ * Every athlete in the zwift:athletes registry (see lib/kv-plan-state.ts's
+ * getKnownAthletes) is processed - there is no single-athlete special case
+ * anywhere in this file. New athletes are added to that registry by
+ * ensurePlanProvisioned (lib/plan-runner.ts), which runs on every login,
+ * every Intervals.icu connect, and every dashboard load - so an athlete
+ * reaches this cron's registry long before their first Sunday run, without
+ * needing to click anything.
  *
  * TrainingPeaks is intentionally NOT auto-synced here (or anywhere
  * automatic): syncing both TP and Intervals.icu double-pushed every
@@ -89,7 +110,16 @@ export async function GET(req: NextRequest) {
   }
 
   const athleteIds = await getKnownAthletes();
-  const weekOf = mondayOfCurrentWeek();
+
+  // The COMING week's Monday - this job runs Sunday night specifically to
+  // generate for the week that's about to start, not the one that's ending.
+  // mondayOfCurrentWeek() on a Sunday returns THIS week's Monday (already
+  // passed); +7 days gives the Monday that starts tomorrow.
+  const thisWeekMonday = mondayOfCurrentWeek();
+  const comingMondayDate = new Date(thisWeekMonday + "T00:00:00Z");
+  comingMondayDate.setUTCDate(comingMondayDate.getUTCDate() + 7);
+  const weekOf = comingMondayDate.toISOString().slice(0, 10);
+
   const results: AthleteRunResult[] = [];
 
   for (const athleteId of athleteIds) {

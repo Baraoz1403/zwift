@@ -25,6 +25,16 @@ import { advanceMacroCycle, getPhaseForWeekIndex, resolvePhase, mondayOfCurrentW
 import { computeAdherence } from "@/lib/adherence";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
 import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerprint";
+import {
+  registerAthlete,
+  getCachedPlan,
+  setCachedPlan,
+  mirrorStateToKv,
+  getStoredAthleteState,
+  getIntervalsCredentials,
+  wasIntervalsSynced,
+} from "@/lib/kv-plan-state";
+import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 
 export { AiInsightsError };
 
@@ -244,4 +254,78 @@ export async function runWeeklyPlanGeneration(
   });
 
   return { athleteId, plan, macroCycle, cycle, weekOf, rides };
+}
+
+/**
+ * Best-effort, idempotent auto-provisioning: called on every login and every
+ * Intervals.icu connect so a rider never has to press a button to get their
+ * first plan or their first ICU sync. Before this existed, an athlete was
+ * only added to the cron's known-athletes registry as a SIDE EFFECT of a
+ * manual "Generate" click succeeding - so an athlete who connected ICU (and
+ * was already getting their completed rides synced in, independent of this
+ * app) but never happened to click Generate sat registered nowhere, with no
+ * planned workouts ever pushed, indefinitely. Now that the manual button is
+ * gone entirely, this is the only remaining path that can create a rider's
+ * very first plan.
+ *
+ * Steps: (1) register the athlete so the nightly cron picks them up going
+ * forward, (2) generate a plan for the current week if one doesn't already
+ * exist, (3) push it to Intervals.icu if the rider is connected and this
+ * week hasn't been confirmed synced yet (covers both "just generated it"
+ * and "a plan already existed but was never synced, e.g. ICU was connected
+ * afterward").
+ *
+ * Swallows all its own errors - this must never turn a successful login or
+ * a successful ICU connect into a failure response just because plan
+ * generation or sync hit a snag. The nightly cron and the next login/connect
+ * both get another chance.
+ */
+export async function ensurePlanProvisioned(athleteId: string, accessToken: string): Promise<void> {
+  try {
+    await registerAthlete(athleteId);
+    const currentWeek = mondayOfCurrentWeek();
+    let cached = await getCachedPlan(athleteId, currentWeek);
+
+    if (!cached) {
+      const state = await getStoredAthleteState(athleteId);
+      const result = await runWeeklyPlanGeneration({
+        accessToken,
+        incomingCycle: state.macroCycle,
+        previousPlan: state.previousPlan,
+        riderProfile: state.riderProfile,
+      });
+      cached = {
+        weekOf: result.weekOf,
+        summary: result.plan.summary,
+        workouts: result.plan.workouts,
+      };
+      await setCachedPlan(result.athleteId, cached);
+      await mirrorStateToKv(result.athleteId, {
+        riderProfile: state.riderProfile,
+        macroCycle: result.macroCycle,
+        plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
+      });
+
+      const creds = await getIntervalsCredentials(athleteId);
+      if (creds) {
+        const riddenDates = new Set(
+          result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
+        );
+        await syncPlanToIcuAndMark(athleteId, result.weekOf, cached, riddenDates);
+      }
+      return;
+    }
+
+    // A plan already exists for this week - the only thing left to check is
+    // whether it's actually been synced (e.g. ICU was connected AFTER this
+    // plan was generated, or the plan predates automatic sync existing).
+    if (!(await wasIntervalsSynced(athleteId, currentWeek))) {
+      const creds = await getIntervalsCredentials(athleteId);
+      if (creds) {
+        await syncPlanToIcuAndMark(athleteId, currentWeek, cached, new Set());
+      }
+    }
+  } catch {
+    // best-effort
+  }
 }

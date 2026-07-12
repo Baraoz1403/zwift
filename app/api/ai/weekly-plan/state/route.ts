@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet } from "@/lib/kv";
+import { ensurePlanProvisioned } from "@/lib/plan-runner";
 
 /**
  * GET /api/ai/weekly-plan/state
@@ -19,6 +20,12 @@ import { kvGet } from "@/lib/kv";
  * THEN call getCachedPlan with the confirmed ID. This guarantees the per-week
  * cache is always checked regardless of session vintage.
  */
+
+// The background auto-provisioning call (see the after() call below) can run
+// a full AI plan generation (30-60s) - keep this route alive long enough for
+// that to finish even though the response itself returns almost instantly.
+export const maxDuration = 60;
+
 export async function GET() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -72,6 +79,18 @@ export async function GET() {
     const macroRaw = await kvGet(`zwift:${athleteId}:macro_cycle`);
     if (macroRaw) macroCycle = JSON.parse(macroRaw);
   } catch { /* best-effort */ }
+
+  // Auto-provision in the BACKGROUND, after the response is sent - this is
+  // the dashboard's normal, most-frequently-hit read path (fires on every
+  // page load), so it's the one place guaranteed to catch an athlete with a
+  // long-lived session cookie who won't hit the login route again for weeks.
+  // ensurePlanProvisioned no-ops quickly (one extra KV read) for anyone who
+  // already has this week's plan, so this never slows down a normal load;
+  // for anyone missing one, the plan/sync completes shortly after this
+  // response, ready by their next reload. See its doc comment (lib/plan-
+  // runner.ts) for why every login/connect/dashboard-load path needs its own
+  // call to this instead of relying solely on the weekly cron.
+  after(() => ensurePlanProvisioned(athleteId!, session.accessToken));
 
   return NextResponse.json({
     ok: true,

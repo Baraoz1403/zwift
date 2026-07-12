@@ -3,6 +3,13 @@ import { loginToZwift, fetchOwnProfile, ZwiftAuthError, ZwiftApiError } from "@/
 import { encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { kvGet } from "@/lib/kv";
 import { mirrorZwiftAuthToKv } from "@/lib/kv-plan-state";
+import { ensurePlanProvisioned } from "@/lib/plan-runner";
+
+// Auto-provisioning (see ensurePlanProvisioned) can involve a full AI plan
+// generation (30-60s) for an athlete who doesn't have one yet - without this,
+// Vercel would cut the function at the default 10s hobby-plan limit right in
+// the middle of a first-time rider's login.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -92,6 +99,15 @@ export async function POST(req: NextRequest) {
         // Silence the TypeScript unused-variable warning
         void tpExpiresIn;
       }
+
+      // ── Auto-provision: first plan + first ICU sync, no button needed ────
+      // See ensurePlanProvisioned's doc comment. Awaited (not fire-and-forget)
+      // because Vercel serverless functions don't guarantee background work
+      // survives after the response is sent unless explicitly using
+      // waitUntil/after - awaiting here with maxDuration=60 is the reliable
+      // option. Only costs real time for an athlete who doesn't already have
+      // this week's plan cached; everyone else returns from this near-instantly.
+      await ensurePlanProvisioned(athleteId, result.accessToken);
     }
 
     return res;

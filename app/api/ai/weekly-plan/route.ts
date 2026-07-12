@@ -10,13 +10,10 @@ import {
   mirrorZwiftAuthToKv,
   getCachedPlan,
   setCachedPlan,
-  getIntervalsCredentials,
   wasIntervalsSynced,
-  markIntervalsSynced,
 } from "@/lib/kv-plan-state";
-import { kvGet, kvSet } from "@/lib/kv";
-import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
-import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
+import { kvGet } from "@/lib/kv";
+import { syncPlanToIcuAndMark, type IntervalsSyncResult } from "@/lib/headless-sync";
 import { fetchActivities } from "@/lib/zwift";
 
 // mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
@@ -36,70 +33,6 @@ import { fetchActivities } from "@/lib/zwift";
 // AI plan generation takes 30-60 seconds (FIT file downloads + Claude API).
 // Without this, Vercel cuts the function at the default 10s hobby-plan limit.
 export const maxDuration = 60;
-
-interface IntervalsSyncResult {
-  pushed: number;
-  deleted: number;
-  errors: string[];
-}
-
-/**
- * Pushes `plan` to Intervals.icu and cleans up duplicates, in two passes:
- * (1) the narrow push-then-delete pass scoped to this plan's own week
- * (lib/headless-sync.ts's syncPlanToIntervalsHeadless), then (2) a wide
- * dedup-only sweep (4 weeks back, 2 weeks ahead - see wideCleanupRange())
- * that catches orphaned events sitting OUTSIDE this week - a stale
- * previously-generated "next week" plan, or leftovers from before sync
- * worked correctly. Skipping step 2 was a real regression: it used to run
- * automatically after every client-triggered push (the old
- * pushPlanToIntervals's "Step 4"); when that client code was removed in
- * favor of this server-side call, step 2 needs to be reproduced here or
- * exactly that class of stale-duplicate-in-another-week bug comes back.
- *
- * Marks the week as synced in KV on success so a later cache-hit read of
- * the same plan doesn't redundantly re-push (see wasIntervalsSynced).
- * Returns null (skips entirely) when the rider hasn't connected ICU.
- *
- * `cookieFallback`, when provided, is the ICU key/id read straight from this
- * request's own cookies. It's a self-heal: app/api/intervals/connect/route.ts
- * writes the cookie unconditionally but used to skip the KV mirror entirely
- * whenever session.athleteId happened to be empty (that field is optional -
- * see lib/session-constants.ts - and was silently missing on some sessions).
- * The result was a rider who looked "connected" in the UI (cookie present)
- * forever, while this KV-only server-side sync (and the cron job, which has
- * no cookies at all) found nothing to push with. If KV comes back empty but
- * the cookie has a key, mirror it into KV right here so this athlete's sync
- * starts working immediately, without needing them to disconnect/reconnect.
- */
-async function syncPlanToIcuAndMark(
-  athleteId: string,
-  weekOf: string,
-  plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
-  riddenDates: Set<string>,
-  cookieFallback?: { icuKey: string; icuId: string | null } | null
-): Promise<IntervalsSyncResult | null> {
-  let creds = await getIntervalsCredentials(athleteId);
-  if (!creds && cookieFallback) {
-    await kvSet(`zwift:${athleteId}:icu_key`, cookieFallback.icuKey);
-    if (cookieFallback.icuId) await kvSet(`zwift:${athleteId}:icu_id`, cookieFallback.icuId);
-    creds = { icuKey: cookieFallback.icuKey, icuId: cookieFallback.icuId };
-  }
-  if (!creds) return null;
-
-  const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
-  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
-
-  const { oldest, newest } = wideCleanupRange();
-  const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
-
-  await markIntervalsSynced(athleteId, weekOf);
-
-  return {
-    pushed: narrow.pushed,
-    deleted: narrow.deleted + wide.deleted,
-    errors: [...narrow.errors, ...wide.errors],
-  };
-}
 
 export async function POST(req: NextRequest) {
   let ageYears: number | undefined;

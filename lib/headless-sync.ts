@@ -35,8 +35,10 @@
  * exactly that class of stale-duplicate-in-another-week bug comes back.
  */
 import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "./intervals";
-import { generateZwoXml, isRestDay } from "./zwo";
-import { workoutDateLabel } from "./plan-shape";
+import { generateZwoXml, isRestDay, isRunWorkout } from "./zwo";
+import { workoutDateLabel, ensureWorkoutDates, normalizeToSix } from "./plan-shape";
+import { getIntervalsCredentials, markIntervalsSynced } from "./kv-plan-state";
+import { kvSet } from "./kv";
 import type { WeeklyPlan, WeeklyWorkout } from "./ai";
 
 export interface HeadlessSyncResult {
@@ -131,11 +133,15 @@ export async function syncPlanToIntervalsHeadless(
 ): Promise<HeadlessSyncResult> {
   const errors: string[] = [];
 
-  // 1. Push fresh copies first for every non-rest day that hasn't actually
-  // been ridden yet (same rule as the client: an already-ridden day's own
-  // completed-ride data is the source of truth, not the plan).
+  // 1. Push fresh copies first for every non-rest, non-running day that
+  // hasn't actually been ridden yet (same rule as the client: an
+  // already-ridden day's own completed-ride data is the source of truth,
+  // not the plan). Running sessions are excluded - see isRunWorkout's doc
+  // comment: this sync target is cycling-only (Intervals.icu -> Zwift), and
+  // generateZwoXml always emits a bike ZWO regardless of the workout's real
+  // sport, so pushing a run here would create a nonsensical fake ride.
   const daysToPush = plan.workouts.filter(
-    (w) => !isRestDay(w.type) && !(w.date && riddenDates.has(w.date))
+    (w) => !isRestDay(w.type) && !isRunWorkout(w.type) && !(w.date && riddenDates.has(w.date))
   );
 
   const pushOne = async (w: WeeklyWorkout) => {
@@ -212,4 +218,65 @@ export async function syncPlanToIntervalsHeadless(
   }
 
   return { pushed: pushedDates.size, deleted, errors };
+}
+
+export interface IntervalsSyncResult {
+  pushed: number;
+  deleted: number;
+  errors: string[];
+}
+
+/**
+ * The single entry point every caller (the interactive weekly-plan route,
+ * the login/connect auto-provisioning flow) uses to push a plan to
+ * Intervals.icu and clean up duplicates, in two passes: (1) the narrow
+ * push-then-delete pass scoped to this plan's own week
+ * (syncPlanToIntervalsHeadless above), then (2) a wide dedup-only sweep
+ * (wideCleanupRange()) that catches orphaned events sitting OUTSIDE this
+ * week - a stale previously-generated "next week" plan, or leftovers from
+ * before sync worked correctly. Skipping step 2 was a real regression once
+ * before (see this file's top doc comment) - keep both steps together here
+ * so no caller can accidentally reproduce that gap.
+ *
+ * Marks the week as synced in KV on success so a later cache-hit read of
+ * the same plan doesn't redundantly re-push. Returns null (skips entirely)
+ * when the rider hasn't connected ICU.
+ *
+ * `cookieFallback`, when provided, is the ICU key/id read straight from an
+ * in-flight request's own cookies - a self-heal for the case where KV is
+ * missing credentials that the browser's cookie already has (see
+ * app/api/intervals/connect/route.ts's athleteId resolution fix for why
+ * that gap could exist: the KV mirror used to be silently skipped whenever
+ * session.athleteId happened to be empty). If KV comes back empty but the
+ * cookie has a key, this mirrors it into KV right here so sync starts
+ * working immediately, without needing a disconnect/reconnect.
+ */
+export async function syncPlanToIcuAndMark(
+  athleteId: string,
+  weekOf: string,
+  plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
+  riddenDates: Set<string>,
+  cookieFallback?: { icuKey: string; icuId: string | null } | null
+): Promise<IntervalsSyncResult | null> {
+  let creds = await getIntervalsCredentials(athleteId);
+  if (!creds && cookieFallback) {
+    await kvSet(`zwift:${athleteId}:icu_key`, cookieFallback.icuKey);
+    if (cookieFallback.icuId) await kvSet(`zwift:${athleteId}:icu_id`, cookieFallback.icuId);
+    creds = { icuKey: cookieFallback.icuKey, icuId: cookieFallback.icuId };
+  }
+  if (!creds) return null;
+
+  const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
+  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
+
+  const { oldest, newest } = wideCleanupRange();
+  const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
+
+  await markIntervalsSynced(athleteId, weekOf);
+
+  return {
+    pushed: narrow.pushed,
+    deleted: narrow.deleted + wide.deleted,
+    errors: [...narrow.errors, ...wide.errors],
+  };
 }
