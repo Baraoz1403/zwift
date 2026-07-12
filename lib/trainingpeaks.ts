@@ -329,9 +329,10 @@ export async function pushWorkoutToTP(opts: PushWorkoutOptions): Promise<PushWor
     try { parsed = JSON.parse(text); } catch { /* ignore */ }
 
     if (res.ok) {
+      const rawId = parsed?.workoutId ?? parsed?.id;
       return {
         ok: true,
-        workoutId: (parsed as Record<string, unknown>)?.workoutId ?? (parsed as Record<string, unknown>)?.id,
+        workoutId: typeof rawId === "string" || typeof rawId === "number" ? rawId : undefined,
         status: res.status,
       };
     }

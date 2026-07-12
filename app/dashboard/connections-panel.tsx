@@ -363,6 +363,11 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
     health.tp.tokenExpired ? "warn" :
     health.tp.connected    ? "ok"   : "error";
 
+  const tpAction: ServiceTileProps["action"] =
+    tpStatus !== "ok" && onOpenTPModal
+      ? { label: "Connect", onClick: onOpenTPModal }
+      : undefined;
+
   const intervalsStatus: Status = !health ? "loading" :
     health.intervals.connected ? "ok" : "error";
 
@@ -467,11 +472,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
               tpStatus === "warn"    ? "Token expired — reconnect to resume Garmin sync" :
               "Garmin · outdoor calendar"
             }
-            action={
-              tpStatus !== "ok"
-                ? { label: "Connect", onClick: onOpenTPModal }
-                : undefined
-            }
+            action={tpAction}
           />
           )}
 

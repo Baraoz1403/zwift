@@ -70,17 +70,9 @@ const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
 /** localStorage key for the array of Intervals.icu eventIds pushed in the current plan */
 const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
-/** Stable hash of the last plan version that was fully synced to all platforms.
- *  Used to avoid re-syncing on every page refresh — only syncs when the plan changes. */
-const SYNCED_HASH_KEY = "zwiftLastSyncedPlanHash";
 // Automatic sync targets Intervals.icu only (see syncPlanToConnectedPlatforms
 // below for why TP was removed from the automatic path - it caused duplicate
 // entries on Zwift and on TP's own calendar).
-
-/** Stable identifier for a plan version — changes only when the AI generates a new plan. */
-function planHash(plan: WeeklyPlan): string {
-  return `${plan.weekOf}|${plan.workouts.map(w => w.title).join(",")}`;
-}
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -797,10 +789,6 @@ export default function WeeklyPlan() {
         } catch {
           // Sync failed — plan is displayed, don't surface a misleading error.
         }
-        // Mark this plan version as synced so the auto-sync useEffect doesn't
-        // re-run it on the next page load (it only re-syncs when the plan changes).
-        try { window.localStorage.setItem(SYNCED_HASH_KEY, planHash(normalizedPlan)); } catch {}
-        try { setAutoSyncedHash(planHash(normalizedPlan)); } catch {}
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {

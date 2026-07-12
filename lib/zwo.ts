@@ -69,7 +69,8 @@ export interface ZwoWorkoutInput {
  * units - so a block straight from this array can be written out as-is.
  */
 export type ZwoBlock =
-  | { kind: "Warmup" | "Cooldown"; durationSec: number; powerLow: number; powerHigh: number }
+  | { kind: "Warmup"; durationSec: number; powerLow: number; powerHigh: number }
+  | { kind: "Cooldown"; durationSec: number; powerLow: number; powerHigh: number }
   | { kind: "SteadyState"; durationSec: number; power: number }
   | {
       kind: "IntervalsT";
