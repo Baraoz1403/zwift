@@ -378,8 +378,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "AUTHORITATIVE target for this week's session count starting with THIS " +
   "plan - schedule that many training days now, not a gradual ramp toward " +
   "it over future weeks. Only schedule fewer than daysPerWeek when " +
-  "trainingLoad clearly justifies it (freshness is 'fatigued', or tsb is " +
-  "clearly negative, or this is a scheduled Recovery week - see cycle " +
+  "trainingLoad clearly justifies it (freshness is 'fatigued', or tsb is below -25, " +
+  "or this is a scheduled Recovery week - see cycle " +
   "below) - and when you do, the summary MUST say so explicitly and by " +
   "name, e.g. 'You asked for 5-6 sessions this week; your current fatigue " +
   "signal (TSB -18) suggests scaling back to 4 for now - back to your full " +
