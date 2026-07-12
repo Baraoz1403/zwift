@@ -29,32 +29,32 @@ import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerpr
 export { AiInsightsError };
 
 /**
- * Coggan Power-Duration FTP Estimation â applied to last 30 CYCLING rides.
+ * Coggan Power-Duration FTP Estimation Ã¢ÂÂ applied to last 30 CYCLING rides.
  *
  * METHODOLOGY (Coggan, 2003):
  * Every ride duration has an anaerobic contribution that inflates avgWatts
  * above true FTP. We divide by a duration-specific factor to remove that
  * contribution and recover the underlying FTP estimate.
  *
- *   < 20 min â Ã· 1.10  (high anaerobic contribution)
- *   < 30 min â Ã· 1.05
- *   < 45 min â Ã· 1.00  (â FTP effort zone)
- *   < 60 min â Ã· 0.97
- *   < 75 min â Ã· 0.95
- *   < 90 min â Ã· 0.93
- *   < 120 min â Ã· 0.91
- *   â¥ 120 min â Ã· 0.88 (group ride / draft â discounted)
+ *   < 20 min Ã¢ÂÂ ÃÂ· 1.10  (high anaerobic contribution)
+ *   < 30 min Ã¢ÂÂ ÃÂ· 1.05
+ *   < 45 min Ã¢ÂÂ ÃÂ· 1.00  (Ã¢ÂÂ FTP effort zone)
+ *   < 60 min Ã¢ÂÂ ÃÂ· 0.97
+ *   < 75 min Ã¢ÂÂ ÃÂ· 0.95
+ *   < 90 min Ã¢ÂÂ ÃÂ· 0.93
+ *   < 120 min Ã¢ÂÂ ÃÂ· 0.91
+ *   Ã¢ÂÂ¥ 120 min Ã¢ÂÂ ÃÂ· 0.88 (group ride / draft Ã¢ÂÂ discounted)
  *
- * Uses Normalized Power (NP) over avgWatts when available â NP is the
+ * Uses Normalized Power (NP) over avgWatts when available Ã¢ÂÂ NP is the
  * physiologically correct measure of sustained effort for variable-pace rides.
  *
- * Result: weighted average of TOP 5 estimates. Group rides (â¥120 min) are
- * weighted at 0.5Ã to reduce draft-inflated outliers.
+ * Result: weighted average of TOP 5 estimates. Group rides (Ã¢ÂÂ¥120 min) are
+ * weighted at 0.5ÃÂ to reduce draft-inflated outliers.
  *
  * HARD RULES:
- * - Requires â¥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
- * - Result < 100W â suspect data â returns null (falls back to profile.ftp)
- * - This function's result ALWAYS overrides manual profile.ftp when â¥ 100W
+ * - Requires Ã¢ÂÂ¥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
+ * - Result < 100W Ã¢ÂÂ suspect data Ã¢ÂÂ returns null (falls back to profile.ftp)
+ * - This function's result ALWAYS overrides manual profile.ftp when Ã¢ÂÂ¥ 100W
  */
 function estimateFtpFromRides(rides: RideSummary[]): number | null {
   function cogganFactor(durMin: number): number {
@@ -162,10 +162,24 @@ export async function runWeeklyPlanGeneration(
   }
 
   // Coggan Protocol: computed FTP from last 30 rides ALWAYS overrides manual entry.
-  // Manual profile.ftp is a stale fallback only â never the primary source.
+  // Manual profile.ftp is a stale fallback only Ã¢ÂÂ never the primary source.
   // See estimateFtpFromRides() doc for the full methodology.
   const estimatedFtp = estimateFtpFromRides(rides);
   const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
+
+  // Auto-sync computed FTP to Intervals.icu — fire-and-forget.
+  // Ensures every ZWO file pushed to Intervals uses the same FTP as the plan.
+  // Never blocks plan generation; a failure here is non-critical.
+  if (effectiveFtp && effectiveFtp >= 100) {
+    const appUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://zwift-delta.vercel.app";
+    fetch(`${appUrl}/api/intervals/update-ftp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ftp: effectiveFtp }),
+    }).catch(() => {});
+  }
 
   const trainingLoad = computeTrainingLoad(rides, effectiveFtp ?? profile.ftp);
 
