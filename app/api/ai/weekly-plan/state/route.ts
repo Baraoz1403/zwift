@@ -1,56 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
 import { fetchOwnProfile } from "@/lib/zwift";
+import { mondayOfCurrentWeek } from "@/lib/periodization";
+import { kvGet } from "@/lib/kv";
 
 /**
  * GET /api/ai/weekly-plan/state
  *
- * Returns the server's (KV) view of this rider's current plan/macro-cycle/
- * profile, keyed by their Zwift athlete id - the same store the cron job
- * (app/api/ai/weekly-plan/cron/route.ts) reads and every interactive
- * "Generate" call writes to.
+ * ARCHITECTURE FIX (July 2026):
+ * Previously read only from zwift:{id}:last_plan (Key 2) via mirrorStateToKv.
+ * This always returned the PREVIOUS week's plan because mirrorStateToKv only
+ * writes when result.weekOf === currentWeek -- but by the time Generate is
+ * clicked for the new week, still holds the old week's data.
  *
- * Why this route exists: before it did, the dashboard's only source of
- * truth on page load was each browser's OWN localStorage. That worked fine
- * on one device, but a second device (a rider checking from an iPad, say)
- * had no way to know a plan for the current week already existed - it would
- * see its own empty/stale local cache, decide the plan was "fully stale",
- * and call the AI to generate an independent SECOND plan for the same week.
- * That second plan could easily differ from the first (different AI
- * response), and once it synced to Intervals.icu/Zwift it would look like
- * two devices were pushing "different rides" for the same days - which is
- * exactly what was reported. The dashboard's bootstrap effect now calls this
- * route before ever deciding to auto-generate, so any device opening the
- * app adopts whatever the server already has for the current week instead
- * of silently forking its own copy.
+ * Fix: check per-week cache (Key 1: zwift:{id}:plan:{weekOf}) for current
+ * week FIRST. Fall back to last_plan only if no current-week cache exists.
+ * This ensures every device always loads the correct current-week plan on
+ * page load, with zero user action required.
  */
 export async function GET() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!raw) {
-    return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
-  }
+  if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
 
   const session = await decryptSession(raw);
-  if (!session) {
-    return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
-  }
-  // Try to resolve athleteId — either from the session (happy path) or by
-  // fetching the Zwift profile live (older sessions that were created before
-  // athleteId was stored). Without this, any device with a pre-athleteId
-  // session cookie would always get plan:null, auto-generate a fresh plan,
-  // and diverge from every other device. A live profile fetch is cheap (~1
-  // round-trip) and only runs when athleteId is missing from the session.
+  if (!session) return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
+
   let athleteId = session.athleteId;
   if (!athleteId && session.accessToken) {
     try {
       const profile = await fetchOwnProfile(session.accessToken);
       athleteId = profile.id != null ? String(profile.id) : undefined;
-    } catch {
-      // best-effort — if this fails we report no plan rather than erroring
-    }
+    } catch { /* best-effort */ }
   }
 
   if (!athleteId) {
@@ -58,10 +41,41 @@ export async function GET() {
   }
 
   const state = await getStoredAthleteState(athleteId);
+
+  // Compute current week and next week Monday dates
+  const currentWeek = mondayOfCurrentWeek();
+  const nextWeekDate = new Date(currentWeek + "T00:00:00Z");
+  nextWeekDate.setUTCDate(nextWeekDate.getUTCDate() + 7);
+  const nextWeek = nextWeekDate.toISOString().slice(0, 10);
+
+  // KEY FIX: Read from per-week cache first (Key 1), not last_plan (Key 2).
+  // Priority: current week cache > last_plan if current > next week cache > last_plan
+  const [currentCached, nextCached] = await Promise.all([
+    getCachedPlan(athleteId, currentWeek),
+    getCachedPlan(athleteId, nextWeek),
+  ]);
+
+  let plan = state.previousPlan; // default: whatever last_plan has
+  if (currentCached) {
+    plan = currentCached; // best: current week from per-week cache
+  } else if (state.previousPlan?.weekOf === currentWeek) {
+    plan = state.previousPlan; // also fine: last_plan happens to be current week
+  } else if (nextCached) {
+    plan = nextCached; // prefetched next week
+  }
+  // else: fall through to state.previousPlan (may be stale, dashboard will auto-generate)
+
+  // Read macro cycle
+  let macroCycle = state.macroCycle;
+  try {
+    const macroRaw = await kvGet(`zwift:${athleteId}:macro_cycle`);
+    if (macroRaw) macroCycle = JSON.parse(macroRaw);
+  } catch { /* best-effort */ }
+
   return NextResponse.json({
     ok: true,
     riderProfile: state.riderProfile ?? null,
-    macroCycle: state.macroCycle,
-    plan: state.previousPlan,
+    macroCycle,
+    plan,
   });
 }
