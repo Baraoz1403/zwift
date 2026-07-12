@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchIntervalsAthlete } from "@/lib/intervals";
+import { fetchOwnProfile } from "@/lib/zwift";
 import { kvSet, kvDel } from "@/lib/kv";
 
 export async function POST(req: NextRequest) {
@@ -55,14 +56,35 @@ export async function POST(req: NextRequest) {
   cookieStore.set("zwift_intervals_id", athleteId, cookieOpts);
   cookieStore.set("zwift_intervals_name", athleteName, { ...cookieOpts, httpOnly: false });
 
-  // Mirror to KV so other devices auto-restore on login
-  if (session.athleteId) {
-    await kvSet(`zwift:${session.athleteId}:icu_key`, apiKey.trim());
-    await kvSet(`zwift:${session.athleteId}:icu_id`, athleteId);
-    await kvSet(`zwift:${session.athleteId}:icu_name`, athleteName);
+  // Mirror to KV so other devices (and the server-side auto-sync in
+  // app/api/ai/weekly-plan/route.ts) can find this key. session.athleteId is
+  // OPTIONAL on the session payload (lib/session-constants.ts) - it's only
+  // populated when the login flow's own profile fetch succeeded. Trusting it
+  // blindly here used to mean: if it was ever missing (an older session
+  // minted before this field existed, or a transient profile-fetch hiccup at
+  // login), the cookies above still get set fine - so the dashboard shows
+  // "connected" - but this KV write silently no-ops, and the server-side sync
+  // (which is KV-only, no cookies) finds nothing to push with, forever,
+  // until the rider disconnects and reconnects. Resolving it fresh here
+  // (same fetchOwnProfile call runWeeklyPlanGeneration and login already
+  // make) means a connect action always durably lands in KV, regardless of
+  // what happened to be cached on this session.
+  let resolvedAthleteId = session.athleteId;
+  if (!resolvedAthleteId) {
+    try {
+      const profile = await fetchOwnProfile(session.accessToken);
+      resolvedAthleteId = profile.id != null ? String(profile.id) : undefined;
+    } catch {
+      // best-effort — fall through with resolvedAthleteId still undefined
+    }
+  }
+  if (resolvedAthleteId) {
+    await kvSet(`zwift:${resolvedAthleteId}:icu_key`, apiKey.trim());
+    await kvSet(`zwift:${resolvedAthleteId}:icu_id`, athleteId);
+    await kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName);
   }
 
-  return NextResponse.json({ ok: true, athleteName, athleteId });
+  return NextResponse.json({ ok: true, athleteName, athleteId, kvSynced: !!resolvedAthleteId });
 }
 
 /** DELETE /api/intervals/connect — disconnect Intervals.icu */

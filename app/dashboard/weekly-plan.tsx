@@ -208,6 +208,16 @@ export default function WeeklyPlan() {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [cycleInfo, setCycleInfo] = useState<PhaseInfo | null>(null);
+  // The server's actual report of what happened when it tried to push this
+  // plan to Intervals.icu (see app/api/ai/weekly-plan/route.ts's
+  // intervalsSync response field) - null before the first response arrives,
+  // or if the rider isn't connected to ICU at all. Driving the "synced"
+  // indicator off this REAL result (instead of just "is ICU connected")
+  // matters: a connected-but-failed push should never look identical to a
+  // connected-and-succeeded one.
+  const [lastIntervalsSync, setLastIntervalsSync] = useState<
+    { pushed: number; deleted: number; errors: string[] } | null
+  >(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [riderNote, setRiderNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
@@ -674,9 +684,11 @@ export default function WeeklyPlan() {
         setRiderNote("");
         // Intervals.icu sync already happened server-side inside the request
         // above (see app/api/ai/weekly-plan/route.ts) - nothing to trigger
-        // from here. data.intervalsSync carries the push/delete counts for
-        // observability only; a sync failure there is already best-effort
-        // and never surfaces as an error on this response.
+        // from here. Record the server's actual result so the UI can show
+        // what really happened instead of just "ICU is connected" - a sync
+        // failure there is best-effort and never surfaces as a request
+        // error, so this is the only place that real outcome is visible.
+        setLastIntervalsSync(data.intervalsSync ?? null);
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -1859,16 +1871,29 @@ export default function WeeklyPlan() {
                   {!isRestDay(w.type) && (() => {
                     return (
                       <div style={{ marginTop: 14 }}>
-                        {/* The push already happened server-side before this plan was
-                            ever returned to the browser (see app/api/ai/weekly-plan/
-                            route.ts) - so by the time this card renders, sync is done,
-                            not pending. This is just a static "it's connected" note,
-                            not per-workout live status. */}
-                        {intervalsConnected && (
+                        {/* Reflects the server's ACTUAL reported result from the last
+                            generate call (see app/api/ai/weekly-plan/route.ts's
+                            intervalsSync response field), not just "is ICU connected" -
+                            a connected-but-failed push must never look identical to a
+                            connected-and-succeeded one. lastIntervalsSync is null until
+                            a generate response has actually arrived this session. */}
+                        {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length === 0 && (
                           <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
                             <span style={{ color: "var(--accent)" }}>
-                              ✓ Auto-synced → Intervals.icu → Zwift
+                              ✓ Synced → Intervals.icu → Zwift ({lastIntervalsSync.pushed} pushed{lastIntervalsSync.deleted > 0 ? `, ${lastIntervalsSync.deleted} duplicates removed` : ""})
                             </span>
+                          </div>
+                        )}
+                        {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length > 0 && (
+                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                            <span style={{ color: "var(--danger)" }} title={lastIntervalsSync.errors.join("; ")}>
+                              ⚠ Synced with {lastIntervalsSync.errors.length} error(s) — hover for detail
+                            </span>
+                          </div>
+                        )}
+                        {intervalsConnected && !lastIntervalsSync && (
+                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
+                            Connected — syncs automatically when a plan is generated
                           </div>
                         )}
 

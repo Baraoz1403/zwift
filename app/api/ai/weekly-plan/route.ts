@@ -14,7 +14,7 @@ import {
   wasIntervalsSynced,
   markIntervalsSynced,
 } from "@/lib/kv-plan-state";
-import { kvGet } from "@/lib/kv";
+import { kvGet, kvSet } from "@/lib/kv";
 import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
 import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
 import { fetchActivities } from "@/lib/zwift";
@@ -59,14 +59,31 @@ interface IntervalsSyncResult {
  * Marks the week as synced in KV on success so a later cache-hit read of
  * the same plan doesn't redundantly re-push (see wasIntervalsSynced).
  * Returns null (skips entirely) when the rider hasn't connected ICU.
+ *
+ * `cookieFallback`, when provided, is the ICU key/id read straight from this
+ * request's own cookies. It's a self-heal: app/api/intervals/connect/route.ts
+ * writes the cookie unconditionally but used to skip the KV mirror entirely
+ * whenever session.athleteId happened to be empty (that field is optional -
+ * see lib/session-constants.ts - and was silently missing on some sessions).
+ * The result was a rider who looked "connected" in the UI (cookie present)
+ * forever, while this KV-only server-side sync (and the cron job, which has
+ * no cookies at all) found nothing to push with. If KV comes back empty but
+ * the cookie has a key, mirror it into KV right here so this athlete's sync
+ * starts working immediately, without needing them to disconnect/reconnect.
  */
 async function syncPlanToIcuAndMark(
   athleteId: string,
   weekOf: string,
   plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
-  riddenDates: Set<string>
+  riddenDates: Set<string>,
+  cookieFallback?: { icuKey: string; icuId: string | null } | null
 ): Promise<IntervalsSyncResult | null> {
-  const creds = await getIntervalsCredentials(athleteId);
+  let creds = await getIntervalsCredentials(athleteId);
+  if (!creds && cookieFallback) {
+    await kvSet(`zwift:${athleteId}:icu_key`, cookieFallback.icuKey);
+    if (cookieFallback.icuId) await kvSet(`zwift:${athleteId}:icu_id`, cookieFallback.icuId);
+    creds = { icuKey: cookieFallback.icuKey, icuId: cookieFallback.icuId };
+  }
   if (!creds) return null;
 
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
@@ -137,6 +154,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
   }
 
+  // Read straight from this request's own cookies as a fallback source for
+  // ICU credentials, in case KV is missing them (see syncPlanToIcuAndMark's
+  // doc comment for why that gap could exist).
+  const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value;
+  const icuCookieFallback = cookieIcuKey
+    ? { icuKey: cookieIcuKey, icuId: cookieStore.get("zwift_intervals_id")?.value ?? null }
+    : null;
+
   // ── KV plan cache check ────────────────────────────────────────────────────
   // If a plan for this exact week is already in KV (from a prior Generate on
   // any device, or from the nightly cron), return it immediately without
@@ -184,7 +209,7 @@ export async function POST(req: NextRequest) {
           } catch {
             // best-effort — worst case a already-ridden day gets a redundant planned event
           }
-          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates);
+          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates, icuCookieFallback);
         }
       } catch {
         // best-effort — a self-heal failure must never break the cached-plan response
@@ -256,7 +281,8 @@ export async function POST(req: NextRequest) {
         result.athleteId,
         result.weekOf,
         { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
-        riddenDates
+        riddenDates,
+        icuCookieFallback
       );
     } catch {
       // best-effort — never fail plan generation because ICU sync hiccuped
