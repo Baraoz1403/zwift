@@ -6230,3 +6230,41 @@ Sun 07/12/2026  8:56:17.94
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+[main bce27da] Auto deploy Sun 07/12/2026  8:56:18.81
+ 2 files changed, 39 insertions(+)
+To https://github.com/Baraoz1403/zwift.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Baraoz1403/zwift.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+Sun 07/12/2026  8:56:19.75 - FAILED: git push error 
+ 
+=============================== 
+Sun 07/12/2026  9:14:15.99 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
