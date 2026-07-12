@@ -1,5 +1,50 @@
+
 /**
- * Cycling coaching knowledge base — curated workout library and periodization
+ * ============================================================
+ * FTP VERIFICATION PROTOCOL — MANDATORY BEFORE ANY PLAN
+ * ============================================================
+ *
+ * ⛔ HARD RULE: Workouts are the core of this project.
+ * A wrong FTP destroys every workout. Manual profile.ftp is NEVER
+ * trusted — always use estimatedFtp from the Coggan Protocol below.
+ *
+ * WHY THIS MATTERS:
+ * profile.ftp=276W (manual, stale) → workout at 150% = 414W (impossible)
+ * estimatedFtp=214W (computed)     → workout at 150% = 321W (hard but doable)
+ *
+ * THE COGGAN POWER-DURATION PROTOCOL:
+ * For each qualifying ride (CYCLING, 30-120 min):
+ *   FTP_estimate = avgWatts / coggan_factor(duration_min)
+ *
+ *   coggan_factor:
+ *     < 20 min → 1.10 | < 30 min → 1.05 | < 45 min → 1.00
+ *     < 60 min → 0.97 | < 75 min → 0.95 | < 90 min → 0.93
+ *     < 120 min → 0.91 | ≥ 120 min → 0.88 (group ride — use cautiously)
+ *
+ *   FTP = average of TOP 3 estimates (filters outliers)
+ *
+ * VALIDATION:
+ * - Sweet Spot ride: avgWatts ÷ 0.82 = upper bound, ÷ 0.90 = lower bound
+ * - High-elevation rides (>300m): minimal draft → most accurate
+ * - Group/pacer rides: subtract 10-15W (draft effect)
+ *
+ * CONFIDENCE LEVELS:
+ * - HIGH: 5+ rides, estimates within 10W → use directly
+ * - MEDIUM: 3-4 rides, spread 10-20W → use with ±5W buffer
+ * - LOW: <3 rides or spread >20W → Ramp Test first, no intensity above Z2
+ *
+ * HARD RULE:
+ * IF manual_ftp > computed_ftp + 15W → REJECT manual, USE computed
+ * IF no qualifying rides → Ramp Test is workout #1, no plan without it
+ *
+ * RAMP TEST PROTOCOL (when needed):
+ * Warmup 10min 50→75% FTP | +20W every 1min from 50% estimated FTP
+ * FTP = 75% × highest completed wattage
+ * ============================================================
+ */
+
+/**
+ * Cycling coaching knowledge base â curated workout library and periodization
  * principles for generating professional training plans.
  *
  * This file serves two purposes:
@@ -11,12 +56,12 @@
  * Every workout here is drawn from established protocols:
  *  - Zwift's official plans (FTP Builder, Build Me Up, Zwift Academy)
  *  - Coggan / Allen power-based training zones
- *  - Norwegian VO2max model (Seiler & Tønnessen)
+ *  - Norwegian VO2max model (Seiler & TÃ¸nnessen)
  *  - TrainerRoad / Sufferfest canonical interval formats
  *  - FasCat Coaching sweet spot principles (Frank Overton)
  */
 
-// ─── Coggan 7-Zone Power Model ─────────────────────────────────────────────
+// âââ Coggan 7-Zone Power Model âââââââââââââââââââââââââââââââââââââââââââââ
 export const POWER_ZONES = {
   Z1: { name: "Active Recovery",     pctFtp: "< 55%",    feel: "effortless, conversational" },
   Z2: { name: "Endurance",           pctFtp: "56-75%",   feel: "easy, full sentences" },
@@ -27,39 +72,39 @@ export const POWER_ZONES = {
   Z7: { name: "Neuromuscular Power", pctFtp: "> 150%",   feel: "all-out sprint, < 30 s" },
 } as const;
 
-// ─── W/kg Rider Classification ──────────────────────────────────────────────
+// âââ W/kg Rider Classification ââââââââââââââââââââââââââââââââââââââââââââââ
 /**
- * Power-to-weight categories (FTP ÷ body mass in kg) used to calibrate session
+ * Power-to-weight categories (FTP Ã· body mass in kg) used to calibrate session
  * prescription. A 2.0 W/kg rider has very different recovery needs and intensity
  * tolerance than a 3.5 W/kg rider even at the same TSB.
  */
 export const RIDER_LEVEL_THRESHOLDS = [
   { label: "Beginner",     minWkg: 0.0,  maxWkg: 2.5,  note: "Foundation + Tempo + Sprint Builder only. No true threshold or VO2max." },
   { label: "Novice",       minWkg: 2.5,  maxWkg: 3.0,  note: "Add Sweet Spot Classic. Threshold Development only in late Build phase." },
-  { label: "Intermediate", minWkg: 3.0,  maxWkg: 3.5,  note: "Full sweet spot range. Add Threshold Development, Micro Intervals, 4×4 Two-Set." },
-  { label: "Trained",      minWkg: 3.5,  maxWkg: 4.0,  note: "Norwegian 4×4, Over-Under Intervals, 2×20 FTP Blocks, Descending Threshold unlocked." },
+  { label: "Intermediate", minWkg: 3.0,  maxWkg: 3.5,  note: "Full sweet spot range. Add Threshold Development, Micro Intervals, 4Ã4 Two-Set." },
+  { label: "Trained",      minWkg: 3.5,  maxWkg: 4.0,  note: "Norwegian 4Ã4, Over-Under Intervals, 2Ã20 FTP Blocks, Descending Threshold unlocked." },
   { label: "Advanced",     minWkg: 4.0,  maxWkg: 4.5,  note: "Full library. Polarized model (more Z2 + more Z5, less Z3/Z4 middle ground)." },
   { label: "Elite",        minWkg: 4.5,  maxWkg: 99.0, note: "All sessions available. High volume demands longer recovery windows between hard days." },
 ] as const;
 
-// ─── Session Readiness Prerequisites (minimum TSB) ─────────────────────────
+// âââ Session Readiness Prerequisites (minimum TSB) âââââââââââââââââââââââââ
 /**
  * Minimum TSB (Training Stress Balance) required for each session category
  * to be physiologically productive rather than just accumulating more fatigue.
- * These are soft thresholds — cite them when the AI makes substitutions.
+ * These are soft thresholds â cite them when the AI makes substitutions.
  */
 export const SESSION_PREREQUISITES = {
-  vo2max:        { minTsb: -5,  fallback: "Sweet Spot Classic",   note: "VO2max demands near-maximal cardiac output — legs must be fresh." },
+  vo2max:        { minTsb: -5,  fallback: "Sweet Spot Classic",   note: "VO2max demands near-maximal cardiac output â legs must be fresh." },
   threshold:     { minTsb: -12, fallback: "Sweet Spot Classic",   note: "Sustained threshold with tired legs becomes junk miles, not adaptation." },
   sweetspot:     { minTsb: -20, fallback: "Tempo Cruise",         note: "Sweet spot is resilient to moderate fatigue." },
   neuromuscular: { minTsb: -15, fallback: "Sprint Builder",       note: "Maximal neural efforts need reasonably fresh legs." },
   intermittent:  { minTsb: -8,  fallback: "Tempo Cruise",         note: "30/30 and similar work is metabolically demanding." },
   tempo:         { minTsb: -99, fallback: "Foundation Ride",      note: "Tempo always productive regardless of fatigue level." },
-  endurance:     { minTsb: -99, fallback: "Easy Flush",           note: "Always OK — aerobic stimulus without meaningful stress." },
+  endurance:     { minTsb: -99, fallback: "Easy Flush",           note: "Always OK â aerobic stimulus without meaningful stress." },
   recovery:      { minTsb: -99, fallback: "Spin & Recover",       note: "The purpose is to flush fatigue, not create it." },
 } as const;
 
-// ─── Named Workout Library ──────────────────────────────────────────────────
+// âââ Named Workout Library ââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export type WorkoutCategory =
   | "recovery" | "endurance" | "tempo" | "sweetspot"
@@ -70,9 +115,9 @@ export interface NamedWorkout {
   category: WorkoutCategory;
   /** Total ride time in minutes. */
   durationMin: number;
-  /** Approximate Training Stress Score (IF² × hours × 100). */
+  /** Approximate Training Stress Score (IFÂ² Ã hours Ã 100). */
   tss: number;
-  /** One-sentence coaching rationale — the physiological "why" for this workout. */
+  /** One-sentence coaching rationale â the physiological "why" for this workout. */
   rationale: string;
   /** Human-readable structure (used in the system prompt). */
   structure: string;
@@ -85,15 +130,15 @@ export interface NamedWorkout {
 
 export const WORKOUT_LIBRARY: NamedWorkout[] = [
 
-  // ── RECOVERY ─────────────────────────────────────────────────────────────
+  // ââ RECOVERY âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Spin & Recover",
     category: "recovery",
     durationMin: 30,
     tss: 20,
-    rationale: "Active recovery — flushes metabolic waste products from the previous session without adding new training stress. Blood flow without biochemical cost.",
+    rationale: "Active recovery â flushes metabolic waste products from the previous session without adding new training stress. Blood flow without biochemical cost.",
     structure: "30 min continuous @ 50-60% FTP, 90+ rpm, no structure",
-    executionCue: "Keep power at 50-60% FTP and cadence above 90 rpm. If legs feel heavy at the start, that's exactly the point of this ride — the heaviness should ease in the last 10 minutes.",
+    executionCue: "Keep power at 50-60% FTP and cadence above 90 rpm. If legs feel heavy at the start, that's exactly the point of this ride â the heaviness should ease in the last 10 minutes.",
     successFeel: "You should feel noticeably better at minute 25 than minute 5. If you feel worse or the same, you were going too hard.",
     tags: ["recovery", "beginner-friendly"],
   },
@@ -102,23 +147,23 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "recovery",
     durationMin: 45,
     tss: 30,
-    rationale: "Sustained low-intensity blood flow promotes lactate clearance after hard efforts — often more valuable than complete rest because active circulation accelerates recovery.",
-    structure: "10 min easy build → 25 min Z1 @ 55% FTP → 10 min cooldown",
-    executionCue: "The 25-minute Z1 block is non-negotiable. Resist the urge to push harder — this ride's job is biochemical, not cardiovascular. If you feel strong, you're recovering well; that doesn't mean you should push.",
+    rationale: "Sustained low-intensity blood flow promotes lactate clearance after hard efforts â often more valuable than complete rest because active circulation accelerates recovery.",
+    structure: "10 min easy build â 25 min Z1 @ 55% FTP â 10 min cooldown",
+    executionCue: "The 25-minute Z1 block is non-negotiable. Resist the urge to push harder â this ride's job is biochemical, not cardiovascular. If you feel strong, you're recovering well; that doesn't mean you should push.",
     successFeel: "Finish feeling energized, not depleted. If you're tired at the end, you were going too hard.",
     tags: ["recovery"],
   },
 
-  // ── ENDURANCE / FOUNDATION ────────────────────────────────────────────────
+  // ââ ENDURANCE / FOUNDATION ââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Foundation Ride",
     category: "endurance",
     durationMin: 60,
     tss: 60,
-    rationale: "Builds mitochondrial density and fat-oxidation enzymes — the aerobic base that every higher-intensity session rests on. Each Foundation Ride lays a brick in the aerobic engine.",
-    structure: "10 min warmup → 40 min Z2 @ 65-73% FTP (conversational pace) → 10 min cooldown",
-    executionCue: "Hold 65-73% FTP the entire 40 minutes. Cadence 88-95 rpm. If you can't complete full sentences, you're above Z2. If you're bored — good. That's the pace.",
-    successFeel: "You should finish feeling like you could easily ride 30 more minutes. That's not failure — that's the correct Z2 intensity signal.",
+    rationale: "Builds mitochondrial density and fat-oxidation enzymes â the aerobic base that every higher-intensity session rests on. Each Foundation Ride lays a brick in the aerobic engine.",
+    structure: "10 min warmup â 40 min Z2 @ 65-73% FTP (conversational pace) â 10 min cooldown",
+    executionCue: "Hold 65-73% FTP the entire 40 minutes. Cadence 88-95 rpm. If you can't complete full sentences, you're above Z2. If you're bored â good. That's the pace.",
+    successFeel: "You should finish feeling like you could easily ride 30 more minutes. That's not failure â that's the correct Z2 intensity signal.",
     tags: ["aerobic-base", "beginner-friendly", "zwift-ftp-builder"],
   },
   {
@@ -126,9 +171,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 90,
     tss: 90,
-    rationale: "Extended aerobic volume trains the body to spare glycogen and run predominantly on fat — the metabolic foundation that separates trained cyclists from untrained ones.",
-    structure: "15 min warmup → 65 min Z2 @ 65-73% FTP → 10 min cooldown",
-    executionCue: "The first 30 minutes feel easy — resist the temptation to increase intensity. The last 20 minutes are where real metabolic adaptation happens as glycogen depletes and fat oxidation rises.",
+    rationale: "Extended aerobic volume trains the body to spare glycogen and run predominantly on fat â the metabolic foundation that separates trained cyclists from untrained ones.",
+    structure: "15 min warmup â 65 min Z2 @ 65-73% FTP â 10 min cooldown",
+    executionCue: "The first 30 minutes feel easy â resist the temptation to increase intensity. The last 20 minutes are where real metabolic adaptation happens as glycogen depletes and fat oxidation rises.",
     successFeel: "Slightly tired but not depleted at 90 minutes. If you're wiped out, you rode too hard in the first half.",
     tags: ["aerobic-base", "volume"],
   },
@@ -138,8 +183,8 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     durationMin: 60,
     tss: 58,
     rationale: "Foundation ride with short high-cadence inserts (100-110 rpm) to improve neuromuscular efficiency and eliminate dead-spots in the pedal stroke.",
-    structure: "10 min warmup → 4× (8 min Z2 @ 68% + 2 min @ 100-110 rpm / 65%) → 10 min cooldown",
-    executionCue: "During the 2-min high-cadence inserts, let your legs spin freely — don't mash. Power will drop slightly at the higher cadence; that's fine. If your upper body is rocking, drop to 95 rpm.",
+    structure: "10 min warmup â 4Ã (8 min Z2 @ 68% + 2 min @ 100-110 rpm / 65%) â 10 min cooldown",
+    executionCue: "During the 2-min high-cadence inserts, let your legs spin freely â don't mash. Power will drop slightly at the higher cadence; that's fine. If your upper body is rocking, drop to 95 rpm.",
     successFeel: "The 100-rpm blocks should feel almost bouncy, not choppy. By the 4th drill your pedaling should feel measurably smoother.",
     tags: ["aerobic-base", "technique"],
   },
@@ -148,22 +193,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 60,
     tss: 72,
-    rationale: "Long Z2 ride with embedded 1-minute power surges at 110% FTP — adds metabolic variety to an endurance session without the recovery cost of a full interval workout.",
-    structure: "12 min warmup → 36 min Z2 @ 68% FTP with 6×1 min surges @ 110% FTP (5 min apart) → 12 min cooldown",
-    executionCue: "The surges should be sharp and decisive — full power for 1 minute, then immediately drop back to Z2 pace. Don't 'ease into' the surge and don't 'ease out' — hard on, hard off, back to Z2.",
+    rationale: "Long Z2 ride with embedded 1-minute power surges at 110% FTP â adds metabolic variety to an endurance session without the recovery cost of a full interval workout.",
+    structure: "12 min warmup â 36 min Z2 @ 68% FTP with 6Ã1 min surges @ 110% FTP (5 min apart) â 12 min cooldown",
+    executionCue: "The surges should be sharp and decisive â full power for 1 minute, then immediately drop back to Z2 pace. Don't 'ease into' the surge and don't 'ease out' â hard on, hard off, back to Z2.",
     successFeel: "The Z2 sections between surges should still feel controlled. If the surges are preventing recovery to Z2, shorten them to 45 seconds.",
     tags: ["aerobic-base", "mixed-intensity", "base-phase-ok"],
   },
 
-  // ── TEMPO ─────────────────────────────────────────────────────────────────
+  // ââ TEMPO âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Tempo Cruise",
     category: "tempo",
     durationMin: 60,
     tss: 72,
     rationale: "Trains lactate clearance and glycogen storage at Z3; steady-state tempo builds the metabolic ceiling that sweet spot and threshold work sits on top of.",
-    structure: "10 min warmup → 2×15 min @ 78-83% FTP (5 min recovery) → 15 min cooldown",
-    executionCue: "Hold 78-83% FTP — comfortably uncomfortable. You should be able to say 3-4 words if asked but not hold a full sentence. Don't drift above 85% — that's sweet spot territory with a different recovery cost.",
+    structure: "10 min warmup â 2Ã15 min @ 78-83% FTP (5 min recovery) â 15 min cooldown",
+    executionCue: "Hold 78-83% FTP â comfortably uncomfortable. You should be able to say 3-4 words if asked but not hold a full sentence. Don't drift above 85% â that's sweet spot territory with a different recovery cost.",
     successFeel: "The second 15-minute block should feel harder than the first, but completeable. If it felt the same as the first, you were too easy.",
     tags: ["tempo", "z3", "zwift-ftp-builder"],
   },
@@ -173,7 +218,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     durationMin: 75,
     tss: 90,
     rationale: "Progressively longer blocks teach the body to sustain Z3 for extended periods; the final 20-minute block is where the meaningful physiological adaptation occurs.",
-    structure: "12 min warmup → 10 min + 15 min + 20 min @ 80% FTP (5 min recovery each) → 13 min cooldown",
+    structure: "12 min warmup â 10 min + 15 min + 20 min @ 80% FTP (5 min recovery each) â 13 min cooldown",
     executionCue: "Start the 10-minute block conservatively at 78% FTP. Build to 81% for the 15-min block. The 20-min block is the main stimulus; aim for 82-83% if legs allow.",
     successFeel: "The 20-minute block should be genuinely hard by minutes 16-20. If it felt easy throughout, you needed more intensity.",
     tags: ["tempo", "progression"],
@@ -183,22 +228,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "tempo",
     durationMin: 65,
     tss: 80,
-    rationale: "Low-cadence (55-65 rpm) Z3 efforts build leg muscular strength while maintaining aerobic stimulus — the cycling equivalent of gym leg press, done on the bike, without the injury risk.",
-    structure: "15 min warmup (build to 85%) → 3×8 min @ 78-84% FTP / 55-65 rpm (4 min recovery @ 60% / 90 rpm) → 14 min cooldown",
+    rationale: "Low-cadence (55-65 rpm) Z3 efforts build leg muscular strength while maintaining aerobic stimulus â the cycling equivalent of gym leg press, done on the bike, without the injury risk.",
+    structure: "15 min warmup (build to 85%) â 3Ã8 min @ 78-84% FTP / 55-65 rpm (4 min recovery @ 60% / 90 rpm) â 14 min cooldown",
     executionCue: "Cadence is the key variable here. Keep it deliberately at 55-65 rpm during work intervals. You'll feel your quads working much harder than usual at a power level you could normally hold easily at 90 rpm.",
     successFeel: "Quads should feel muscularly tired (like after a leg workout) rather than cardiovascularly depleted. That's the correct stimulus.",
     tags: ["tempo", "strength", "muscular-endurance"],
   },
 
-  // ── SWEET SPOT ────────────────────────────────────────────────────────────
+  // ââ SWEET SPOT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Sweet Spot Classic",
     category: "sweetspot",
     durationMin: 60,
     tss: 78,
-    rationale: "The most time-efficient training zone (88-93% FTP): hard enough to drive FTP adaptation, easy enough to recover from in 24-48 hours — the cornerstone of Zwift's Build Me Up plan.",
-    structure: "12 min warmup → 3×10 min @ 88-93% FTP (4 min recovery) → 14 min cooldown",
-    executionCue: "Start each 10-min block at 88% — not 93%. You have 3 of them; pacing discipline on block 1 is what makes block 3 possible. If power drops in the final 2 minutes of any block, you started too hot.",
+    rationale: "The most time-efficient training zone (88-93% FTP): hard enough to drive FTP adaptation, easy enough to recover from in 24-48 hours â the cornerstone of Zwift's Build Me Up plan.",
+    structure: "12 min warmup â 3Ã10 min @ 88-93% FTP (4 min recovery) â 14 min cooldown",
+    executionCue: "Start each 10-min block at 88% â not 93%. You have 3 of them; pacing discipline on block 1 is what makes block 3 possible. If power drops in the final 2 minutes of any block, you started too hot.",
     successFeel: "All 3 blocks completed with even power. Block 3 is hard, but you finish it. That's the benchmark.",
     tags: ["sweetspot", "ftp-builder", "zwift-build-me-up"],
   },
@@ -208,7 +253,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     durationMin: 75,
     tss: 100,
     rationale: "Two long sweet-spot blocks; extended time at 88-92% FTP creates a substantial aerobic adaptation signal without the recovery debt of true threshold work.",
-    structure: "15 min warmup → 2×20 min @ 88-92% FTP (8 min recovery) → 12 min cooldown",
+    structure: "15 min warmup â 2Ã20 min @ 88-92% FTP (8 min recovery) â 12 min cooldown",
     executionCue: "Use minutes 1-4 of the 8-minute recovery to genuinely recover below 65% FTP. Go into the second 20-min block feeling ready, not pre-exhausted. Second block power should be within 3% of first.",
     successFeel: "If you faded more than 3% in block 2, spend another week at Sweet Spot Classic before progressing here.",
     tags: ["sweetspot", "ftp-builder", "advanced"],
@@ -218,22 +263,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "sweetspot",
     durationMin: 70,
     tss: 90,
-    rationale: "Ascending blocks (10→15→20 min) apply progressive overload within a single session — the final 20-min block is physiologically distinct from the warmup effect on block 1.",
-    structure: "12 min warmup → 10 min + 15 min + 20 min @ 90% FTP (5 min recovery each) → 8 min cooldown",
+    rationale: "Ascending blocks (10â15â20 min) apply progressive overload within a single session â the final 20-min block is physiologically distinct from the warmup effect on block 1.",
+    structure: "12 min warmup â 10 min + 15 min + 20 min @ 90% FTP (5 min recovery each) â 8 min cooldown",
     executionCue: "Treat the 10-min block as a warm-into-it at 88%. Step to 90% for the 15-min, then push to 92% if available for the 20-min block.",
     successFeel: "The 20-min block should feel substantially harder than the 10-min opener. That progressive difficulty is the design.",
     tags: ["sweetspot", "progression"],
   },
 
-  // ── THRESHOLD ─────────────────────────────────────────────────────────────
+  // ââ THRESHOLD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Threshold Development",
     category: "threshold",
     durationMin: 60,
     tss: 82,
-    rationale: "Short blocks directly at lactate turn point; 8 minutes is long enough to maximally stress the system, short enough to complete all 4 with quality power output — quality beats duration at threshold.",
-    structure: "12 min warmup → 4×8 min @ 97-102% FTP (4 min recovery) → 12 min cooldown",
-    executionCue: "Start block 1 at 97% — not 102%. By block 3, it should feel like 'this is hard but I can hold it.' If block 3 feels easy, you paced too conservatively — not a problem, just note it for next time.",
+    rationale: "Short blocks directly at lactate turn point; 8 minutes is long enough to maximally stress the system, short enough to complete all 4 with quality power output â quality beats duration at threshold.",
+    structure: "12 min warmup â 4Ã8 min @ 97-102% FTP (4 min recovery) â 12 min cooldown",
+    executionCue: "Start block 1 at 97% â not 102%. By block 3, it should feel like 'this is hard but I can hold it.' If block 3 feels easy, you paced too conservatively â not a problem, just note it for next time.",
     successFeel: "4 blocks completed, last block power within 5% of first. If you can only quality-complete 3 blocks, add another week of Sweet Spot before returning to threshold.",
     tags: ["threshold", "ftp-builder", "zwift-ftp-builder"],
   },
@@ -242,20 +287,20 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 60,
     tss: 82,
-    rationale: "5×5-minute blocks at threshold with short recovery — more total threshold time than 4×8 min, with shorter individual reps that build pacing confidence for riders bridging from sweet spot.",
-    structure: "12 min warmup → 5×5 min @ 98-102% FTP (2.5 min recovery) → 13 min cooldown",
-    executionCue: "The 2.5-minute recovery is intentionally short — you won't fully recover between reps. By rep 4, you'll be carrying accumulating lactate; that sustained lactate stress is the physiological target.",
-    successFeel: "Rep 5 should be genuinely hard. If all 5 reps felt similar, the short recovery didn't challenge you enough — consider Over-Under Intervals as your next threshold progression.",
+    rationale: "5Ã5-minute blocks at threshold with short recovery â more total threshold time than 4Ã8 min, with shorter individual reps that build pacing confidence for riders bridging from sweet spot.",
+    structure: "12 min warmup â 5Ã5 min @ 98-102% FTP (2.5 min recovery) â 13 min cooldown",
+    executionCue: "The 2.5-minute recovery is intentionally short â you won't fully recover between reps. By rep 4, you'll be carrying accumulating lactate; that sustained lactate stress is the physiological target.",
+    successFeel: "Rep 5 should be genuinely hard. If all 5 reps felt similar, the short recovery didn't challenge you enough â consider Over-Under Intervals as your next threshold progression.",
     tags: ["threshold", "intermediate"],
   },
   {
-    name: "2×20 FTP Blocks",
+    name: "2Ã20 FTP Blocks",
     category: "threshold",
     durationMin: 70,
     tss: 98,
     rationale: "The gold-standard FTP benchmark session: two sustained 20-minute blocks at threshold reveal your true current ceiling and teach the body to hold race pace for long durations.",
-    structure: "15 min warmup → 2×20 min @ 97-100% FTP (8 min recovery) → 7 min cooldown",
-    executionCue: "Start block 1 at 97% — your ego will want to go harder, don't. By minute 15 of block 1, you should feel 'I can hold this, just barely.' The second block starts manageable and gets harder — that's correct.",
+    structure: "15 min warmup â 2Ã20 min @ 97-100% FTP (8 min recovery) â 7 min cooldown",
+    executionCue: "Start block 1 at 97% â your ego will want to go harder, don't. By minute 15 of block 1, you should feel 'I can hold this, just barely.' The second block starts manageable and gets harder â that's correct.",
     successFeel: "If you completed both 20-minute blocks at target power, your FTP estimate is accurate. If block 2 faded more than 3-4%, consider a formal FTP re-test.",
     tags: ["threshold", "advanced", "classic"],
   },
@@ -264,9 +309,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 65,
     tss: 92,
-    rationale: "Alternating just above and just below FTP trains the body to clear lactate while sustaining high power — the hardest threshold variant and highly effective for race-simulation fitness.",
-    structure: "12 min warmup → 3×9 min cycling (3 min @ 105% / 3 min @ 93%) (5 min recovery) → 11 min cooldown",
-    executionCue: "The 'over' phases at 105% are where lactate accumulates; the 'under' phases at 93% are where you must clear it while staying near threshold pace. Don't ease below 90% during the 'under' — that defeats the purpose.",
+    rationale: "Alternating just above and just below FTP trains the body to clear lactate while sustaining high power â the hardest threshold variant and highly effective for race-simulation fitness.",
+    structure: "12 min warmup â 3Ã9 min cycling (3 min @ 105% / 3 min @ 93%) (5 min recovery) â 11 min cooldown",
+    executionCue: "The 'over' phases at 105% are where lactate accumulates; the 'under' phases at 93% are where you must clear it while staying near threshold pace. Don't ease below 90% during the 'under' â that defeats the purpose.",
     successFeel: "By rep 3, the 'over' phases feel genuinely hard. If all 'over' phases felt manageable, your FTP may be underestimated.",
     tags: ["threshold", "advanced", "over-under"],
   },
@@ -275,45 +320,45 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 65,
     tss: 90,
-    rationale: "Decreasing interval lengths (12→10→8→6 min) stepping up 2% each block; builds mental resilience by ending with the most intense effort when most fatigued — trains the body and mind to push hardest when it hurts most.",
-    structure: "12 min warmup → 12 min @ 97% + 10 min @ 99% + 8 min @ 101% + 6 min @ 103% FTP (equal rest each) → 11 min cooldown",
-    executionCue: "Each block gets shorter but steps up 2% in power. By the 6-minute final block, you should be at full threshold effort — knowing it's only 6 minutes is exactly the point. This session trains pacing judgment and mental toughness simultaneously.",
+    rationale: "Decreasing interval lengths (12â10â8â6 min) stepping up 2% each block; builds mental resilience by ending with the most intense effort when most fatigued â trains the body and mind to push hardest when it hurts most.",
+    structure: "12 min warmup â 12 min @ 97% + 10 min @ 99% + 8 min @ 101% + 6 min @ 103% FTP (equal rest each) â 11 min cooldown",
+    executionCue: "Each block gets shorter but steps up 2% in power. By the 6-minute final block, you should be at full threshold effort â knowing it's only 6 minutes is exactly the point. This session trains pacing judgment and mental toughness simultaneously.",
     successFeel: "The 6-minute block at 103% feels like a sprint after exhausting work. Completing it at target power = this session worked perfectly.",
     tags: ["threshold", "advanced", "mental-toughness"],
   },
 
-  // ── VO2MAX ────────────────────────────────────────────────────────────────
+  // ââ VO2MAX ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
-    name: "Norwegian 4×4",
+    name: "Norwegian 4Ã4",
     category: "vo2max",
     durationMin: 60,
     tss: 90,
-    rationale: "Gold-standard VO2max protocol; four 4-minute blocks at 106-110% FTP raise aerobic ceiling more efficiently than any other protocol because 4 minutes is exactly long enough for HR to plateau at VO2max — that sustained plateau is where the adaptation signal lives.",
-    structure: "12 min warmup → 4×4 min @ 106-110% FTP (4 min recovery) → 16 min cooldown",
-    executionCue: "The first 2 minutes of each rep will feel manageable. The last 2 minutes are where the adaptation happens — HR climbs toward max and you must hold on. Keep cadence 95+ rpm; grinding slows HR rise and reduces the VO2max stimulus.",
+    rationale: "Gold-standard VO2max protocol; four 4-minute blocks at 106-110% FTP raise aerobic ceiling more efficiently than any other protocol because 4 minutes is exactly long enough for HR to plateau at VO2max â that sustained plateau is where the adaptation signal lives.",
+    structure: "12 min warmup â 4Ã4 min @ 106-110% FTP (4 min recovery) â 16 min cooldown",
+    executionCue: "The first 2 minutes of each rep will feel manageable. The last 2 minutes are where the adaptation happens â HR climbs toward max and you must hold on. Keep cadence 95+ rpm; grinding slows HR rise and reduces the VO2max stimulus.",
     successFeel: "By rep 4, you should barely be able to finish. If rep 4 felt like rep 2, the power target was too low. The protocol is designed to hurt in the right way.",
     tags: ["vo2max", "norwegian", "advanced"],
   },
   {
-    name: "4×4 Two-Set",
+    name: "4Ã4 Two-Set",
     category: "vo2max",
     durationMin: 65,
     tss: 85,
-    rationale: "Two sets of 2×4-minute VO2max intervals with an 8-minute easy block mid-session — delivers the same Norwegian 4-rep stimulus in a format more accessible to riders not yet ready for 4 consecutive hard reps.",
-    structure: "12 min warmup → (2×4 min @ 108% / 4 min recovery) → 8 min easy Z2 → (2×4 min @ 108% / 4 min recovery) → 9 min cooldown",
-    executionCue: "Use the 8-minute easy block genuinely — drop below 65% FTP. The second set will feel harder than the first; that's by design, and by completing it you've trained your body to produce effort under accumulated fatigue.",
-    successFeel: "All 4 reps completed at target power. Once this feels manageable rather than maximal, you're ready to consolidate into the standard Norwegian 4×4.",
+    rationale: "Two sets of 2Ã4-minute VO2max intervals with an 8-minute easy block mid-session â delivers the same Norwegian 4-rep stimulus in a format more accessible to riders not yet ready for 4 consecutive hard reps.",
+    structure: "12 min warmup â (2Ã4 min @ 108% / 4 min recovery) â 8 min easy Z2 â (2Ã4 min @ 108% / 4 min recovery) â 9 min cooldown",
+    executionCue: "Use the 8-minute easy block genuinely â drop below 65% FTP. The second set will feel harder than the first; that's by design, and by completing it you've trained your body to produce effort under accumulated fatigue.",
+    successFeel: "All 4 reps completed at target power. Once this feels manageable rather than maximal, you're ready to consolidate into the standard Norwegian 4Ã4.",
     tags: ["vo2max", "intermediate", "norwegian-variant"],
   },
   {
-    name: "5×5 VO2max",
+    name: "5Ã5 VO2max",
     category: "vo2max",
     durationMin: 70,
     tss: 100,
-    rationale: "Five 5-minute blocks at VO2max intensity; 5 minutes is the optimal individual rep duration — long enough to fully stress the cardiovascular system, short enough to maintain quality across all 5 reps.",
-    structure: "15 min warmup → 5×5 min @ 108-112% FTP (5 min recovery) → 5 min cooldown",
-    executionCue: "The equal work:rest ratio (5:5) is critical — don't rush the recovery by returning to 108% before heart rate has actually recovered. HR should be declining through the first 3 recovery minutes.",
-    successFeel: "Rep 5 is the hardest thing you'll do this week. All 5 completed = excellent. 4 completed at target power = still very good — aim to finish all 5 next time.",
+    rationale: "Five 5-minute blocks at VO2max intensity; 5 minutes is the optimal individual rep duration â long enough to fully stress the cardiovascular system, short enough to maintain quality across all 5 reps.",
+    structure: "15 min warmup â 5Ã5 min @ 108-112% FTP (5 min recovery) â 5 min cooldown",
+    executionCue: "The equal work:rest ratio (5:5) is critical â don't rush the recovery by returning to 108% before heart rate has actually recovered. HR should be declining through the first 3 recovery minutes.",
+    successFeel: "Rep 5 is the hardest thing you'll do this week. All 5 completed = excellent. 4 completed at target power = still very good â aim to finish all 5 next time.",
     tags: ["vo2max", "zwift-build-me-up"],
   },
   {
@@ -321,22 +366,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "vo2max",
     durationMin: 55,
     tss: 80,
-    rationale: "Short 1-minute bursts at 115-120% FTP accumulate VO2max stress without the pacing discipline required by longer intervals — the ideal entry point to VO2max work for riders not yet ready for 4-minute sustained reps.",
-    structure: "12 min warmup → 12×1 min @ 115-120% FTP (1 min recovery) → 19 min cooldown",
-    executionCue: "The 1:1 work:rest ratio keeps you returning before you're fully recovered. By rep 8, the recovery minute won't feel like enough — that sustained oxygen uptake elevation through the 'off' periods is the training signal.",
+    rationale: "Short 1-minute bursts at 115-120% FTP accumulate VO2max stress without the pacing discipline required by longer intervals â the ideal entry point to VO2max work for riders not yet ready for 4-minute sustained reps.",
+    structure: "12 min warmup â 12Ã1 min @ 115-120% FTP (1 min recovery) â 19 min cooldown",
+    executionCue: "The 1:1 work:rest ratio keeps you returning before you're fully recovered. By rep 8, the recovery minute won't feel like enough â that sustained oxygen uptake elevation through the 'off' periods is the training signal.",
     successFeel: "The last 4 reps should be noticeably harder than the first 4. If all 12 felt similar, you weren't going hard enough on the 'on' intervals.",
     tags: ["vo2max", "short-intervals"],
   },
 
-  // ── NEUROMUSCULAR / STRENGTH ──────────────────────────────────────────────
+  // ââ NEUROMUSCULAR / STRENGTH ââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Sprint Builder",
     category: "neuromuscular",
     durationMin: 50,
     tss: 50,
-    rationale: "15-20 second maximal efforts recruit fast-twitch muscle fibers you won't touch in any endurance session — essential for neuromuscular development even in base phase, and these short maximal efforts don't create meaningful lactate accumulation.",
-    structure: "15 min warmup → 8×15 s ALL OUT (2.5 min recovery) → 15 min Z2 flush",
-    executionCue: "Each sprint is 100% — not 80%, not 90%. Think 'jump out of a corner' or 'bridge a gap now.' Wind up for 3-5 seconds before the clock starts. 2.5 full minutes between efforts is non-negotiable.",
+    rationale: "15-20 second maximal efforts recruit fast-twitch muscle fibers you won't touch in any endurance session â essential for neuromuscular development even in base phase, and these short maximal efforts don't create meaningful lactate accumulation.",
+    structure: "15 min warmup â 8Ã15 s ALL OUT (2.5 min recovery) â 15 min Z2 flush",
+    executionCue: "Each sprint is 100% â not 80%, not 90%. Think 'jump out of a corner' or 'bridge a gap now.' Wind up for 3-5 seconds before the clock starts. 2.5 full minutes between efforts is non-negotiable.",
     successFeel: "Your last sprint should produce nearly the same peak power as your first. If peak power drops significantly by sprint 5-6, extend recovery to 3 minutes.",
     tags: ["neuromuscular", "sprint", "zwift-ftp-builder", "base-phase-ok"],
   },
@@ -345,35 +390,35 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "neuromuscular",
     durationMin: 35,
     tss: 30,
-    rationale: "Pre-event activation protocol — brief punchy efforts 24-48 hours before a race activate the neuromuscular system and prime cardiovascular response without adding meaningful fatigue.",
-    structure: "10 min easy warmup → 3×1 min @ 110% FTP (3 min easy recovery) → 5 min @ 80% → 10 min easy spindown",
+    rationale: "Pre-event activation protocol â brief punchy efforts 24-48 hours before a race activate the neuromuscular system and prime cardiovascular response without adding meaningful fatigue.",
+    structure: "10 min easy warmup â 3Ã1 min @ 110% FTP (3 min easy recovery) â 5 min @ 80% â 10 min easy spindown",
     executionCue: "Three 1-minute efforts at 110% FTP: sharp and decisive, not all-out sprints. These are neuromuscular 'reminders,' not training stimuli. The goal is to feel activated and ready, not tired.",
-    successFeel: "30-35 minutes and done. Legs feel awake and reactive. If you feel fatigued after this, you're not yet recovered enough for your event — consider one more rest day.",
+    successFeel: "30-35 minutes and done. Legs feel awake and reactive. If you feel fatigued after this, you're not yet recovered enough for your event â consider one more rest day.",
     tags: ["pre-event", "taper", "activation"],
   },
 
-  // ── INTERMITTENT ──────────────────────────────────────────────────────────
+  // ââ INTERMITTENT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "30/30 Blitz",
     category: "intermittent",
     durationMin: 60,
     tss: 78,
-    rationale: "30s hard / 30s easy creates a metabolic double-hit: anaerobic stress in the 'on' intervals with aerobic recovery that can't fully clear before the next rep — this keeps oxygen uptake elevated through the 'off' periods, accumulating VO2max stress more efficiently than single all-out efforts.",
-    structure: "12 min warmup → 3 sets of 8×(30 s @ 120% / 30 s @ 50%) with 5 min set recovery → 14 min cooldown",
-    executionCue: "The 'on' intervals are 120% FTP — hard effort, not sprint. The 30-second 'off' is active recovery at 50%; don't coast to zero. By set 3, the previous sets should still be felt in the legs — that sustained elevation is the training signal.",
+    rationale: "30s hard / 30s easy creates a metabolic double-hit: anaerobic stress in the 'on' intervals with aerobic recovery that can't fully clear before the next rep â this keeps oxygen uptake elevated through the 'off' periods, accumulating VO2max stress more efficiently than single all-out efforts.",
+    structure: "12 min warmup â 3 sets of 8Ã(30 s @ 120% / 30 s @ 50%) with 5 min set recovery â 14 min cooldown",
+    executionCue: "The 'on' intervals are 120% FTP â hard effort, not sprint. The 30-second 'off' is active recovery at 50%; don't coast to zero. By set 3, the previous sets should still be felt in the legs â that sustained elevation is the training signal.",
     successFeel: "Sets 1-2 are hard. Set 3 is very hard. Completing all 8 reps in set 3 at target power = success. If you bail on rep 7 or 8 of set 3, still an excellent session.",
     tags: ["intermittent", "zwift-ftp-builder"],
   },
 
-  // ── RECOVERY (additional) ─────────────────────────────────────────────────
+  // ââ RECOVERY (additional) âââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Short Active Recovery",
     category: "recovery",
     durationMin: 20,
     tss: 12,
-    rationale: "Ultra-short active recovery for days when time is scarce — just enough blood flow to accelerate muscle clearance without adding measurable training stress. Better than nothing, better than complete rest for very fatigued legs.",
+    rationale: "Ultra-short active recovery for days when time is scarce â just enough blood flow to accelerate muscle clearance without adding measurable training stress. Better than nothing, better than complete rest for very fatigued legs.",
     structure: "20 min continuous @ 45-55% FTP, free cadence, no structure",
-    executionCue: "Keep power below 55% FTP at all times. If it feels too easy, that's correct — this is not training, it's biochemical maintenance. Stay below 120 bpm heart rate.",
+    executionCue: "Keep power below 55% FTP at all times. If it feels too easy, that's correct â this is not training, it's biochemical maintenance. Stay below 120 bpm heart rate.",
     successFeel: "Legs feel looser at minute 18 than at minute 2. No cardiovascular fatigue at all. If you feel like you need more, add 10 minutes at the same intensity.",
     tags: ["recovery", "time-crunched", "beginner-friendly"],
   },
@@ -382,22 +427,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "recovery",
     durationMin: 50,
     tss: 33,
-    rationale: "Longer recovery ride for days after two consecutive hard efforts — extended Z1 circulation allows more complete glycogen resynthesis and waste clearance than a 30-minute spin.",
-    structure: "10 min easy → 30 min pure Z1 @ 50-58% FTP → 10 min wind-down",
+    rationale: "Longer recovery ride for days after two consecutive hard efforts â extended Z1 circulation allows more complete glycogen resynthesis and waste clearance than a 30-minute spin.",
+    structure: "10 min easy â 30 min pure Z1 @ 50-58% FTP â 10 min wind-down",
     executionCue: "The 30-minute middle block is deliberately boring. Stay below 60% FTP regardless of how you feel. If TSB is very negative (-25 or more), this ride is more valuable than any intensity.",
     successFeel: "Notable improvement in leg feel from start to finish. Heart rate should be comfortably below 130 bpm throughout.",
     tags: ["recovery", "post-hard-effort"],
   },
 
-  // ── ENDURANCE (additional) ────────────────────────────────────────────────
+  // ââ ENDURANCE (additional) ââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Two-Hour Foundation",
     category: "endurance",
     durationMin: 120,
     tss: 120,
-    rationale: "The cornerstone of long-term aerobic development — two hours at true Z2 intensity triggers maximal mitochondrial biogenesis and fat-oxidation enzyme upregulation, adaptations that shorter rides simply cannot produce. Used systematically in every elite endurance program from Seiler's polarized model to Friel's periodization.",
-    structure: "20 min easy warmup → 85 min Z2 @ 65-73% FTP → 15 min cooldown",
-    executionCue: "Power must stay in Z2 for the full 85 minutes. The first 40 minutes should feel suspiciously easy — that's correct. Fat metabolism takes 30-40 minutes to fully activate; riders who start at 75% miss most of the adaptation. Check power every 10 minutes and drift down if anything.",
+    rationale: "The cornerstone of long-term aerobic development â two hours at true Z2 intensity triggers maximal mitochondrial biogenesis and fat-oxidation enzyme upregulation, adaptations that shorter rides simply cannot produce. Used systematically in every elite endurance program from Seiler's polarized model to Friel's periodization.",
+    structure: "20 min easy warmup â 85 min Z2 @ 65-73% FTP â 15 min cooldown",
+    executionCue: "Power must stay in Z2 for the full 85 minutes. The first 40 minutes should feel suspiciously easy â that's correct. Fat metabolism takes 30-40 minutes to fully activate; riders who start at 75% miss most of the adaptation. Check power every 10 minutes and drift down if anything.",
     successFeel: "Pleasantly tired, not depleted. If you're wiped out, you were riding at Z3 for parts of it. You should be able to ride again tomorrow without issue.",
     tags: ["aerobic-base", "long", "seiler", "fat-oxidation"],
   },
@@ -406,9 +451,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 60,
     tss: 68,
-    rationale: "Targets the top of Z2 — the aerobic threshold (AeT, first ventilatory threshold) where fat and carbohydrate metabolism are equally contributing. Training at this exact intensity builds the aerobic ceiling that separates riders who can hold Z3 for hours from those who can't.",
-    structure: "10 min warmup → 40 min @ 72-76% FTP (top of Z2, below tempo) → 10 min cooldown",
-    executionCue: "Power between 72-76% FTP. You should be able to speak in short sentences (4-5 words), but sustained conversation is uncomfortable. This is 'comfortably uncomfortable' — not easy, not hard, perfectly in the metabolic sweet spot.",
+    rationale: "Targets the top of Z2 â the aerobic threshold (AeT, first ventilatory threshold) where fat and carbohydrate metabolism are equally contributing. Training at this exact intensity builds the aerobic ceiling that separates riders who can hold Z3 for hours from those who can't.",
+    structure: "10 min warmup â 40 min @ 72-76% FTP (top of Z2, below tempo) â 10 min cooldown",
+    executionCue: "Power between 72-76% FTP. You should be able to speak in short sentences (4-5 words), but sustained conversation is uncomfortable. This is 'comfortably uncomfortable' â not easy, not hard, perfectly in the metabolic sweet spot.",
     successFeel: "Mildly fatigued but not depleted. Heart rate decoupling (power stays stable but HR slowly rises) in the last 15 minutes indicates successful aerobic stress.",
     tags: ["aerobic-base", "aerobic-threshold", "aet"],
   },
@@ -417,9 +462,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 65,
     tss: 70,
-    rationale: "Z2 ride with embedded low-cadence blocks (50-60 rpm) that stress the slow-twitch fibers more than normal spinning — a 'gym session on the bike' that builds cycling-specific leg strength without leaving the aerobic zone.",
-    structure: "12 min warmup → 4× (6 min Z2 @ 68% / 90 rpm → 5 min Z2 @ 68% / 55 rpm) → 9 min cooldown",
-    executionCue: "During the 55-rpm blocks, resist the urge to raise power — the intensity stays the same, only the cadence drops. You'll feel your quads working far harder. The goal is muscular stress, not cardiovascular stress.",
+    rationale: "Z2 ride with embedded low-cadence blocks (50-60 rpm) that stress the slow-twitch fibers more than normal spinning â a 'gym session on the bike' that builds cycling-specific leg strength without leaving the aerobic zone.",
+    structure: "12 min warmup â 4Ã (6 min Z2 @ 68% / 90 rpm â 5 min Z2 @ 68% / 55 rpm) â 9 min cooldown",
+    executionCue: "During the 55-rpm blocks, resist the urge to raise power â the intensity stays the same, only the cadence drops. You'll feel your quads working far harder. The goal is muscular stress, not cardiovascular stress.",
     successFeel: "Quads have a muscular burn similar to a gym session, but heart rate never exceeded 75% of max. That's the correct combination of stimuli.",
     tags: ["aerobic-base", "muscular-endurance", "low-cadence"],
   },
@@ -428,9 +473,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 100,
     tss: 100,
-    rationale: "Slightly longer than the standard Foundation Ride — extends the aerobic stimulus window without crossing into tempo. Used when CTL is building and the rider can handle moderate volume.",
-    structure: "15 min warmup → 70 min Z2 @ 66-72% FTP → 15 min cooldown",
-    executionCue: "Treat minutes 60-70 as the primary adaptation window — glycogen is partially depleted by then, and fat oxidation is working at maximum. The last 10 minutes of steady Z2 should feel slightly harder even at the same power.",
+    rationale: "Slightly longer than the standard Foundation Ride â extends the aerobic stimulus window without crossing into tempo. Used when CTL is building and the rider can handle moderate volume.",
+    structure: "15 min warmup â 70 min Z2 @ 66-72% FTP â 15 min cooldown",
+    executionCue: "Treat minutes 60-70 as the primary adaptation window â glycogen is partially depleted by then, and fat oxidation is working at maximum. The last 10 minutes of steady Z2 should feel slightly harder even at the same power.",
     successFeel: "Manageable tiredness at the end, not exhaustion. If you feel great at 100 minutes, the next session can be longer.",
     tags: ["aerobic-base", "volume", "base-phase"],
   },
@@ -439,23 +484,23 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 60,
     tss: 65,
-    rationale: "Z2 base ride with brief 'opener' efforts — 30-second accelerations at 110% FTP that prime the neuromuscular system without adding real training stress. Perfect the day before a race or hard session when legs need stimulation, not load.",
-    structure: "15 min warmup → 30 min Z2 @ 68% FTP with 5×30s openers @ 110% (6 min apart) → 15 min cooldown",
-    executionCue: "The openers are sharp but brief — full commitment for 30 seconds, then immediately back to Z2 pace. Don't treat them as intervals; treat them as system checks.",
-    successFeel: "Legs feel activated and responsive by the end. TSB should be similar or slightly better than when you started — this is activation, not depletion.",
+    rationale: "Z2 base ride with brief 'opener' efforts â 30-second accelerations at 110% FTP that prime the neuromuscular system without adding real training stress. Perfect the day before a race or hard session when legs need stimulation, not load.",
+    structure: "15 min warmup â 30 min Z2 @ 68% FTP with 5Ã30s openers @ 110% (6 min apart) â 15 min cooldown",
+    executionCue: "The openers are sharp but brief â full commitment for 30 seconds, then immediately back to Z2 pace. Don't treat them as intervals; treat them as system checks.",
+    successFeel: "Legs feel activated and responsive by the end. TSB should be similar or slightly better than when you started â this is activation, not depletion.",
     tags: ["aerobic-base", "activation", "pre-race"],
   },
 
-  // ── TEMPO (additional) ────────────────────────────────────────────────────
+  // ââ TEMPO (additional) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Continuous Tempo",
     category: "tempo",
     durationMin: 60,
     tss: 75,
-    rationale: "Unbroken 35-minute Z3 block — harder than broken tempo because there's no rest for lactate to clear, forcing the body to improve buffering capacity while sustaining output. Develops mental toughness alongside physiology.",
-    structure: "12 min warmup → 35 min continuous @ 79-83% FTP (no recovery) → 13 min cooldown",
-    executionCue: "Start at 79% FTP even if you feel like pushing harder. The challenge in this workout is the second half — minutes 20-35 — not the first. Conserve intentionally.",
-    successFeel: "Minutes 25-35 feel genuinely hard but completeable. If you had to back off the power, that's fine — adjust target down 2% next time.",
+    rationale: "Unbroken 35-minute Z3 block â harder than broken tempo because there's no rest for lactate to clear, forcing the body to improve buffering capacity while sustaining output. Develops mental toughness alongside physiology.",
+    structure: "12 min warmup â 35 min continuous @ 79-83% FTP (no recovery) â 13 min cooldown",
+    executionCue: "Start at 79% FTP even if you feel like pushing harder. The challenge in this workout is the second half â minutes 20-35 â not the first. Conserve intentionally.",
+    successFeel: "Minutes 25-35 feel genuinely hard but completeable. If you had to back off the power, that's fine â adjust target down 2% next time.",
     tags: ["tempo", "continuous", "mental-endurance"],
   },
   {
@@ -463,10 +508,10 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "tempo",
     durationMin: 65,
     tss: 78,
-    rationale: "Pacing discipline trainer — most riders go too hard at the start, fade, and finish disappointed. This workout reverses the pattern: start easy, finish strong, teaching the metabolic economy that defines experienced cyclists.",
-    structure: "12 min warmup → 10 min @ 76% FTP → 10 min @ 79% FTP → 10 min @ 82% FTP → 10 min @ 85% FTP → 13 min cooldown",
-    executionCue: "Resist the urge to push in block 1 even if it feels 'too easy' — you need the reserves for block 4. The final 10 minutes at 85% should feel hard. If block 4 felt easy, you held back too much in blocks 1-3.",
-    successFeel: "Block 4 is the hardest and you completed it. Heart rate should be highest in block 4 despite stable power — that's aerobic system working correctly.",
+    rationale: "Pacing discipline trainer â most riders go too hard at the start, fade, and finish disappointed. This workout reverses the pattern: start easy, finish strong, teaching the metabolic economy that defines experienced cyclists.",
+    structure: "12 min warmup â 10 min @ 76% FTP â 10 min @ 79% FTP â 10 min @ 82% FTP â 10 min @ 85% FTP â 13 min cooldown",
+    executionCue: "Resist the urge to push in block 1 even if it feels 'too easy' â you need the reserves for block 4. The final 10 minutes at 85% should feel hard. If block 4 felt easy, you held back too much in blocks 1-3.",
+    successFeel: "Block 4 is the hardest and you completed it. Heart rate should be highest in block 4 despite stable power â that's aerobic system working correctly.",
     tags: ["tempo", "pacing", "progressive"],
   },
   {
@@ -474,34 +519,34 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "tempo",
     durationMin: 75,
     tss: 88,
-    rationale: "3×15 min at 87-89% FTP — the bridge between sweet spot and threshold. This range trains the top end of Z3/bottom of Z4, improving the lactate clearance machinery before introducing true threshold work.",
-    structure: "12 min warmup → 3×15 min @ 88% FTP (5 min recovery) → 13 min cooldown",
-    executionCue: "88% FTP is right at the boundary — you'll be working hard but the 15-minute blocks should be completeable. If you can't finish block 3, power was too high; reduce to 86% for next session.",
+    rationale: "3Ã15 min at 87-89% FTP â the bridge between sweet spot and threshold. This range trains the top end of Z3/bottom of Z4, improving the lactate clearance machinery before introducing true threshold work.",
+    structure: "12 min warmup â 3Ã15 min @ 88% FTP (5 min recovery) â 13 min cooldown",
+    executionCue: "88% FTP is right at the boundary â you'll be working hard but the 15-minute blocks should be completeable. If you can't finish block 3, power was too high; reduce to 86% for next session.",
     successFeel: "Third block feels hard but not desperate. Breathing is controlled throughout. Ready to introduce Threshold Development next week if this felt manageable.",
     tags: ["tempo", "sub-threshold", "progression"],
   },
 
-  // ── SWEET SPOT (additional) ───────────────────────────────────────────────
+  // ââ SWEET SPOT (additional) âââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Sweet Spot Primer",
     category: "sweetspot",
     durationMin: 55,
     tss: 68,
-    rationale: "Entry-level sweet spot — four 8-minute blocks instead of three 10-minute blocks makes this more accessible for riders new to the zone. Fewer minutes per block reduces the psychological barrier while still building the metabolic foundations.",
-    structure: "12 min warmup → 4×8 min @ 88% FTP (3 min recovery) → 11 min cooldown",
-    executionCue: "Start at 87% FTP even if it feels easy — pacing matters here. Block 4 should feel noticeably harder than block 1. If blocks 1 and 4 feel identical, your sweet spot zone is probably miscalibrated.",
-    successFeel: "All 4 blocks completed. Block 4 is the hardest. Recovery between blocks feels genuinely helpful — you're out of the zone, not just coasting.",
+    rationale: "Entry-level sweet spot â four 8-minute blocks instead of three 10-minute blocks makes this more accessible for riders new to the zone. Fewer minutes per block reduces the psychological barrier while still building the metabolic foundations.",
+    structure: "12 min warmup â 4Ã8 min @ 88% FTP (3 min recovery) â 11 min cooldown",
+    executionCue: "Start at 87% FTP even if it feels easy â pacing matters here. Block 4 should feel noticeably harder than block 1. If blocks 1 and 4 feel identical, your sweet spot zone is probably miscalibrated.",
+    successFeel: "All 4 blocks completed. Block 4 is the hardest. Recovery between blocks feels genuinely helpful â you're out of the zone, not just coasting.",
     tags: ["sweetspot", "beginner-friendly", "entry-level"],
   },
   {
-    name: "3×15 Sweet Spot",
+    name: "3Ã15 Sweet Spot",
     category: "sweetspot",
     durationMin: 75,
     tss: 88,
-    rationale: "The natural progression from 3×10 min — same number of reps, 50% more work per interval. This is the session that marks the jump from beginner to intermediate sweet spot training and directly precedes 2×20 capability.",
-    structure: "12 min warmup → 3×15 min @ 90% FTP (5 min recovery) → 13 min cooldown",
-    executionCue: "3×15 is substantially harder than 3×10 — the last 5 minutes of each block is where the real adaptation happens. Aim for even splits (same power on all 3 blocks). If you fade in block 3, power was too high.",
-    successFeel: "All three 15-minute blocks completed near target power. Block 3 is the hardest and you finished it. Ready to progress toward 2×20 in the next 2-3 weeks.",
+    rationale: "The natural progression from 3Ã10 min â same number of reps, 50% more work per interval. This is the session that marks the jump from beginner to intermediate sweet spot training and directly precedes 2Ã20 capability.",
+    structure: "12 min warmup â 3Ã15 min @ 90% FTP (5 min recovery) â 13 min cooldown",
+    executionCue: "3Ã15 is substantially harder than 3Ã10 â the last 5 minutes of each block is where the real adaptation happens. Aim for even splits (same power on all 3 blocks). If you fade in block 3, power was too high.",
+    successFeel: "All three 15-minute blocks completed near target power. Block 3 is the hardest and you finished it. Ready to progress toward 2Ã20 in the next 2-3 weeks.",
     tags: ["sweetspot", "intermediate", "progression"],
   },
   {
@@ -509,9 +554,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "sweetspot",
     durationMin: 65,
     tss: 84,
-    rationale: "One continuous 35-minute block at sweet spot intensity — builds the ability to sustain effort without the psychological crutch of recovery intervals. Critical bridge between interval training and real-world riding where there are no built-in rest periods.",
-    structure: "12 min warmup → 35 min continuous @ 89% FTP → 18 min cooldown",
-    executionCue: "No recovery — this is one unbroken effort. Start at 87% FTP; build to 89% by minute 10. The final 10 minutes should be hard. If you can't sustain 87-89% for 35 min, your FTP may be slightly overestimated.",
+    rationale: "One continuous 35-minute block at sweet spot intensity â builds the ability to sustain effort without the psychological crutch of recovery intervals. Critical bridge between interval training and real-world riding where there are no built-in rest periods.",
+    structure: "12 min warmup â 35 min continuous @ 89% FTP â 18 min cooldown",
+    executionCue: "No recovery â this is one unbroken effort. Start at 87% FTP; build to 89% by minute 10. The final 10 minutes should be hard. If you can't sustain 87-89% for 35 min, your FTP may be slightly overestimated.",
     successFeel: "Completed all 35 minutes above 86% FTP. HR likely peaked in the final 5 minutes. Breathing was controlled but heavy by the end.",
     tags: ["sweetspot", "time-trial", "continuous"],
   },
@@ -520,23 +565,23 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "sweetspot",
     durationMin: 65,
     tss: 82,
-    rationale: "Sweet spot at 70-75 rpm shifts more work to the slow-twitch muscle fibers, building cycling-specific muscular endurance while simultaneously challenging the cardiovascular system — two adaptations in one session.",
-    structure: "15 min warmup → 3×12 min @ 89% FTP / 70-75 rpm (5 min recovery @ 90 rpm) → 14 min cooldown",
-    executionCue: "The low cadence is not optional. You'll feel your quads burning much earlier than usual. If maintaining 70-75 rpm forces you below 85% FTP, you're not strong enough for this version yet — use the standard Sweet Spot Classic instead.",
+    rationale: "Sweet spot at 70-75 rpm shifts more work to the slow-twitch muscle fibers, building cycling-specific muscular endurance while simultaneously challenging the cardiovascular system â two adaptations in one session.",
+    structure: "15 min warmup â 3Ã12 min @ 89% FTP / 70-75 rpm (5 min recovery @ 90 rpm) â 14 min cooldown",
+    executionCue: "The low cadence is not optional. You'll feel your quads burning much earlier than usual. If maintaining 70-75 rpm forces you below 85% FTP, you're not strong enough for this version yet â use the standard Sweet Spot Classic instead.",
     successFeel: "Quads feel muscularly worked (different from cardiovascular fatigue). You could feel the difference in muscle recruitment vs. normal spinning.",
     tags: ["sweetspot", "muscular-endurance", "low-cadence"],
   },
 
-  // ── THRESHOLD (additional) ────────────────────────────────────────────────
+  // ââ THRESHOLD (additional) ââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "FTP Test Protocol",
     category: "threshold",
     durationMin: 60,
     tss: 90,
-    rationale: "The standard field test for estimating FTP — a 20-minute all-out effort where 95% of average power estimates functional threshold. Use when FTP hasn't been tested in 4+ weeks or when rider performance has significantly changed.",
-    structure: "15 min progressive warmup (include 3×1 min @ 110%) → 5 min easy → 20 min ALL OUT time trial → 20 min easy cooldown",
-    executionCue: "Start the 20-minute effort conservatively — most riders go too hard in the first 5 minutes and blow up. Aim for even power across all 20 minutes or a slight negative split. Your FTP = 0.95 × average power for the 20 minutes.",
-    successFeel: "Completely exhausted at minute 20 — you should have nothing left. If you felt strong at the end, you rode too conservatively. Average power in the last 5 minutes should be ≥ average of first 5 minutes.",
+    rationale: "The standard field test for estimating FTP â a 20-minute all-out effort where 95% of average power estimates functional threshold. Use when FTP hasn't been tested in 4+ weeks or when rider performance has significantly changed.",
+    structure: "15 min progressive warmup (include 3Ã1 min @ 110%) â 5 min easy â 20 min ALL OUT time trial â 20 min easy cooldown",
+    executionCue: "Start the 20-minute effort conservatively â most riders go too hard in the first 5 minutes and blow up. Aim for even power across all 20 minutes or a slight negative split. Your FTP = 0.95 Ã average power for the 20 minutes.",
+    successFeel: "Completely exhausted at minute 20 â you should have nothing left. If you felt strong at the end, you rode too conservatively. Average power in the last 5 minutes should be â¥ average of first 5 minutes.",
     tags: ["threshold", "test", "assessment"],
   },
   {
@@ -544,9 +589,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 60,
     tss: 84,
-    rationale: "Shorter intervals at full threshold (5-minute blocks) with minimal rest — accumulates threshold time without the psychological demands of 8-minute blocks. High total threshold minutes, lower per-rep commitment.",
-    structure: "12 min warmup → 6×5 min @ 100% FTP (2.5 min recovery @ 55%) → 18 min cooldown",
-    executionCue: "The 2.5-minute recovery is deliberately short — designed to keep lactate elevated between reps so the total metabolic challenge is higher. Resist the urge to extend recovery time.",
+    rationale: "Shorter intervals at full threshold (5-minute blocks) with minimal rest â accumulates threshold time without the psychological demands of 8-minute blocks. High total threshold minutes, lower per-rep commitment.",
+    structure: "12 min warmup â 6Ã5 min @ 100% FTP (2.5 min recovery @ 55%) â 18 min cooldown",
+    executionCue: "The 2.5-minute recovery is deliberately short â designed to keep lactate elevated between reps so the total metabolic challenge is higher. Resist the urge to extend recovery time.",
     successFeel: "All 6 reps completed at target power. The last 2-3 reps were the hardest. Recovery between reps felt insufficient but you recovered enough.",
     tags: ["threshold", "accumulation"],
   },
@@ -555,10 +600,10 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 70,
     tss: 96,
-    rationale: "Three 12-minute blocks at 102% FTP — slightly above threshold, targeting the power output where the 'critical power' model predicts the highest rate of lactate removal capacity development. Based on Burnley & Jones research.",
-    structure: "12 min warmup → 3×12 min @ 102% FTP (6 min recovery @ 55%) → 16 min cooldown",
-    executionCue: "102% FTP is above threshold — these reps will be hard. Don't start above 100%; build to 102% by minute 2 of each rep. The rep ends when you've completed 12 minutes, not when your legs scream. If you can't hold 100%, you're probably not recovered enough.",
-    successFeel: "Three reps completed at 100-103% FTP. Rep 3 was the hardest. You could feel the difference from regular threshold — the metabolic ceiling was being genuinely challenged.",
+    rationale: "Three 12-minute blocks at 102% FTP â slightly above threshold, targeting the power output where the 'critical power' model predicts the highest rate of lactate removal capacity development. Based on Burnley & Jones research.",
+    structure: "12 min warmup â 3Ã12 min @ 102% FTP (6 min recovery @ 55%) â 16 min cooldown",
+    executionCue: "102% FTP is above threshold â these reps will be hard. Don't start above 100%; build to 102% by minute 2 of each rep. The rep ends when you've completed 12 minutes, not when your legs scream. If you can't hold 100%, you're probably not recovered enough.",
+    successFeel: "Three reps completed at 100-103% FTP. Rep 3 was the hardest. You could feel the difference from regular threshold â the metabolic ceiling was being genuinely challenged.",
     tags: ["threshold", "critical-power", "advanced"],
   },
   {
@@ -566,23 +611,23 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "threshold",
     durationMin: 75,
     tss: 96,
-    rationale: "Ascending then descending threshold blocks build toward the peak effort in the middle of the session, then step back down — teaching the rider what 100% FTP feels like from multiple approach angles, and building fatigue-resistance through the second descending half.",
-    structure: "12 min warmup → 5 min @ 97% → 4 min easy → 8 min @ 99% → 4 min easy → 10 min @ 101% → 4 min easy → 8 min @ 99% → 4 min easy → 5 min @ 97% → 14 min cooldown",
-    executionCue: "The 10-minute peak block is the hardest — it comes when you're already fatigued. The descending blocks (8 min, 5 min) must be completed even if you're tired. Descending threshold blocks train the most fatigue-resistant muscle fibers.",
-    successFeel: "All blocks completed. The 10-minute peak block was the hardest thing in the session. The final 5-minute block felt easier than the first 5-minute block even though you're more tired — that's pacing intelligence developing.",
+    rationale: "Ascending then descending threshold blocks build toward the peak effort in the middle of the session, then step back down â teaching the rider what 100% FTP feels like from multiple approach angles, and building fatigue-resistance through the second descending half.",
+    structure: "12 min warmup â 5 min @ 97% â 4 min easy â 8 min @ 99% â 4 min easy â 10 min @ 101% â 4 min easy â 8 min @ 99% â 4 min easy â 5 min @ 97% â 14 min cooldown",
+    executionCue: "The 10-minute peak block is the hardest â it comes when you're already fatigued. The descending blocks (8 min, 5 min) must be completed even if you're tired. Descending threshold blocks train the most fatigue-resistant muscle fibers.",
+    successFeel: "All blocks completed. The 10-minute peak block was the hardest thing in the session. The final 5-minute block felt easier than the first 5-minute block even though you're more tired â that's pacing intelligence developing.",
     tags: ["threshold", "pyramid", "variety"],
   },
 
-  // ── VO2MAX (additional) ───────────────────────────────────────────────────
+  // ââ VO2MAX (additional) âââââââââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "40/20 Ronnestad",
     category: "vo2max",
     durationMin: 60,
     tss: 82,
-    rationale: "Rønnestad's 40/20 protocol: 40 seconds at maximal aerobic power (~130% FTP) with only 20 seconds rest. The compressed rest period keeps VO2 elevated for nearly the entire working interval, achieving more accumulated time at VO2max than equal-duration 1:1 work:rest protocols.",
-    structure: "15 min warmup → 3 sets of 10×(40s@130% / 20s@50%) with 5 min rest between sets → 10 min cooldown",
-    executionCue: "130% FTP for 40 seconds is very hard. The 20-second rest is almost nothing — incomplete recovery is the design. By rep 8-10 of each set you'll be hurting. Never coast to zero power during the 20-second rest.",
-    successFeel: "All 30 reps completed (3 sets × 10). Set 3 is significantly harder than set 1. Power may drop 5-10% in the last few reps of set 3 — that's acceptable. Power maintained above 115% FTP in all reps = excellent.",
+    rationale: "RÃ¸nnestad's 40/20 protocol: 40 seconds at maximal aerobic power (~130% FTP) with only 20 seconds rest. The compressed rest period keeps VO2 elevated for nearly the entire working interval, achieving more accumulated time at VO2max than equal-duration 1:1 work:rest protocols.",
+    structure: "15 min warmup â 3 sets of 10Ã(40s@130% / 20s@50%) with 5 min rest between sets â 10 min cooldown",
+    executionCue: "130% FTP for 40 seconds is very hard. The 20-second rest is almost nothing â incomplete recovery is the design. By rep 8-10 of each set you'll be hurting. Never coast to zero power during the 20-second rest.",
+    successFeel: "All 30 reps completed (3 sets Ã 10). Set 3 is significantly harder than set 1. Power may drop 5-10% in the last few reps of set 3 â that's acceptable. Power maintained above 115% FTP in all reps = excellent.",
     tags: ["vo2max", "ronnestad", "intermittent", "advanced"],
   },
   {
@@ -590,20 +635,20 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "vo2max",
     durationMin: 65,
     tss: 88,
-    rationale: "6×3 minute intervals at 114% FTP — one of the most effective VO2max formats in research literature. Three minutes allows full VO2max elevation while short enough that power can be maintained at a level that maximally stresses the oxygen transport system.",
-    structure: "15 min warmup → 6×3 min @ 114% FTP (3 min recovery @ 50%) → 14 min cooldown",
+    rationale: "6Ã3 minute intervals at 114% FTP â one of the most effective VO2max formats in research literature. Three minutes allows full VO2max elevation while short enough that power can be maintained at a level that maximally stresses the oxygen transport system.",
+    structure: "15 min warmup â 6Ã3 min @ 114% FTP (3 min recovery @ 50%) â 14 min cooldown",
     executionCue: "Start each rep at 112% FTP, build to 114-116% by minute 2. The third minute of each rep should be genuinely maximal. If you can't hold 110% in rep 6, reduce to 112% for all reps next time.",
     successFeel: "Rep 6 was the hardest thing you've done on the bike this week. HR was above 90% of max in the final minute of reps 4-6. Full 6 reps completed.",
     tags: ["vo2max", "research-backed"],
   },
   {
-    name: "Seiler 4×8",
+    name: "Seiler 4Ã8",
     category: "vo2max",
     durationMin: 70,
     tss: 92,
-    rationale: "Stephen Seiler's extended VO2max protocol: 4×8 minutes at 106-108% FTP with 2:1 work:rest ratio. Longer intervals than traditional 4×4, requiring sustained cardiac output at VO2max rather than the brief cardiovascular spikes of shorter reps.",
-    structure: "14 min warmup → 4×8 min @ 107% FTP (4 min recovery @ 50%) → 8 min cooldown",
-    executionCue: "106-108% FTP for 8 full minutes — the last 2 minutes of each rep are where adaptation happens. HR should reach 90%+ of max by minute 6 of each rep. Cadence 90+ rpm maintains cardiovascular efficiency. If HR won't elevate to 88%+ max, power target is too low.",
+    rationale: "Stephen Seiler's extended VO2max protocol: 4Ã8 minutes at 106-108% FTP with 2:1 work:rest ratio. Longer intervals than traditional 4Ã4, requiring sustained cardiac output at VO2max rather than the brief cardiovascular spikes of shorter reps.",
+    structure: "14 min warmup â 4Ã8 min @ 107% FTP (4 min recovery @ 50%) â 8 min cooldown",
+    executionCue: "106-108% FTP for 8 full minutes â the last 2 minutes of each rep are where adaptation happens. HR should reach 90%+ of max by minute 6 of each rep. Cadence 90+ rpm maintains cardiovascular efficiency. If HR won't elevate to 88%+ max, power target is too low.",
     successFeel: "All 4 reps completed. HR peaked in the final 2 minutes of each rep (that sustained cardiac stress is the entire point). Rep 4 was the hardest and you finished it.",
     tags: ["vo2max", "seiler", "extended-intervals", "advanced"],
   },
@@ -612,10 +657,10 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "vo2max",
     durationMin: 60,
     tss: 78,
-    rationale: "Ascending and descending intervals (1-2-3-2-1 min) allow the rider to experience VO2max stress without committing to full 4-5 minute blocks — excellent introduction to high-intensity work, or a volume-reduced VO2max session on a high-fatigue week.",
-    structure: "15 min warmup → 1+2+3+2+1 min @ 115% FTP (2 min recovery between each) → 15 min cooldown",
-    executionCue: "The 3-minute rep is the peak effort. 1-minute reps feel easy — that's by design, they're warm-up intensity for the harder reps to come. Start each rep at 112% FTP and build. Don't hold back on the 3-minute rep.",
-    successFeel: "3-minute rep felt genuinely hard — near maximal. The 1-minute reps after the 3-minute (descending) felt easier than expected, showing metabolic recovery even with incomplete rest.",
+    rationale: "Ascending and descending intervals (1-2-3-2-1 min) allow the rider to experience VO2max stress without committing to full 4-5 minute blocks â excellent introduction to high-intensity work, or a volume-reduced VO2max session on a high-fatigue week.",
+    structure: "15 min warmup â 1+2+3+2+1 min @ 115% FTP (2 min recovery between each) â 15 min cooldown",
+    executionCue: "The 3-minute rep is the peak effort. 1-minute reps feel easy â that's by design, they're warm-up intensity for the harder reps to come. Start each rep at 112% FTP and build. Don't hold back on the 3-minute rep.",
+    successFeel: "3-minute rep felt genuinely hard â near maximal. The 1-minute reps after the 3-minute (descending) felt easier than expected, showing metabolic recovery even with incomplete rest.",
     tags: ["vo2max", "pyramid", "moderate-intensity", "intro-vo2"],
   },
   {
@@ -623,22 +668,22 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "vo2max",
     durationMin: 65,
     tss: 85,
-    rationale: "60 seconds at VO2max power / 60 seconds easy — the equal work:rest ratio allows more total interval time at high intensity than 3×3 minute formats while maintaining quality in each rep. Used extensively in national team programs.",
-    structure: "15 min warmup → 3 sets of 6×(60s@115% / 60s@50%) with 5 min between sets → 8 min cooldown",
-    executionCue: "115% FTP for 60 seconds — you should be working very hard. The 60-second rest isn't full recovery; you return to the next rep at 65-70% of max oxygen uptake. Never coast the rest periods.",
+    rationale: "60 seconds at VO2max power / 60 seconds easy â the equal work:rest ratio allows more total interval time at high intensity than 3Ã3 minute formats while maintaining quality in each rep. Used extensively in national team programs.",
+    structure: "15 min warmup â 3 sets of 6Ã(60s@115% / 60s@50%) with 5 min between sets â 8 min cooldown",
+    executionCue: "115% FTP for 60 seconds â you should be working very hard. The 60-second rest isn't full recovery; you return to the next rep at 65-70% of max oxygen uptake. Never coast the rest periods.",
     successFeel: "18 reps completed. Set 3 was significantly harder than set 1. Power held above 110% in all reps in set 3 = excellent execution.",
     tags: ["vo2max", "intermittent", "quality"],
   },
 
-  // ── NEUROMUSCULAR (additional) ────────────────────────────────────────────
+  // ââ NEUROMUSCULAR (additional) ââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Spin-Up Sprints",
     category: "neuromuscular",
     durationMin: 50,
     tss: 48,
-    rationale: "Gradual acceleration to maximum cadence (vs. fixed power) trains the fast-twitch motor unit recruitment pattern — the ability to access top-end speed quickly is trained separately from raw sprint power. Used for criterium and track cycling preparation.",
-    structure: "15 min warmup → 8×30s spin-up (build from 90 rpm to max cadence within 30s, light gear) → 2 min easy between → 15 min cooldown",
-    executionCue: "Use a gear lighter than you'd sprint in — this is a cadence drill, not a power drill. Build cadence from 90 rpm as fast as possible, reaching max cadence by second 20-25. Upper body stays relaxed and stable regardless of leg speed.",
+    rationale: "Gradual acceleration to maximum cadence (vs. fixed power) trains the fast-twitch motor unit recruitment pattern â the ability to access top-end speed quickly is trained separately from raw sprint power. Used for criterium and track cycling preparation.",
+    structure: "15 min warmup â 8Ã30s spin-up (build from 90 rpm to max cadence within 30s, light gear) â 2 min easy between â 15 min cooldown",
+    executionCue: "Use a gear lighter than you'd sprint in â this is a cadence drill, not a power drill. Build cadence from 90 rpm as fast as possible, reaching max cadence by second 20-25. Upper body stays relaxed and stable regardless of leg speed.",
     successFeel: "Peak cadence in rep 8 equals or exceeds peak cadence in rep 1 (no fatigue decline = clean neuromuscular execution). Legs feel the slight soreness of high-cadence muscular stress in the hip flexors.",
     tags: ["neuromuscular", "cadence", "technique"],
   },
@@ -647,23 +692,23 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "neuromuscular",
     durationMin: 55,
     tss: 62,
-    rationale: "6×1 minute efforts at 130% FTP target the anaerobic alactic and lactic systems — building the energy reserves that power attacks, breakaway attempts, and steep short climbs. One minute is the canonical anaerobic capacity stimulus duration.",
-    structure: "15 min warmup → 6×1 min @ 130% FTP (4 min easy recovery) → 16 min cooldown",
-    executionCue: "130% FTP for a full minute is very hard. Go all-out from the first second of each rep. Recovery must be full (4 minutes) — these are maximal efforts, not interval training. If rep 6 power drops more than 15% below rep 1, full 4-minute recovery wasn't adequate.",
-    successFeel: "All 6 reps completed. Power in rep 6 within 10% of rep 1 = excellent. Completely out of breath at the end of each rep — that's the correct effort level.",
+    rationale: "6Ã1 minute efforts at 130% FTP target the anaerobic alactic and lactic systems â building the energy reserves that power attacks, breakaway attempts, and steep short climbs. One minute is the canonical anaerobic capacity stimulus duration.",
+    structure: "15 min warmup â 6Ã1 min @ 130% FTP (4 min easy recovery) â 16 min cooldown",
+    executionCue: "130% FTP for a full minute is very hard. Go all-out from the first second of each rep. Recovery must be full (4 minutes) â these are maximal efforts, not interval training. If rep 6 power drops more than 15% below rep 1, full 4-minute recovery wasn't adequate.",
+    successFeel: "All 6 reps completed. Power in rep 6 within 10% of rep 1 = excellent. Completely out of breath at the end of each rep â that's the correct effort level.",
     tags: ["neuromuscular", "anaerobic", "attack-training"],
   },
 
-  // ── INTERMITTENT (additional) ─────────────────────────────────────────────
+  // ââ INTERMITTENT (additional) âââââââââââââââââââââââââââââââââââââââââââââ
   {
     name: "Tabata Protocol",
     category: "intermittent",
     durationMin: 30,
     tss: 45,
-    rationale: "The original Tabata (Izumi Tabata, 1996): 8×20s at 170% FTP / 10s rest — just 4 minutes of intervals, but the 20/10 format at supramaximal intensity achieves VO2max stimulus in a fraction of the time of longer intervals. Short total session makes it ideal for time-crunched days.",
-    structure: "12 min warmup → 8×(20s @ 170% FTP / 10s complete rest) → 5 min steady @ 60% → 13 min cooldown",
-    executionCue: "170% FTP for 20 seconds — this is an all-out effort. 10 seconds of complete rest (stop pedaling). The 8 reps take exactly 4 minutes. If you can complete all 8 reps above 150% FTP, your effort was calibrated correctly.",
-    successFeel: "The 4-minute Tabata block feels like the hardest thing possible. VO2max is fully reached by rep 5-6. The complete rest periods are essential — partial pedaling defeats the protocol.",
+    rationale: "The original Tabata (Izumi Tabata, 1996): 8Ã20s at 170% FTP / 10s rest â just 4 minutes of intervals, but the 20/10 format at supramaximal intensity achieves VO2max stimulus in a fraction of the time of longer intervals. Short total session makes it ideal for time-crunched days.",
+    structure: "12 min warmup â 8Ã(20s @ 170% FTP / 10s complete rest) â 5 min steady @ 60% â 13 min cooldown",
+    executionCue: "170% FTP for 20 seconds â this is an all-out effort. 10 seconds of complete rest (stop pedaling). The 8 reps take exactly 4 minutes. If you can complete all 8 reps above 150% FTP, your effort was calibrated correctly.",
+    successFeel: "The 4-minute Tabata block feels like the hardest thing possible. VO2max is fully reached by rep 5-6. The complete rest periods are essential â partial pedaling defeats the protocol.",
     tags: ["intermittent", "tabata", "time-crunched", "research-backed"],
   },
   {
@@ -671,9 +716,9 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "intermittent",
     durationMin: 50,
     tss: 72,
-    rationale: "40 seconds hard / 20 seconds easy — similar to Ronnestad 40/20 but at a slightly lower intensity (120% vs 130%), making it accessible at TSB -10 to -15 where a full Ronnestad session would be counterproductive.",
-    structure: "12 min warmup → 4 sets of 8×(40s@120% / 20s@50%) with 4 min rest between sets → 11 min cooldown",
-    executionCue: "120% FTP for 40 seconds — very hard but sustainable for all 8 reps per set. The 20-second rest is active, not complete. By set 4, you'll be significantly fatigued; reduce power to 115% if necessary to complete all reps.",
+    rationale: "40 seconds hard / 20 seconds easy â similar to Ronnestad 40/20 but at a slightly lower intensity (120% vs 130%), making it accessible at TSB -10 to -15 where a full Ronnestad session would be counterproductive.",
+    structure: "12 min warmup â 4 sets of 8Ã(40s@120% / 20s@50%) with 4 min rest between sets â 11 min cooldown",
+    executionCue: "120% FTP for 40 seconds â very hard but sustainable for all 8 reps per set. The 20-second rest is active, not complete. By set 4, you'll be significantly fatigued; reduce power to 115% if necessary to complete all reps.",
     successFeel: "32 total reps completed. Last set was the hardest but you finished all 8 reps. Breathing was maximal throughout each set.",
     tags: ["intermittent", "hiit", "moderate"],
   },
@@ -682,81 +727,81 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "intermittent",
     durationMin: 50,
     tss: 65,
-    rationale: "15 seconds hard / 15 seconds easy (Ronnestad-derived) — very short work periods allow very high power targets, creating a high peak power stimulus with less total lactate accumulation than 30/30 or 40/20 formats. Excellent for VO2max development with lower recovery cost.",
-    structure: "12 min warmup → 4 sets of 10×(15s@135% / 15s@50%) with 4 min rest between sets → 10 min cooldown",
-    executionCue: "135% FTP for 15 seconds — explosive but controlled. The 15-second rest is very short; start the next rep before you feel recovered. Never let power drop to zero during the rest period.",
-    successFeel: "40 total reps completed. Power in last set was within 10% of first set — the short duration makes power maintenance easier than in 30/30 or 40/20 formats.",
+    rationale: "15 seconds hard / 15 seconds easy (Ronnestad-derived) â very short work periods allow very high power targets, creating a high peak power stimulus with less total lactate accumulation than 30/30 or 40/20 formats. Excellent for VO2max development with lower recovery cost.",
+    structure: "12 min warmup â 4 sets of 10Ã(15s@135% / 15s@50%) with 4 min rest between sets â 10 min cooldown",
+    executionCue: "135% FTP for 15 seconds â explosive but controlled. The 15-second rest is very short; start the next rep before you feel recovered. Never let power drop to zero during the rest period.",
+    successFeel: "40 total reps completed. Power in last set was within 10% of first set â the short duration makes power maintenance easier than in 30/30 or 40/20 formats.",
     tags: ["intermittent", "micro-intervals", "neuromuscular"],
   },
 ];
 
-// ─── Phase Workout Selection ────────────────────────────────────────────────
+// âââ Phase Workout Selection ââââââââââââââââââââââââââââââââââââââââââââââââ
 export const PHASE_GUIDELINES = {
   Base: {
     focus: "aerobic foundation",
     primary: ["Foundation Ride", "Long Endurance", "Two-Hour Foundation", "Over-Distance Ride", "Z2 with Cadence Drills", "Sprint Builder", "Surge Ride", "Strength Endurance", "Endurance with Muscle Tension", "Aerobic Threshold Ride"],
     supporting: ["Tempo Cruise", "Continuous Tempo", "Progressive Tempo", "Easy Flush", "Spin & Recover", "Short Active Recovery"],
-    avoid: ["2×20 FTP Blocks", "Norwegian 4×4", "Over-Under Intervals", "5×5 VO2max", "Descending Threshold", "Seiler 4×8", "Critical Power Development", "40/20 Ronnestad"],
-    note: "80% Z1-Z2 volume. Sprint Builder, Surge Ride, and Anaerobic Bursts are acceptable — short maximal efforts don't create lasting lactate accumulation. Two-Hour Foundation is the most important single session in Base. One structured hard session per week maximum.",
+    avoid: ["2Ã20 FTP Blocks", "Norwegian 4Ã4", "Over-Under Intervals", "5Ã5 VO2max", "Descending Threshold", "Seiler 4Ã8", "Critical Power Development", "40/20 Ronnestad"],
+    note: "80% Z1-Z2 volume. Sprint Builder, Surge Ride, and Anaerobic Bursts are acceptable â short maximal efforts don't create lasting lactate accumulation. Two-Hour Foundation is the most important single session in Base. One structured hard session per week maximum.",
   },
   Build: {
     focus: "FTP and VO2max development",
-    primary: ["Sweet Spot Primer", "Sweet Spot Classic", "3×15 Sweet Spot", "Extended Sweet Spot", "Sweet Spot Progression", "Sweet Spot Time Trial", "Threshold Development", "Short Threshold Intervals", "Threshold Cruise Intervals", "Norwegian 4×4", "3-Minute VO2max Repeats"],
-    supporting: ["Foundation Ride", "Long Endurance", "Tempo Cruise", "Sub-Threshold Blocks", "30/30 Blitz", "60/60 Intervals", "Micro Intervals", "4×4 Two-Set", "VO2max Pyramid", "15/15 Micro-Intervals"],
+    primary: ["Sweet Spot Primer", "Sweet Spot Classic", "3Ã15 Sweet Spot", "Extended Sweet Spot", "Sweet Spot Progression", "Sweet Spot Time Trial", "Threshold Development", "Short Threshold Intervals", "Threshold Cruise Intervals", "Norwegian 4Ã4", "3-Minute VO2max Repeats"],
+    supporting: ["Foundation Ride", "Long Endurance", "Tempo Cruise", "Sub-Threshold Blocks", "30/30 Blitz", "60/60 Intervals", "Micro Intervals", "4Ã4 Two-Set", "VO2max Pyramid", "15/15 Micro-Intervals"],
     avoid: [],
-    note: "Progressive overload. Early Build: sweet spot + threshold intro. Mid Build: add VO2max. Late Build: 2×20, Norwegian 4×4, Seiler 4×8 for trained riders. Always bookend hard sessions with Foundation rides. 2-3 hard sessions per week maximum. Never increase volume AND intensity in the same week.",
+    note: "Progressive overload. Early Build: sweet spot + threshold intro. Mid Build: add VO2max. Late Build: 2Ã20, Norwegian 4Ã4, Seiler 4Ã8 for trained riders. Always bookend hard sessions with Foundation rides. 2-3 hard sessions per week maximum. Never increase volume AND intensity in the same week.",
   },
   Recovery: {
     focus: "adaptation and regeneration",
     primary: ["Short Active Recovery", "Spin & Recover", "Extended Recovery Flush", "Easy Flush", "Foundation Ride"],
     supporting: ["Tempo Cruise", "Continuous Tempo"],
-    avoid: ["Threshold Development", "2×20 FTP Blocks", "Norwegian 4×4", "5×5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression", "3×15 Sweet Spot", "Seiler 4×8", "Critical Power Development"],
-    note: "Volume cut 40-60%. At most one short quality session (Tempo Cruise). The body adapts DURING recovery weeks — this is not wasted time, it is when fitness from the load block is consolidated.",
+    avoid: ["Threshold Development", "2Ã20 FTP Blocks", "Norwegian 4Ã4", "5Ã5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression", "3Ã15 Sweet Spot", "Seiler 4Ã8", "Critical Power Development"],
+    note: "Volume cut 40-60%. At most one short quality session (Tempo Cruise). The body adapts DURING recovery weeks â this is not wasted time, it is when fitness from the load block is consolidated.",
   },
   Taper: {
     focus: "shed fatigue, keep race-pace sharpness, target event 2-3 weeks out",
     primary: ["Foundation Ride", "Tempo Cruise", "Sweet Spot Classic"],
     supporting: ["Long Endurance", "Micro Intervals", "Surge Ride"],
-    avoid: ["Norwegian 4×4", "2×20 FTP Blocks", "Over-Under Intervals", "5×5 VO2max", "Descending Threshold", "Extended Sweet Spot"],
-    note: "Cut total volume ~20-30% below the rider's recent normal week, more as the event gets closer. Keep 1-2 SHORT touches of race-pace intensity (Sweet Spot Classic or a shortened threshold touch, not a full hard session) so sharpness isn't lost. When in doubt, cut duration before cutting intensity — a shorter version of a familiar session beats a novel hard one this close to the event.",
+    avoid: ["Norwegian 4Ã4", "2Ã20 FTP Blocks", "Over-Under Intervals", "5Ã5 VO2max", "Descending Threshold", "Extended Sweet Spot"],
+    note: "Cut total volume ~20-30% below the rider's recent normal week, more as the event gets closer. Keep 1-2 SHORT touches of race-pace intensity (Sweet Spot Classic or a shortened threshold touch, not a full hard session) so sharpness isn't lost. When in doubt, cut duration before cutting intensity â a shorter version of a familiar session beats a novel hard one this close to the event.",
   },
   RaceWeek: {
     focus: "arrive fresh, event this week or next",
     primary: ["Spin & Recover", "Race Day Opener"],
     supporting: ["Foundation Ride"],
-    avoid: ["Threshold Development", "2×20 FTP Blocks", "Norwegian 4×4", "5×5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression", "Sweet Spot Classic", "Tempo Ladder", "30/30 Blitz"],
+    avoid: ["Threshold Development", "2Ã20 FTP Blocks", "Norwegian 4Ã4", "5Ã5 VO2max", "Over-Under Intervals", "Descending Threshold", "Extended Sweet Spot", "Sweet Spot Progression", "Sweet Spot Classic", "Tempo Ladder", "30/30 Blitz"],
     note: "No new training stress. Short easy rides only, plus one 'Race Day Opener' 1-2 days before the event to stay activated without adding fatigue. Schedule the event day itself as a Rest Day in the plan (the rider logs the real event separately) and keep the day after light too.",
   },
 } as const;
 
 /**
- * PROGRESSION LADDER — advance one rung per mesocycle, never skip.
+ * PROGRESSION LADDER â advance one rung per mesocycle, never skip.
  * Used by the AI to determine appropriate workout intensity for the rider's
  * current fitness level and training phase.
  */
 export const PROGRESSION_LADDER = [
   "Foundation Ride",            // Rung 1: aerobic base, mitochondrial density
-  "Two-Hour Foundation",        // Rung 2: extended aerobic — the foundation of all elite training
+  "Two-Hour Foundation",        // Rung 2: extended aerobic â the foundation of all elite training
   "Tempo Cruise",               // Rung 3: lactate clearance, Z3 introduction
-  "Continuous Tempo",           // Rung 4: unbroken Z3 — builds buffering and mental toughness
+  "Continuous Tempo",           // Rung 4: unbroken Z3 â builds buffering and mental toughness
   "Sub-Threshold Blocks",       // Rung 5: 88% FTP bridge before true sweet spot
-  "Sweet Spot Primer",          // Rung 6: 4×7 min @ 88% — entry-level sweet spot
-  "Sweet Spot Classic",         // Rung 7: 3×10 min @ 90% — cornerstone sweet spot session
-  "3×15 Sweet Spot",            // Rung 8: 3×15 min @ 90% — intermediate sweet spot
+  "Sweet Spot Primer",          // Rung 6: 4Ã7 min @ 88% â entry-level sweet spot
+  "Sweet Spot Classic",         // Rung 7: 3Ã10 min @ 90% â cornerstone sweet spot session
+  "3Ã15 Sweet Spot",            // Rung 8: 3Ã15 min @ 90% â intermediate sweet spot
   "Sweet Spot Progression",     // Rung 9: ascending blocks 10+15+20 min @ 90%
-  "Extended Sweet Spot",        // Rung 10: 2×20 min @ 90% — sustained sweet spot
-  "Short Threshold Intervals",  // Rung 11: 6×5 min @ 100% — threshold accumulation
-  "Threshold Development",      // Rung 12: 4×8 min @ 100% — threshold quality
-  "Threshold Cruise Intervals", // Rung 13: 5×5 min @ 100% — threshold volume
-  "Critical Power Development", // Rung 14: 3×12 min @ 102% — above-threshold ceiling
+  "Extended Sweet Spot",        // Rung 10: 2Ã20 min @ 90% â sustained sweet spot
+  "Short Threshold Intervals",  // Rung 11: 6Ã5 min @ 100% â threshold accumulation
+  "Threshold Development",      // Rung 12: 4Ã8 min @ 100% â threshold quality
+  "Threshold Cruise Intervals", // Rung 13: 5Ã5 min @ 100% â threshold volume
+  "Critical Power Development", // Rung 14: 3Ã12 min @ 102% â above-threshold ceiling
   "Over-Under Intervals",       // Rung 15: lactate buffering at the threshold boundary
-  "VO2max Pyramid",             // Rung 16: 1+2+3+2+1 min — VO2max introduction
-  "4×4 Two-Set",                // Rung 17: 2+2 Norwegian variant — stepping stone
-  "Norwegian 4×4",              // Rung 18: 4×4 min @ 108% — VO2max development
-  "3-Minute VO2max Repeats",    // Rung 19: 6×3 min @ 114% — research-backed VO2max
-  "5×5 VO2max",                 // Rung 20: VO2max volume
-  "Seiler 4×8",                 // Rung 21: extended VO2max, sustained cardiac stress
-  "2×20 FTP Blocks",            // Rung 22: race-pace FTP simulation
+  "VO2max Pyramid",             // Rung 16: 1+2+3+2+1 min â VO2max introduction
+  "4Ã4 Two-Set",                // Rung 17: 2+2 Norwegian variant â stepping stone
+  "Norwegian 4Ã4",              // Rung 18: 4Ã4 min @ 108% â VO2max development
+  "3-Minute VO2max Repeats",    // Rung 19: 6Ã3 min @ 114% â research-backed VO2max
+  "5Ã5 VO2max",                 // Rung 20: VO2max volume
+  "Seiler 4Ã8",                 // Rung 21: extended VO2max, sustained cardiac stress
+  "2Ã20 FTP Blocks",            // Rung 22: race-pace FTP simulation
 ] as const;
 
 /**
@@ -764,123 +809,123 @@ export const PROGRESSION_LADDER = [
  * Keep this in sync with WORKOUT_LIBRARY above.
  */
 export const WORKOUT_LIBRARY_PROMPT = `
-NAMED WORKOUT PROTOCOLS — use these exact names as session titles. Choose from this library every time. Plans must feel like they were designed by a professional coach who studied this rider's actual data, not generated from a template.
+NAMED WORKOUT PROTOCOLS â use these exact names as session titles. Choose from this library every time. Plans must feel like they were designed by a professional coach who studied this rider's actual data, not generated from a template.
 
 RECOVERY (always appropriate regardless of TSB):
-• "Short Active Recovery" — 20 min @ 45-55% FTP. Use on time-crunched days or after a very hard week. No structure, just blood flow.
-• "Spin & Recover" — 30 min, 50-60% FTP, 90+ rpm. Metabolic waste clearance. Heaviness should ease in last 10 min — if it doesn't, power was too high.
-• "Extended Recovery Flush" — 50 min (10 easy → 30 Z1 @ 54% → 10 wind-down). For days after back-to-back hard efforts.
-• "Easy Flush" — 45 min (10 warmup → 25 Z1 @ 55% → 10 cooldown). Never push harder even if feeling strong.
+â¢ "Short Active Recovery" â 20 min @ 45-55% FTP. Use on time-crunched days or after a very hard week. No structure, just blood flow.
+â¢ "Spin & Recover" â 30 min, 50-60% FTP, 90+ rpm. Metabolic waste clearance. Heaviness should ease in last 10 min â if it doesn't, power was too high.
+â¢ "Extended Recovery Flush" â 50 min (10 easy â 30 Z1 @ 54% â 10 wind-down). For days after back-to-back hard efforts.
+â¢ "Easy Flush" â 45 min (10 warmup â 25 Z1 @ 55% â 10 cooldown). Never push harder even if feeling strong.
 
-ENDURANCE / FOUNDATION (Z2 — 65-76% FTP, always appropriate):
-• "Foundation Ride" — 60 min (10 warmup → 40 Z2 @ 65-73% → 10 cooldown). If you can't complete full sentences, you're above Z2.
-• "Long Endurance" — 90 min (15 warmup → 65 Z2 @ 65-73% → 10 cooldown). Last 20 min = primary fat-oxidation adaptation window.
-• "Two-Hour Foundation" — 120 min (20 warmup → 85 Z2 → 15 cooldown). Cornerstone of elite aerobic base — triggers mitochondrial biogenesis that shorter rides can't. Use in Base/Build with adequate recovery.
-• "Over-Distance Ride" — 100 min (15 warmup → 70 Z2 → 15 cooldown). Extends aerobic window for riders whose CTL can handle moderate volume.
-• "Z2 with Cadence Drills" — 60 min, Z2 with 4×2 min @ 100-110 rpm. Eliminates dead-spots in pedal stroke.
-• "Surge Ride" — 60 min, Z2 with 6×1 min surges @ 110% FTP (5 min apart). Metabolic variety without recovery cost.
-• "Aerobic Threshold Ride" — 60 min (10 warmup → 40 min @ 72-76% AeT → 10 cooldown). Targets the fat/carb crossover point — builds aerobic ceiling.
-• "Endurance with Muscle Tension" — 65 min, Z2 with 4×5 min low-cadence (55 rpm) blocks. Cycling-specific leg strength within the aerobic zone.
-• "Endurance Openers" — 60 min, Z2 with 5×30s openers @ 110% FTP. Activation ride for the day before a race or hard session.
+ENDURANCE / FOUNDATION (Z2 â 65-76% FTP, always appropriate):
+â¢ "Foundation Ride" â 60 min (10 warmup â 40 Z2 @ 65-73% â 10 cooldown). If you can't complete full sentences, you're above Z2.
+â¢ "Long Endurance" â 90 min (15 warmup â 65 Z2 @ 65-73% â 10 cooldown). Last 20 min = primary fat-oxidation adaptation window.
+â¢ "Two-Hour Foundation" â 120 min (20 warmup â 85 Z2 â 15 cooldown). Cornerstone of elite aerobic base â triggers mitochondrial biogenesis that shorter rides can't. Use in Base/Build with adequate recovery.
+â¢ "Over-Distance Ride" â 100 min (15 warmup â 70 Z2 â 15 cooldown). Extends aerobic window for riders whose CTL can handle moderate volume.
+â¢ "Z2 with Cadence Drills" â 60 min, Z2 with 4Ã2 min @ 100-110 rpm. Eliminates dead-spots in pedal stroke.
+â¢ "Surge Ride" â 60 min, Z2 with 6Ã1 min surges @ 110% FTP (5 min apart). Metabolic variety without recovery cost.
+â¢ "Aerobic Threshold Ride" â 60 min (10 warmup â 40 min @ 72-76% AeT â 10 cooldown). Targets the fat/carb crossover point â builds aerobic ceiling.
+â¢ "Endurance with Muscle Tension" â 65 min, Z2 with 4Ã5 min low-cadence (55 rpm) blocks. Cycling-specific leg strength within the aerobic zone.
+â¢ "Endurance Openers" â 60 min, Z2 with 5Ã30s openers @ 110% FTP. Activation ride for the day before a race or hard session.
 
-TEMPO (Z3 — 76-90% FTP, always appropriate, never needs high TSB):
-• "Tempo Cruise" — 60 min (10 warmup → 2×15 min @ 80% / 5 rec → 15 cooldown). 3-4 word sentences at target. Second block harder = correct.
-• "Tempo Ladder" — 75 min (12 warmup → 10+15+20 min @ 80% / 5 rec each → 13 cooldown). 20-min block is the real stimulus.
-• "Continuous Tempo" — 60 min (12 warmup → 35 min non-stop @ 81% → 13 cooldown). No rest — the continuous challenge builds lactate buffering and mental toughness.
-• "Progressive Tempo" — 65 min (12 warmup → 10+10+10+10 min stepping 76→79→82→85% → 13 cooldown). Pacing discipline trainer — start conservative, finish strong.
-• "Sub-Threshold Blocks" — 75 min (12 warmup → 3×15 min @ 88% / 5 min rec → 3 cooldown). Bridge from sweet spot to threshold. Requires TSB ≥ -15.
-• "Strength Endurance" — 65 min (15 warmup → 3×8 min @ 81% FTP / 55-65 rpm / 4 min rec → 14 cooldown). Quads burn muscularly — that's the correct signal.
+TEMPO (Z3 â 76-90% FTP, always appropriate, never needs high TSB):
+â¢ "Tempo Cruise" â 60 min (10 warmup â 2Ã15 min @ 80% / 5 rec â 15 cooldown). 3-4 word sentences at target. Second block harder = correct.
+â¢ "Tempo Ladder" â 75 min (12 warmup â 10+15+20 min @ 80% / 5 rec each â 13 cooldown). 20-min block is the real stimulus.
+â¢ "Continuous Tempo" â 60 min (12 warmup â 35 min non-stop @ 81% â 13 cooldown). No rest â the continuous challenge builds lactate buffering and mental toughness.
+â¢ "Progressive Tempo" â 65 min (12 warmup â 10+10+10+10 min stepping 76â79â82â85% â 13 cooldown). Pacing discipline trainer â start conservative, finish strong.
+â¢ "Sub-Threshold Blocks" â 75 min (12 warmup â 3Ã15 min @ 88% / 5 min rec â 3 cooldown). Bridge from sweet spot to threshold. Requires TSB â¥ -15.
+â¢ "Strength Endurance" â 65 min (15 warmup â 3Ã8 min @ 81% FTP / 55-65 rpm / 4 min rec â 14 cooldown). Quads burn muscularly â that's the correct signal.
 
-SWEET SPOT (88-93% FTP — the most time-efficient zone. Requires TSB ≥ -20):
-• "Sweet Spot Primer" — 55 min (12 warmup → 4×7 min @ 88% / 3 min rec → 3 cooldown). Beginner entry to sweet spot — fewer, shorter blocks than Classic.
-• "Sweet Spot Classic" — 60 min (12 warmup → 3×10 min @ 90% / 4 rec → 14 cooldown). Pacing: start 88%, not 93%. Block 1 discipline makes block 3 possible.
-• "3×15 Sweet Spot" — 75 min (12 warmup → 3×15 min @ 90% / 5 rec → 3 cooldown). Natural progression from 3×10 min. If block 3 fades, power was too high.
-• "Extended Sweet Spot" — 75 min (15 warmup → 2×20 min @ 90% / 8 rec → 4 cooldown). Second block within 3% of first = progression ready.
-• "Sweet Spot Progression" — 70 min (12 warmup → 10+15+20 min @ 90% / 5 each → 8 cooldown). Ascending difficulty in a single session.
-• "Sweet Spot Time Trial" — 65 min (12 warmup → 35 min continuous @ 89% → 18 cooldown). No recovery — builds tolerance for sustained effort.
-• "Low-Cadence Sweet Spot" — 65 min (15 warmup → 3×12 min @ 89% / 70-75 rpm / 4 rec → 2 cooldown). Dual stimulus: cardiovascular + muscular endurance.
+SWEET SPOT (88-93% FTP â the most time-efficient zone. Requires TSB â¥ -20):
+â¢ "Sweet Spot Primer" â 55 min (12 warmup â 4Ã7 min @ 88% / 3 min rec â 3 cooldown). Beginner entry to sweet spot â fewer, shorter blocks than Classic.
+â¢ "Sweet Spot Classic" â 60 min (12 warmup â 3Ã10 min @ 90% / 4 rec â 14 cooldown). Pacing: start 88%, not 93%. Block 1 discipline makes block 3 possible.
+â¢ "3Ã15 Sweet Spot" â 75 min (12 warmup â 3Ã15 min @ 90% / 5 rec â 3 cooldown). Natural progression from 3Ã10 min. If block 3 fades, power was too high.
+â¢ "Extended Sweet Spot" â 75 min (15 warmup â 2Ã20 min @ 90% / 8 rec â 4 cooldown). Second block within 3% of first = progression ready.
+â¢ "Sweet Spot Progression" â 70 min (12 warmup â 10+15+20 min @ 90% / 5 each â 8 cooldown). Ascending difficulty in a single session.
+â¢ "Sweet Spot Time Trial" â 65 min (12 warmup â 35 min continuous @ 89% â 18 cooldown). No recovery â builds tolerance for sustained effort.
+â¢ "Low-Cadence Sweet Spot" â 65 min (15 warmup â 3Ã12 min @ 89% / 70-75 rpm / 4 rec â 2 cooldown). Dual stimulus: cardiovascular + muscular endurance.
 
-THRESHOLD (97-105% FTP — requires TSB ≥ -12):
-• "Short Threshold Intervals" — 60 min (12 warmup → 6×5 min @ 100% / 2.5 rec → 3 cooldown). Short recovery accumulates lactate deliberately — the stress IS the workout.
-• "Threshold Development" — 60 min (12 warmup → 4×8 min @ 100% / 4 rec → 4 cooldown). Quality > quantity — 3 quality blocks > 4 faded ones.
-• "Threshold Cruise Intervals" — 60 min (12 warmup → 5×5 min @ 100% / 2.5 rec → 10.5 cooldown). High threshold volume, lower per-rep commitment.
-• "Critical Power Development" — 70 min (12 warmup → 3×12 min @ 102% / 6 rec → 4 cooldown). Above-threshold work targets the critical power ceiling. Advanced only.
-• "Threshold Pyramid" — 75 min (12 warmup → 5+8+10+8+5 min @ ascending % / 4 rec each → 11 cooldown). Peak effort in the middle of the session; descending blocks train fatigue-resistance.
-• "2×20 FTP Blocks" — 70 min (15 warmup → 2×20 min @ 98% / 7 rec → 6 cooldown). Gold standard. Start at 97% — pacing discipline is the entire test.
-• "Descending Threshold" — 65 min (12 warmup → 12+10+8+6 min stepping 97→103% / 4 rec each → 5 cooldown). Builds mental toughness. Final block at 103% feels like a sprint.
-• "Over-Under Intervals" — 65 min (12 warmup → 3×9 min cycling 3 min@105%/3 min@93% / 5 rec → 11 cooldown). Never ease below 90% during 'under' phases.
-• "FTP Test Protocol" — 60 min (15 progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). Assessment only. FTP = 0.95 × average power for 20 min.
+THRESHOLD (97-105% FTP â requires TSB â¥ -12):
+â¢ "Short Threshold Intervals" â 60 min (12 warmup â 6Ã5 min @ 100% / 2.5 rec â 3 cooldown). Short recovery accumulates lactate deliberately â the stress IS the workout.
+â¢ "Threshold Development" â 60 min (12 warmup â 4Ã8 min @ 100% / 4 rec â 4 cooldown). Quality > quantity â 3 quality blocks > 4 faded ones.
+â¢ "Threshold Cruise Intervals" â 60 min (12 warmup â 5Ã5 min @ 100% / 2.5 rec â 10.5 cooldown). High threshold volume, lower per-rep commitment.
+â¢ "Critical Power Development" â 70 min (12 warmup â 3Ã12 min @ 102% / 6 rec â 4 cooldown). Above-threshold work targets the critical power ceiling. Advanced only.
+â¢ "Threshold Pyramid" â 75 min (12 warmup â 5+8+10+8+5 min @ ascending % / 4 rec each â 11 cooldown). Peak effort in the middle of the session; descending blocks train fatigue-resistance.
+â¢ "2Ã20 FTP Blocks" â 70 min (15 warmup â 2Ã20 min @ 98% / 7 rec â 6 cooldown). Gold standard. Start at 97% â pacing discipline is the entire test.
+â¢ "Descending Threshold" â 65 min (12 warmup â 12+10+8+6 min stepping 97â103% / 4 rec each â 5 cooldown). Builds mental toughness. Final block at 103% feels like a sprint.
+â¢ "Over-Under Intervals" â 65 min (12 warmup â 3Ã9 min cycling 3 min@105%/3 min@93% / 5 rec â 11 cooldown). Never ease below 90% during 'under' phases.
+â¢ "FTP Test Protocol" â 60 min (15 progressive warmup â 5 min easy â 20 min ALL OUT â 20 min cooldown). Assessment only. FTP = 0.95 Ã average power for 20 min.
 
-VO2MAX (106-120% FTP — requires TSB ≥ -5 and intermediate+ rider):
-• "Micro Intervals" — 55 min (12 warmup → 12×1 min @ 117% / 1 rec → 19 cooldown). Entry-level VO2max. Last 4 reps harder than first 4.
-• "VO2max Pyramid" — 60 min (15 warmup → 1+2+3+2+1 min @ 115% / 2 rec each → 27 cooldown). Intro to VO2max without long rep commitment. Great variety session.
-• "60/60 Intervals" — 65 min (15 warmup → 3 sets of 6×(60s@115% / 60s@50%) / 5 set-rest → 4 cooldown). Equal work:rest. Set 3 significantly harder than set 1 = correct execution.
-• "4×4 Two-Set" — 65 min (12 warmup → [2×4 min@108%/4 rec] + 8 Z2 + [2×4 min@108%/4 rec] → 13 cooldown). Beginner Norwegian variant. Graduate to full 4×4 when this feels manageable.
-• "Norwegian 4×4" — 60 min (12 warmup → 4×4 min @ 108% / 4 rec → 16 cooldown). Last 2 min of each rep MUST be genuinely hard. Cadence 95+ rpm.
-• "3-Minute VO2max Repeats" — 65 min (15 warmup → 6×3 min @ 114% / 3 rec → 14 cooldown). Highly effective per research. Rep 6 must be the hardest thing this week.
-• "5×5 VO2max" — 70 min (15 warmup → 5×5 min @ 110% / 5 rec → 5 cooldown). Equal work:rest. Rep 5 = hardest thing this week.
-• "40/20 Ronnestad" — 60 min (15 warmup → 3 sets of 10×(40s@130% / 20s@50%) / 5 set-rest → 5 cooldown). Compressed rest keeps VO2 elevated throughout. Advanced riders only (TSB ≥ -5, trained+).
-• "Seiler 4×8" — 70 min (14 warmup → 4×8 min @ 107% / 4 rec → 8 cooldown). Extended VO2max intervals — HR must reach 90%+ max in last 2 min each rep. Advanced only.
+VO2MAX (106-120% FTP â requires TSB â¥ -5 and intermediate+ rider):
+â¢ "Micro Intervals" â 55 min (12 warmup â 12Ã1 min @ 117% / 1 rec â 19 cooldown). Entry-level VO2max. Last 4 reps harder than first 4.
+â¢ "VO2max Pyramid" â 60 min (15 warmup â 1+2+3+2+1 min @ 115% / 2 rec each â 27 cooldown). Intro to VO2max without long rep commitment. Great variety session.
+â¢ "60/60 Intervals" â 65 min (15 warmup â 3 sets of 6Ã(60s@115% / 60s@50%) / 5 set-rest â 4 cooldown). Equal work:rest. Set 3 significantly harder than set 1 = correct execution.
+â¢ "4Ã4 Two-Set" â 65 min (12 warmup â [2Ã4 min@108%/4 rec] + 8 Z2 + [2Ã4 min@108%/4 rec] â 13 cooldown). Beginner Norwegian variant. Graduate to full 4Ã4 when this feels manageable.
+â¢ "Norwegian 4Ã4" â 60 min (12 warmup â 4Ã4 min @ 108% / 4 rec â 16 cooldown). Last 2 min of each rep MUST be genuinely hard. Cadence 95+ rpm.
+â¢ "3-Minute VO2max Repeats" â 65 min (15 warmup â 6Ã3 min @ 114% / 3 rec â 14 cooldown). Highly effective per research. Rep 6 must be the hardest thing this week.
+â¢ "5Ã5 VO2max" â 70 min (15 warmup â 5Ã5 min @ 110% / 5 rec â 5 cooldown). Equal work:rest. Rep 5 = hardest thing this week.
+â¢ "40/20 Ronnestad" â 60 min (15 warmup â 3 sets of 10Ã(40s@130% / 20s@50%) / 5 set-rest â 5 cooldown). Compressed rest keeps VO2 elevated throughout. Advanced riders only (TSB â¥ -5, trained+).
+â¢ "Seiler 4Ã8" â 70 min (14 warmup â 4Ã8 min @ 107% / 4 rec â 8 cooldown). Extended VO2max intervals â HR must reach 90%+ max in last 2 min each rep. Advanced only.
 
-NEUROMUSCULAR (acceptable even in Base — minimal lactate, neurological only):
-• "Sprint Builder" — 50 min (15 warmup → 8×15s ALL OUT / 2.5 min rec → 13 Z2 flush). Last sprint near-equal to first = success.
-• "Spin-Up Sprints" — 50 min (15 warmup → 8×30s cadence spin-ups / 2 min rec → 15 cooldown). Builds pedaling speed and motor unit recruitment. Light gear, max cadence.
-• "Anaerobic Bursts" — 55 min (15 warmup → 6×1 min @ 130% / 4 min rec → 10 cooldown). Trains anaerobic capacity for attacks and climbs. Full recovery between reps is non-negotiable.
-• "Race Day Opener" — 35 min (10 warmup → 3×1 min @ 110% / 3 min easy → 5 min @ 80% → 10 spindown). Pre-event only (24-48h before race). Activation, not training stress.
+NEUROMUSCULAR (acceptable even in Base â minimal lactate, neurological only):
+â¢ "Sprint Builder" â 50 min (15 warmup â 8Ã15s ALL OUT / 2.5 min rec â 13 Z2 flush). Last sprint near-equal to first = success.
+â¢ "Spin-Up Sprints" â 50 min (15 warmup â 8Ã30s cadence spin-ups / 2 min rec â 15 cooldown). Builds pedaling speed and motor unit recruitment. Light gear, max cadence.
+â¢ "Anaerobic Bursts" â 55 min (15 warmup â 6Ã1 min @ 130% / 4 min rec â 10 cooldown). Trains anaerobic capacity for attacks and climbs. Full recovery between reps is non-negotiable.
+â¢ "Race Day Opener" â 35 min (10 warmup â 3Ã1 min @ 110% / 3 min easy â 5 min @ 80% â 10 spindown). Pre-event only (24-48h before race). Activation, not training stress.
 
-INTERMITTENT (requires TSB ≥ -8 — metabolically demanding):
-• "15/15 Micro-Intervals" — 50 min (12 warmup → 4 sets of 10×(15s@135% / 15s@50%) / 4 set-rest → 6 cooldown). High-power, low-recovery-cost intermittent work. Good starter for riders new to above-threshold.
-• "30/30 Blitz" — 60 min (12 warmup → 3 sets of 8×(30s@120% / 30s@50%) / 5 set-rest → 14 cooldown). Never coast the off intervals — active recovery maintains elevated VO2.
-• "Tabata Protocol" — 30 min (12 warmup → 8×(20s@170% / 10s complete rest) → 5 min @ 60% → 9 cooldown). True Tabata: 4 min of supramaximal work achieves VO2max in minimal time.
-• "40/20 HIIT" — 50 min (12 warmup → 3 sets of 8×(40s@120% / 20s@50%) / 4 set-rest → 6 cooldown). Slightly lower than Ronnestad intensity — appropriate at TSB -10 to -15 where full Ronnestad would be counterproductive.
+INTERMITTENT (requires TSB â¥ -8 â metabolically demanding):
+â¢ "15/15 Micro-Intervals" â 50 min (12 warmup â 4 sets of 10Ã(15s@135% / 15s@50%) / 4 set-rest â 6 cooldown). High-power, low-recovery-cost intermittent work. Good starter for riders new to above-threshold.
+â¢ "30/30 Blitz" â 60 min (12 warmup â 3 sets of 8Ã(30s@120% / 30s@50%) / 5 set-rest â 14 cooldown). Never coast the off intervals â active recovery maintains elevated VO2.
+â¢ "Tabata Protocol" â 30 min (12 warmup â 8Ã(20s@170% / 10s complete rest) â 5 min @ 60% â 9 cooldown). True Tabata: 4 min of supramaximal work achieves VO2max in minimal time.
+â¢ "40/20 HIIT" â 50 min (12 warmup â 3 sets of 8Ã(40s@120% / 20s@50%) / 4 set-rest â 6 cooldown). Slightly lower than Ronnestad intensity â appropriate at TSB -10 to -15 where full Ronnestad would be counterproductive.
 
 RIDER LEVEL GUIDANCE:
-• < 2.5 W/kg (Beginner): Recovery, Foundation, Surge Ride, Tempo Cruise, Sprint Builder, Short Active Recovery ONLY. No sweet spot > 4×7 min. No threshold. No VO2max.
-• 2.5–3.0 W/kg (Novice): Add Sweet Spot Primer, Sweet Spot Classic, Micro Intervals, 30/30 Blitz, 15/15 Micro-Intervals. Threshold only in late Build at TSB ≥ -8.
-• 3.0–3.5 W/kg (Intermediate): Full sweet spot range including 3×15. Add Threshold Development, Short Threshold Intervals, 4×4 Two-Set, VO2max Pyramid, 60/60 Intervals. No Norwegian 4×4 or 2×20.
-• 3.5+ W/kg (Trained): Full library. Norwegian 4×4, 2×20, Over-Under, Seiler 4×8, 40/20 Ronnestad, Critical Power Development all unlocked.
-• If wPerKg is null: infer from FTP — < 150 W = beginner, 150-220 W = novice/intermediate, > 220 W = trained.
+â¢ < 2.5 W/kg (Beginner): Recovery, Foundation, Surge Ride, Tempo Cruise, Sprint Builder, Short Active Recovery ONLY. No sweet spot > 4Ã7 min. No threshold. No VO2max.
+â¢ 2.5â3.0 W/kg (Novice): Add Sweet Spot Primer, Sweet Spot Classic, Micro Intervals, 30/30 Blitz, 15/15 Micro-Intervals. Threshold only in late Build at TSB â¥ -8.
+â¢ 3.0â3.5 W/kg (Intermediate): Full sweet spot range including 3Ã15. Add Threshold Development, Short Threshold Intervals, 4Ã4 Two-Set, VO2max Pyramid, 60/60 Intervals. No Norwegian 4Ã4 or 2Ã20.
+â¢ 3.5+ W/kg (Trained): Full library. Norwegian 4Ã4, 2Ã20, Over-Under, Seiler 4Ã8, 40/20 Ronnestad, Critical Power Development all unlocked.
+â¢ If wPerKg is null: infer from FTP â < 150 W = beginner, 150-220 W = novice/intermediate, > 220 W = trained.
 
 SESSION READINESS (substitute and cite the actual TSB when doing so):
-• VO2max (106%+): TSB ≥ -5. Below → substitute Sweet Spot Classic or 60/60 Intervals.
-• Threshold (100%+): TSB ≥ -12. Below → substitute Sweet Spot Classic or Sub-Threshold Blocks.
-• Sweet Spot (88%+): TSB ≥ -20. Below → substitute Tempo Cruise or Continuous Tempo.
-• Intermittent (30/30, 40/20): TSB ≥ -8. Below → substitute 15/15 Micro-Intervals or Tempo Cruise.
-• Neuromuscular/Sprint: TSB ≥ -15. Below → substitute Sprint Builder (shorter) or Foundation Ride.
-• Tempo, Foundation, Recovery: always appropriate regardless of TSB.
+â¢ VO2max (106%+): TSB â¥ -5. Below â substitute Sweet Spot Classic or 60/60 Intervals.
+â¢ Threshold (100%+): TSB â¥ -12. Below â substitute Sweet Spot Classic or Sub-Threshold Blocks.
+â¢ Sweet Spot (88%+): TSB â¥ -20. Below â substitute Tempo Cruise or Continuous Tempo.
+â¢ Intermittent (30/30, 40/20): TSB â¥ -8. Below â substitute 15/15 Micro-Intervals or Tempo Cruise.
+â¢ Neuromuscular/Sprint: TSB â¥ -15. Below â substitute Sprint Builder (shorter) or Foundation Ride.
+â¢ Tempo, Foundation, Recovery: always appropriate regardless of TSB.
 
-PROGRESSION LADDER — advance one rung per mesocycle, never skip:
-Foundation Ride → Tempo Cruise → Sweet Spot Primer → Sweet Spot Classic → 3×15 Sweet Spot → Extended Sweet Spot → Sub-Threshold Blocks → Threshold Development → Over-Under Intervals → Critical Power Development → Norwegian 4×4 → Seiler 4×8
+PROGRESSION LADDER â advance one rung per mesocycle, never skip:
+Foundation Ride â Tempo Cruise â Sweet Spot Primer â Sweet Spot Classic â 3Ã15 Sweet Spot â Extended Sweet Spot â Sub-Threshold Blocks â Threshold Development â Over-Under Intervals â Critical Power Development â Norwegian 4Ã4 â Seiler 4Ã8
 
 WEEKLY SEQUENCING:
-• Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
-• Two-Hour Foundation / Long Endurance: schedule late in the week (pre-fatigued legs = fat-oxidation training signal).
-• Pattern: rest → hard → easy/recovery → hard → moderate → long endurance → rest.
-• After Norwegian 4×4 / 2×20 / Seiler 4×8: mandatory easy or rest day.
-• Never two hard sessions on consecutive days — always insert Foundation or Recovery between.
+â¢ Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
+â¢ Two-Hour Foundation / Long Endurance: schedule late in the week (pre-fatigued legs = fat-oxidation training signal).
+â¢ Pattern: rest â hard â easy/recovery â hard â moderate â long endurance â rest.
+â¢ After Norwegian 4Ã4 / 2Ã20 / Seiler 4Ã8: mandatory easy or rest day.
+â¢ Never two hard sessions on consecutive days â always insert Foundation or Recovery between.
 
 PHASE SELECTION:
-• Base → Foundation Ride, Two-Hour Foundation, Long Endurance, Surge Ride, Z2 Cadence Drills, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 structured hard session/week.
-• Build → Sweet Spot series, Threshold series, VO2max series. Bookend with Foundation. 2-3 hard sessions/week max. Never increase volume AND intensity in the same week.
-• Recovery → Short Active Recovery, Spin & Recover, Easy Flush, Foundation Ride only. At most one Tempo Cruise. Cut volume 40-60%. Adaptation happens DURING recovery.
-• Taper → Foundation Ride, Tempo Cruise, Sweet Spot Classic. Cut volume ~20-30%. Keep 1-2 short race-pace touches. Cut duration before cutting intensity.
-• RaceWeek → Short Active Recovery, Spin & Recover, Foundation Ride, one "Race Day Opener" 24-48h before event. No new stress. Event day is a Rest Day in the plan.
+â¢ Base â Foundation Ride, Two-Hour Foundation, Long Endurance, Surge Ride, Z2 Cadence Drills, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 structured hard session/week.
+â¢ Build â Sweet Spot series, Threshold series, VO2max series. Bookend with Foundation. 2-3 hard sessions/week max. Never increase volume AND intensity in the same week.
+â¢ Recovery â Short Active Recovery, Spin & Recover, Easy Flush, Foundation Ride only. At most one Tempo Cruise. Cut volume 40-60%. Adaptation happens DURING recovery.
+â¢ Taper â Foundation Ride, Tempo Cruise, Sweet Spot Classic. Cut volume ~20-30%. Keep 1-2 short race-pace touches. Cut duration before cutting intensity.
+â¢ RaceWeek â Short Active Recovery, Spin & Recover, Foundation Ride, one "Race Day Opener" 24-48h before event. No new stress. Event day is a Rest Day in the plan.
 `.trim();
 
-// ─── Canonical Workout Structure Blocks ────────────────────────────────────
+// âââ Canonical Workout Structure Blocks ââââââââââââââââââââââââââââââââââââ
 //
 // Pre-computed, mathematically exact workout block arrays for every named
 // workout in the library. These are used server-side in normalizeWeeklyPlan()
-// to guarantee that a named workout has exactly the right interval structure —
-// correct repeats, durations, and power targets — regardless of what the AI
+// to guarantee that a named workout has exactly the right interval structure â
+// correct repeats, durations, and power targets â regardless of what the AI
 // generated. The AI may drift slightly in its structure JSON; the canonical
 // definition never does.
 //
 // Block rules (matching lib/zwo.ts structureToBlocks):
-//  • warmup: powerFtp = top of the ramp (builds from 0.45 → powerFtp)
-//  • cooldown: powerFtp = start of the ramp (ramps from powerFtp → 0.40)
-//  • intervals: durationMin = repeats × (onSec + offSec) / 60
-//  • All blocks in a workout must sum to the stated totalMin
+//  â¢ warmup: powerFtp = top of the ramp (builds from 0.45 â powerFtp)
+//  â¢ cooldown: powerFtp = start of the ramp (ramps from powerFtp â 0.40)
+//  â¢ intervals: durationMin = repeats Ã (onSec + offSec) / 60
+//  â¢ All blocks in a workout must sum to the stated totalMin
 //
 // Import note: WorkoutStructureBlock is re-exported from lib/zwo.ts.
 
@@ -894,7 +939,7 @@ export interface CanonicalWorkoutEntry {
 
 export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry> = {
 
-  // ── RECOVERY ────────────────────────────────────────────────────────────
+  // ââ RECOVERY ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Spin & Recover": {
     totalMin: 30,
     blocks: [
@@ -912,7 +957,7 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
 
-  // ── ENDURANCE / FOUNDATION ───────────────────────────────────────────────
+  // ââ ENDURANCE / FOUNDATION âââââââââââââââââââââââââââââââââââââââââââââââ
   "Foundation Ride": {
     totalMin: 60,
     blocks: [
@@ -931,42 +976,42 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Z2 with Cadence Drills": {
     totalMin: 60,
-    // 4 × (8 min Z2 @ 68% + 2 min cadence drill @ 65%) = 4 × 600s = 40 min
+    // 4 Ã (8 min Z2 @ 68% + 2 min cadence drill @ 65%) = 4 Ã 600s = 40 min
     blocks: [
       { type: "warmup",    durationMin: 10, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "intervals", durationMin: 40, powerFtp: 0.68, recoveryPowerFtp: 0.65,
         repeats: 4, onSec: 480, offSec: 120,
-        label: "4×8 min Z2 + 2 min cadence drill (100-110 rpm)" },
+        label: "4Ã8 min Z2 + 2 min cadence drill (100-110 rpm)" },
       { type: "cooldown",  durationMin: 10, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Surge Ride": {
     totalMin: 60,
-    // 6 × (1 min surge @ 110% + 5 min Z2 @ 68%) = 6 × 360s = 36 min
+    // 6 Ã (1 min surge @ 110% + 5 min Z2 @ 68%) = 6 Ã 360s = 36 min
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "intervals", durationMin: 36, powerFtp: 1.10, recoveryPowerFtp: 0.68,
         repeats: 6, onSec: 60, offSec: 300,
-        label: "6×1 min surges @ 110% FTP" },
+        label: "6Ã1 min surges @ 110% FTP" },
       { type: "cooldown",  durationMin: 12, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── TEMPO ────────────────────────────────────────────────────────────────
+  // ââ TEMPO ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Tempo Cruise": {
     totalMin: 60,
-    // 2 × (15 min @ 80% + 5 min recovery @ 58%) = 2 × 1200s = 40 min
+    // 2 Ã (15 min @ 80% + 5 min recovery @ 58%) = 2 Ã 1200s = 40 min
     blocks: [
       { type: "warmup",    durationMin: 10, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 40, powerFtp: 0.80, recoveryPowerFtp: 0.58,
         repeats: 2, onSec: 900, offSec: 300,
-        label: "2×15 min @ 80% FTP" },
+        label: "2Ã15 min @ 80% FTP" },
       { type: "cooldown",  durationMin: 10, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Tempo Ladder": {
     totalMin: 75,
-    // Ascending blocks: 10 min @ 78% → 15 min @ 81% → 20 min @ 83%
+    // Ascending blocks: 10 min @ 78% â 15 min @ 81% â 20 min @ 83%
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "steadystate", durationMin: 10, powerFtp: 0.78, label: "10 min @ 78% FTP" },
@@ -979,42 +1024,42 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Strength Endurance": {
     totalMin: 65,
-    // 3 × (8 min @ 81% FTP / 55-65 rpm + 4 min recovery @ 60%) = 3 × 720s = 36 min
+    // 3 Ã (8 min @ 81% FTP / 55-65 rpm + 4 min recovery @ 60%) = 3 Ã 720s = 36 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.73, label: "Progressive warm-up to 85% FTP" },
       { type: "intervals", durationMin: 36, powerFtp: 0.81, recoveryPowerFtp: 0.60,
         repeats: 3, onSec: 480, offSec: 240,
-        label: "3×8 min @ 81% FTP / 55-65 rpm (low cadence)" },
+        label: "3Ã8 min @ 81% FTP / 55-65 rpm (low cadence)" },
       { type: "cooldown",  durationMin: 14, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── SWEET SPOT ───────────────────────────────────────────────────────────
+  // ââ SWEET SPOT âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Sweet Spot Classic": {
     totalMin: 60,
-    // 3 × (10 min @ 90% + 4 min recovery @ 50%) = 3 × 840s = 42 min
+    // 3 Ã (10 min @ 90% + 4 min recovery @ 50%) = 3 Ã 840s = 42 min
     blocks: [
       { type: "warmup",    durationMin: 10, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 42, powerFtp: 0.90, recoveryPowerFtp: 0.50,
         repeats: 3, onSec: 600, offSec: 240,
-        label: "3×10 min @ 90% FTP" },
+        label: "3Ã10 min @ 90% FTP" },
       { type: "cooldown",  durationMin: 8,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Extended Sweet Spot": {
     totalMin: 75,
-    // 2 × (20 min @ 90% + 8 min recovery @ 52%) = 2 × 1680s = 56 min
+    // 2 Ã (20 min @ 90% + 8 min recovery @ 52%) = 2 Ã 1680s = 56 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 56, powerFtp: 0.90, recoveryPowerFtp: 0.52,
         repeats: 2, onSec: 1200, offSec: 480,
-        label: "2×20 min @ 90% FTP" },
+        label: "2Ã20 min @ 90% FTP" },
       { type: "cooldown",  durationMin: 4,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Sweet Spot Progression": {
     totalMin: 70,
-    // Ascending: 10 min @ 88% → 15 min @ 90% → 20 min @ 92%
+    // Ascending: 10 min @ 88% â 15 min @ 90% â 20 min @ 92%
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "steadystate", durationMin: 10, powerFtp: 0.88, label: "10 min @ 88% FTP (opener)" },
@@ -1026,43 +1071,43 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
 
-  // ── THRESHOLD ────────────────────────────────────────────────────────────
+  // ââ THRESHOLD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Threshold Development": {
     totalMin: 60,
-    // 4 × (8 min @ 100% + 4 min recovery @ 52%) = 4 × 720s = 48 min
+    // 4 Ã (8 min @ 100% + 4 min recovery @ 52%) = 4 Ã 720s = 48 min
     blocks: [
       { type: "warmup",    durationMin: 8,  powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 48, powerFtp: 1.00, recoveryPowerFtp: 0.52,
         repeats: 4, onSec: 480, offSec: 240,
-        label: "4×8 min @ 100% FTP" },
+        label: "4Ã8 min @ 100% FTP" },
       { type: "cooldown",  durationMin: 4,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Threshold Cruise Intervals": {
     totalMin: 60,
-    // 5 × (5 min @ 100% + 2.5 min @ 52%) = 5 × 450s = 37.5 min
+    // 5 Ã (5 min @ 100% + 2.5 min @ 52%) = 5 Ã 450s = 37.5 min
     blocks: [
       { type: "warmup",    durationMin: 12,   powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 37.5, powerFtp: 1.00, recoveryPowerFtp: 0.52,
         repeats: 5, onSec: 300, offSec: 150,
-        label: "5×5 min @ 100% FTP (short recovery — accumulated lactate is the goal)" },
+        label: "5Ã5 min @ 100% FTP (short recovery â accumulated lactate is the goal)" },
       { type: "cooldown",  durationMin: 10.5, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
-  "2×20 FTP Blocks": {
+  "2Ã20 FTP Blocks": {
     totalMin: 70,
-    // 2 × (20 min @ 98% + 7 min recovery @ 52%) = 2 × 1620s = 54 min
+    // 2 Ã (20 min @ 98% + 7 min recovery @ 52%) = 2 Ã 1620s = 54 min
     blocks: [
       { type: "warmup",    durationMin: 10, powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 54, powerFtp: 0.98, recoveryPowerFtp: 0.52,
         repeats: 2, onSec: 1200, offSec: 420,
-        label: "2×20 min @ 98% FTP (gold standard threshold session)" },
+        label: "2Ã20 min @ 98% FTP (gold standard threshold session)" },
       { type: "cooldown",  durationMin: 6,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Over-Under Intervals": {
     totalMin: 65,
-    // 3 × (9 min over-under block + 5 min recovery) = 3 × 840s = 42 min
+    // 3 Ã (9 min over-under block + 5 min recovery) = 3 Ã 840s = 42 min
     // Over-under modelled as: onSec=540 (9 min at 'over'), offSec=300 (5 min recovery)
     // Note: the internal over/under cycling within each 9-min block is described in
     // the label and the workout description carries the execution detail.
@@ -1070,13 +1115,13 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
       { type: "warmup",    durationMin: 12, powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 42, powerFtp: 1.05, recoveryPowerFtp: 0.55,
         repeats: 3, onSec: 540, offSec: 300,
-        label: "3×9 min over-under cycling (3 min@105% / 3 min@93% / 3 min@105%)" },
+        label: "3Ã9 min over-under cycling (3 min@105% / 3 min@93% / 3 min@105%)" },
       { type: "cooldown",  durationMin: 11, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Descending Threshold": {
     totalMin: 65,
-    // 12 min@97% → 10 min@99% → 8 min@101% → 6 min@103%, equal 4-min recovery each
+    // 12 min@97% â 10 min@99% â 8 min@101% â 6 min@103%, equal 4-min recovery each
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.72, label: "Easy warm-up" },
       { type: "steadystate", durationMin: 12, powerFtp: 0.97, label: "12 min @ 97% FTP" },
@@ -1090,103 +1135,103 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
 
-  // ── VO2MAX ───────────────────────────────────────────────────────────────
-  "Norwegian 4×4": {
+  // ââ VO2MAX âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  "Norwegian 4Ã4": {
     totalMin: 60,
-    // 4 × (4 min @ 108% + 4 min recovery @ 52%) = 4 × 480s = 32 min
+    // 4 Ã (4 min @ 108% + 4 min recovery @ 52%) = 4 Ã 480s = 32 min
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 32, powerFtp: 1.08, recoveryPowerFtp: 0.52,
         repeats: 4, onSec: 240, offSec: 240,
-        label: "4×4 min @ 108% FTP (95+ rpm — HR must plateau in last 2 min each rep)" },
+        label: "4Ã4 min @ 108% FTP (95+ rpm â HR must plateau in last 2 min each rep)" },
       { type: "cooldown",  durationMin: 16, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
-  "4×4 Two-Set": {
+  "4Ã4 Two-Set": {
     totalMin: 65,
-    // Set 1: 2 × (4 min @ 108% + 4 min @ 52%) = 16 min; Z2 bridge 8 min; Set 2: 16 min
+    // Set 1: 2 Ã (4 min @ 108% + 4 min @ 52%) = 16 min; Z2 bridge 8 min; Set 2: 16 min
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals",   durationMin: 16, powerFtp: 1.08, recoveryPowerFtp: 0.52,
         repeats: 2, onSec: 240, offSec: 240,
-        label: "Set 1: 2×4 min @ 108% FTP" },
+        label: "Set 1: 2Ã4 min @ 108% FTP" },
       { type: "steadystate", durationMin: 8,  powerFtp: 0.65, label: "8 min Z2 bridge between sets" },
       { type: "intervals",   durationMin: 16, powerFtp: 1.08, recoveryPowerFtp: 0.52,
         repeats: 2, onSec: 240, offSec: 240,
-        label: "Set 2: 2×4 min @ 108% FTP (harder than set 1 — that's the design)" },
+        label: "Set 2: 2Ã4 min @ 108% FTP (harder than set 1 â that's the design)" },
       { type: "cooldown",    durationMin: 13, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
-  "5×5 VO2max": {
+  "5Ã5 VO2max": {
     totalMin: 70,
-    // 5 × (5 min @ 110% + 5 min recovery @ 52%) = 5 × 600s = 50 min
+    // 5 Ã (5 min @ 110% + 5 min recovery @ 52%) = 5 Ã 600s = 50 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 50, powerFtp: 1.10, recoveryPowerFtp: 0.52,
         repeats: 5, onSec: 300, offSec: 300,
-        label: "5×5 min @ 110% FTP (equal work:rest — don't rush the recovery)" },
+        label: "5Ã5 min @ 110% FTP (equal work:rest â don't rush the recovery)" },
       { type: "cooldown",  durationMin: 5,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Micro Intervals": {
     totalMin: 55,
-    // 12 × (1 min @ 117% + 1 min recovery @ 52%) = 12 × 120s = 24 min
+    // 12 Ã (1 min @ 117% + 1 min recovery @ 52%) = 12 Ã 120s = 24 min
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 24, powerFtp: 1.17, recoveryPowerFtp: 0.52,
         repeats: 12, onSec: 60, offSec: 60,
-        label: "12×1 min @ 117% FTP (last 4 reps must be harder than first 4)" },
+        label: "12Ã1 min @ 117% FTP (last 4 reps must be harder than first 4)" },
       { type: "cooldown",  durationMin: 19, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── NEUROMUSCULAR ────────────────────────────────────────────────────────
+  // ââ NEUROMUSCULAR ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Sprint Builder": {
     totalMin: 50,
-    // 8 × (15 s ALL OUT @ 150% + 2.5 min recovery @ 52%) = 8 × 165s = 22 min
+    // 8 Ã (15 s ALL OUT @ 150% + 2.5 min recovery @ 52%) = 8 Ã 165s = 22 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 22, powerFtp: 1.50, recoveryPowerFtp: 0.52,
         repeats: 8, onSec: 15, offSec: 150,
-        label: "8×15 s all-out sprints (last sprint near-equal to first in peak power)" },
+        label: "8Ã15 s all-out sprints (last sprint near-equal to first in peak power)" },
       { type: "cooldown",  durationMin: 13, powerFtp: 0.52, label: "Z2 flush cool-down" },
     ],
   },
   "Race Day Opener": {
     totalMin: 35,
-    // 3 × (1 min @ 110% + 3 min easy @ 55%) = 3 × 240s = 12 min; then 5 min @ 80%
+    // 3 Ã (1 min @ 110% + 3 min easy @ 55%) = 3 Ã 240s = 12 min; then 5 min @ 80%
     blocks: [
       { type: "warmup",      durationMin: 10, powerFtp: 0.65, label: "Easy warm-up" },
       { type: "intervals",   durationMin: 12, powerFtp: 1.10, recoveryPowerFtp: 0.55,
         repeats: 3, onSec: 60, offSec: 180,
-        label: "3×1 min @ 110% FTP (activation — sharp, not all-out)" },
+        label: "3Ã1 min @ 110% FTP (activation â sharp, not all-out)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.78, label: "5 min @ 80% FTP" },
       { type: "cooldown",    durationMin: 8,  powerFtp: 0.55, label: "Easy spin-down" },
     ],
   },
 
-  // ── INTERMITTENT ─────────────────────────────────────────────────────────
+  // ââ INTERMITTENT âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "30/30 Blitz": {
     totalMin: 60,
-    // 3 sets of 8 × (30s @ 120% + 30s @ 50%) = each set 8 × 60s = 8 min; 5 min rest between sets
+    // 3 sets of 8 Ã (30s @ 120% + 30s @ 50%) = each set 8 Ã 60s = 8 min; 5 min rest between sets
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 30, offSec: 30,
-        label: "Set 1: 8×30s @ 120% FTP (never coast the off intervals)" },
+        label: "Set 1: 8Ã30s @ 120% FTP (never coast the off intervals)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 30, offSec: 30,
-        label: "Set 2: 8×30s @ 120% FTP" },
+        label: "Set 2: 8Ã30s @ 120% FTP" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 30, offSec: 30,
-        label: "Set 3: 8×30s @ 120% FTP (this set should hurt — that's success)" },
+        label: "Set 3: 8Ã30s @ 120% FTP (this set should hurt â that's success)" },
       { type: "cooldown",    durationMin: 14, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── RECOVERY (additional) ─────────────────────────────────────────────────
+  // ââ RECOVERY (additional) âââââââââââââââââââââââââââââââââââââââââââââââââ
   "Short Active Recovery": {
     totalMin: 20,
     blocks: [
@@ -1204,12 +1249,12 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
 
-  // ── ENDURANCE (additional) ────────────────────────────────────────────────
+  // ââ ENDURANCE (additional) ââââââââââââââââââââââââââââââââââââââââââââââââ
   "Two-Hour Foundation": {
     totalMin: 120,
     blocks: [
       { type: "warmup",      durationMin: 20, powerFtp: 0.65, label: "Progressive warm-up" },
-      { type: "steadystate", durationMin: 85, powerFtp: 0.69, label: "Z2 @ 65-73% FTP — main aerobic stimulus" },
+      { type: "steadystate", durationMin: 85, powerFtp: 0.69, label: "Z2 @ 65-73% FTP â main aerobic stimulus" },
       { type: "cooldown",    durationMin: 15, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
@@ -1223,12 +1268,12 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Endurance with Muscle Tension": {
     totalMin: 65,
-    // 4 × (6 min Z2 @ 68% / 90rpm + 5 min Z2 @ 68% / 55rpm) = 44 min
+    // 4 Ã (6 min Z2 @ 68% / 90rpm + 5 min Z2 @ 68% / 55rpm) = 44 min
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.65, label: "Easy warm-up" },
       { type: "intervals", durationMin: 44, powerFtp: 0.68, recoveryPowerFtp: 0.68,
         repeats: 4, onSec: 360, offSec: 300,
-        label: "4× (6 min Z2 @ 90 rpm → 5 min Z2 @ 55 rpm low-cadence)" },
+        label: "4Ã (6 min Z2 @ 90 rpm â 5 min Z2 @ 55 rpm low-cadence)" },
       { type: "cooldown",  durationMin: 9,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
@@ -1242,17 +1287,17 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Endurance Openers": {
     totalMin: 60,
-    // 5 × (1 min opener @ 110% + 5 min Z2 @ 68%) = 5 × 360s = 30 min
+    // 5 Ã (1 min opener @ 110% + 5 min Z2 @ 68%) = 5 Ã 360s = 30 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "intervals", durationMin: 30, powerFtp: 1.10, recoveryPowerFtp: 0.68,
         repeats: 5, onSec: 30, offSec: 330,
-        label: "5×30s activation openers @ 110% FTP (Z2 between)" },
+        label: "5Ã30s activation openers @ 110% FTP (Z2 between)" },
       { type: "cooldown",  durationMin: 15, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── TEMPO (additional) ────────────────────────────────────────────────────
+  // ââ TEMPO (additional) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
   "Continuous Tempo": {
     totalMin: 60,
     blocks: [
@@ -1263,7 +1308,7 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Progressive Tempo": {
     totalMin: 65,
-    // Four 10-min blocks stepping up: 76% → 79% → 82% → 85%
+    // Four 10-min blocks stepping up: 76% â 79% â 82% â 85%
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "steadystate", durationMin: 10, powerFtp: 0.76, label: "Block 1: 10 min @ 76% FTP" },
@@ -1275,36 +1320,36 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Sub-Threshold Blocks": {
     totalMin: 75,
-    // 3 × (15 min @ 88% + 5 min @ 55%) = 3 × 1200s = 60 min; 12 warmup + 3 cooldown = 75
+    // 3 Ã (15 min @ 88% + 5 min @ 55%) = 3 Ã 1200s = 60 min; 12 warmup + 3 cooldown = 75
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 60, powerFtp: 0.88, recoveryPowerFtp: 0.55,
         repeats: 3, onSec: 900, offSec: 300,
-        label: "3×15 min @ 88% FTP (bridge between sweet spot and threshold)" },
+        label: "3Ã15 min @ 88% FTP (bridge between sweet spot and threshold)" },
       { type: "cooldown",  durationMin: 3,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── SWEET SPOT (additional) ───────────────────────────────────────────────
+  // ââ SWEET SPOT (additional) âââââââââââââââââââââââââââââââââââââââââââââââ
   "Sweet Spot Primer": {
     totalMin: 55,
-    // 4 × (7 min @ 88% + 3 min recovery @ 50%) = 4 × 600s = 40 min; 12 warmup + 3 cooldown = 55
+    // 4 Ã (7 min @ 88% + 3 min recovery @ 50%) = 4 Ã 600s = 40 min; 12 warmup + 3 cooldown = 55
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.68, label: "Easy warm-up" },
       { type: "intervals", durationMin: 40, powerFtp: 0.88, recoveryPowerFtp: 0.50,
         repeats: 4, onSec: 420, offSec: 180,
-        label: "4×7 min @ 88% FTP (beginner-friendly sweet spot entry)" },
+        label: "4Ã7 min @ 88% FTP (beginner-friendly sweet spot entry)" },
       { type: "cooldown",  durationMin: 3,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
-  "3×15 Sweet Spot": {
+  "3Ã15 Sweet Spot": {
     totalMin: 75,
-    // 3 × (15 min @ 90% + 5 min @ 52%) = 3 × 1200s = 60 min; 12 warmup + 3 cooldown = 75
+    // 3 Ã (15 min @ 90% + 5 min @ 52%) = 3 Ã 1200s = 60 min; 12 warmup + 3 cooldown = 75
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 60, powerFtp: 0.90, recoveryPowerFtp: 0.52,
         repeats: 3, onSec: 900, offSec: 300,
-        label: "3×15 min @ 90% FTP (natural progression from 3×10 min)" },
+        label: "3Ã15 min @ 90% FTP (natural progression from 3Ã10 min)" },
       { type: "cooldown",  durationMin: 3,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
@@ -1318,22 +1363,22 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Low-Cadence Sweet Spot": {
     totalMin: 65,
-    // 3 × (12 min @ 89% / 72 rpm + 4 min @ 55% / 90 rpm) = 3 × 960s = 48 min; 15 wu + 2 cd = 65
+    // 3 Ã (12 min @ 89% / 72 rpm + 4 min @ 55% / 90 rpm) = 3 Ã 960s = 48 min; 15 wu + 2 cd = 65
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 48, powerFtp: 0.89, recoveryPowerFtp: 0.55,
         repeats: 3, onSec: 720, offSec: 240,
-        label: "3×12 min @ 89% FTP / 70-75 rpm (muscular endurance focus)" },
+        label: "3Ã12 min @ 89% FTP / 70-75 rpm (muscular endurance focus)" },
       { type: "cooldown",  durationMin: 2,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── THRESHOLD (additional) ────────────────────────────────────────────────
+  // ââ THRESHOLD (additional) ââââââââââââââââââââââââââââââââââââââââââââââââ
   "FTP Test Protocol": {
     totalMin: 60,
     // 20-min effort + warmup/cooldown. The 5-min easy pre-effort is included.
     blocks: [
-      { type: "warmup",      durationMin: 15, powerFtp: 0.80, label: "Progressive warmup (include 3×1 min @ 110%)" },
+      { type: "warmup",      durationMin: 15, powerFtp: 0.80, label: "Progressive warmup (include 3Ã1 min @ 110%)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.55, label: "5 min easy pre-effort" },
       { type: "steadystate", durationMin: 20, powerFtp: 1.05, label: "20 min ALL OUT time trial (FTP = 95% of avg power)" },
       { type: "cooldown",    durationMin: 20, powerFtp: 0.55, label: "Full cool-down" },
@@ -1341,29 +1386,29 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "Short Threshold Intervals": {
     totalMin: 60,
-    // 6 × (5 min @ 100% + 2.5 min @ 55%) = 6 × 450s = 45 min
+    // 6 Ã (5 min @ 100% + 2.5 min @ 55%) = 6 Ã 450s = 45 min
     blocks: [
       { type: "warmup",    durationMin: 12,  powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 45,  powerFtp: 1.00, recoveryPowerFtp: 0.55,
         repeats: 6, onSec: 300, offSec: 150,
-        label: "6×5 min @ 100% FTP (2.5 min recovery — short rest by design)" },
+        label: "6Ã5 min @ 100% FTP (2.5 min recovery â short rest by design)" },
       { type: "cooldown",  durationMin: 3,   powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Critical Power Development": {
     totalMin: 70,
-    // 3 × (12 min @ 102% + 6 min @ 52%) = 3 × 1080s = 54 min
+    // 3 Ã (12 min @ 102% + 6 min @ 52%) = 3 Ã 1080s = 54 min
     blocks: [
       { type: "warmup",    durationMin: 12, powerFtp: 0.72, label: "Easy warm-up" },
       { type: "intervals", durationMin: 54, powerFtp: 1.02, recoveryPowerFtp: 0.52,
         repeats: 3, onSec: 720, offSec: 360,
-        label: "3×12 min @ 102% FTP (above threshold — critical power zone)" },
+        label: "3Ã12 min @ 102% FTP (above threshold â critical power zone)" },
       { type: "cooldown",  durationMin: 4,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "Threshold Pyramid": {
     totalMin: 75,
-    // 5+8+10+8+5 min blocks with 4 min recovery each = 5×4 min = 20 min recovery
+    // 5+8+10+8+5 min blocks with 4 min recovery each = 5Ã4 min = 20 min recovery
     // Total: 12 warmup + 36 work + 16 recovery + 11 cooldown = 75 min
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.72, label: "Easy warm-up" },
@@ -1380,45 +1425,45 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
 
-  // ── VO2MAX (additional) ───────────────────────────────────────────────────
+  // ââ VO2MAX (additional) âââââââââââââââââââââââââââââââââââââââââââââââââââ
   "40/20 Ronnestad": {
     totalMin: 60,
-    // 3 sets of 10 × (40s @ 130% + 20s @ 50%) = 10 × 60s = 10 min per set; 5 min rest; 15 wu + 5 cd = 60
+    // 3 sets of 10 Ã (40s @ 130% + 20s @ 50%) = 10 Ã 60s = 10 min per set; 5 min rest; 15 wu + 5 cd = 60
     blocks: [
       { type: "warmup",      durationMin: 15, powerFtp: 0.72, label: "Progressive warm-up" },
       { type: "intervals",   durationMin: 10, powerFtp: 1.30, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 40, offSec: 20,
-        label: "Set 1: 10×(40s@130% / 20s@50%) — compressed rest keeps VO2 elevated" },
+        label: "Set 1: 10Ã(40s@130% / 20s@50%) â compressed rest keeps VO2 elevated" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 10, powerFtp: 1.30, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 40, offSec: 20,
-        label: "Set 2: 10×(40s@130% / 20s@50%)" },
+        label: "Set 2: 10Ã(40s@130% / 20s@50%)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 10, powerFtp: 1.30, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 40, offSec: 20,
-        label: "Set 3: 10×(40s@130% / 20s@50%) — final set should feel very hard" },
+        label: "Set 3: 10Ã(40s@130% / 20s@50%) â final set should feel very hard" },
       { type: "cooldown",    durationMin: 5,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "3-Minute VO2max Repeats": {
     totalMin: 65,
-    // 6 × (3 min @ 114% + 3 min recovery @ 50%) = 6 × 360s = 36 min
+    // 6 Ã (3 min @ 114% + 3 min recovery @ 50%) = 6 Ã 360s = 36 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.72, label: "Progressive warm-up" },
       { type: "intervals", durationMin: 36, powerFtp: 1.14, recoveryPowerFtp: 0.50,
         repeats: 6, onSec: 180, offSec: 180,
-        label: "6×3 min @ 114% FTP (build to 116% in final minute each rep)" },
+        label: "6Ã3 min @ 114% FTP (build to 116% in final minute each rep)" },
       { type: "cooldown",  durationMin: 14, powerFtp: 0.55, label: "Extended cool-down" },
     ],
   },
-  "Seiler 4×8": {
+  "Seiler 4Ã8": {
     totalMin: 70,
-    // 4 × (8 min @ 107% + 4 min recovery @ 50%) = 4 × 720s = 48 min
+    // 4 Ã (8 min @ 107% + 4 min recovery @ 50%) = 4 Ã 720s = 48 min
     blocks: [
       { type: "warmup",    durationMin: 14, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 48, powerFtp: 1.07, recoveryPowerFtp: 0.50,
         repeats: 4, onSec: 480, offSec: 240,
-        label: "4×8 min @ 107% FTP — HR must reach 90%+ of max in last 2 min each rep" },
+        label: "4Ã8 min @ 107% FTP â HR must reach 90%+ of max in last 2 min each rep" },
       { type: "cooldown",  durationMin: 8,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
@@ -1445,100 +1490,100 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
   },
   "60/60 Intervals": {
     totalMin: 65,
-    // 3 sets of 6 × (60s @ 115% + 60s @ 50%) = each set 6 × 120s = 12 min; 5 min rest
+    // 3 sets of 6 Ã (60s @ 115% + 60s @ 50%) = each set 6 Ã 120s = 12 min; 5 min rest
     blocks: [
       { type: "warmup",      durationMin: 15, powerFtp: 0.70, label: "Progressive warm-up" },
       { type: "intervals",   durationMin: 12, powerFtp: 1.15, recoveryPowerFtp: 0.50,
         repeats: 6, onSec: 60, offSec: 60,
-        label: "Set 1: 6×(60s@115% / 60s@50%)" },
+        label: "Set 1: 6Ã(60s@115% / 60s@50%)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 12, powerFtp: 1.15, recoveryPowerFtp: 0.50,
         repeats: 6, onSec: 60, offSec: 60,
-        label: "Set 2: 6×(60s@115% / 60s@50%)" },
+        label: "Set 2: 6Ã(60s@115% / 60s@50%)" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.52, label: "5 min set recovery" },
       { type: "intervals",   durationMin: 12, powerFtp: 1.15, recoveryPowerFtp: 0.50,
         repeats: 6, onSec: 60, offSec: 60,
-        label: "Set 3: 6×(60s@115% / 60s@50%) — final set should be hardest" },
+        label: "Set 3: 6Ã(60s@115% / 60s@50%) â final set should be hardest" },
       { type: "cooldown",    durationMin: 4,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
 
-  // ── NEUROMUSCULAR (additional) ────────────────────────────────────────────
+  // ââ NEUROMUSCULAR (additional) ââââââââââââââââââââââââââââââââââââââââââââ
   "Spin-Up Sprints": {
     totalMin: 50,
-    // 8 × (30s spin-up cadence drill + 2 min easy @ 55%) = 8 × 150s = 20 min
+    // 8 Ã (30s spin-up cadence drill + 2 min easy @ 55%) = 8 Ã 150s = 20 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.65, label: "Easy warm-up" },
       { type: "intervals", durationMin: 20, powerFtp: 1.20, recoveryPowerFtp: 0.55,
         repeats: 8, onSec: 30, offSec: 120,
-        label: "8×30s spin-up drills (build to max cadence, light gear)" },
+        label: "8Ã30s spin-up drills (build to max cadence, light gear)" },
       { type: "cooldown",  durationMin: 15, powerFtp: 0.52, label: "Easy cool-down" },
     ],
   },
   "Anaerobic Bursts": {
     totalMin: 55,
-    // 6 × (1 min @ 130% + 4 min @ 52%) = 6 × 300s = 30 min
+    // 6 Ã (1 min @ 130% + 4 min @ 52%) = 6 Ã 300s = 30 min
     blocks: [
       { type: "warmup",    durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 30, powerFtp: 1.30, recoveryPowerFtp: 0.52,
         repeats: 6, onSec: 60, offSec: 240,
-        label: "6×1 min @ 130% FTP (full 4 min recovery — maximal each rep)" },
+        label: "6Ã1 min @ 130% FTP (full 4 min recovery â maximal each rep)" },
       { type: "cooldown",  durationMin: 10, powerFtp: 0.52, label: "Easy cool-down" },
     ],
   },
 
-  // ── INTERMITTENT (additional) ─────────────────────────────────────────────
+  // ââ INTERMITTENT (additional) âââââââââââââââââââââââââââââââââââââââââââââ
   "Tabata Protocol": {
     totalMin: 30,
-    // 8 × (20s @ 170% + 10s rest) = 4 min; then 5 min @ 60%
+    // 8 Ã (20s @ 170% + 10s rest) = 4 min; then 5 min @ 60%
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up with some openers" },
       { type: "intervals",   durationMin: 4,  powerFtp: 1.70, recoveryPowerFtp: 0.00,
         repeats: 8, onSec: 20, offSec: 10,
-        label: "8×(20s@170% / 10s complete rest) — true Tabata protocol" },
+        label: "8Ã(20s@170% / 10s complete rest) â true Tabata protocol" },
       { type: "steadystate", durationMin: 5,  powerFtp: 0.60, label: "5 min @ 60% FTP" },
       { type: "cooldown",    durationMin: 9,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "40/20 HIIT": {
     totalMin: 50,
-    // 3 sets of 8 × (40s @ 120% + 20s @ 50%) = 8 × 60s = 8 min per set; 4 min rest; 12 wu + 6 cd = 50
+    // 3 sets of 8 Ã (40s @ 120% + 20s @ 50%) = 8 Ã 60s = 8 min per set; 4 min rest; 12 wu + 6 cd = 50
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 40, offSec: 20,
-        label: "Set 1: 8×(40s@120% / 20s@50%)" },
+        label: "Set 1: 8Ã(40s@120% / 20s@50%)" },
       { type: "steadystate", durationMin: 4,  powerFtp: 0.52, label: "4 min set recovery" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 40, offSec: 20,
-        label: "Set 2: 8×(40s@120% / 20s@50%)" },
+        label: "Set 2: 8Ã(40s@120% / 20s@50%)" },
       { type: "steadystate", durationMin: 4,  powerFtp: 0.52, label: "4 min set recovery" },
       { type: "intervals",   durationMin: 8,  powerFtp: 1.20, recoveryPowerFtp: 0.50,
         repeats: 8, onSec: 40, offSec: 20,
-        label: "Set 3: 8×(40s@120% / 20s@50%) — final set" },
+        label: "Set 3: 8Ã(40s@120% / 20s@50%) â final set" },
       { type: "cooldown",    durationMin: 6,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
   "15/15 Micro-Intervals": {
     totalMin: 50,
-    // 4 sets of 10 × (15s @ 135% + 15s @ 50%) = 10 × 30s = 5 min per set; 4 min rest
+    // 4 sets of 10 Ã (15s @ 135% + 15s @ 50%) = 10 Ã 30s = 5 min per set; 4 min rest
     blocks: [
       { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals",   durationMin: 5,  powerFtp: 1.35, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 15, offSec: 15,
-        label: "Set 1: 10×(15s@135% / 15s@50%)" },
+        label: "Set 1: 10Ã(15s@135% / 15s@50%)" },
       { type: "steadystate", durationMin: 4,  powerFtp: 0.52, label: "4 min set recovery" },
       { type: "intervals",   durationMin: 5,  powerFtp: 1.35, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 15, offSec: 15,
-        label: "Set 2: 10×(15s@135% / 15s@50%)" },
+        label: "Set 2: 10Ã(15s@135% / 15s@50%)" },
       { type: "steadystate", durationMin: 4,  powerFtp: 0.52, label: "4 min set recovery" },
       { type: "intervals",   durationMin: 5,  powerFtp: 1.35, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 15, offSec: 15,
-        label: "Set 3: 10×(15s@135% / 15s@50%)" },
+        label: "Set 3: 10Ã(15s@135% / 15s@50%)" },
       { type: "steadystate", durationMin: 4,  powerFtp: 0.52, label: "4 min set recovery" },
       { type: "intervals",   durationMin: 5,  powerFtp: 1.35, recoveryPowerFtp: 0.50,
         repeats: 10, onSec: 15, offSec: 15,
-        label: "Set 4: 10×(15s@135% / 15s@50%) — final set" },
+        label: "Set 4: 10Ã(15s@135% / 15s@50%) â final set" },
       { type: "cooldown",    durationMin: 6,  powerFtp: 0.55, label: "Easy cool-down" },
     ],
   },
@@ -1547,9 +1592,9 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
 /**
  * Returns the canonical pre-computed block structure for a named workout.
  *
- * When `targetMin` is within ±8 min of the library's reference duration, the
+ * When `targetMin` is within Â±8 min of the library's reference duration, the
  * blocks are scaled by adjusting warmup/cooldown proportionally (the core
- * interval structure is never shortened — changing repeats or interval duration
+ * interval structure is never shortened â changing repeats or interval duration
  * defeats the purpose of the named protocol). If the target differs by more
  * than 8 minutes, returns null (caller should use the AI's own structure or
  * generateDefaultBlocks instead).
@@ -1568,7 +1613,7 @@ export function resolveCanonicalStructure(
   const target = targetMin ?? canonical.totalMin;
   const delta = target - canonical.totalMin;
 
-  // Within ±8 min — adjust warmup/cooldown to fit, keep intervals intact
+  // Within Â±8 min â adjust warmup/cooldown to fit, keep intervals intact
   if (Math.abs(delta) <= 8) {
     if (delta === 0) return canonical.blocks;
 
@@ -1592,6 +1637,6 @@ export function resolveCanonicalStructure(
     });
   }
 
-  // Too far from reference — caller decides what to do
+  // Too far from reference â caller decides what to do
   return null;
 }
