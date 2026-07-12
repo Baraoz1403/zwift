@@ -1,7 +1,7 @@
 "use client";
 
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
-import { IconCalendar, IconBolt } from "./icons";
+import { IconBolt } from "./icons";
 import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from "@/lib/plan-shape";
@@ -80,6 +80,16 @@ function colorForType(type: string): string {
   if (t.includes("endurance")) return "c-blue";
   return "c-teal";
 }
+
+/** Hex values matching each colorForType bucket's existing icon color (see
+ *  .stat-card-icon.c-* in globals.css) - used for the workout card's
+ *  top intensity-color bar. */
+const TYPE_BAR_COLOR: Record<string, string> = {
+  "c-green": "#1a9e52",
+  "c-orange": "#e85d00",
+  "c-blue": "#2f8fe0",
+  "c-teal": "#0f9488",
+};
 
 function loadCachedPlan(): WeeklyPlan | null {
   try {
@@ -1374,27 +1384,23 @@ export default function WeeklyPlan() {
         </div>
       )}
 
-      {/* ── 3-column header grid ────────────────────────────────────────── */}
-      <div className={`header-cards-grid${noteOpen ? " note-open" : ""}`}>
-
-        {/* Card 1: Training Profile */}
-        <div id="training-profile"><TrainingProfileCard /></div>
-
-        {/* Card 2: Today's Note */}
-        <div id="todays-note" className="stat-card" style={{
-          display: "flex", flexDirection: "column", padding: "20px 22px",
-        }}>
-          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-            Today&apos;s note
-          </div>
-          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, flex: 1 }}>
-            {riderNote
-              ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 60 ? riderNote.slice(0, 60) + "…" : riderNote}</span>
-              : "How are you feeling today? Your AI coach adapts the session to your readiness."}
-          </div>
+      {/* ── Today's Note — full-width, prominent, at the top of the Coach
+          page. Training Profile access moved to the header nav chip only
+          (TrainingProfileNavChip in page.tsx); the old 3rd "Weekly training
+          plan" info card's phase caption is folded in below instead of
+          taking its own card, per the Coach/Stats page split. ──────────── */}
+      <div id="todays-note" className="stat-card todays-note-card">
+        <div className="section-title" style={{ margin: "0 0 8px 0" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Today&apos;s note
+        </div>
+        <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
+          {riderNote
+            ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 80 ? riderNote.slice(0, 80) + "…" : riderNote}</span>
+            : "How are you feeling today? Your AI coach adapts the session to your readiness."}
+        </div>
 
           {/* Expanded content */}
           {noteOpen && (
@@ -1487,30 +1493,19 @@ export default function WeeklyPlan() {
               )}
             </button>
           </div>
-        </div>
 
-        {/* Card 3: Weekly Training Plan */}
-        <div className="stat-card" style={{
-          display: "flex", flexDirection: "column", padding: "20px 22px",
-        }}>
-          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
-            <IconCalendar size={13} />
-            Weekly training plan
-          </div>
-          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55, flex: 1 }}>
+          {/* Phase caption - folded in from the old standalone "Weekly
+              training plan" info card, which no longer gets its own slot
+              now that this section is full-width rather than 1-of-3 cards. */}
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 12, color: "var(--muted)" }}>
             {cycleInfo
               ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
-                ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`} — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
-                : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4 — your AI coach builds 7 structured sessions from your ride history, training load, and goals.`
-              : "Seven structured sessions, built fresh each week — calibrated to your training load, recovery, and where you are in your season."}
+                ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
+                : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
+              : "Seven structured sessions, built fresh each week"}
+            {" — generated automatically every Sunday night, adjusted by Today's note above."}
           </div>
-          <div style={{ marginTop: 16, textAlign: "center", fontSize: 11.5, color: "var(--muted)", opacity: 0.75 }}>
-            Generated automatically every Sunday night — no action needed. Use{" "}
-            <strong style={{ opacity: 0.9 }}>Today&apos;s note</strong> above to adjust this week.
-          </div>
-        </div>
-
-      </div>{/* end 3-col grid */}
+      </div>{/* end todays-note-card */}
 
       {/* ── Connections panel — shown only when header CONNECTIONS button clicked ── */}
       {showConnections && (
@@ -1813,81 +1808,90 @@ export default function WeeklyPlan() {
               }
 
               // ── Planned: no ride done yet ──
+              // MyWhoosh-style card: full-bleed thumbnail on top (the power
+              // profile is the dominant visual element), centered bold
+              // title, a clean duration/TSS/IF line, then description and
+              // sync/download actions below.
+              const ifTss = w.structure && w.structure.length > 0
+                ? computeIfTss(structureToBlocks(w.structure))
+                : null;
               return (
                 <div className="stat-card" key={i} style={{ display: "flex", flexDirection: "column" }}>
-                  {!isRestDay(w.type) && <WorkoutThumbnail workout={w} />}
-                  <div className="stat-card-head" style={{ marginTop: 10 }}>
-                    <div className={`stat-card-icon ${colorForType(w.type)}`}>
-                      <IconBolt size={13} />
+                  {!isRestDay(w.type) && (
+                    <div style={{ borderTop: `4px solid ${TYPE_BAR_COLOR[colorForType(w.type)]}` }}>
+                      <WorkoutThumbnail workout={w} flush height={160} hideFooter />
                     </div>
-                    <div className="label" style={{ margin: 0 }}>
-                      {w.day}
-                      {w.date ? ` (${w.date})` : ""} - {w.type}
+                  )}
+                  <div className="workout-card-body" style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                    <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                      {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
-                  </div>
-                  <div className="value" style={{ fontSize: 16 }}>{w.title}</div>
-                  <div style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
-                    {w.durationMin} min
-                    {w.targetPowerPctFtp ? ` · ${w.targetPowerPctFtp} FTP` : ""}
-                    {w.structure && w.structure.length > 0 && (
-                      <span style={{ marginLeft: 6, opacity: 0.8 }}>
-                        · ~{calcTss(w.structure)} TSS
-                      </span>
-                    )}
-                  </div>
-                  <div className="card-desc" style={{ fontSize: 13.5, marginTop: 6 }}>
-                    {w.description}
-                  </div>
-                  {!isRestDay(w.type) && (() => {
-                    return (
-                      <div style={{ marginTop: 14 }}>
-                        {/* Reflects the server's ACTUAL reported result from the last
-                            generate call (see app/api/ai/weekly-plan/route.ts's
-                            intervalsSync response field), not just "is ICU connected" -
-                            a connected-but-failed push must never look identical to a
-                            connected-and-succeeded one. lastIntervalsSync is null until
-                            a generate response has actually arrived this session. */}
-                        {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length === 0 && (
-                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
-                            <span style={{ color: "var(--accent)" }}>
-                              ✓ Synced → Intervals.icu → Zwift ({lastIntervalsSync.pushed} pushed{lastIntervalsSync.deleted > 0 ? `, ${lastIntervalsSync.deleted} duplicates removed` : ""})
-                            </span>
-                          </div>
-                        )}
-                        {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length > 0 && (
-                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
-                            <span style={{ color: "var(--danger)" }} title={lastIntervalsSync.errors.join("; ")}>
-                              ⚠ Synced with {lastIntervalsSync.errors.length} error(s) — hover for detail
-                            </span>
-                          </div>
-                        )}
-                        {intervalsConnected && !lastIntervalsSync && (
-                          <div style={{ marginBottom: 4, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
-                            Connected — syncs automatically when a plan is generated
-                          </div>
-                        )}
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
+                      {w.title}
+                    </div>
 
-                        {/* TP_DISABLED: tpConnected block hidden — restore by removing `false &&` */}
-                        {false /* TP_DISABLED */ && tpConnected && (
-                          <div style={{ marginBottom: 6, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
-                            TrainingPeaks: reserved for outdoor/Garmin rides — not auto-synced
-                          </div>
-                        )}
-
-                        {/* Download .zwo — always available as fallback */}
-                        <div style={{ display: "flex", justifyContent: "center" }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            style={{ width: "auto", padding: "5px 11px", fontSize: 11 }}
-                            onClick={() => handleDownloadZwo(w)}
-                          >
-                            ↓ Download .zwo
-                          </button>
-                        </div>
+                    {!isRestDay(w.type) && (
+                      <div style={{
+                        display: "flex", justifyContent: "center", gap: 18,
+                        marginTop: 14, paddingTop: 14, paddingBottom: 14,
+                        borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
+                        fontSize: 13, fontWeight: 700, color: "var(--text)",
+                      }}>
+                        <span>{w.durationMin} min</span>
+                        {ifTss && <span>TSS {ifTss.tss}</span>}
+                        {ifTss && <span>IF {ifTss.intensityFactor.toFixed(2)}</span>}
+                        {w.targetPowerPctFtp && <span style={{ color: "var(--muted)", fontWeight: 500 }}>{w.targetPowerPctFtp} FTP</span>}
                       </div>
-                    );
-                  })()}
+                    )}
+
+                    <div className="card-desc" style={{ fontSize: 13.5, marginTop: 14, lineHeight: 1.6 }}>
+                      {w.description}
+                    </div>
+
+                    {!isRestDay(w.type) && (() => {
+                      return (
+                        <div style={{ marginTop: "auto", paddingTop: 18 }}>
+                          {/* Reflects the server's ACTUAL reported result from the last
+                              generate call (see app/api/ai/weekly-plan/route.ts's
+                              intervalsSync response field), not just "is ICU connected" -
+                              a connected-but-failed push must never look identical to a
+                              connected-and-succeeded one. lastIntervalsSync is null until
+                              a generate response has actually arrived this session. */}
+                          {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length === 0 && (
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                              <span style={{ color: "var(--accent)" }}>
+                                ✓ Synced → Intervals.icu → Zwift ({lastIntervalsSync.pushed} pushed{lastIntervalsSync.deleted > 0 ? `, ${lastIntervalsSync.deleted} duplicates removed` : ""})
+                              </span>
+                            </div>
+                          )}
+                          {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length > 0 && (
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                              <span style={{ color: "var(--danger)" }} title={lastIntervalsSync.errors.join("; ")}>
+                                ⚠ Synced with {lastIntervalsSync.errors.length} error(s) — hover for detail
+                              </span>
+                            </div>
+                          )}
+                          {intervalsConnected && !lastIntervalsSync && (
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>
+                              Connected — syncs automatically when a plan is generated
+                            </div>
+                          )}
+
+                          {/* Download .zwo — always available as fallback */}
+                          <div style={{ display: "flex", justifyContent: "center" }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ width: "auto", padding: "8px 16px", fontSize: 12, fontWeight: 600 }}
+                              onClick={() => handleDownloadZwo(w)}
+                            >
+                              ↓ Download ZWO
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               );
             })}
@@ -2047,6 +2051,15 @@ export default function WeeklyPlan() {
           </div>
         </>
       )}
+
+      {/* Training profile - settings/config, not a stat, so it stays on the
+          Coach page per the Coach/Stats split, but unobtrusively at the very
+          bottom rather than competing with Today's Note/workouts for
+          attention. TrainingProfileNavChip (header) targets this id and
+          dispatches the open event TrainingProfileCard listens for. */}
+      <div id="training-profile" style={{ marginTop: 48 }}>
+        <TrainingProfileCard />
+      </div>
     </div>
   );
 }

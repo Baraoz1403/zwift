@@ -47,6 +47,8 @@ export default function WorkoutThumbnail({
   workout,
   flush = false,
   realPowerSamples,
+  height = 60,
+  hideFooter = false,
 }: {
   workout: ZwoWorkoutInput;
   /** When true, don't apply the -20px bleed margin. Use inside containers
@@ -62,6 +64,14 @@ export default function WorkoutThumbnail({
    * ride's own FIT power stream always can.
    */
   realPowerSamples?: number[];
+  /** Bar-graph height in px. Default 60 (existing completed/bonus-ride
+   *  cards); the redesigned planned-workout card uses a larger 160 to make
+   *  the power profile the card's dominant visual element. */
+  height?: number;
+  /** Hides the duration/effort-dots footer strip - the redesigned planned
+   *  card shows duration/TSS/IF in its own footer row instead, so repeating
+   *  it here would be redundant. */
+  hideFooter?: boolean;
 }) {
   const powers = realPowerSamples && realPowerSamples.length > 0
     ? resample(realPowerSamples, SAMPLES)
@@ -76,7 +86,7 @@ export default function WorkoutThumbnail({
           display: "flex",
           alignItems: "flex-end",
           gap: 1,
-          height: 60,
+          height,
           padding: "8px 6px 0",
           background: "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
@@ -94,23 +104,25 @@ export default function WorkoutThumbnail({
           />
         ))}
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontSize: 11,
-          padding: "6px 20px 4px",
-          color: "var(--muted)",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        <span>{workout.durationMin} min</span>
-        <span style={{ letterSpacing: 1 }}>
-          {"●".repeat(effort)}
-          {"○".repeat(Math.max(0, 5 - effort))}
-        </span>
-      </div>
+      {!hideFooter && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 11,
+            padding: "6px 20px 4px",
+            color: "var(--muted)",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <span>{workout.durationMin} min</span>
+          <span style={{ letterSpacing: 1 }}>
+            {"●".repeat(effort)}
+            {"○".repeat(Math.max(0, 5 - effort))}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
