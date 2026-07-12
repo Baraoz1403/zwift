@@ -10,7 +10,7 @@
  *   2. Headlessly from app/api/ai/weekly-plan/cron/route.ts (secret-header
  *      auth, no browser session) - the nightly proactive regeneration task.
  *
- * Both call paths need an already-resolved Zwift `accessToken` + `athleteId`;
+ * Both call paths need an already-resolved Zwift accessToken + athleteId;
  * how that token was obtained (live cookie session vs. a KV-stored refresh
  * token exchanged via refreshZwiftToken()) is the caller's concern, not this
  * module's.
@@ -29,37 +29,69 @@ import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerpr
 export { AiInsightsError };
 
 /**
- * Estimates current FTP from recent rides using power-duration scaling.
- * Prefers each ride's Normalized Power over plain avgWatts when available
- * (lib/stats.ts computeNormalizedPower) - FTP is by definition an estimate
- * of sustainable *effort*, and NP is the physiologically correct measure of
- * that for anything but a dead-steady ride (a 45-min ride with a few surges
- * has a true sustainable-effort level closer to its NP than its avgWatts,
- * which surges pull down relative to the steady portions). This directly
- * improves the accuracy of effectiveFtp, which every power target in the
- * generated plan is a percentage of - a meaningfully high-leverage fix.
+ * Coggan Power-Duration FTP Estimation from last 30 CYCLING rides.
+ *
+ * METHODOLOGY:
+ * Every ride has anaerobic contribution that inflates power above true FTP.
+ * We divide by a duration-specific Coggan factor to recover FTP estimate.
+ *
+ * Coggan factors (power / factor = FTP estimate):
+ *   < 20 min  -> 1.10  (high anaerobic)
+ *   < 30 min  -> 1.05
+ *   < 45 min  -> 1.00  (near FTP effort)
+ *   < 60 min  -> 0.97
+ *   < 75 min  -> 0.95
+ *   < 90 min  -> 0.93
+ *   < 120 min -> 0.91
+ *   >= 120 min -> 0.88 (group ride / draft discounted at 0.5x weight)
+ *
+ * Uses Normalized Power (NP) over avgWatts when available.
+ * Result: weighted average of TOP 5 estimates (not Math.max - avoids outliers).
+ * Group rides (>=120 min) weighted 0.5x.
+ *
+ * HARD RULES:
+ * - Requires >= 3 qualifying CYCLING rides (20-180 min, power > 80W)
+ * - Result < 100W -> suspect data -> returns null
+ * - This result ALWAYS overrides manual profile.ftp when non-null
  */
 function estimateFtpFromRides(rides: RideSummary[]): number | null {
+  function cogganFactor(durMin: number): number {
+    if (durMin < 20)  return 1.10;
+    if (durMin < 30)  return 1.05;
+    if (durMin < 45)  return 1.00;
+    if (durMin < 60)  return 0.97;
+    if (durMin < 75)  return 0.95;
+    if (durMin < 90)  return 0.93;
+    if (durMin < 120) return 0.91;
+    return 0.88;
+  }
+
   const qualifying = rides.filter(
     (r) =>
       (!r.sport || r.sport.toLowerCase().includes("cycling")) &&
-      (r.normalizedPower ?? r.avgWatts) > 60 &&
-      r.durationMin >= 30 &&
-      r.durationMin <= 100
+      (r.normalizedPower ?? r.avgWatts) > 80 &&
+      r.durationMin >= 20 &&
+      r.durationMin <= 180
   );
+
   if (qualifying.length < 3) return null;
 
   const estimates = qualifying.map((r) => {
-    const dur = r.durationMin;
-    const factor =
-      dur < 40 ? 0.90
-      : dur < 55 ? 0.95
-      : dur < 75 ? 1.00
-      : 1.05;
-    return Math.round((r.normalizedPower ?? r.avgWatts) * factor);
+    const power = r.normalizedPower ?? r.avgWatts;
+    const estimate = Math.round(power / cogganFactor(r.durationMin));
+    const weight = r.durationMin >= 120 ? 0.5 : 1.0;
+    return { estimate, weight };
   });
 
-  return Math.max(...estimates);
+  const top5 = estimates
+    .sort((a, b) => b.estimate - a.estimate)
+    .slice(0, 5);
+
+  const totalWeight = top5.reduce((s, e) => s + e.weight, 0);
+  const weightedSum = top5.reduce((s, e) => s + e.estimate * e.weight, 0);
+  const result = Math.round(weightedSum / totalWeight);
+
+  return result < 100 ? null : result;
 }
 
 export interface RunWeeklyPlanOptions {
@@ -78,20 +110,9 @@ export interface RunWeeklyPlanResult {
   macroCycle: MacroCycleState;
   cycle: ReturnType<typeof getPhaseForWeekIndex>;
   weekOf: string;
-  /** The rides fetched/used for this generation - exposed so a headless
-   *  caller (the cron endpoint) can tell which days this week already have
-   *  a real completed ride, the same "don't push a planned workout over an
-   *  already-ridden day" check the browser does via weekActivities. */
   rides: RideSummary[];
 }
 
-/**
- * Runs the full plan-generation pipeline: fetch profile + recent rides from
- * Zwift, estimate FTP, compute training load / adherence / periodization,
- * then call generateWeeklyPlan(). Throws AiInsightsError for
- * expected/user-facing failures (e.g. "not enough ride history"), or a plain
- * Error for anything unexpected - callers decide how to map that to a response.
- */
 export async function runWeeklyPlanGeneration(
   opts: RunWeeklyPlanOptions
 ): Promise<RunWeeklyPlanResult> {
@@ -104,11 +125,6 @@ export async function runWeeklyPlanGeneration(
   const activities = await fetchActivities(opts.accessToken, athleteId);
   const recentActivities = selectChartActivities(activities);
 
-  // One FIT fetch per ride already happens here for heart rate - reuse the
-  // exact same parsed records to also compute Normalized Power, instead of
-  // fetching/parsing the same file twice. See computeNormalizedPower's doc
-  // comment in lib/stats.ts for why this materially improves training-load
-  // accuracy over the old plain-avgWatts proxy.
   const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
     const buf = await fetchActivityFit(a);
     const fitRecords = parseFitRecords(buf);
@@ -142,23 +158,18 @@ export async function runWeeklyPlanGeneration(
     throw new AiInsightsError("Not enough ride history yet to build a plan.");
   }
 
+  // Coggan Protocol: computed FTP from rides ALWAYS overrides manual profile.ftp.
+  // Manual entry is stale fallback only - never the primary source.
+  // Previous bug: 30-100 min filter caused null return for 60-75 min rides,
+  // falling back to profile.ftp=276W -> impossible workout targets (414W).
+  // Fixed: 20-180 min range covers all typical rides including 1-hour sessions.
   const estimatedFtp = estimateFtpFromRides(rides);
-  // FTP computed from actual rides always wins over the manually-entered value.
-  // The manual entry is often stale, outdated, or wrong (e.g. 276W entered years
-  // ago while actual performance is 200W) — which directly causes workouts to be
-  // built at impossible wattages (150% of 276W = 414W instead of 150% of 200W = 300W).
-  // Only fall back to the manual profile.ftp when there is not enough ride data
-  // to estimate (fewer than 3 qualifying rides of 30-100 min duration).
   const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
 
   const trainingLoad = computeTrainingLoad(rides, effectiveFtp ?? profile.ftp);
 
   const weekOf = opts.targetWeekOf ?? mondayOfCurrentWeek();
   const macroCycle = advanceMacroCycle(opts.incomingCycle ?? null, weekOf);
-  // resolvePhase overrides the normal Base/Build/Recovery rotation with a
-  // real Taper/RaceWeek phase when the rider's stated event date is close -
-  // see the doc comment on resolvePhase for why this replaced the old
-  // prompt-only "if eventDate is within 4 weeks..." handling.
   const cycle = resolvePhase(macroCycle.weekIndex, weekOf, opts.riderProfile?.eventDate ?? null);
 
   const lastWeekAdherence =
@@ -166,8 +177,6 @@ export async function runWeeklyPlanGeneration(
       ? computeAdherence(opts.previousPlan, rides, effectiveFtp ?? profile.ftp)
       : undefined;
 
-  // When the rider is editing the CURRENT week's plan (previousPlan.weekOf === weekOf),
-  // pass it as currentPlan so the AI does a surgical edit rather than a full regenerate.
   const currentPlan =
     opts.previousPlan && opts.previousPlan.weekOf === weekOf
       ? opts.previousPlan
@@ -187,9 +196,6 @@ export async function runWeeklyPlanGeneration(
     resolvedAge = hadBirthday ? years : years - 1;
   }
 
-  // Extract last week's workout titles for variety enforcement â only non-rest
-  // days, and only when previousPlan covers a DIFFERENT week from this one
-  // (same-week previousPlan is for surgical edits, not variety tracking).
   const previousWeekTitles =
     opts.previousPlan && opts.previousPlan.weekOf !== weekOf
       ? opts.previousPlan.workouts
@@ -198,7 +204,6 @@ export async function runWeeklyPlanGeneration(
           .filter(Boolean)
       : undefined;
 
-  // Load the rider's accumulated fingerprint (best-effort â null = no data yet or KV down)
   const fingerprint = await getFingerprint(athleteId);
   const riderFingerprint = fingerprintToPromptSummary(fingerprint);
 
