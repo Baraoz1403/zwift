@@ -186,7 +186,9 @@ export interface IntervalsEvent {
  * has no record of what an *earlier* session already pushed, auto-syncs the
  * same plan again, and has nothing to delete before doing so. Querying the
  * real calendar state makes cleanup authoritative regardless of which
- * device did the previous push - see pushPlanToIntervals in weekly-plan.tsx.
+ * device did the previous push - see syncPlanToIntervalsHeadless in
+ * lib/headless-sync.ts, the sole sync implementation (used by both the
+ * interactive weekly-plan route and the nightly cron).
  */
 export async function listIntervalsEvents(
   apiKey: string,

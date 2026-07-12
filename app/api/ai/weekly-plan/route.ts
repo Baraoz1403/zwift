@@ -5,8 +5,10 @@ import { WeeklyWorkout } from "@/lib/ai";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { MacroCycleState, mondayOfCurrentWeek } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { mirrorStateToKv, mirrorZwiftAuthToKv, getCachedPlan, setCachedPlan } from "@/lib/kv-plan-state";
+import { mirrorStateToKv, mirrorZwiftAuthToKv, getCachedPlan, setCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
 import { kvGet } from "@/lib/kv";
+import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
+import { syncPlanToIntervalsHeadless } from "@/lib/headless-sync";
 
 // mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
 // app/api/ai/weekly-plan/cron/route.ts can share the exact same KV
@@ -144,7 +146,37 @@ export async function POST(req: NextRequest) {
     // access token headlessly later, without ever needing a browser here.
     await mirrorZwiftAuthToKv(result.athleteId, session.refreshToken);
 
-    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle });
+    // ── Automatic Intervals.icu sync (server-side, no rider action) ────────
+    // Every freshly generated plan is pushed to Intervals.icu -> Zwift/Garmin
+    // right here, the moment it's generated - not as a browser-triggered
+    // action after the response comes back. That used to be the client's job
+    // (syncPlanToConnectedPlatforms in weekly-plan.tsx), which caused a real
+    // cross-device bug: two devices opening the dashboard around the same
+    // generation each ran their own push-then-cleanup pass, each blind to the
+    // other's newly-created event ids, so events piled up on the calendar
+    // instead of being replaced. Doing it exactly once, here, server-side,
+    // means there is only ever one sync per generation regardless of how many
+    // browsers/devices are open. Uses the same push-then-delete-duplicates
+    // algorithm the nightly cron already relies on (lib/headless-sync.ts) -
+    // best-effort: a sync failure here must never break the interactive
+    // response, and the nightly cron reconciles ICU state again regardless.
+    let intervalsSync: { pushed: number; deleted: number; errors: string[] } | null = null;
+    try {
+      const creds = await getIntervalsCredentials(result.athleteId);
+      if (creds) {
+        const normalizedPlan = ensureWorkoutDates(
+          normalizeToSix({ weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts })
+        );
+        const riddenDates = new Set(
+          result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
+        );
+        intervalsSync = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
+      }
+    } catch {
+      // best-effort — never fail plan generation because ICU sync hiccuped
+    }
+
+    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle, intervalsSync });
   } catch (e) {
     if (e instanceof AiInsightsError) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 200 });

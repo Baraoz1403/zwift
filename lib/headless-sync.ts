@@ -1,19 +1,28 @@
 /**
- * Server-side (no browser, no cookies) equivalent of pushPlanToIntervals in
- * app/dashboard/weekly-plan.tsx - lets app/api/ai/weekly-plan/cron/route.ts
- * push a freshly generated plan straight to Intervals.icu using an API key
- * read from KV, without a rider ever opening the dashboard.
+ * Server-side (no browser, no cookies) push of a generated plan straight to
+ * Intervals.icu using an API key read from KV. This is now the ONE sync
+ * implementation for the whole app - both app/api/ai/weekly-plan/route.ts
+ * (the interactive Generate/Regenerate path) and
+ * app/api/ai/weekly-plan/cron/route.ts (the nightly headless path) call this
+ * directly, right after a plan is generated, so a plan syncs exactly once
+ * per generation no matter which path produced it or how many browsers/
+ * devices are open.
  *
- * This intentionally mirrors the client version's algorithm exactly (push
- * fresh copies first, only then clean up; clean-up range spans the WHOLE
- * plan week, not just active days; matched by date, not by a single
- * captured id) rather than reinventing it - that algorithm exists in its
- * current shape because of several real production bugs (an empty-calendar
- * outage from delete-before-push, a self-deleted just-created entry, and a
- * stale entry left forever on a day that turned into a Rest day - see the
- * doc comments on pushPlanToIntervals and on the cleanup-range fix in
- * weekly-plan.tsx). A from-scratch reimplementation here would risk
- * reintroducing any one of those.
+ * A client-side equivalent (pushPlanToIntervals in weekly-plan.tsx) used to
+ * also exist and ran automatically after every browser-triggered generation.
+ * It was removed because having both the browser AND the server push the
+ * same plan is exactly what caused duplicate events on Intervals.icu/Zwift in
+ * the first place: two devices opening the dashboard around the same
+ * generation each ran their own push-then-cleanup pass, each blind to the
+ * other's newly-created event ids.
+ *
+ * The algorithm below (push fresh copies first, only then clean up;
+ * clean-up range spans the WHOLE plan week, not just active days; matched by
+ * date, not by a single captured id) exists in its current shape because of
+ * several real production bugs: an empty-calendar outage from
+ * delete-before-push, a self-deleted just-created entry, and a stale entry
+ * left forever on a day that turned into a Rest day. Change it carefully -
+ * a from-scratch reimplementation would risk reintroducing any one of those.
  */
 import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "./intervals";
 import { generateZwoXml, isRestDay } from "./zwo";

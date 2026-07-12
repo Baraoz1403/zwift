@@ -68,11 +68,10 @@ const ACTIVITIES_CACHE_KEY = "zwiftWeekActivitiesCache";
 const ACTIVITIES_CACHE_WEEK_KEY = "zwiftWeekActivitiesWeek";
 /** localStorage key for the array of TP workoutIds pushed in the current plan */
 const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
-/** localStorage key for the array of Intervals.icu eventIds pushed in the current plan */
-const INTERVALS_PUSHED_IDS_KEY = "zwiftIntervalsPushedEventIds";
-// Automatic sync targets Intervals.icu only (see syncPlanToConnectedPlatforms
-// below for why TP was removed from the automatic path - it caused duplicate
-// entries on Zwift and on TP's own calendar).
+// Intervals.icu sync now happens server-side, automatically, the moment a
+// plan is generated (see app/api/ai/weekly-plan/route.ts) - the browser no
+// longer pushes anything itself, so there's no per-browser pushed-ids list
+// to track here anymore. See lib/headless-sync.ts for the sync algorithm.
 
 function colorForType(type: string): string {
   const t = type.toLowerCase();
@@ -296,9 +295,9 @@ export default function WeeklyPlan() {
   // training-profile.tsx's saveProfile). Reuses the exact same path a daily
   // note already used - handleGenerate() regenerates THIS week using
   // whatever's currently in localStorage (so it picks up the profile edit
-  // that was just made) and, once the new plan lands, generateAndActivate's
-  // own syncPlanToConnectedPlatforms call carries it on to Intervals.icu ->
-  // Zwift automatically - no separate wiring needed for that part.
+  // that was just made); the POST this triggers already pushes the result to
+  // Intervals.icu server-side (see app/api/ai/weekly-plan/route.ts) - no
+  // separate wiring needed for that part.
   useEffect(() => {
     const onProfileSaved = () => { handleGenerate(); };
     window.addEventListener("zwift:profile-saved", onProfileSaved);
@@ -311,18 +310,23 @@ export default function WeeklyPlan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, stale]);
 
-  // Auto-sync on page load is intentionally DISABLED.
-  // The cron job (app/api/ai/weekly-plan/cron/route.ts) already pushes every
-  // plan to Intervals.icu right after generation. Syncing again on every page
-  // load from every browser/device caused a cross-device race: Mac and iPad
-  // each took the same pre-push ICU snapshot, each pushed 6 new events (12
-  // total), but each only deleted the original snapshot IDs — not the other
-  // device's newly-pushed events — leaving 12+ events on ICU → duplicates in
-  // Zwift that accumulated on every page load. Client-side ICU sync now
-  // happens ONLY when the user takes an explicit action:
-  //   • Generate / Regenerate → generateAndActivate → syncPlanToConnectedPlatforms
-  // The cron handles the autonomous weekly push; the client corrects ICU only
-  // when a new plan is actually produced in-session.
+  // Client-side auto-sync on page load is intentionally ABSENT: syncing on
+  // every page load from every browser/device caused a cross-device race
+  // (Mac and iPad each took their own pre-push ICU snapshot, each pushed 6
+  // new events, but each only deleted the snapshot IDs it personally saw -
+  // not the other device's newly-pushed events - leaving duplicates on ICU
+  // that accumulated on every page load).
+  //
+  // The fix isn't "only sync on explicit user action" (that was the previous
+  // approach and still allowed two devices to race if both clicked Generate
+  // around the same time) - it's that the browser no longer pushes to
+  // Intervals.icu AT ALL. The push now happens exactly once, server-side,
+  // inside the POST /api/ai/weekly-plan request itself, the moment a plan is
+  // actually generated (see that route's doc comment, and
+  // lib/headless-sync.ts for the push-then-delete-duplicates algorithm). The
+  // nightly cron calls the same function for riders who never open the
+  // dashboard that week. Every code path that can produce a plan syncs it,
+  // and no code path left in the browser can race against that.
 
   useEffect(() => {
     const thisWeek = currentWeekOf();
@@ -621,126 +625,14 @@ export default function WeeklyPlan() {
     }
   }
 
-  /**
-   * Pushes the plan to Intervals.icu — the sole automatic sync target.
-   *
-   * Key fix (duplicate-in-Zwift bug): we now query ICU for existing events
-   * BEFORE pushing, not after. The previous post-push query had a timing
-   * issue: newly-created ICU events don't always appear in the list
-   * immediately (API caching), so the cleanup saw only the OLD entry,
-   * kept it as "the most recent one", and the fresh event we just pushed
-   * silently piled up alongside it → two copies in Zwift every sync.
-   * Querying first gives us a clean pre-push baseline: every ID we see
-   * there is definitively stale once we've pushed fresh replacements.
-   */
-  async function pushPlanToIntervals(normalizedPlan: WeeklyPlan) {
-    let connected = intervalsConnected;
-    try {
-      const r = await fetch("/api/intervals/status");
-      const d = await r.json();
-      connected = !!d.connected;
-    } catch { /* fall back to the React state above on network failure */ }
-    if (!connected) return;
-
-    const activeDays = normalizedPlan.workouts.filter(w => !isRestDay(w.type) && w.date);
-    if (activeDays.length === 0) return;
-
-    // Cleanup range spans the full plan week so rest-day slots (which we
-    // don't push to) still get their stale planned entries swept up.
-    const allDates = normalizedPlan.workouts.map(w => w.date).filter(Boolean).sort() as string[];
-    const oldest = allDates[0];
-    const newest = allDates[allDates.length - 1];
-
-    const deleteOne = (id: string | number) =>
-      fetch("/api/intervals/push-workout", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: id }),
-      }).then(r => r.ok).catch(() => false);
-
-    // Step 1: Snapshot what's on ICU right now (PRE-push baseline).
-    const prePushIds = new Set<string | number>();
-    try {
-      const r = await fetch(`/api/intervals/push-workout?oldest=${oldest}&newest=${newest}`);
-      const d = await r.json();
-      if (d.ok && Array.isArray(d.events)) {
-        for (const e of d.events as { id: string | number }[]) prePushIds.add(e.id);
-      }
-    } catch {}
-
-    // Step 2: Push fresh planned events for every non-rest, not-yet-ridden day.
-    const daysToPush = normalizedPlan.workouts
-      .filter(w => !isRestDay(w.type) && !(w.date && weekActivities.has(w.date)));
-    const pushResults = await Promise.all(daysToPush.map(w => handlePushToIntervals(w)));
-    const newlyPushedIds = new Set(
-      pushResults.filter(r => r.ok && r.eventId != null).map(r => r.eventId as string | number)
-    );
-
-    // Step 3: Delete everything in the pre-push snapshot (all now stale —
-    // either replaced by a fresh copy or a rest/completed day with no new event).
-    // Also clean up any out-of-range IDs tracked in localStorage from prior sessions.
-    const idsToDelete = new Set<string | number>(prePushIds);
-    try {
-      const prevRaw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
-      if (prevRaw) {
-        for (const id of JSON.parse(prevRaw) as (string | number)[]) idsToDelete.add(id);
-      }
-    } catch {}
-    // Safety: never delete a freshly-pushed event (ICU creates new IDs,
-    // but guard against any edge-case reuse).
-    for (const id of newlyPushedIds) idsToDelete.delete(id);
-
-    if (idsToDelete.size > 0) {
-      const toDelete = [...idsToDelete];
-      const firstPass = await Promise.all(toDelete.map(async id => ({ id, ok: await deleteOne(id) })));
-      const stillFailing = firstPass.filter(r => !r.ok);
-      const orphaned = stillFailing.length > 0
-        ? (await Promise.all(stillFailing.map(async r => ({ id: r.id, ok: await deleteOne(r.id) }))))
-            .filter(r => !r.ok).map(r => r.id)
-        : [];
-      if (orphaned.length > 0) {
-        setIntervalsPushLog(l => ({ ...l, _cleanup: `${orphaned.length} old workout(s) couldn't be removed from Intervals.icu — will retry next sync` }));
-        try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(orphaned)); } catch {}
-      } else {
-        setIntervalsPushLog(l => { const { _cleanup, ...rest } = l; return rest; });
-        try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify([...newlyPushedIds])); } catch {}
-      }
-    } else {
-      try { window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify([...newlyPushedIds])); } catch {}
-    }
-
-    // Step 4: Trigger the server-side extended cleanup (7-week window, +2 future
-    // weeks) to catch any orphaned events from previous plan generations that
-    // targeted a different week. The pre-push snapshot above only covers this
-    // plan's date range; if the user previously generated a "next week" plan
-    // and then generated a "this week" plan, those future-week events survive
-    // the snapshot and cause Zwift to show two different workouts per day.
-    // Fire-and-forget — don't await; this is best-effort dedup.
-    fetch("/api/intervals/cleanup", { method: "POST" }).catch(() => {});
-  }
-
-  /**
-   * Automatic sync target: Intervals.icu only.
-   *
-   * TrainingPeaks used to get the same automatic push, but that caused two
-   * problems the rider hit directly: (1) TP and ICU both relay structured
-   * workouts onward to Zwift, so every AI-generated indoor session landed on
-   * Zwift's own workout list twice; (2) TP's push-tracking has the same
-   * per-browser-localStorage weakness described on pushPlanToIntervals
-   * above, and unlike ICU's cleanly separated WORKOUT/ACTIVITY categories,
-   * TP's workout list can't be safely bulk-deleted by date range without
-   * risking a real completed outdoor Garmin ride getting caught in the same
-   * sweep. The rider's own call: TP stays reserved for outdoor rides synced
-   * in from Garmin; every AI-planned indoor session goes to Intervals.icu
-   * only, which is what already relays cleanly to Zwift and (via the
-   * rider's own Intervals.icu → Garmin sync) to Garmin too.
-   *
-   * pushPlanToTP still exists below in case a manual per-workout TP push is
-   * wanted later, but it's no longer called automatically here.
-   */
-  async function syncPlanToConnectedPlatforms(normalizedPlan: WeeklyPlan) {
-    await pushPlanToIntervals(normalizedPlan);
-  }
+  // Intervals.icu sync is no longer triggered from the browser at all - it
+  // now happens automatically server-side, exactly once per generation, in
+  // app/api/ai/weekly-plan/route.ts (see lib/headless-sync.ts for the
+  // push-then-delete-duplicates algorithm). This eliminates the cross-device
+  // duplicate-event bug that motivated the client-side version's design
+  // (query-before-push, full-week cleanup range, etc.) - that client version
+  // (pushPlanToIntervals/handlePushToIntervals) has been removed entirely
+  // rather than left as an unused, now-conflicting second pusher.
   void pushPlanToTP; // kept for a possible future manual "push this day to TP" action; not auto-called
 
   /**
@@ -780,15 +672,11 @@ export default function WeeklyPlan() {
         setStale(false);
         setCycleInfo(data.cycle ?? null);
         setRiderNote("");
-        // Sync to Intervals.icu (→ Zwift). Wrapped in its own try/catch so a
-        // sync error never shows "Network error reaching the server" — the plan
-        // is already rendered at this point; a sync failure is recoverable and
-        // the cron will push again tonight anyway.
-        try {
-          await syncPlanToConnectedPlatforms(normalizedPlan);
-        } catch {
-          // Sync failed — plan is displayed, don't surface a misleading error.
-        }
+        // Intervals.icu sync already happened server-side inside the request
+        // above (see app/api/ai/weekly-plan/route.ts) - nothing to trigger
+        // from here. data.intervalsSync carries the push/delete counts for
+        // observability only; a sync failure there is already best-effort
+        // and never surfaces as an error on this response.
         try {
           window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedPlan));
           if (data.macroCycle) {
@@ -941,9 +829,10 @@ export default function WeeklyPlan() {
   const [tpPushLog, setTpPushLog]     = useState<Record<string, string>>({});
 
   // ── Intervals.icu integration ──────────────────────────────────────────────
+  // Push status is no longer tracked client-side - the push itself happens
+  // server-side now (see app/api/ai/weekly-plan/route.ts). This state is only
+  // whether the rider has connected an account, for the Connect/Change-key UI.
   const [intervalsConnected, setIntervalsConnected] = useState(false);
-  const [intervalsPushState, setIntervalsPushState] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
-  const [intervalsPushLog, setIntervalsPushLog] = useState<Record<string, string>>({});
 
 
   // Ref for the bookmarklet anchor. We MUST set href via setAttribute after
@@ -1091,57 +980,6 @@ export default function WeeklyPlan() {
     }
   }
 
-  /**
-   * Mirrors handlePushToTP - no refresh-then-retry step needed since
-   * Intervals.icu personal API keys don't expire on an hourly cycle like
-   * TP's tokens do.
-   */
-  async function handlePushToIntervals(w: WeeklyWorkout): Promise<{ ok: boolean; eventId?: string | number }> {
-    const key = `icu_${w.date ?? w.title}`;
-    setIntervalsPushState(s => ({ ...s, [key]: "loading" }));
-    const dateLabel = workoutDateLabel(w.date);
-    const titledWorkout = dateLabel ? `${dateLabel} · ${w.title}` : w.title;
-    const pushBody = JSON.stringify({
-      workoutDay: w.date ?? new Date().toISOString().slice(0, 10),
-      title: titledWorkout,
-      description: w.description,
-      durationMin: w.durationMin,
-      type: w.type,
-      targetPower: w.targetPowerPctFtp,
-      structure: w.structure,
-    });
-    try {
-      const res = await fetch("/api/intervals/push-workout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: pushBody,
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setIntervalsPushState(s => ({ ...s, [key]: "ok" }));
-        setIntervalsPushLog(l => ({ ...l, [key]: `✓ ID: ${data.eventId ?? "pushed"}` }));
-        if (data.eventId != null) {
-          try {
-            const raw = window.localStorage.getItem(INTERVALS_PUSHED_IDS_KEY);
-            const ids: (string | number)[] = raw ? JSON.parse(raw) : [];
-            ids.push(data.eventId);
-            window.localStorage.setItem(INTERVALS_PUSHED_IDS_KEY, JSON.stringify(ids));
-          } catch {}
-        }
-        return { ok: true, eventId: data.eventId };
-      } else {
-        setIntervalsPushState(s => ({ ...s, [key]: "error" }));
-        setIntervalsPushLog(l => ({ ...l, [key]: data.error ?? "Error." }));
-        if (res.status === 401 || res.status === 403) setIntervalsConnected(false);
-        return { ok: false };
-      }
-    } catch (e) {
-      setIntervalsPushState(s => ({ ...s, [key]: "error" }));
-      setIntervalsPushLog(l => ({ ...l, [key]: e instanceof Error ? e.message : "Network error." }));
-      return { ok: false };
-    }
-  }
-
   return (
     <div>
 
@@ -1193,11 +1031,11 @@ export default function WeeklyPlan() {
             </div>
 
             {/* Sets correct expectations up front — this connection no longer
-                pushes the AI plan anywhere (that's Intervals.icu's job, see
-                syncPlanToConnectedPlatforms in this file). Without this line,
-                a rider connecting TP for their own outdoor/Garmin rides could
-                reasonably expect their indoor workouts to show up here too,
-                the way TP used to work in this app before. */}
+                pushes the AI plan anywhere (that's Intervals.icu's job, done
+                automatically server-side - see app/api/ai/weekly-plan/route.ts).
+                Without this line, a rider connecting TP for their own outdoor/
+                Garmin rides could reasonably expect their indoor workouts to
+                show up here too, the way TP used to work in this app before. */}
             <div style={{
               fontSize: 11.5, color: "var(--muted)", lineHeight: 1.6,
               background: "rgba(20,23,26,0.03)", border: "1px solid var(--border)",
@@ -2019,34 +1857,18 @@ export default function WeeklyPlan() {
                     {w.description}
                   </div>
                   {!isRestDay(w.type) && (() => {
-                    const icuKey = `icu_${w.date ?? w.title}`;
-                    const icus   = intervalsPushState[icuKey] ?? "idle";
-                    const icuLog = intervalsPushLog[icuKey] ?? "";
                     return (
                       <div style={{ marginTop: 14 }}>
-                        {/* ICU sync status — shown when connected */}
+                        {/* The push already happened server-side before this plan was
+                            ever returned to the browser (see app/api/ai/weekly-plan/
+                            route.ts) - so by the time this card renders, sync is done,
+                            not pending. This is just a static "it's connected" note,
+                            not per-workout live status. */}
                         {intervalsConnected && (
                           <div style={{ marginBottom: 4, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
-                            {icus === "loading" && (
-                              <span style={{ color: "var(--muted)", opacity: 0.7 }}>
-                                ⏳ Syncing to Intervals.icu…
-                              </span>
-                            )}
-                            {icus === "ok" && (
-                              <span style={{ color: "var(--accent)" }}>
-                                ✓ Synced → ICU → Zwift
-                              </span>
-                            )}
-                            {icus === "error" && (
-                              <span style={{ color: "var(--danger)" }} title={icuLog}>
-                                ✗ ICU sync failed
-                              </span>
-                            )}
-                            {icus === "idle" && (
-                              <span style={{ color: "var(--muted)", opacity: 0.4, fontSize: 10 }}>
-                                will sync on generate
-                              </span>
-                            )}
+                            <span style={{ color: "var(--accent)" }}>
+                              ✓ Auto-synced → Intervals.icu → Zwift
+                            </span>
                           </div>
                         )}
 
