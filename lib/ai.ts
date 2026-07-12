@@ -462,8 +462,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   "(2) cap every planned session at sessionLengthMinutes - never schedule a " +
   "session longer than this value; " +
   "(3) let goal colour session type emphasis: 'Increase FTP' -> more " +
-  "threshold/sweet-spot blocks; 'Lose weight / body composition' -> more " +
-  "moderate-duration aerobic rides; 'Prepare for an event' -> build toward " +
+  "threshold/sweet-spot blocks; 'Lose weight / body composition' -> STILL requires 2+ structured intensity sessions (Sweet Spot/Threshold/VO2max) per week — fat burning is maximized by high-intensity intervals, not just aerobic volume. Add one longer Z2 ride but never replace hard sessions with easy rides; 'Prepare for an event' -> build toward " +
   "event-specific demands; 'General fitness' or 'Fun/enjoyment' -> balanced " +
   "variety; " +
   "(4) whether and how close a target event is comes from cycle.phase/" +
