@@ -10,7 +10,7 @@
  *   2. Headlessly from app/api/ai/weekly-plan/cron/route.ts (secret-header
  *      auth, no browser session) - the nightly proactive regeneration task.
  *
- * Both call paths need an already-resolved Zwift accessToken + athleteId;
+ * Both call paths need an already-resolved Zwift `accessToken` + `athleteId`;
  * how that token was obtained (live cookie session vs. a KV-stored refresh
  * token exchanged via refreshZwiftToken()) is the caller's concern, not this
  * module's.
@@ -29,30 +29,32 @@ import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerpr
 export { AiInsightsError };
 
 /**
- * Coggan Power-Duration FTP Estimation from last 30 CYCLING rides.
+ * Coggan Power-Duration FTP Estimation — applied to last 30 CYCLING rides.
  *
- * METHODOLOGY:
- * Every ride has anaerobic contribution that inflates power above true FTP.
- * We divide by a duration-specific Coggan factor to recover FTP estimate.
+ * METHODOLOGY (Coggan, 2003):
+ * Every ride duration has an anaerobic contribution that inflates avgWatts
+ * above true FTP. We divide by a duration-specific factor to remove that
+ * contribution and recover the underlying FTP estimate.
  *
- * Coggan factors (power / factor = FTP estimate):
- *   < 20 min  -> 1.10  (high anaerobic)
- *   < 30 min  -> 1.05
- *   < 45 min  -> 1.00  (near FTP effort)
- *   < 60 min  -> 0.97
- *   < 75 min  -> 0.95
- *   < 90 min  -> 0.93
- *   < 120 min -> 0.91
- *   >= 120 min -> 0.88 (group ride / draft discounted at 0.5x weight)
+ *   < 20 min → ÷ 1.10  (high anaerobic contribution)
+ *   < 30 min → ÷ 1.05
+ *   < 45 min → ÷ 1.00  (≈ FTP effort zone)
+ *   < 60 min → ÷ 0.97
+ *   < 75 min → ÷ 0.95
+ *   < 90 min → ÷ 0.93
+ *   < 120 min → ÷ 0.91
+ *   ≥ 120 min → ÷ 0.88 (group ride / draft — discounted)
  *
- * Uses Normalized Power (NP) over avgWatts when available.
- * Result: weighted average of TOP 5 estimates (not Math.max - avoids outliers).
- * Group rides (>=120 min) weighted 0.5x.
+ * Uses Normalized Power (NP) over avgWatts when available — NP is the
+ * physiologically correct measure of sustained effort for variable-pace rides.
+ *
+ * Result: weighted average of TOP 5 estimates. Group rides (≥120 min) are
+ * weighted at 0.5× to reduce draft-inflated outliers.
  *
  * HARD RULES:
- * - Requires >= 3 qualifying CYCLING rides (20-180 min, power > 80W)
- * - Result < 100W -> suspect data -> returns null
- * - This result ALWAYS overrides manual profile.ftp when non-null
+ * - Requires ≥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
+ * - Result < 100W → suspect data → returns null (falls back to profile.ftp)
+ * - This function's result ALWAYS overrides manual profile.ftp when ≥ 100W
  */
 function estimateFtpFromRides(rides: RideSummary[]): number | null {
   function cogganFactor(durMin: number): number {
@@ -83,6 +85,7 @@ function estimateFtpFromRides(rides: RideSummary[]): number | null {
     return { estimate, weight };
   });
 
+  // Weighted average of top 5 estimates by value
   const top5 = estimates
     .sort((a, b) => b.estimate - a.estimate)
     .slice(0, 5);
@@ -158,11 +161,9 @@ export async function runWeeklyPlanGeneration(
     throw new AiInsightsError("Not enough ride history yet to build a plan.");
   }
 
-  // Coggan Protocol: computed FTP from rides ALWAYS overrides manual profile.ftp.
-  // Manual entry is stale fallback only - never the primary source.
-  // Previous bug: 30-100 min filter caused null return for 60-75 min rides,
-  // falling back to profile.ftp=276W -> impossible workout targets (414W).
-  // Fixed: 20-180 min range covers all typical rides including 1-hour sessions.
+  // Coggan Protocol: computed FTP from last 30 rides ALWAYS overrides manual entry.
+  // Manual profile.ftp is a stale fallback only — never the primary source.
+  // See estimateFtpFromRides() doc for the full methodology.
   const estimatedFtp = estimateFtpFromRides(rides);
   const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
 
@@ -212,9 +213,9 @@ export async function runWeeklyPlanGeneration(
     ftp: effectiveFtp,
     weightKg: profile.weight ? profile.weight / 1000 : undefined,
     cyclingLevel:
-      profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
+      profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined;
     runLevel:
-      profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
+      profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined;
     ageYears: resolvedAge,
     rides,
     trainingLoad,
