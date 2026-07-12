@@ -151,6 +151,35 @@ export async function setCachedPlan(athleteId: string, plan: CachedWeeklyPlan): 
   }
 }
 
+// ── Per-week Intervals.icu sync marker ────────────────────────────────────
+// Tracks whether the CURRENTLY cached plan for a given week has already been
+// confirmed pushed to Intervals.icu at least once. Exists so a cache-hit
+// read of an already-synced plan (the common case: every subsequent page
+// load for the same week) doesn't re-push a fresh ZWO copy every time -
+// only the very first read after a plan lacks this marker (freshly
+// generated, or a plan that was cached before ICU was connected, or before
+// this marker existed at all) triggers a sync. Same TTL as the plan cache
+// itself so the marker never outlives the plan it describes.
+const ICU_SYNC_MARKER_TTL_SECONDS = PLAN_CACHE_TTL_SECONDS;
+
+export async function wasIntervalsSynced(athleteId: string, weekOf: string): Promise<boolean> {
+  if (!kvAvailable() || !athleteId || !weekOf) return false;
+  try {
+    return (await kvGet(`zwift:${athleteId}:plan:${weekOf}:icu_synced`)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export async function markIntervalsSynced(athleteId: string, weekOf: string): Promise<void> {
+  if (!kvAvailable() || !athleteId || !weekOf) return;
+  try {
+    await kvSet(`zwift:${athleteId}:plan:${weekOf}:icu_synced`, "1", ICU_SYNC_MARKER_TTL_SECONDS);
+  } catch {
+    // best-effort
+  }
+}
+
 /** Reads back everything the cron job needs to regenerate + push a plan for one athlete. */
 export async function getStoredAthleteState(athleteId: string): Promise<StoredAthleteState> {
   const [profileRaw, macroRaw, planRaw, icuKey, icuId] = await Promise.all([

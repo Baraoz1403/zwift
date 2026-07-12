@@ -3,7 +3,7 @@ import { refreshZwiftToken, ZwiftApiError } from "@/lib/zwift";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
-import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates } from "@/lib/headless-sync";
+import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
 import {
   getKnownAthletes,
   getStoredZwiftRefreshToken,
@@ -120,21 +120,7 @@ export async function GET(req: NextRequest) {
         let icuCleaned: number | undefined;
         if (state.icuKey) {
           try {
-            // Scan 4 weeks back + 3 weeks ahead so stale events from a
-            // previously-generated "next week" plan are also cleaned up.
-            // Using only the current plan's date range misses future-week
-            // orphans that cause Zwift to show two different workouts per day.
-            const now = new Date();
-            const dow = now.getUTCDay();
-            const diffToMonday = dow === 0 ? -6 : 1 - dow;
-            const thisMonday = new Date(now);
-            thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
-            const oldestDate = new Date(thisMonday);
-            oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
-            const newestDate = new Date(thisMonday);
-            newestDate.setUTCDate(thisMonday.getUTCDate() + 6 + 14); // +2 future weeks
-            const oldest = oldestDate.toISOString().slice(0, 10);
-            const newest = newestDate.toISOString().slice(0, 10);
+            const { oldest, newest } = wideCleanupRange();
             const cleanResult = await cleanupIcuDuplicates(
               state.icuKey,
               state.icuId ?? undefined,
@@ -189,6 +175,17 @@ export async function GET(req: NextRequest) {
         );
         pushed = syncResult.pushed;
         deleted = syncResult.deleted;
+        // Also sweep the wider window - the narrow sync above only cleans
+        // THIS plan's own week; orphaned events from other weeks (a stale
+        // "next week" prefetch, or leftovers from before sync worked) need
+        // the same wide pass the "already-current" branch above runs.
+        try {
+          const { oldest, newest } = wideCleanupRange();
+          const wideResult = await cleanupIcuDuplicates(state.icuKey, state.icuId ?? undefined, oldest, newest);
+          deleted += wideResult.deleted;
+        } catch {
+          // best-effort
+        }
       }
 
       results.push({ athleteId, status: "generated", weekOf: result.weekOf, pushed, deleted });

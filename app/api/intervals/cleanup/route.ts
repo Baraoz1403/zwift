@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { cleanupIcuDuplicates } from "@/lib/headless-sync";
+import { cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
 
 /**
  * POST /api/intervals/cleanup
@@ -27,25 +27,10 @@ export async function POST() {
   const icuId  = cookieStore.get("zwift_intervals_id")?.value;
   if (!icuKey) return NextResponse.json({ ok: false, error: "Intervals.icu not connected." });
 
-  // Scan a 7-week window (4 past weeks + current week + 2 future weeks).
-  // The +2 future weeks is critical: if the rider generated a plan for
-  // "next week" and then generated another one, the stale next-week events
-  // sit *beyond* this Sunday and are invisible to a current-week-only range,
-  // causing Zwift to show two different workouts per day. Covering 2 weeks
-  // ahead catches those orphaned future events and removes duplicates there too.
-  const now = new Date();
-  const dow = now.getUTCDay();
-  const diffToMonday = dow === 0 ? -6 : 1 - dow;
-  const thisMonday = new Date(now);
-  thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
-  // oldest = 4 weeks before this Monday
-  const oldestDate = new Date(thisMonday);
-  oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
-  // newest = 2 weeks from this Sunday (covers next week + week after)
-  const newestDate = new Date(thisMonday);
-  newestDate.setUTCDate(thisMonday.getUTCDate() + 6 + 14);
-  const oldest = oldestDate.toISOString().slice(0, 10);
-  const newest = newestDate.toISOString().slice(0, 10);
+  // Scan the standard 7-week window (4 past weeks + current week + 2 future
+  // weeks) - see wideCleanupRange()'s doc comment for why the range needs to
+  // extend beyond just the current week.
+  const { oldest, newest } = wideCleanupRange();
 
   // Guard against "0" — that's the fallback value set at login when the ICU
   // athlete ID wasn't available, and /athlete/0/events would return 404.

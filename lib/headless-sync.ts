@@ -23,6 +23,16 @@
  * delete-before-push, a self-deleted just-created entry, and a stale entry
  * left forever on a day that turned into a Rest day. Change it carefully -
  * a from-scratch reimplementation would risk reintroducing any one of those.
+ *
+ * IMPORTANT — syncPlanToIntervalsHeadless only cleans within the plan being
+ * synced's OWN week (its narrowest correct range: rest days included, other
+ * weeks not). The old client-side pushPlanToIntervals also fired a SEPARATE,
+ * much wider dedup pass (see wideCleanupRange() above) after every push, to
+ * catch orphaned events from other weeks - a stale "next week" prefetch, or
+ * duplicates left over from before sync worked correctly. When that client
+ * code was removed, its callers (app/api/ai/weekly-plan/route.ts) must call
+ * cleanupIcuDuplicates(wideCleanupRange()) themselves as a second step, or
+ * exactly that class of stale-duplicate-in-another-week bug comes back.
  */
 import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "./intervals";
 import { generateZwoXml, isRestDay } from "./zwo";
@@ -33,6 +43,39 @@ export interface HeadlessSyncResult {
   pushed: number;
   deleted: number;
   errors: string[];
+}
+
+/**
+ * The standard 7-week ICU dedup window (4 weeks back, current week, 2 weeks
+ * ahead of "this Monday", UTC) - shared by every automatic/manual cleanup
+ * pass so the cron job, the interactive route, and the manual "clean up
+ * Zwift calendar" endpoint can't drift into three different ideas of "wide
+ * enough". Was previously copy-pasted separately in each of those three
+ * places; consolidated here after that drift already caused a real gap (see
+ * the doc comment on syncPlanToIntervalsHeadless below).
+ *
+ * The +2-future-weeks / -4-past-weeks span exists because a narrower
+ * range - e.g. just the plan being synced right now - misses orphaned
+ * events sitting outside that one week: a stale "next week" plan generated
+ * earlier, or last week's plan left over from before ICU sync worked
+ * correctly, both show up to the rider as duplicate/wrong workouts in
+ * Zwift's Custom Workouts menu even though the CURRENT week's sync is
+ * working perfectly.
+ */
+export function wideCleanupRange(): { oldest: string; newest: string } {
+  const now = new Date();
+  const dow = now.getUTCDay();
+  const diffToMonday = dow === 0 ? -6 : 1 - dow;
+  const thisMonday = new Date(now);
+  thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
+  const oldestDate = new Date(thisMonday);
+  oldestDate.setUTCDate(thisMonday.getUTCDate() - 28);
+  const newestDate = new Date(thisMonday);
+  newestDate.setUTCDate(thisMonday.getUTCDate() + 6 + 14);
+  return {
+    oldest: oldestDate.toISOString().slice(0, 10),
+    newest: newestDate.toISOString().slice(0, 10),
+  };
 }
 
 /**

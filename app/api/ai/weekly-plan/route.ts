@@ -5,10 +5,19 @@ import { WeeklyWorkout } from "@/lib/ai";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { MacroCycleState, mondayOfCurrentWeek } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { mirrorStateToKv, mirrorZwiftAuthToKv, getCachedPlan, setCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
+import {
+  mirrorStateToKv,
+  mirrorZwiftAuthToKv,
+  getCachedPlan,
+  setCachedPlan,
+  getIntervalsCredentials,
+  wasIntervalsSynced,
+  markIntervalsSynced,
+} from "@/lib/kv-plan-state";
 import { kvGet } from "@/lib/kv";
 import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
-import { syncPlanToIntervalsHeadless } from "@/lib/headless-sync";
+import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
+import { fetchActivities } from "@/lib/zwift";
 
 // mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
 // app/api/ai/weekly-plan/cron/route.ts can share the exact same KV
@@ -27,6 +36,53 @@ import { syncPlanToIntervalsHeadless } from "@/lib/headless-sync";
 // AI plan generation takes 30-60 seconds (FIT file downloads + Claude API).
 // Without this, Vercel cuts the function at the default 10s hobby-plan limit.
 export const maxDuration = 60;
+
+interface IntervalsSyncResult {
+  pushed: number;
+  deleted: number;
+  errors: string[];
+}
+
+/**
+ * Pushes `plan` to Intervals.icu and cleans up duplicates, in two passes:
+ * (1) the narrow push-then-delete pass scoped to this plan's own week
+ * (lib/headless-sync.ts's syncPlanToIntervalsHeadless), then (2) a wide
+ * dedup-only sweep (4 weeks back, 2 weeks ahead - see wideCleanupRange())
+ * that catches orphaned events sitting OUTSIDE this week - a stale
+ * previously-generated "next week" plan, or leftovers from before sync
+ * worked correctly. Skipping step 2 was a real regression: it used to run
+ * automatically after every client-triggered push (the old
+ * pushPlanToIntervals's "Step 4"); when that client code was removed in
+ * favor of this server-side call, step 2 needs to be reproduced here or
+ * exactly that class of stale-duplicate-in-another-week bug comes back.
+ *
+ * Marks the week as synced in KV on success so a later cache-hit read of
+ * the same plan doesn't redundantly re-push (see wasIntervalsSynced).
+ * Returns null (skips entirely) when the rider hasn't connected ICU.
+ */
+async function syncPlanToIcuAndMark(
+  athleteId: string,
+  weekOf: string,
+  plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
+  riddenDates: Set<string>
+): Promise<IntervalsSyncResult | null> {
+  const creds = await getIntervalsCredentials(athleteId);
+  if (!creds) return null;
+
+  const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
+  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
+
+  const { oldest, newest } = wideCleanupRange();
+  const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
+
+  await markIntervalsSynced(athleteId, weekOf);
+
+  return {
+    pushed: narrow.pushed,
+    deleted: narrow.deleted + wide.deleted,
+    errors: [...narrow.errors, ...wide.errors],
+  };
+}
 
 export async function POST(req: NextRequest) {
   let ageYears: number | undefined;
@@ -103,7 +159,38 @@ export async function POST(req: NextRequest) {
         const macroRaw = await kvGet(`zwift:${session.athleteId}:macro_cycle`);
         cachedMacroCycle = macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null;
       } catch { /* best-effort */ }
-      return NextResponse.json({ ok: true, plan: cached, macroCycle: cachedMacroCycle, cycle: null });
+
+      // ── Self-heal: sync to ICU if this cached plan was never confirmed
+      // synced ─────────────────────────────────────────────────────────────
+      // No new generation happened here (that's the whole point of the
+      // cache), so normally there's nothing new to push. But a plan can be
+      // sitting in cache with NO successful sync behind it yet - e.g. it was
+      // cached before the rider connected Intervals.icu, or before automatic
+      // server-side sync existed at all. Without this check such a plan
+      // would sit in cache, unsynced, forever - every future read is a cache
+      // hit that (before this check) skipped sync unconditionally. Checking
+      // wasIntervalsSynced keeps this cheap: once a week is confirmed
+      // synced, every subsequent cache-hit read for it skips straight past
+      // this block.
+      let intervalsSync: IntervalsSyncResult | null = null;
+      try {
+        if (!(await wasIntervalsSynced(session.athleteId, effectiveWeekOf))) {
+          let riddenDates = new Set<string>();
+          try {
+            const activities = await fetchActivities(session.accessToken, session.athleteId);
+            riddenDates = new Set(
+              activities.map((a) => ((a.startDate as string) ?? "").slice(0, 10)).filter(Boolean)
+            );
+          } catch {
+            // best-effort — worst case a already-ridden day gets a redundant planned event
+          }
+          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates);
+        }
+      } catch {
+        // best-effort — a self-heal failure must never break the cached-plan response
+      }
+
+      return NextResponse.json({ ok: true, plan: cached, macroCycle: cachedMacroCycle, cycle: null, intervalsSync });
     }
   }
 
@@ -156,22 +243,21 @@ export async function POST(req: NextRequest) {
     // other's newly-created event ids, so events piled up on the calendar
     // instead of being replaced. Doing it exactly once, here, server-side,
     // means there is only ever one sync per generation regardless of how many
-    // browsers/devices are open. Uses the same push-then-delete-duplicates
-    // algorithm the nightly cron already relies on (lib/headless-sync.ts) -
+    // browsers/devices are open. See syncPlanToIcuAndMark's doc comment for
+    // why this includes a wide dedup sweep, not just this week's own range -
     // best-effort: a sync failure here must never break the interactive
     // response, and the nightly cron reconciles ICU state again regardless.
-    let intervalsSync: { pushed: number; deleted: number; errors: string[] } | null = null;
+    let intervalsSync: IntervalsSyncResult | null = null;
     try {
-      const creds = await getIntervalsCredentials(result.athleteId);
-      if (creds) {
-        const normalizedPlan = ensureWorkoutDates(
-          normalizeToSix({ weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts })
-        );
-        const riddenDates = new Set(
-          result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
-        );
-        intervalsSync = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
-      }
+      const riddenDates = new Set(
+        result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
+      );
+      intervalsSync = await syncPlanToIcuAndMark(
+        result.athleteId,
+        result.weekOf,
+        { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
+        riddenDates
+      );
     } catch {
       // best-effort — never fail plan generation because ICU sync hiccuped
     }
