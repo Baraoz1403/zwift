@@ -72,10 +72,10 @@ export default function PhaseCard({
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
       background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.14)",
-      borderRadius: 14, padding: "12px 20px", minWidth: 108,
+      borderRadius: 8, padding: "12px 20px", minWidth: 108,
     }}>
       <div style={{
-        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+        width: 32, height: 32, borderRadius: 7, flexShrink: 0,
         background: `${ACCENT}18`, display: "flex", alignItems: "center", justifyContent: "center",
         color: ACCENT,
       }}>
@@ -100,7 +100,7 @@ export default function PhaseCard({
       style={{
         width: "100%", maxWidth: 1100, margin: "0 auto", boxSizing: "border-box",
         background: "var(--panel)",
-        borderRadius: 12,
+        borderRadius: 8,
         border: `1px solid ${hover ? "rgba(59,130,246,0.3)" : "var(--border)"}`,
         boxShadow: hover
           ? "0 12px 32px rgba(47,143,224,0.14), 0 4px 14px rgba(0,0,0,0.06)"
@@ -181,7 +181,7 @@ export default function PhaseCard({
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             background: `${ACCENT}0f`, border: `1px solid ${ACCENT}30`,
-            borderRadius: 24, padding: "8px 16px",
+            borderRadius: 8, padding: "8px 16px",
           }}>
             <svg width={42} height={42} viewBox="0 0 42 42">
               <circle cx={21} cy={21} r={r} fill="none" stroke="rgba(15,23,42,0.08)" strokeWidth={5} />
@@ -202,7 +202,7 @@ export default function PhaseCard({
         <div
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "10px 18px", borderRadius: 12,
+            padding: "10px 18px", borderRadius: 8,
             background: hover ? ACCENT : "rgba(59,130,246,0.08)",
             border: `1px solid ${hover ? ACCENT : "rgba(59,130,246,0.25)"}`,
             color: hover ? "#fff" : ACCENT,

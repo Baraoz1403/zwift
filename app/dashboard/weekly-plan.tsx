@@ -1764,7 +1764,7 @@ export default function WeeklyPlan() {
                     // its corners were visibly not following the card's
                     // radius. Rest-day cards hide the strip via the
                     // ...--rest className above instead of an inline override.
-                    borderRadius: 12,
+                    borderRadius: 8,
                     overflow: "hidden",
                     boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
                     ["--card-accent" as string]: accentColor,
