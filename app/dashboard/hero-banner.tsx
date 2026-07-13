@@ -21,17 +21,21 @@ const SLIDES = [
     sub: "Real-time training plans built from your Zwift performance — not templates.",
   },
   {
-    dark: false,
-    bg: "linear-gradient(135deg, #eafcf3 0%, #d7f7e4 55%, #c7f0d8 100%)",
-    accent: "#15803d",
+    // Was a pale mint pastel - read as washed-out/weak. Same deep-to-mid
+    // diagonal gradient treatment as the blue slide, just in a rich emerald
+    // hue, so it carries the same visual weight instead of looking faded.
+    dark: true,
+    bg: "linear-gradient(135deg, #064e3b 0%, #059669 55%, #033a2c 100%)",
+    accent: "#4ADE9E",
     tag: "STRUCTURED TRAINING",
     lines: ["Sweet Spot.", "Threshold.", "VO2max."],
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    dark: false,
-    bg: "linear-gradient(135deg, #fff1f2 0%, #ffe1e5 55%, #ffd0d6 100%)",
-    accent: "#e11d48",
+    // Was a pale blush pastel - same fix as above, in a rich crimson hue.
+    dark: true,
+    bg: "linear-gradient(135deg, #7f1d2e 0%, #be123c 55%, #4c0f1c 100%)",
+    accent: "#FF6B85",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
@@ -180,15 +184,24 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
       transition: "background 0.5s ease, border-color 0.4s ease",
     }}>
-      {/* Grid - white lines, like the original banners. A soft dark grid on
-          the light slides instead, so it still reads against a pale
-          background rather than disappearing. */}
-      <div style={{ position:"absolute",inset:0,opacity:s.dark ? 0.14 : 0.06,pointerEvents:"none",
-        backgroundImage:`linear-gradient(${s.dark ? "#fff" : "#0f172a"} 1px,transparent 1px),linear-gradient(90deg,${s.dark ? "#fff" : "#0f172a"} 1px,transparent 1px)`,
-        backgroundSize:"40px 40px"}} />
-      {/* Glow */}
+      {/* Grid - white lines, like the original banners. Instead of one flat
+          opacity everywhere, the intensity is masked so it visibly brightens
+          near the glow (top-right) and fades elsewhere - a single flat
+          value read as static/cheap; this gives it depth and a sense of
+          light actually falling across the panel. */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        backgroundImage: `linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)`,
+        backgroundSize: "40px 40px",
+        opacity: 0.22,
+        WebkitMaskImage: `radial-gradient(ellipse 750px 520px at 80% 10%, black 0%, rgba(0,0,0,0.4) 45%, transparent 88%)`,
+        maskImage: `radial-gradient(ellipse 750px 520px at 80% 10%, black 0%, rgba(0,0,0,0.4) 45%, transparent 88%)`,
+        transition: "opacity 0.4s ease",
+      }} />
+      {/* Glow - same focal point as the grid brightening above, so the two
+          read as one light source rather than two unrelated effects. */}
       <div style={{position:"absolute",top:-60,right:"20%",width:340,height:340,borderRadius:"50%",
-        background:`radial-gradient(circle,${s.accent}22 0%,transparent 70%)`,pointerEvents:"none",transition:"background 0.4s ease"}} />
+        background:`radial-gradient(circle,${s.accent}2e 0%,transparent 70%)`,pointerEvents:"none",transition:"background 0.4s ease"}} />
 
       {/* ── Nav row: brand + persistent nav actions ─────────────────────── */}
       <div className="banner-nav" style={{
