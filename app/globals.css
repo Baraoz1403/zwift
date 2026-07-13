@@ -341,12 +341,15 @@ a:hover {
    deepens and lifts on hover; --card-accent is set inline per card (the
    workout's own intensity-zone color) so the shadow tint always matches
    that card's accent bar/graph coloring instead of one fixed color. */
-/* .stat-card's generic ::before top strip (2.5px, single --accent color -
-   see the .stat-card::before rule above) was layering on top of this card's
-   own 5px per-workout-type borderTop accent, which is what actually caused
-   the reported "clipped to 2.5px" look - two competing top bars, not one
-   clipped bar. Disable the generic one specifically for these cards. */
-.workout-card-elevated::before {
+/* The accent strip on these cards now comes from .stat-card's own generic
+   ::before (2.5px, var(--accent), clipped to the card's rounded corners by
+   .stat-card's border-radius + overflow:hidden) - the same single mechanism
+   every other card on the site uses. It used to be drawn as an inline
+   `borderTop` on the card itself instead; a border-side can't be clipped by
+   overflow the way an absolutely-positioned strip can, so its corners
+   didn't follow the card's rounded radius the way every other card's strip
+   does. Rest-day cards deliberately show no accent strip. */
+.workout-card-elevated--rest::before {
   display: none;
 }
 
@@ -1216,6 +1219,20 @@ tbody tr:hover {
 /* Dark-background variant — used for nav chips/sign-out that now live
    inside the dark hero-banner header (see hero-banner.tsx) instead of the
    old light .dashboard-header bar. */
+/* Dark glass backing on the nav row itself, independent of whatever the
+   slide's own background color is (blue / light green / light red all
+   rotate through now) - keeps the nav legible without needing a separate
+   light/dark theme per slide for every nav sub-component. */
+.banner-nav {
+  background: rgba(8, 12, 24, 0.32);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
 .banner-nav .header-nav-chip {
   border-color: rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.06);
@@ -1243,17 +1260,21 @@ tbody tr:hover {
 
 /* Full-bleed hero banner - stretches edge-to-edge like the old
    .dashboard-header used to (same technique: 100vw + negative margin),
-   instead of being boxed in at 1100px. Content still lines up with the
-   rest of the page via the calc() padding, which mirrors .dashboard-header's
-   own max((100vw-1140px)/2+24px) approach. Requested explicitly - the
-   contained/rounded banner felt disconnected from the rest of the layout. */
+   instead of being boxed in at 1100px.
+   The padding formula must match .dashboard's ACTUAL rendered content
+   edges, not just its max-width number: .dashboard is max-width:1100px
+   with its own 24px horizontal padding INSIDE that box, so its real
+   content edge sits at (viewport-1100)/2 + 24px from the viewport edge
+   (or a flat 24px once viewport <= 1100px). Missing that trailing "+24px"
+   left the banner's text/nav content about 24px further out than the
+   cards below it - the exact "margins don't line up" bug reported. */
 .hero-banner-fullbleed {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   border-radius: 0;
   box-sizing: border-box;
-  padding-left: max(24px, calc((100vw - 1100px) / 2));
-  padding-right: max(24px, calc((100vw - 1100px) / 2));
+  padding-left: max(24px, calc((100vw - 1100px) / 2 + 24px));
+  padding-right: max(24px, calc((100vw - 1100px) / 2 + 24px));
 }
 
 /* ========================================================

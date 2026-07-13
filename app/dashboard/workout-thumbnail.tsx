@@ -96,52 +96,39 @@ export default function WorkoutThumbnail({
           position: "relative",
           display: "flex",
           alignItems: "flex-end",
-          gap: 2,
+          gap: "1px",
           height,
-          padding: "8px 6px 0",
-          background: lightGraph ? "#f1f5f9" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
+          padding: "8px 0 0",
+          background: lightGraph ? "#eef2f6" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
         {lightGraph && (
           <div style={{
             position: "absolute", left: 0, right: 0, bottom: `${ftpLinePct}%`,
-            borderTop: "1px dashed rgba(0,0,0,0.15)", pointerEvents: "none",
+            borderTop: "1px dashed rgba(0,0,0,0.18)", pointerEvents: "none", zIndex: 1,
           }} />
         )}
+        {/* Zwift's own workout graph: flat, matte, contiguous blocks (a
+            stepped skyline of interval segments) - not individually glossy
+            floating bars. Segments touch (1px seam, not a visible gap),
+            sit flush on the baseline with square corners, and get their
+            definition purely from the zone color change block-to-block,
+            same as the in-game workout view. */}
         {powers.map((p, i) => {
           const color = zoneForPowerFraction(p).color;
           return (
             <div
               key={i}
-              className="wo-thumb-bar"
               style={{
                 flex: 1,
                 minWidth: 2,
                 height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
                 background: color,
-                boxShadow: `inset 0 6px 8px -6px rgba(255,255,255,0.55), 0 1px 0 rgba(0,0,0,0.12), 0 2px 3px -1px rgba(0,0,0,0.18)`,
-                borderRadius: "2px 2px 0 0",
-                animationDelay: `${(i / powers.length) * 220}ms`,
               }}
             />
           );
         })}
       </div>
-      <style>{`
-        @keyframes woThumbBarIn {
-          from { opacity: 0; transform: scaleY(0.3); }
-          to   { opacity: 1; transform: scaleY(1); }
-        }
-        .wo-thumb-bar {
-          transform-origin: bottom;
-          animation: woThumbBarIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-          transition: filter 0.12s ease, transform 0.12s ease;
-        }
-        .wo-thumb-bar:hover {
-          filter: brightness(1.12) saturate(1.1);
-          transform: scaleY(1.02);
-        }
-      `}</style>
       {!hideFooter && (
         <div
           style={{

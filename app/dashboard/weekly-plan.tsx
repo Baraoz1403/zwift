@@ -1751,21 +1751,19 @@ export default function WeeklyPlan() {
               const rest = isRestDay(w.type);
               return (
                 <div
-                  className="stat-card workout-card-elevated"
+                  className={`stat-card workout-card-elevated${rest ? " workout-card-elevated--rest" : ""}`}
                   key={i}
                   style={{
                     display: "flex", flexDirection: "column",
                     background: rest ? "#f8fafc" : "#fff",
                     border: rest ? "2px dashed #e2e8f0" : "none",
-                    // A real border (not a child div) paints at the box's own
-                    // edge regardless of this element's overflow:hidden -
-                    // a separate inner div was getting clipped/reduced to a
-                    // sliver on some cards, this can't be.
-                    // Always the site's blue accent, not a per-workout-type
-                    // color - matches every other accent bar on the site
-                    // (stat cards, record cards, trend cards all use the
-                    // same var(--accent) strip). Asked for repeatedly.
-                    borderTop: rest ? undefined : `2.5px solid var(--accent)`,
+                    // Accent strip is .stat-card's own generic ::before now
+                    // (2.5px, var(--accent)) - see globals.css. That strip is
+                    // clipped to the card's rounded corners by overflow:hidden,
+                    // which a real `borderTop` on the card itself can't be -
+                    // its corners were visibly not following the card's
+                    // radius. Rest-day cards hide the strip via the
+                    // ...--rest className above instead of an inline override.
                     borderRadius: 12,
                     overflow: "hidden",
                     boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
@@ -1829,12 +1827,6 @@ export default function WeeklyPlan() {
                               </span>
                             </div>
                           )}
-                          {intervalsConnected && !lastIntervalsSync && (
-                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 14, color: "#64748b", opacity: 0.8 }}>
-                              Connected — syncs automatically when a plan is generated
-                            </div>
-                          )}
-
                           {/* Download .zwo — always available as fallback */}
                           <div style={{ display: "flex", justifyContent: "center" }}>
                             <button
@@ -1993,20 +1985,6 @@ export default function WeeklyPlan() {
           })()}
 
 
-          <div style={{ fontSize: 11, opacity: 0.55, marginTop: 10 }}>
-            {intervalsConnected
-              ? <>
-                  <strong style={{ opacity: 0.8, color: "var(--accent)" }}>Intervals.icu connected</strong> — workouts push here automatically and relay onward to Zwift (and Garmin, via the sync you set up once in your own Intervals.icu account). Fall back to{" "}
-                  <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> at any time.
-                </>
-              : <>
-                  <strong style={{ opacity: 0.8 }}>Connect Intervals.icu</strong> (above) for the easiest path — push workouts straight to your Zwift (and Garmin) calendar automatically. Or use{" "}
-                  <strong style={{ opacity: 0.8 }}>↓ Download .zwo</strong> and drop the file into{" "}
-                  <code style={{ fontSize: 10 }}>Documents/Zwift/Workouts/&lt;your Zwift ID&gt;/</code>,
-                  then open Zwift once.
-                </>
-            }
-          </div>
         </>
       )}
 
@@ -2038,9 +2016,9 @@ export default function WeeklyPlan() {
             onChange={(e) => setRiderNote(e.target.value)}
             disabled={loading}
             style={{
-              flex: 1, padding: "10px 14px", borderRadius: 8,
+              flex: 1, padding: "12px 16px", borderRadius: 8,
               border: "1px solid var(--border)", background: "var(--panel-solid)",
-              fontSize: 14, color: "var(--text)", fontFamily: "inherit",
+              fontSize: 16, color: "var(--text)", fontFamily: "inherit",
               outline: "none",
             }}
           />
@@ -2049,10 +2027,10 @@ export default function WeeklyPlan() {
             disabled={loading || !riderNote.trim()}
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "10px 16px", borderRadius: 8,
+              padding: "12px 18px", borderRadius: 8,
               border: "1.5px solid #16a34a",
               background: riderNote.trim() ? "#16a34a" : "rgba(22,163,74,0.4)",
-              color: "#fff", fontSize: 13.5, fontWeight: 600,
+              color: "#fff", fontSize: 15, fontWeight: 600,
               cursor: loading || !riderNote.trim() ? "default" : "pointer",
               fontFamily: "inherit", whiteSpace: "nowrap",
               transition: "background 0.15s ease",
@@ -2060,7 +2038,7 @@ export default function WeeklyPlan() {
           >
             {loading ? "Adapting…" : "Send"}
             {!loading && (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>
             )}
@@ -2069,7 +2047,7 @@ export default function WeeklyPlan() {
 
         {/* Phase caption - folded in from the old standalone "Weekly
             training plan" info card, which no longer gets its own slot. */}
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 13, color: "var(--muted)" }}>
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14.5, color: "var(--muted)" }}>
           {cycleInfo
             ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
               ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`

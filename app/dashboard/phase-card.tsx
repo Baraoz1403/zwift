@@ -102,13 +102,6 @@ export default function PhaseCard({
         background: "var(--panel)",
         borderRadius: 12,
         border: `1px solid ${hover ? "rgba(59,130,246,0.3)" : "var(--border)"}`,
-        // Same 2.5px accent-bar weight as every other card on the site
-        // (stat-card/record-card/trend-card/workout cards all share
-        // var(--strip-height)) - this was 4px, a mismatched thickness even
-        // though the color already matched. Kept as a literal value here
-        // (rather than var(--strip-height)) only because this component
-        // uses inline styles throughout rather than a CSS class.
-        borderTop: `2.5px solid ${ACCENT}`,
         boxShadow: hover
           ? "0 12px 32px rgba(47,143,224,0.14), 0 4px 14px rgba(0,0,0,0.06)"
           : "0 4px 24px rgba(0,0,0,0.06)",
@@ -128,6 +121,17 @@ export default function PhaseCard({
         transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
       }}
     >
+      {/* Accent strip - same mechanism as .stat-card::before everywhere else
+          on the site (a flat strip clipped by this card's own overflow:hidden
+          + borderRadius), rather than a `borderTop` on the card's own border.
+          A border side can't be clipped the same way, so its corners didn't
+          follow the card's rounded radius the way every other card's strip
+          does - asked to fix repeatedly, this is the actual root cause. */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: "var(--strip-height)",
+        background: "var(--accent)", zIndex: 2,
+      }} />
+
       <div style={{
         position: "absolute", top: -80, right: "10%", width: 280, height: 280, borderRadius: "50%",
         background: `radial-gradient(circle,${ACCENT}0c,transparent 70%)`, pointerEvents: "none",
