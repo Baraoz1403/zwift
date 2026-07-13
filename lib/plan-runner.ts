@@ -268,12 +268,24 @@ export async function runWeeklyPlanGeneration(
  * gone entirely, this is the only remaining path that can create a rider's
  * very first plan.
  *
+ * HARD REQUIREMENT: no plan is generated at all for an athlete with no
+ * Intervals.icu connection on record. This app hit the same confusion
+ * repeatedly - a rider gets a plan, has no idea it can never reach Zwift
+ * because they never connected ICU, and the "why isn't this working"
+ * debugging always traces back to a missing icu_key. Refusing to spend an
+ * AI call producing a plan that has nowhere to sync closes that class of
+ * problem at the root instead of chasing each instance of it. The
+ * onboarding gate in app/dashboard/layout.tsx enforces the same rule at the
+ * UI level (a rider literally cannot reach Today's Note without connecting
+ * first) - this is the code-level backstop for the paths that don't go
+ * through that UI at all (cron, direct login/connect).
+ *
  * Steps: (1) register the athlete so the nightly cron picks them up going
- * forward, (2) generate a plan for the current week if one doesn't already
- * exist, (3) push it to Intervals.icu if the rider is connected and this
- * week hasn't been confirmed synced yet (covers both "just generated it"
- * and "a plan already existed but was never synced, e.g. ICU was connected
- * afterward").
+ * forward, (2) bail out here if ICU isn't connected yet, (3) generate a plan
+ * for the current week if one doesn't already exist, (4) push it to
+ * Intervals.icu if this week hasn't been confirmed synced yet (covers both
+ * "just generated it" and "a plan already existed but was never synced,
+ * e.g. ICU was connected afterward").
  *
  * Swallows all its own errors - this must never turn a successful login or
  * a successful ICU connect into a failure response just because plan
@@ -283,6 +295,12 @@ export async function runWeeklyPlanGeneration(
 export async function ensurePlanProvisioned(athleteId: string, accessToken: string): Promise<void> {
   try {
     await registerAthlete(athleteId);
+
+    // No ICU connection on record - refuse to generate anything yet. See
+    // this function's doc comment for why "generate now, sync later" is no
+    // longer acceptable.
+    if (!(await getIntervalsCredentials(athleteId))) return;
+
     const currentWeek = mondayOfCurrentWeek();
     let cached = await getCachedPlan(athleteId, currentWeek);
 
