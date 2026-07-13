@@ -94,11 +94,7 @@ export default function WorkoutThumbnail({
       <div
         style={{
           position: "relative",
-          display: "flex",
-          alignItems: "flex-end",
-          gap: "1px",
           height,
-          padding: "8px 0 0",
           background: lightGraph ? "#eef2f6" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
@@ -109,25 +105,32 @@ export default function WorkoutThumbnail({
           }} />
         )}
         {/* Zwift's own workout graph: flat, matte, contiguous blocks (a
-            stepped skyline of interval segments) - not individually glossy
-            floating bars. Segments touch (1px seam, not a visible gap),
-            sit flush on the baseline with square corners, and get their
-            definition purely from the zone color change block-to-block,
-            same as the in-game workout view. */}
-        {powers.map((p, i) => {
-          const color = zoneForPowerFraction(p).color;
-          return (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                minWidth: 2,
-                height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
-                background: color,
-              }}
-            />
-          );
-        })}
+            stepped skyline of interval segments), evenly spaced.
+            Rendered as ONE svg, not N separate flex/DOM boxes - a row of
+            40 independently-laid-out divs visibly jittered in width
+            (some seams reading as 1px, others as 2px+) whenever the card's
+            actual rendered width didn't divide evenly by 40, because each
+            div's width gets rounded to a whole device pixel on its own.
+            SVG rects are positioned from one shared floating-point
+            coordinate space instead, so every bar and every gap between
+            them comes out identical no matter what width the card renders
+            at - the "maximum precision" fix, not a cosmetic tweak. */}
+        <svg
+          viewBox="0 0 1000 100"
+          preserveAspectRatio="none"
+          style={{ position: "absolute", top: 8, left: 0, right: 0, bottom: 0, width: "100%", height: "calc(100% - 8px)" }}
+        >
+          {powers.map((p, i) => {
+            const color = zoneForPowerFraction(p).color;
+            const slot = 1000 / powers.length;
+            const gap = slot * 0.16;
+            const barW = slot - gap;
+            const x = i * slot + gap / 2;
+            const hPct = Math.max(8, Math.min(100, (p / maxPower) * 100));
+            const y = 100 - hPct;
+            return <rect key={i} x={x} y={y} width={barW} height={hPct} fill={color} />;
+          })}
+        </svg>
       </div>
       {!hideFooter && (
         <div
