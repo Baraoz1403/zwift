@@ -1,55 +1,62 @@
 /**
  * lib/workout-selector.ts
  *
- * Deterministic, code-driven selection of WHICH named workouts land on which
- * days of a Base/Build/Recovery week - separated from writing about them.
- *
- * Before this existed, the AI was asked to both SELECT sessions (which
- * categories, how many, what week-over-week progression) AND write
- * descriptions in the same call. Despite explicit prompt rules ("IRON LAW:
- * 2+ structured intensity sessions"), plans kept coming back flat
- * (Foundation Ride + Easy Run + Spin & Recover, no real intensity) because
- * session SELECTION is a rules problem, not a language-generation problem -
- * an LLM asked to simultaneously juggle W/kg gating, TSB, mesocycle
- * progression, and week-over-week variety, on every single call, drifts.
- * This module makes selection a fixed function of
- * {phase, weekInMesocycle, daysPerWeek, wPerKg, tsb}. The AI's only
+ * Deterministic, code-driven selection of WHICH named workout goes on WHICH
+ * day of the week - separated entirely from writing about it. The AI's only
  * remaining job (see generateWeeklyPlan in lib/ai.ts) is writing the
- * personal, data-grounded description for each pre-chosen session - which
- * is what LLMs are actually good at, and where all the variance in a real
- * plan SHOULD live.
+ * personal, data-grounded description for each pre-chosen session.
  *
- * Progression table (2 mesocycles = 8 weeks, matching MESOCYCLE_LENGTH=4 in
- * lib/periodization.ts - weekInMesocycle 4 is always Recovery regardless of
- * which mesocycle):
- *   Base week 1:  Sweet Spot 2x8 min @ 90%  + Foundation Ride 60 + Sprint Builder
- *   Base week 2:  Sweet Spot 2x10 min @ 90% + Foundation Ride 60 + Sprint Builder
- *   Base week 3:  Sweet Spot 3x8 min @ 91%  + Foundation Ride 75 + Sprint Builder
- *   Recovery:     Spin & Recover + Foundation Ride (the only week Foundation is primary)
- *   Build week 1: Threshold 3x6 min @ 97%  + Sweet Spot Classic + Foundation Ride
- *   Build week 2: Threshold 3x8 min @ 97%  + Sweet Spot Classic + Foundation Ride
- *   Build week 3: Threshold 2x12 min @ 97% + Micro Intervals 16x30/30 + Foundation Ride
+ * FIXED WEEKLY TEMPLATE (every day has a permanent role - this is not a
+ * dynamic placement algorithm anymore, see the history note below for why):
+ *   Monday:    Z2 with Cadence Drills   (65-73% FTP, 60 min)
+ *   Tuesday:   Sweet Spot / Threshold   (88-97% FTP, ~55-60 min) - PRIMARY
+ *   Wednesday: Rest
+ *   Thursday:  Sprint Builder or Threshold, depending on phase/week
+ *   Friday:    Easy Zone 2              (65-73% FTP, 45 min)
+ *   Saturday:  Long Endurance           (65-73% FTP, 75-90 min)
+ *   Sunday:    Rest
  *
- * Two safety gates run AFTER the table lookup, before the week is finalized:
+ * Progression (weekInMesocycle 1-4, 4 is always Recovery):
+ *   Base week 1: Tuesday Sweet Spot 2x8  + Thursday Sprint Builder
+ *   Base week 2: Tuesday Sweet Spot 2x10 + Thursday Sprint Builder
+ *   Base week 3: Tuesday Sweet Spot 3x8  + Thursday Sprint Builder
+ *   Recovery:    Tuesday Spin & Recover only - every other day is Rest
+ *   Build week 1: Tuesday Sweet Spot Classic + Thursday Threshold 3x6
+ *   Build week 2: Tuesday Sweet Spot Classic + Thursday Threshold 3x8
+ *   Build week 3: Tuesday Sweet Spot Classic + Thursday Threshold 2x12
+ *
+ * Two safety gates run AFTER the template lookup, before the week is
+ * finalized, applied independently to Tuesday's and Thursday's sessions:
  *   1. W/kg gate: a rider below 2.5 W/kg (beginner, per
  *      RIDER_LEVEL_THRESHOLDS in lib/coaching-knowledge.ts) cannot yet
- *      handle true Threshold/VO2max work - those sessions get replaced with
- *      their SESSION_PREREQUISITES fallback. 2.5-3.0 W/kg (novice) is capped
- *      the same way as a deliberate simplification: the full "late-Build +
+ *      handle true Threshold work - it gets replaced with its
+ *      SESSION_PREREQUISITES fallback. 2.5-3.0 W/kg (novice) is capped the
+ *      same way as a deliberate simplification: the full "late-Build +
  *      good-TSB" carve-out documented in lib/ai.ts's prompt isn't modeled
  *      here, so novices are held to Sweet-Spot-or-under until they cross
  *      3.0 W/kg. This errs safe, not precise.
- *   2. TSB gate: TSB < -20 replaces the single HARDEST session in the week
- *      with its SESSION_PREREQUISITES fallback - a tired rider gets one
+ *   2. TSB gate: TSB < -20 downgrades whichever of Tuesday/Thursday is
+ *      harder to its SESSION_PREREQUISITES fallback - a tired rider gets one
  *      easier week, not a wholesale rewrite.
  *
- * Scope: this drives selection for the standard Base/Build/Recovery
- * rotation - the week-to-week case that was actually going flat. Taper,
+ * HISTORY - why this replaced the previous "3 sessions + Foundation-Ride
+ * padding" design: that version (a) had a real placement bug that dropped a
+ * session and produced weeks with 5 forced Rest days (fixed, then this
+ * rewrite followed), and (b) even once fixed, padded every extra day beyond
+ * the 3 core sessions with an IDENTICAL "Foundation Ride" filler - a rider
+ * on a 5-6 day/week profile got the same Foundation Ride four days running,
+ * which reads as template output, not coaching, even though nothing was
+ * technically wrong. Giving every day of the week a distinct, permanent
+ * role (cadence work Monday, easy spin Friday, long ride Saturday) removes
+ * both problems at once: there is no placement algorithm left to have a
+ * bug, and no day repeats another day's session.
+ *
+ * Scope: this drives the standard Base/Build/Recovery rotation. Taper,
  * RaceWeek, and a rider-note-driven surgical day edit keep going through the
  * existing AI-driven path in lib/ai.ts, which already has dedicated, working
  * logic for those (event-driven volume cuts, exact-day overrides) that this
- * fixed weekly table doesn't model - see generateWeeklyPlan's call site for
- * the exact condition that decides which path a given plan takes.
+ * fixed template doesn't model - see generateWeeklyPlan's call site for the
+ * exact condition that decides which path a given plan takes.
  */
 
 import type { WorkoutStructureBlock } from "./zwo";
@@ -61,10 +68,6 @@ export interface SelectorInput {
   phase: SelectorPhase;
   /** 1-based position within the 4-week mesocycle - 4 is always Recovery. */
   weekInMesocycle: 1 | 2 | 3 | 4;
-  /** Rider's target session count this week (from riderProfile.daysPerWeek
-   *  or a ridesLast7Days-based estimate - same source lib/ai.ts's prompt
-   *  already used for this before selection moved to code). */
-  daysPerWeek: number;
   /** FTP / body weight in kg. Null if unknown - the W/kg gate no-ops. */
   wPerKg: number | null;
   /** Training Stress Balance. Null if unknown - the TSB gate no-ops. */
@@ -72,9 +75,7 @@ export interface SelectorInput {
 }
 
 export interface SelectedWorkout {
-  /** e.g. "Sweet Spot", "Threshold", "VO2max", "Neuromuscular", "Foundation", "Recovery" */
   category: string;
-  /** Exact title the AI must use verbatim - see generateWeeklyPlan's merge step. */
   title: string;
   durationMin: number;
   targetPowerPctFtp: string;
@@ -90,33 +91,70 @@ export interface SelectedDay {
 const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 // ─── Structure builders ──────────────────────────────────────────────────
-// Literal, hand-specified blocks - mirrors the style of
-// CANONICAL_WORKOUT_STRUCTURES in lib/coaching-knowledge.ts. Titles that
-// exactly match an existing canonical library entry (Sprint Builder, Spin &
-// Recover, Foundation Ride at 60 min, Sweet Spot Classic) are deliberately
-// reused so normalizeWeeklyPlan's canonical-injection step in lib/ai.ts uses
-// the library's own precise blocks; titles for the custom rep-schemes this
-// progression table needs (e.g. "Sweet Spot 2×8", not a library entry) are
-// unique on purpose so that same injection step leaves them untouched.
+// Titles that exactly match an existing canonical library entry (Sprint
+// Builder, Spin & Recover, Sweet Spot Classic, Z2 with Cadence Drills, Long
+// Endurance at its canonical 90 min) are deliberately reused so
+// normalizeWeeklyPlan's canonical-injection step in lib/ai.ts uses the
+// library's own precise blocks; titles for custom rep-schemes this
+// progression needs (e.g. "Sweet Spot 2×8") are unique on purpose so that
+// same injection step leaves them untouched.
 
-function zone2(durationMin: number): WorkoutStructureBlock[] {
-  const warm = Math.max(8, Math.round(durationMin * 0.16));
+function zone2Ride(title: string, durationMin: number): SelectedWorkout {
+  const warm = Math.max(8, Math.round(durationMin * 0.17));
   const cool = Math.max(8, Math.round(durationMin * 0.13));
   const steady = durationMin - warm - cool;
-  return [
-    { type: "warmup", durationMin: warm, powerFtp: 0.65, label: "Easy warm-up" },
-    { type: "steadystate", durationMin: steady, powerFtp: 0.69, label: "Z2 @ 65-73% FTP" },
-    { type: "cooldown", durationMin: cool, powerFtp: 0.55, label: "Easy cool-down" },
-  ];
-}
-
-function foundationRide(durationMin = 60): SelectedWorkout {
   return {
     category: "Foundation",
-    title: "Foundation Ride",
+    title,
     durationMin,
     targetPowerPctFtp: "65-73%",
-    structure: zone2(durationMin),
+    structure: [
+      { type: "warmup", durationMin: warm, powerFtp: 0.65, label: "Easy warm-up" },
+      { type: "steadystate", durationMin: steady, powerFtp: 0.69, label: "Z2 @ 65-73% FTP" },
+      { type: "cooldown", durationMin: cool, powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
+/** Monday - matches CANONICAL_WORKOUT_STRUCTURES["Z2 with Cadence Drills"]
+ *  exactly (60 min total). */
+function zone2CadenceDrills(): SelectedWorkout {
+  return {
+    category: "Foundation",
+    title: "Z2 with Cadence Drills",
+    durationMin: 60,
+    targetPowerPctFtp: "65-73%",
+    structure: [
+      { type: "warmup", durationMin: 10, powerFtp: 0.68, label: "Easy warm-up" },
+      { type: "intervals", durationMin: 40, powerFtp: 0.68, recoveryPowerFtp: 0.65,
+        repeats: 4, onSec: 480, offSec: 120, label: "4×8 min Z2 + 2 min cadence drill (100-110 rpm)" },
+      { type: "cooldown", durationMin: 10, powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
+/** Friday - deliberately distinct from Monday (no cadence drills, shorter,
+ *  titled differently) so the two Z2 days don't read as the same session. */
+function easyZone2(): SelectedWorkout {
+  return zone2Ride("Easy Spin", 45);
+}
+
+/** Saturday - duration varies 75-90 min by phase/week, matching how much
+ *  volume is appropriate that week (Build weeks run the longer end). */
+function longEndurance(durationMin: number): SelectedWorkout {
+  const warm = Math.max(10, Math.round(durationMin * 0.17));
+  const cool = Math.max(8, Math.round(durationMin * 0.11));
+  const steady = durationMin - warm - cool;
+  return {
+    category: "Endurance",
+    title: "Long Endurance",
+    durationMin,
+    targetPowerPctFtp: "65-73%",
+    structure: [
+      { type: "warmup", durationMin: warm, powerFtp: 0.65, label: "Easy warm-up" },
+      { type: "steadystate", durationMin: steady, powerFtp: 0.69, label: "Z2 @ 65-73% FTP" },
+      { type: "cooldown", durationMin: cool, powerFtp: 0.55, label: "Easy cool-down" },
+    ],
   };
 }
 
@@ -154,17 +192,19 @@ function sweetSpot3x8(): SelectedWorkout {
   return {
     category: "Sweet Spot",
     title: "Sweet Spot 3×8",
-    durationMin: 60,
+    durationMin: 55,
     targetPowerPctFtp: "89-93%",
     structure: [
-      { type: "warmup", durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
+      { type: "warmup", durationMin: 10, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "intervals", durationMin: 36, powerFtp: 0.91, recoveryPowerFtp: 0.50,
         repeats: 3, onSec: 480, offSec: 240, label: "3×8 min @ 91% FTP" },
-      { type: "cooldown", durationMin: 12, powerFtp: 0.55, label: "Easy cool-down" },
+      { type: "cooldown", durationMin: 9, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   };
 }
 
+/** Build phase Tuesday - matches CANONICAL_WORKOUT_STRUCTURES["Sweet Spot
+ *  Classic"] exactly (60 min, 3×10 min @ 90%). */
 function sweetSpotClassic(): SelectedWorkout {
   return {
     category: "Sweet Spot",
@@ -225,21 +265,8 @@ function threshold2x12(): SelectedWorkout {
   };
 }
 
-function microIntervals16x3030(): SelectedWorkout {
-  return {
-    category: "VO2max",
-    title: "Micro Intervals 16×30/30",
-    durationMin: 45,
-    targetPowerPctFtp: "115-120%",
-    structure: [
-      { type: "warmup", durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
-      { type: "intervals", durationMin: 16, powerFtp: 1.18, recoveryPowerFtp: 0.55,
-        repeats: 16, onSec: 30, offSec: 30, label: "16×30s @ 118% FTP / 30s @ 55% FTP" },
-      { type: "cooldown", durationMin: 17, powerFtp: 0.55, label: "Easy cool-down" },
-    ],
-  };
-}
-
+/** Base phase Thursday - matches CANONICAL_WORKOUT_STRUCTURES["Sprint
+ *  Builder"] exactly. */
 function sprintBuilder(): SelectedWorkout {
   return {
     category: "Neuromuscular",
@@ -255,6 +282,8 @@ function sprintBuilder(): SelectedWorkout {
   };
 }
 
+/** Recovery week's sole session - matches CANONICAL_WORKOUT_STRUCTURES["Spin
+ *  & Recover"] exactly. */
 function spinAndRecover(): SelectedWorkout {
   return {
     category: "Recovery",
@@ -269,53 +298,6 @@ function spinAndRecover(): SelectedWorkout {
   };
 }
 
-/** Maps a library fallback name to the Title-Case category strings this
- *  module's own gates (isGated/sessionPrereqKey) check against.
- *  WORKOUT_LIBRARY's own `category` field uses lowercase single-word values
- *  ("endurance", "sweetspot") for a different purpose (the AI prompt) - this
- *  keeps the two vocabularies from silently drifting apart, which would
- *  otherwise make a downgraded session invisible to a second gate pass
- *  (e.g. TSB gate running after the W/kg gate already downgraded a session). */
-const FALLBACK_CATEGORY: Record<string, string> = {
-  "Sweet Spot Classic": "Sweet Spot",
-  "Tempo Cruise": "Tempo",
-  "Sprint Builder": "Neuromuscular",
-  "Foundation Ride": "Foundation",
-  "Spin & Recover": "Recovery",
-};
-
-/** Falls back to a named library entry (e.g. SESSION_PREREQUISITES'
- *  fallback names) via the shared canonical-structure resolver, so a
- *  downgrade always uses the same precise blocks the rest of the app does
- *  rather than a second hand-written copy. */
-function buildFromLibrary(name: string): SelectedWorkout | null {
-  const entry = WORKOUT_LIBRARY.find((w) => w.name === name);
-  const structure = entry ? resolveCanonicalStructure(name, entry.durationMin) : null;
-  if (!entry || !structure) return null;
-  return {
-    category: FALLBACK_CATEGORY[name] ?? entry.category,
-    title: entry.name,
-    durationMin: entry.durationMin,
-    targetPowerPctFtp: "",
-    structure,
-  };
-}
-
-// ─── Progression table ───────────────────────────────────────────────────
-
-/** Hard/quality sessions for a Base/Build week, ordered HARDEST FIRST - the
- *  order the TSB gate downgrades in (see selectWeeklyWorkouts). */
-function baseBuildSessions(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): SelectedWorkout[] {
-  if (phase === "Base") {
-    if (weekInMesocycle === 1) return [sweetSpot2x8(), sprintBuilder(), foundationRide(60)];
-    if (weekInMesocycle === 2) return [sweetSpot2x10(), sprintBuilder(), foundationRide(60)];
-    return [sweetSpot3x8(), sprintBuilder(), foundationRide(75)];
-  }
-  if (weekInMesocycle === 1) return [threshold3x6(), sweetSpotClassic(), foundationRide(60)];
-  if (weekInMesocycle === 2) return [threshold3x8(), sweetSpotClassic(), foundationRide(60)];
-  return [threshold2x12(), microIntervals16x3030(), foundationRide(60)];
-}
-
 // ─── Safety gates ────────────────────────────────────────────────────────
 
 type WkgTier = "beginner" | "novice" | "intermediate" | "trained" | "advanced" | "elite";
@@ -325,8 +307,8 @@ function classifyWkg(wPerKg: number): WkgTier {
   return (found?.label.toLowerCase() as WkgTier) ?? "elite";
 }
 
-/** True if this category requires a gate-check at all (Foundation/Recovery
- *  are always safe regardless of level/fatigue). */
+/** True if this category needs a gate-check at all (Foundation/Endurance/
+ *  Recovery are always safe regardless of level/fatigue). */
 function isGated(category: string): boolean {
   return category === "Threshold" || category === "VO2max" || category === "Sweet Spot" || category === "Neuromuscular";
 }
@@ -341,96 +323,106 @@ function sessionPrereqKey(category: string): keyof typeof SESSION_PREREQUISITES 
   }
 }
 
+/** Maps a library fallback name to the Title-Case category strings this
+ *  module's own gates check against. WORKOUT_LIBRARY's own `category` field
+ *  uses lowercase single-word values ("endurance", "sweetspot") for a
+ *  different purpose (the AI prompt) - this keeps the two vocabularies from
+ *  silently drifting apart. */
+const FALLBACK_CATEGORY: Record<string, string> = {
+  "Sweet Spot Classic": "Sweet Spot",
+  "Tempo Cruise": "Tempo",
+  "Sprint Builder": "Neuromuscular",
+  "Foundation Ride": "Foundation",
+  "Spin & Recover": "Recovery",
+};
+
+/** Falls back to a named library entry via the shared canonical-structure
+ *  resolver, so a downgrade uses the same precise blocks the rest of the
+ *  app does rather than a second hand-written copy. */
+function buildFromLibrary(name: string): SelectedWorkout | null {
+  const entry = WORKOUT_LIBRARY.find((w) => w.name === name);
+  const structure = entry ? resolveCanonicalStructure(name, entry.durationMin) : null;
+  if (!entry || !structure) return null;
+  return {
+    category: FALLBACK_CATEGORY[name] ?? entry.category,
+    title: entry.name,
+    durationMin: entry.durationMin,
+    targetPowerPctFtp: "",
+    structure,
+  };
+}
+
 function downgrade(session: SelectedWorkout): SelectedWorkout {
   const key = sessionPrereqKey(session.category);
   if (!key) return session;
   const fallbackName = SESSION_PREREQUISITES[key].fallback;
-  return buildFromLibrary(fallbackName) ?? foundationRide(60);
+  return buildFromLibrary(fallbackName) ?? zone2Ride("Foundation Ride", 60);
 }
 
-/** W/kg gate: a rider under 3.0 W/kg (beginner or novice, per
- *  RIDER_LEVEL_THRESHOLDS) isn't ready for true Threshold/VO2max work -
- *  every gated session above Sweet Spot gets replaced. See this file's top
- *  doc comment for why novice is capped the same as beginner here. */
-function applyWkgGate(sessions: SelectedWorkout[], wPerKg: number | null): SelectedWorkout[] {
-  if (wPerKg == null) return sessions;
-  const tier = classifyWkg(wPerKg);
-  if (tier !== "beginner" && tier !== "novice") return sessions;
-  return sessions.map((s) => {
-    if (!isGated(s.category)) return s;
-    if (tier === "beginner" && s.category !== "Sweet Spot") return downgrade(s);
-    if (tier === "novice" && (s.category === "Threshold" || s.category === "VO2max")) return downgrade(s);
-    return s;
-  });
-}
+/** Applies the W/kg gate then the TSB gate to a single day's session -
+ *  Tuesday and Thursday are gated independently of each other. */
+function applyGates(session: SelectedWorkout, wPerKg: number | null, tsb: number | null): SelectedWorkout {
+  let result = session;
 
-/** TSB gate: a rider deep in fatigue (TSB < -20) gets ONE easier week, not a
- *  wholesale rewrite - only the single hardest session (first in the
- *  hardest-first ordered array) is downgraded. */
-function applyTsbGate(sessions: SelectedWorkout[], tsb: number | null): SelectedWorkout[] {
-  if (tsb == null || tsb >= -20) return sessions;
-  const hardestIndex = sessions.findIndex((s) => isGated(s.category));
-  if (hardestIndex === -1) return sessions;
-  return sessions.map((s, i) => (i === hardestIndex ? downgrade(s) : s));
-}
-
-// ─── Day placement ───────────────────────────────────────────────────────
-
-/**
- * Places the (already gated) session list across Monday-Sunday: hard day ->
- * easy/rest day alternation, matching the "never two hard days back to
- * back" rule already established elsewhere in this app. Fills remaining
- * slots up to daysPerWeek with an extra Foundation Ride; anything beyond
- * daysPerWeek is Rest. Sunday is a valid training day, never defaulted to
- * rest purely for being last, matching lib/ai.ts's existing convention.
- */
-function placeSessions(sessions: SelectedWorkout[], daysPerWeek: number): SelectedDay[] {
-  const clampedDays = Math.max(2, Math.min(7, Math.round(daysPerWeek)));
-  const toPlace = [...sessions];
-  while (toPlace.length < clampedDays) toPlace.push(foundationRide(45));
-
-  const result: SelectedDay[] = DAY_ORDER.map((day) => ({ day, workout: null }));
-  let dayIdx = 0;
-  let lastWasHard = false;
-
-  // NOTE: this used to be a while loop keyed on a separate sessionIdx, with
-  // `continue` on a hard/hard collision. That never advanced sessionIdx OR
-  // reset lastWasHard, so the SAME session kept re-triggering the skip
-  // condition every iteration - it silently skipped days all the way to the
-  // dayIdx<6 boundary, dumped that one session on the last day, and then the
-  // loop exited (dayIdx now 7) with any remaining sessions never placed at
-  // all. A 3-session Base/Build week (two adjacent hard sessions is the
-  // normal case) produced a plan with 5 rest days and one session dropped
-  // entirely - exactly what shipped to the first real second athlete. Fixed
-  // by iterating the sessions directly with for..of, so every session gets
-  // exactly one placement attempt and a hard/hard collision costs exactly
-  // one gap day, not an unbounded skip.
-  for (const session of toPlace) {
-    if (dayIdx >= 7) break;
-    const isHard = session.category !== "Foundation" && session.category !== "Recovery";
-    if (isHard && lastWasHard && dayIdx < 6) {
-      dayIdx++; // exactly one gap day between two hard sessions
+  if (wPerKg != null && isGated(result.category)) {
+    const tier = classifyWkg(wPerKg);
+    if (tier === "beginner" && result.category !== "Sweet Spot") {
+      result = downgrade(result);
+    } else if (tier === "novice" && (result.category === "Threshold" || result.category === "VO2max")) {
+      result = downgrade(result);
     }
-    if (dayIdx >= 7) break;
-    result[dayIdx].workout = session;
-    lastWasHard = isHard;
-    dayIdx++;
+  }
+
+  if (tsb != null && tsb < -20 && isGated(result.category)) {
+    result = downgrade(result);
   }
 
   return result;
+}
+
+// ─── Progression table ───────────────────────────────────────────────────
+
+function tuesdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): SelectedWorkout {
+  if (phase === "Base") {
+    if (weekInMesocycle === 1) return sweetSpot2x8();
+    if (weekInMesocycle === 2) return sweetSpot2x10();
+    return sweetSpot3x8();
+  }
+  return sweetSpotClassic();
+}
+
+function thursdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): SelectedWorkout {
+  if (phase === "Base") return sprintBuilder();
+  if (weekInMesocycle === 1) return threshold3x6();
+  if (weekInMesocycle === 2) return threshold3x8();
+  return threshold2x12();
 }
 
 // ─── Public entry point ──────────────────────────────────────────────────
 
 export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
   if (input.phase === "Recovery") {
-    const sessions = [spinAndRecover(), foundationRide(60)];
-    return placeSessions(sessions, Math.min(input.daysPerWeek, 4));
+    // "Spin & Recover only" - every other day is Rest, no Foundation-Ride
+    // companion session (a deliberate change from an earlier version of
+    // this file, which paired it with a Foundation Ride).
+    return DAY_ORDER.map((day) => ({
+      day,
+      workout: day === "Tuesday" ? spinAndRecover() : null,
+    }));
   }
 
-  const weekInMesocycle = input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle; // defensive
-  let sessions = baseBuildSessions(input.phase, weekInMesocycle as 1 | 2 | 3);
-  sessions = applyWkgGate(sessions, input.wPerKg);
-  sessions = applyTsbGate(sessions, input.tsb);
-  return placeSessions(sessions, input.daysPerWeek);
+  const weekInMesocycle = (input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle) as 1 | 2 | 3;
+  const tuesday = applyGates(tuesdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
+  const thursday = applyGates(thursdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
+  const saturdayDurationMin = input.phase === "Build" ? 90 : 75;
+
+  return [
+    { day: "Monday", workout: zone2CadenceDrills() },
+    { day: "Tuesday", workout: tuesday },
+    { day: "Wednesday", workout: null },
+    { day: "Thursday", workout: thursday },
+    { day: "Friday", workout: easyZone2() },
+    { day: "Saturday", workout: longEndurance(saturdayDurationMin) },
+    { day: "Sunday", workout: null },
+  ];
 }

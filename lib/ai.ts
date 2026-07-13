@@ -911,12 +911,6 @@ export async function generateWeeklyPlan(params: {
     ? selectWeeklyWorkouts({
         phase: params.cycle!.phase as "Base" | "Build" | "Recovery",
         weekInMesocycle: params.cycle!.weekInMesocycle as 1 | 2 | 3 | 4,
-        daysPerWeek: params.riderProfile?.daysRange
-          ? DAYS_RANGE_MID[params.riderProfile.daysRange]
-          : params.riderProfile?.daysPerWeek
-          ?? (params.trainingLoad?.ridesLast7Days != null
-                ? Math.max(2, Math.min(7, Math.round(params.trainingLoad.ridesLast7Days)))
-                : 4),
         wPerKg,
         tsb: params.trainingLoad?.tsb ?? null,
       })
