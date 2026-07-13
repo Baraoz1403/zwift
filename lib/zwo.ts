@@ -81,16 +81,17 @@ export type ZwoBlock =
       offPower: number;
     };
 
-/** Standard 6-zone power breakdown (Coggan zones, the same ones Zwift's own
- *  in-game UI and workout editor use) - drives the editor's zone-colored
- *  preview bar so it looks like the bars in Zwift's own "New Workout" screen. */
+/** 7-tier power breakdown (Coggan zones, with Sweet Spot split out as its
+ *  own band between Tempo and Threshold) - drives the editor's and workout
+ *  card's zone-colored preview bars. */
 export const POWER_ZONES = [
   { zone: 1, maxPct: 0.55, color: "#9aa0a6", label: "Z1" },
   { zone: 2, maxPct: 0.75, color: "#3b82f6", label: "Z2" },
-  { zone: 3, maxPct: 0.9, color: "#10b981", label: "Z3" },
-  { zone: 4, maxPct: 1.05, color: "#eab308", label: "Z4" },
-  { zone: 5, maxPct: 1.2, color: "#f97316", label: "Z5" },
-  { zone: 6, maxPct: Infinity, color: "#ef4444", label: "Z6" },
+  { zone: 3, maxPct: 0.88, color: "#22d3ee", label: "Z3" },
+  { zone: 4, maxPct: 0.94, color: "#10b981", label: "SweetSpot" },
+  { zone: 5, maxPct: 1.05, color: "#f59e0b", label: "Threshold" },
+  { zone: 6, maxPct: 1.2, color: "#f97316", label: "VO2max" },
+  { zone: 7, maxPct: Infinity, color: "#ef4444", label: "Sprint" },
 ] as const;
 
 export function zoneForPowerFraction(frac: number) {
