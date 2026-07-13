@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 
+// #developer, not #api - this is the fragment already proven to work in
+// ConnectionsPanel's existing wizard (see handleOpenICUSettings there).
+// intervals.icu/settings requires login, so it can't be fetched/verified
+// from here directly - reusing the value already confirmed working in
+// production is safer than guessing a new one.
+const ICU_API_SETTINGS_URL = "https://intervals.icu/settings#developer";
+
 /**
  * Mandatory Intervals.icu connect screen - the ONLY thing a brand-new
  * athlete sees until they connect (see app/dashboard/layout.tsx, which
@@ -15,11 +22,30 @@ import { useState } from "react";
  * still exists as-is for reconnecting/changing keys later from the normal
  * Connections nav chip, where a bit more hand-holding (auto-reading the
  * clipboard, step indicators) earns its complexity for a returning user.
+ *
+ * Clicking the primary button auto-opens intervals.icu's API key settings in
+ * a new tab AND reveals the paste field in the same motion - the rider never
+ * has to hunt for the right settings page themselves. This is the stopgap
+ * until OAuth2 removes the manual key entirely (pending Intervals.icu's
+ * app-registration approval - see the emailed request to david@intervals.icu).
  */
 export default function IntervalsOnboarding() {
+  const [started, setStarted] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function handleStart() {
+    setStarted(true);
+    // Best-effort - popup blockers can still prevent this, which is exactly
+    // why the numbered step 1 below also has a real clickable link as a
+    // fallback the rider can use if nothing opened.
+    try {
+      window.open(ICU_API_SETTINGS_URL, "_blank", "noopener,noreferrer");
+    } catch {
+      // ignore - the visible link is the fallback
+    }
+  }
 
   async function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -72,16 +98,16 @@ export default function IntervalsOnboarding() {
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>1</span>
             <span style={{ fontSize: 14, color: "var(--text)", paddingTop: 2 }}>
-              Go to{" "}
+              Click <strong>Connect</strong> below — it opens{" "}
               <a
-                href="https://intervals.icu/settings#developer"
+                href={ICU_API_SETTINGS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: "var(--accent)", fontWeight: 700 }}
               >
-                intervals.icu/settings
+                intervals.icu&apos;s API key page
               </a>
-              {" "}→ Developer Settings
+              {" "}for you automatically
             </span>
           </li>
           <li style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
@@ -101,40 +127,65 @@ export default function IntervalsOnboarding() {
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>3</span>
             <span style={{ fontSize: 14, color: "var(--text)", paddingTop: 2 }}>
-              Paste it below
+              Come back here and paste it
             </span>
           </li>
         </ol>
 
-        {/* One input, one button */}
-        <form onSubmit={handleConnect} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <input
-            type="text"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Paste your Intervals.icu API key"
-            autoFocus
-            style={{
-              width: "100%", padding: "12px 14px", borderRadius: 8,
-              border: "1.5px solid var(--border)", fontSize: 14,
-              color: "var(--text)", fontFamily: "inherit",
-              outline: "none", boxSizing: "border-box",
-            }}
-          />
+        {!started ? (
           <button
-            type="submit"
-            disabled={!apiKey.trim() || connecting}
+            type="button"
+            onClick={handleStart}
             style={{
-              width: "100%", padding: "12px", borderRadius: 8, border: "none",
-              background: !apiKey.trim() || connecting ? "var(--muted)" : "var(--accent)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              cursor: !apiKey.trim() || connecting ? "default" : "pointer",
-              fontFamily: "inherit",
+              width: "100%", padding: "13px", borderRadius: 8, border: "none",
+              background: "var(--accent)", color: "#fff", fontSize: 14.5, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
             }}
           >
-            {connecting ? "Connecting…" : "Connect"}
+            Connect →
           </button>
-        </form>
+        ) : (
+          <form onSubmit={handleConnect} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <input
+              type="text"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="Paste your Intervals.icu API key"
+              autoFocus
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 8,
+                border: "1.5px solid var(--border)", fontSize: 14,
+                color: "var(--text)", fontFamily: "inherit",
+                outline: "none", boxSizing: "border-box",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!apiKey.trim() || connecting}
+              style={{
+                width: "100%", padding: "12px", borderRadius: 8, border: "none",
+                background: !apiKey.trim() || connecting ? "var(--muted)" : "var(--accent)",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                cursor: !apiKey.trim() || connecting ? "default" : "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {connecting ? "Connecting…" : "Finish connecting"}
+            </button>
+            <button
+              type="button"
+              onClick={handleStart}
+              style={{
+                width: "100%", padding: "8px", borderRadius: 8,
+                border: "1px solid var(--border)", background: "transparent",
+                color: "var(--muted)", fontSize: 12.5, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Didn&apos;t open? Click to reopen the API key page
+            </button>
+          </form>
+        )}
 
         {error && (
           <div style={{ marginTop: 12, fontSize: 12.5, color: "var(--danger)", textAlign: "center" }}>
