@@ -1766,7 +1766,7 @@ export default function WeeklyPlan() {
                     // (stat cards, record cards, trend cards all use the
                     // same var(--accent) strip). Asked for repeatedly.
                     borderTop: rest ? undefined : `2.5px solid var(--accent)`,
-                    borderRadius: 20,
+                    borderRadius: 12,
                     overflow: "hidden",
                     boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
                     ["--card-accent" as string]: accentColor,

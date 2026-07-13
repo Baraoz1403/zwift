@@ -100,9 +100,15 @@ export default function PhaseCard({
       style={{
         width: "100%", maxWidth: 1100, margin: "0 auto", boxSizing: "border-box",
         background: "var(--panel)",
-        borderRadius: 20,
+        borderRadius: 12,
         border: `1px solid ${hover ? "rgba(59,130,246,0.3)" : "var(--border)"}`,
-        borderTop: `4px solid ${ACCENT}`,
+        // Same 2.5px accent-bar weight as every other card on the site
+        // (stat-card/record-card/trend-card/workout cards all share
+        // var(--strip-height)) - this was 4px, a mismatched thickness even
+        // though the color already matched. Kept as a literal value here
+        // (rather than var(--strip-height)) only because this component
+        // uses inline styles throughout rather than a CSS class.
+        borderTop: `2.5px solid ${ACCENT}`,
         boxShadow: hover
           ? "0 12px 32px rgba(47,143,224,0.14), 0 4px 14px rgba(0,0,0,0.06)"
           : "0 4px 24px rgba(0,0,0,0.06)",

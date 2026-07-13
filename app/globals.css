@@ -23,7 +23,7 @@ html {
   --border: rgba(15, 23, 42, 0.06);
   --border-strong: rgba(15, 23, 42, 0.12);
   --danger: #d6362a;
-  --radius: 20px;
+  --radius: 12px; /* was 20px - "reduce rounded corners everywhere" */
   --strip-height: 2.5px;   /* top accent strip on all cards — ONE place to change */
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.14);

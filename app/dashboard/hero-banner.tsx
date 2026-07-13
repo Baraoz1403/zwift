@@ -82,7 +82,7 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
 
   return (
     <div style={{
-      width: "100%", borderRadius: 16,
+      width: "100%", borderRadius: 12,
       background: "rgba(255,255,255,0.06)", border: `1px solid ${accent}40`,
       padding: "18px 22px", position: "relative", overflow: "hidden",
       boxShadow: `0 0 30px ${accent}14`,
