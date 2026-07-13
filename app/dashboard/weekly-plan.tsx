@@ -1833,7 +1833,7 @@ export default function WeeklyPlan() {
                 >
                   {!rest && <div style={{ height: 5, background: accentColor }} />}
                   {!rest && (
-                    <WorkoutThumbnail workout={w} flush height={160} hideFooter />
+                    <WorkoutThumbnail workout={w} flush height={160} hideFooter lightGraph />
                   )}
                   <div
                     className="workout-card-body"

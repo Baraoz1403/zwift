@@ -49,6 +49,7 @@ export default function WorkoutThumbnail({
   realPowerSamples,
   height = 60,
   hideFooter = false,
+  lightGraph = false,
 }: {
   workout: ZwoWorkoutInput;
   /** When true, don't apply the -20px bleed margin. Use inside containers
@@ -72,6 +73,11 @@ export default function WorkoutThumbnail({
    *  card shows duration/TSS/IF in its own footer row instead, so repeating
    *  it here would be redundant. */
   hideFooter?: boolean;
+  /** Subtle light graph background instead of the default dark gradient -
+   *  used by the redesigned white planned-workout card, where a dark block
+   *  reads as jarring against the card's white/shadow-only look. Completed-
+   *  ride and bonus-ride thumbnails keep the original dark background. */
+  lightGraph?: boolean;
 }) {
   const powers = realPowerSamples && realPowerSamples.length > 0
     ? resample(realPowerSamples, SAMPLES)
@@ -88,7 +94,7 @@ export default function WorkoutThumbnail({
           gap: 1,
           height,
           padding: "8px 6px 0",
-          background: "linear-gradient(180deg, #1c2b3a, #0f1922)",
+          background: lightGraph ? "#f1f5f9" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
         {powers.map((p, i) => (

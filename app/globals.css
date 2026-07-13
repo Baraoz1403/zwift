@@ -3,28 +3,30 @@ html {
 }
 
 :root {
-  --bg: #f0f2f5;
-  /* Zwift's own marketing-site palette: light warm-grey page background so
-     white cards "pop" off the surface (much stronger visual hierarchy than
-     white-on-white), orange as the one primary accent (buttons, key numbers,
-     the one CTA per screen, and links), black/near-black for text and headings. */
+  /* Premium light theme (Apple Fitness+ / Whoop style): near-white page
+     background, pure white cards separated by shadow alone (not borders),
+     blue accent. Site-wide via these shared vars - most components
+     (.stat-card et al) already reference them rather than hardcoding
+     colors, so this cascades consistently instead of needing a
+     per-component pass. */
+  --bg: #f8fafc;
   --bg-glow: none;
   --panel: #ffffff;
   --panel-solid: #ffffff;
-  --text: #14171a;
-  --muted: #5b6168;
-  --accent: #2f8fe0;
-  --accent-2: #14171a;
-  --accent-blue: #2f8fe0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #3b82f6;
+  --accent-2: #0f172a;
+  --accent-blue: #3b82f6;
   --good: #1a8f4c;
   --bad: #d6362a;
-  --border: rgba(20, 23, 26, 0.1);
-  --border-strong: rgba(20, 23, 26, 0.2);
+  --border: rgba(15, 23, 42, 0.06);
+  --border-strong: rgba(15, 23, 42, 0.12);
   --danger: #d6362a;
-  --radius: 8px;
+  --radius: 20px;
   --strip-height: 2.5px;   /* top accent strip on all cards — ONE place to change */
-  --shadow: 0 1px 3px rgba(20, 23, 26, 0.07), 0 4px 14px rgba(20, 23, 26, 0.05);
-  --shadow-hover: 0 4px 8px rgba(20, 23, 26, 0.08), 0 12px 28px rgba(20, 23, 26, 0.1);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.14);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -194,7 +196,7 @@ a:hover {
 }
 
 .dashboard {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 24px 0;
 }
@@ -209,10 +211,10 @@ a:hover {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   margin-bottom: 24px;
-  padding: 22px max(24px, calc((100vw - 1040px) / 2 + 24px));
+  padding: 22px max(24px, calc((100vw - 1140px) / 2 + 24px));
   background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(20,23,26,0.04);
+  border-bottom: none;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
 }
 
 
@@ -227,26 +229,25 @@ a:hover {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--accent-2) 0%, var(--accent) 40%, #ff9040 70%, var(--accent-2) 100%);
+  background: var(--accent);
 }
 
 .dashboard-header h1 {
-  /* One flat color, not a gradient/transition - matches the rest of the
-     site's headings (black/near-black), not the orange accent. */
   color: var(--text);
-  letter-spacing: -0.2px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 
 .section-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
   margin: 0 0 14px;
-  color: var(--muted);
+  color: var(--text);
   padding-left: 13px;
   position: relative;
 }
@@ -384,8 +385,9 @@ a:hover {
 }
 
 .stat-card .value {
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 700;
+  color: var(--accent);
   margin-top: 6px;
 }
 
