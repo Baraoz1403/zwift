@@ -116,6 +116,12 @@ export function resolvePhase(
  */
 export function advanceMacroCycle(prev: MacroCycleState | null, weekOf: string): MacroCycleState {
   if (!prev) return { weekIndex: 0, lastWeekOf: weekOf };
+  // Same week: never advance - prevents weekIndex drift from multiple generates
   if (prev.lastWeekOf === weekOf) return prev;
+  // Only advance if new week is genuinely AFTER last week (7+ days)
+  const prevMs = new Date(prev.lastWeekOf + "T00:00:00Z").getTime();
+  const newMs = new Date(weekOf + "T00:00:00Z").getTime();
+  const daysDiff = (newMs - prevMs) / (1000 * 60 * 60 * 24);
+  if (daysDiff < 6) return prev; // not a new week - don't advance
   return { weekIndex: prev.weekIndex + 1, lastWeekOf: weekOf };
 }

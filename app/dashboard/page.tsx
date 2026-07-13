@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchActivities } from "@/lib/zwift";
 import WeeklyPlan from "./weekly-plan";
+import HeroBanner from "./hero-banner";
 import AiInsights from "./ai-insights";
 import HRAlertBanner from "./hr-alert-banner";
 
