@@ -2,17 +2,18 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { fetchActivities } from "@/lib/zwift";
-import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import WeeklyPlan from "./weekly-plan";
+import HeroBanner from "./hero-banner";
 import AiInsights from "./ai-insights";
 import HRAlertBanner from "./hr-alert-banner";
 
-const HeroBanner = dynamic(() => import("./hero-banner"), { ssr: false });
-
 /**
- * Coach page — the daily training hub.
- * Hero banner above the workout grid, Today's Note + AI coaching below.
+ * Coach page (default dashboard route, "/dashboard") - the daily "what do I
+ * ride today" view: Today's Note + this week's workout cards (both inside
+ * WeeklyPlan) and the coach-message area (AiInsights, plus the session
+ * feedback chat inside WeeklyPlan). Deliberately NO statistics here - see
+ * app/dashboard/stats/page.tsx for Power/Cadence, Fitness, Personal Bests,
+ * and ride history. Shared header/auth lives in app/dashboard/layout.tsx.
  */
 export default async function CoachPage() {
   const cookieStore = await cookies();
@@ -22,6 +23,9 @@ export default async function CoachPage() {
   const session = await decryptSession(raw);
   if (!session) redirect("/login");
 
+  // Only need to know whether the rider has ANY ride history yet, to decide
+  // between the coaching UI and a "go ride first" message - the actual data
+  // WeeklyPlan/AiInsights/HRAlertBanner need, they fetch themselves client-side.
   let hasRides = false;
   let activitiesError: string | null = null;
   try {
@@ -49,9 +53,6 @@ export default async function CoachPage() {
   return (
     <>
       <HRAlertBanner />
-      <Suspense fallback={null}>
-        <HeroBanner />
-      </Suspense>
       <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
         <WeeklyPlan />
       </div>
