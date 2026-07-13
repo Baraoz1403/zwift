@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       return {
         athleteId,
         hasIcuKey: Boolean(state.icuKey),
+        icuId: state.icuId ?? null,
         lastPlanWeekOf: state.previousPlan?.weekOf ?? null,
         macroCycle: state.macroCycle,
       };
