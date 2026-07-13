@@ -69,7 +69,7 @@ export default function PhaseCard({
     }}>
       <span style={{ fontSize: 16 }}>{icon}</span>
       <div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: ACCENT, lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: ACCENT, lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.1 }}>{label}</div>
       </div>
     </div>

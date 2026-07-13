@@ -84,11 +84,16 @@ export default function WorkoutThumbnail({
     : sampleWorkoutPower(generateDefaultBlocks(workout), SAMPLES);
   const maxPower = Math.max(1.2, ...powers);
   const effort = effortForType(workout.type);
+  // Where the 100%-FTP line sits, as a % up from the bottom of the graph -
+  // maxPower is always >= 1.2 (see above), so this is always inside the
+  // visible area, never off the top.
+  const ftpLinePct = (1 / maxPower) * 100;
 
   return (
     <div style={flush ? undefined : { margin: "-20px -20px 0 -20px" }}>
       <div
         style={{
+          position: "relative",
           display: "flex",
           alignItems: "flex-end",
           gap: lightGraph ? 2 : 1,
@@ -97,19 +102,38 @@ export default function WorkoutThumbnail({
           background: lightGraph ? "#f1f5f9" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
+        {lightGraph && (
+          <div style={{
+            position: "absolute", left: 0, right: 0, bottom: `${ftpLinePct}%`,
+            borderTop: "1px dashed rgba(0,0,0,0.15)", pointerEvents: "none",
+          }} />
+        )}
         {powers.map((p, i) => (
           <div
             key={i}
+            className={lightGraph ? "wo-thumb-bar" : undefined}
             style={{
               flex: 1,
               minWidth: 2,
               height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
               background: zoneForPowerFraction(p).color,
-              borderRadius: lightGraph ? "4px 4px 0 0" : "1px 1px 0 0",
+              borderRadius: lightGraph ? "3px 3px 0 0" : "1px 1px 0 0",
+              ...(lightGraph ? { animationDelay: `${(i / powers.length) * 300}ms` } : {}),
             }}
           />
         ))}
       </div>
+      {lightGraph && (
+        <style>{`
+          @keyframes woThumbBarIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          .wo-thumb-bar {
+            animation: woThumbBarIn 0.3s ease both;
+          }
+        `}</style>
+      )}
       {!hideFooter && (
         <div
           style={{

@@ -1754,8 +1754,8 @@ export default function WeeklyPlan() {
                   key={i}
                   style={{
                     display: "flex", flexDirection: "column",
-                    background: "#fff",
-                    border: rest ? "1px dashed #cbd5e1" : "none",
+                    background: rest ? "#f8fafc" : "#fff",
+                    border: rest ? "2px dashed #e2e8f0" : "none",
                     // A real border (not a child div) paints at the box's own
                     // edge regardless of this element's overflow:hidden -
                     // a separate inner div was getting clipped/reduced to a
@@ -1779,7 +1779,7 @@ export default function WeeklyPlan() {
                       alignItems: rest ? "center" : undefined,
                     }}
                   >
-                    {rest && <div style={{ fontSize: 40, marginBottom: 10 }}>🛌</div>}
+                    {rest && <div style={{ fontSize: 48, marginBottom: 10 }}>🛌</div>}
                     <div style={{ fontSize: 14, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>

@@ -9,7 +9,7 @@ html {
      (.stat-card et al) already reference them rather than hardcoding
      colors, so this cascades consistently instead of needing a
      per-component pass. */
-  --bg: #f8fafc;
+  --bg: #f0f2f5;
   --bg-glow: none;
   --panel: #ffffff;
   --panel-solid: #ffffff;
