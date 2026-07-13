@@ -6344,3 +6344,14 @@ Sun 07/12/2026 15:10:12.45
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+[main 0d36063] Auto deploy Sun 07/12/2026 15:10:13.36
+ 1 file changed, 38 insertions(+)
+To https://github.com/Baraoz1403/zwift.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Baraoz1403/zwift.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+Sun 07/12/2026 15:10:14.79 - FAILED: git push error 
