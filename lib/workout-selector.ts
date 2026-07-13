@@ -391,22 +391,30 @@ function placeSessions(sessions: SelectedWorkout[], daysPerWeek: number): Select
 
   const result: SelectedDay[] = DAY_ORDER.map((day) => ({ day, workout: null }));
   let dayIdx = 0;
-  let sessionIdx = 0;
   let lastWasHard = false;
 
-  while (sessionIdx < toPlace.length && dayIdx < 7) {
-    const session = toPlace[sessionIdx];
+  // NOTE: this used to be a while loop keyed on a separate sessionIdx, with
+  // `continue` on a hard/hard collision. That never advanced sessionIdx OR
+  // reset lastWasHard, so the SAME session kept re-triggering the skip
+  // condition every iteration - it silently skipped days all the way to the
+  // dayIdx<6 boundary, dumped that one session on the last day, and then the
+  // loop exited (dayIdx now 7) with any remaining sessions never placed at
+  // all. A 3-session Base/Build week (two adjacent hard sessions is the
+  // normal case) produced a plan with 5 rest days and one session dropped
+  // entirely - exactly what shipped to the first real second athlete. Fixed
+  // by iterating the sessions directly with for..of, so every session gets
+  // exactly one placement attempt and a hard/hard collision costs exactly
+  // one gap day, not an unbounded skip.
+  for (const session of toPlace) {
+    if (dayIdx >= 7) break;
     const isHard = session.category !== "Foundation" && session.category !== "Recovery";
-    // Force a rest/gap day if the previous placed day was hard and this one
-    // is too - burns a day slot rather than stacking two hard days.
     if (isHard && lastWasHard && dayIdx < 6) {
-      dayIdx++;
-      continue;
+      dayIdx++; // exactly one gap day between two hard sessions
     }
+    if (dayIdx >= 7) break;
     result[dayIdx].workout = session;
     lastWasHard = isHard;
     dayIdx++;
-    sessionIdx++;
   }
 
   return result;
