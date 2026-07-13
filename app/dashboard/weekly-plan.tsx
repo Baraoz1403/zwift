@@ -8,7 +8,9 @@ import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from 
 import WorkoutThumbnail from "./workout-thumbnail";
 import HeroBanner from "./hero-banner";
 import TrainingProfileCard from "./training-profile";
+import TrainingProfileStrip from "./training-profile-strip";
 import ConnectionsPanel from "./connections-panel";
+import type { RiderTrainingProfile } from "@/lib/rider-profile";
 
 interface WeeklyWorkout {
   day: string;
@@ -253,11 +255,38 @@ export default function WeeklyPlan() {
   // units generateDefaultBlocks/sampleWorkoutPower already use for planned
   // workouts), so a real ride's bar graph lines up with the same zone colors.
   const [ftp, setFtp] = useState<number | null>(null);
+  // Additional profile fields for the compact Training Profile strip - read
+  // from the same /api/zwift/profile call the FTP fetch above already
+  // makes, so the strip doesn't need a second round-trip.
+  const [athleteFirstName, setAthleteFirstName] = useState<string | null>(null);
+  const [athleteWeightKg, setAthleteWeightKg] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/zwift/profile")
       .then(r => r.json())
-      .then(d => { if (d.ok && d.profile?.ftp) setFtp(d.profile.ftp as number); })
+      .then(d => {
+        if (!d.ok || !d.profile) return;
+        if (d.profile.ftp) setFtp(d.profile.ftp as number);
+        if (d.profile.firstName) setAthleteFirstName(d.profile.firstName as string);
+        if (d.profile.weight) setAthleteWeightKg((d.profile.weight as number) / 1000);
+      })
       .catch(() => {});
+  }, []);
+
+  // Rider-set training profile (goal, days/week) for the compact strip -
+  // same localStorage key training-profile.tsx itself reads/writes, kept in
+  // sync via the same "zwift:profile-saved" event that already exists to
+  // tell WeeklyPlan a profile edit just happened.
+  const [riderProfileForStrip, setRiderProfileForStrip] = useState<RiderTrainingProfile | null>(null);
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = window.localStorage.getItem("zwiftRiderProfile");
+        setRiderProfileForStrip(raw ? (JSON.parse(raw) as RiderTrainingProfile) : null);
+      } catch { setRiderProfileForStrip(null); }
+    };
+    load();
+    window.addEventListener("zwift:profile-saved", load);
+    return () => window.removeEventListener("zwift:profile-saved", load);
   }, []);
 
   // Real per-ride power stream (FTP fractions), keyed by activity id - filled
@@ -1017,6 +1046,13 @@ export default function WeeklyPlan() {
     <div>
 
       <HeroBanner cycleInfo={cycleInfo} todayWorkout={todayWorkoutForBanner} />
+      <TrainingProfileStrip
+        firstName={athleteFirstName}
+        ftp={ftp}
+        weightKg={athleteWeightKg}
+        riderProfile={riderProfileForStrip}
+        cycleInfo={cycleInfo}
+      />
 
       {/* TP_DISABLED: modal kept for quick re-enable — just remove the `false &&` */}
       {false /* TP_DISABLED */ && showTPModal && (
