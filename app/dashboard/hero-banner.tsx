@@ -4,25 +4,30 @@ import DashboardNavTabs from "./dashboard-nav-tabs";
 import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
 
+// One shared blue background for every slide - "too much black" was the
+// feedback on the earlier near-black gradients (which also differed per
+// slide, which read as disorganized). A single, unmistakably-blue Zwift-
+// style backdrop now stays constant; only the accent (tag pill, headline
+// highlight, dot, HUD glow) changes between slides.
+const BANNER_BG = "linear-gradient(135deg, #0b2f6b 0%, #123f8f 55%, #0d1f4d 100%)";
+
 const SLIDES = [
   {
-    accent: "#00E5FF",
-    bg: "linear-gradient(135deg, #0a0e1a 0%, #0d1f3c 60%, #0a1628 100%)",
+    accent: "#5EC8FF",
     tag: "POWERED BY AI",
     lines: ["Your Rides.", "Your Data.", "Your Coach."],
     sub: "Real-time training plans built from your Zwift performance — not templates.",
   },
   {
-    accent: "#00FF9C",
-    bg: "linear-gradient(135deg, #050d0a 0%, #0a1f16 60%, #071a10 100%)",
+    accent: "#4ADE9E",
     tag: "STRUCTURED TRAINING",
     lines: ["Sweet Spot.", "Threshold.", "VO2max."],
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    // Was a muddy orange/brown (#FF6B35) — swapped for a vivid, inviting red.
-    accent: "#FF3B5C",
-    bg: "linear-gradient(135deg, #1a0508 0%, #2d0d16 60%, #1a0810 100%)",
+    // Was a muddy orange/brown, then a hot red - a vivid coral-red keeps
+    // the "pop" against the new blue backdrop without clashing with it.
+    accent: "#FF5C7A",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
@@ -68,9 +73,9 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
       <div style={{ minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span style={{ fontSize: 21, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</span>
-          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{unit}</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{unit}</span>
         </div>
-        <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
       </div>
     </div>
   );
@@ -78,12 +83,12 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(255,255,255,0.035)", border: `1px solid ${accent}30`,
+      background: "rgba(255,255,255,0.06)", border: `1px solid ${accent}40`,
       padding: "18px 22px", position: "relative", overflow: "hidden",
-      boxShadow: `0 0 30px ${accent}0c`,
+      boxShadow: `0 0 30px ${accent}14`,
     }}>
       <div style={{
-        position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none",
+        position: "absolute", inset: 0, opacity: 0.06, pointerEvents: "none",
         backgroundImage: `linear-gradient(${accent} 1px,transparent 1px),linear-gradient(90deg,${accent} 1px,transparent 1px)`,
         backgroundSize: "18px 18px",
       }} />
@@ -127,60 +132,55 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
 }
 
 /**
- * HeroBanner — now doubles as the site's persistent header (rendered once
- * from app/dashboard/layout.tsx, shared by Coach + Stats). Previously this
- * lived inside weekly-plan.tsx (Coach page only) and auto-rotated through
- * its 3 messages on a 6s timer; per explicit feedback it no longer
- * auto-advances ("לא מתחלף") — the dots below are still clickable so the
- * 3 messages remain browsable, they just don't change on their own anymore.
- * The nav row (Coach/Stats tabs, Connections, Sign out) that used to live in
- * a separate plain <div className="dashboard-header"> is now built into the
- * top of this banner instead, so there's a single header element rather
- * than two stacked bars. The right-hand visual is a small animated
- * power/cadence/speed/HR "live" telemetry panel (LiveMetricsHUD) instead of
- * the earlier hand-drawn cyclist SVG, which never read as anything but flat
- * and generic no matter how it was restyled.
+ * HeroBanner — the site's persistent header (rendered once from
+ * app/dashboard/layout.tsx, shared by Coach + Stats). Full-bleed width
+ * (edge-to-edge, same trick the old .dashboard-header used) instead of
+ * boxed in at 1100px - a contained/rounded banner felt disconnected from
+ * the rest of the page. One consistent blue background across all 3
+ * messages (BANNER_BG above) instead of a different dark gradient per
+ * slide, which read as "too much black" and unstructured. Doesn't
+ * auto-rotate anymore ("לא מתחלף") - the dots are still clickable so the
+ * 3 messages remain manually browsable.
  */
 export default function HeroBanner({ firstName }: { firstName?: string | null }) {
   const [idx, setIdx] = useState(0);
   const s = SLIDES[idx];
 
   return (
-    <div style={{
-      background: s.bg,
-      borderRadius: 16,
+    <div className="hero-banner-fullbleed" style={{
+      background: BANNER_BG,
       overflow: "hidden",
       position: "relative",
       display: "flex",
       flexDirection: "column",
       minHeight: 260,
       marginBottom: 32,
-      border: `1px solid ${s.accent}22`,
-      boxShadow: `0 0 60px ${s.accent}10, 0 16px 48px rgba(0,0,0,0.4)`,
+      borderBottom: `1px solid ${s.accent}30`,
+      boxShadow: `0 16px 40px rgba(0,0,0,0.25)`,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
-      transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
+      transition: "border-color 0.4s ease",
     }}>
       {/* Grid */}
-      <div style={{ position:"absolute",inset:0,opacity:0.04,pointerEvents:"none",
+      <div style={{ position:"absolute",inset:0,opacity:0.05,pointerEvents:"none",
         backgroundImage:`linear-gradient(${s.accent} 1px,transparent 1px),linear-gradient(90deg,${s.accent} 1px,transparent 1px)`,
         backgroundSize:"40px 40px"}} />
       {/* Glow */}
-      <div style={{position:"absolute",top:-60,right:"25%",width:300,height:300,borderRadius:"50%",
-        background:`radial-gradient(circle,${s.accent}18 0%,transparent 70%)`,pointerEvents:"none"}} />
+      <div style={{position:"absolute",top:-60,right:"20%",width:340,height:340,borderRadius:"50%",
+        background:`radial-gradient(circle,${s.accent}22 0%,transparent 70%)`,pointerEvents:"none",transition:"background 0.4s ease"}} />
 
       {/* ── Nav row: brand + persistent nav actions ─────────────────────── */}
       <div className="banner-nav" style={{
         position: "relative", zIndex: 2, display: "flex", alignItems: "center",
         justifyContent: "space-between", gap: 16, flexWrap: "wrap",
-        padding: "18px 28px 0",
+        padding: "18px 0 0",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 30, height: 30, borderRadius: 9, flexShrink: 0,
             background: s.accent, display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 2px 10px ${s.accent}55`,
+            boxShadow: `0 2px 10px ${s.accent}55`, transition: "background 0.4s ease",
           }}>
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="#0a0e1a">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="#0b1f4d">
               <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
             </svg>
           </div>
@@ -202,13 +202,13 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       </div>
 
       {/* ── Message + live metrics panel ─────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap", maxWidth: 1100, width: "100%", margin: "0 auto" }}>
         {/* Left: text */}
-        <div style={{flex:"1 1 320px",padding:"24px 40px 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+        <div style={{flex:"1 1 320px",padding:"24px 0 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:8,
               background:`${s.accent}18`,border:`1px solid ${s.accent}40`,
-              borderRadius:20,padding:"4px 14px",marginBottom:20}}>
+              borderRadius:20,padding:"4px 14px",marginBottom:20,transition:"background 0.4s ease, border-color 0.4s ease"}}>
               <div style={{width:6,height:6,borderRadius:"50%",background:s.accent,boxShadow:`0 0 8px ${s.accent}`}} />
               <span style={{fontSize:11,fontWeight:700,letterSpacing:"2px",color:s.accent}}>{s.tag}</span>
             </div>
@@ -217,22 +217,23 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
                 fontSize: 36, fontWeight: 800, lineHeight: 1.1,
                 color: i === s.lines.length - 1 ? s.accent : "white",
                 textShadow: i === s.lines.length - 1 ? `0 0 24px ${s.accent}60` : "none",
+                transition: "color 0.3s ease",
               }}>{line}</div>
             ))}
-            <p style={{fontSize:15,color:"#94a3b8",lineHeight:1.6,margin:"14px 0 0"}}>{s.sub}</p>
+            <p style={{fontSize:15,color:"rgba(255,255,255,0.65)",lineHeight:1.6,margin:"14px 0 0"}}>{s.sub}</p>
           </div>
           <div style={{display:"flex",gap:10,marginTop:24}}>
             {SLIDES.map((_,i)=>(
               <button key={i} type="button" aria-label={`Show message ${i + 1}`} onClick={()=>setIdx(i)} style={{border:"none",cursor:"pointer",padding:0,background:"transparent"}}>
                 <div style={{width:i===idx?32:8,height:7,borderRadius:4,
-                  background:i===idx?s.accent:"#334155",transition:"width .3s, background .3s"}} />
+                  background:i===idx?s.accent:"rgba(255,255,255,0.25)",transition:"width .3s, background .3s"}} />
               </button>
             ))}
           </div>
         </div>
 
         {/* Right: live metrics panel */}
-        <div style={{width:300,padding:"20px 24px 20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1,flex:"0 1 300px"}}>
+        <div style={{width:300,padding:"20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1,flex:"0 1 300px"}}>
           <LiveMetricsHUD accent={s.accent} />
         </div>
       </div>

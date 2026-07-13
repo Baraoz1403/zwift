@@ -1241,6 +1241,21 @@ tbody tr:hover {
   color: #fff;
 }
 
+/* Full-bleed hero banner - stretches edge-to-edge like the old
+   .dashboard-header used to (same technique: 100vw + negative margin),
+   instead of being boxed in at 1100px. Content still lines up with the
+   rest of the page via the calc() padding, which mirrors .dashboard-header's
+   own max((100vw-1140px)/2+24px) approach. Requested explicitly - the
+   contained/rounded banner felt disconnected from the rest of the layout. */
+.hero-banner-fullbleed {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  border-radius: 0;
+  box-sizing: border-box;
+  padding-left: max(24px, calc((100vw - 1100px) / 2));
+  padding-right: max(24px, calc((100vw - 1100px) / 2));
+}
+
 /* ========================================================
    MOBILE RESPONSIVENESS
    ======================================================== */
