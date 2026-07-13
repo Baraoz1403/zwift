@@ -67,8 +67,25 @@ export async function POST(req: NextRequest) {
     // If the rider connected ICU or TP on another device, their credentials are
     // stored in Vercel KV keyed by Zwift athlete ID. Restore them now so the
     // session on this device is immediately connected without manual re-setup.
+    //
+    // CRITICAL: every branch below has a matching "else clear the cookie"
+    // path. This used to only ever SET these cookies when KV had a match for
+    // the freshly-logged-in athlete, and silently left them untouched
+    // otherwise - which meant a stale ICU/TP cookie from a PREVIOUS Zwift
+    // account that once logged in on this same browser survived into a new
+    // athlete's session unless that new athlete happened to have their own
+    // KV entry already. That is exactly how one rider's Intervals.icu key
+    // got attributed to a second rider sharing a browser: the second
+    // rider's own KV entry was empty, the first rider's still-set cookie was
+    // never cleared, and later code (since removed - see the doc comment on
+    // syncPlanToIcuAndMark in lib/headless-sync.ts) treated "cookie present"
+    // as "belongs to whoever is logged in now" and copied it into the wrong
+    // athlete's KV entry. Explicitly clearing here whenever KV has nothing
+    // for this athlete closes that gap at its source, regardless of what
+    // any other code does with the cookie afterward.
     if (athleteId) {
       const cookieBase = { httpOnly: true, secure: isSecure, sameSite: "lax" as const, path: "/" };
+      const clearOpts = { ...cookieBase, maxAge: 0 };
 
       // Intervals.icu — API keys don't expire, restore directly
       const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
@@ -78,6 +95,10 @@ export async function POST(req: NextRequest) {
         res.cookies.set("zwift_intervals_key",  icuKey,          { ...cookieBase, maxAge: 60 * 60 * 24 * 365 });
         res.cookies.set("zwift_intervals_id",   icuId  ?? "0",   { ...cookieBase, maxAge: 60 * 60 * 24 * 365 });
         res.cookies.set("zwift_intervals_name", icuName ?? "",   { ...cookieBase, httpOnly: false, maxAge: 60 * 60 * 24 * 365 });
+      } else {
+        res.cookies.set("zwift_intervals_key",  "", clearOpts);
+        res.cookies.set("zwift_intervals_id",   "", clearOpts);
+        res.cookies.set("zwift_intervals_name", "", { ...clearOpts, httpOnly: false });
       }
 
       // TrainingPeaks — restore token + refresh token; if the access token
@@ -98,6 +119,11 @@ export async function POST(req: NextRequest) {
         res.cookies.set("zwift_tp_expires", staleExpiry, { ...cookieBase, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
         // Silence the TypeScript unused-variable warning
         void tpExpiresIn;
+      } else {
+        res.cookies.set("zwift_tp_token",   "", clearOpts);
+        res.cookies.set("zwift_tp_id",      "", clearOpts);
+        res.cookies.set("zwift_tp_refresh", "", clearOpts);
+        res.cookies.set("zwift_tp_expires", "", { ...clearOpts, httpOnly: false });
       }
 
       // ── Auto-provision: first plan + first ICU sync, no button needed ────

@@ -87,14 +87,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Session invalid or expired." }, { status: 401 });
   }
 
-  // Read straight from this request's own cookies as a fallback source for
-  // ICU credentials, in case KV is missing them (see syncPlanToIcuAndMark's
-  // doc comment for why that gap could exist).
-  const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value;
-  const icuCookieFallback = cookieIcuKey
-    ? { icuKey: cookieIcuKey, icuId: cookieStore.get("zwift_intervals_id")?.value ?? null }
-    : null;
-
   // ── KV plan cache check ────────────────────────────────────────────────────
   // If a plan for this exact week is already in KV (from a prior Generate on
   // any device, or from the nightly cron), return it immediately without
@@ -142,7 +134,7 @@ export async function POST(req: NextRequest) {
           } catch {
             // best-effort — worst case a already-ridden day gets a redundant planned event
           }
-          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates, icuCookieFallback);
+          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates);
         }
       } catch {
         // best-effort — a self-heal failure must never break the cached-plan response
@@ -214,8 +206,7 @@ export async function POST(req: NextRequest) {
         result.athleteId,
         result.weekOf,
         { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
-        riddenDates,
-        icuCookieFallback
+        riddenDates
       );
     } catch {
       // best-effort — never fail plan generation because ICU sync hiccuped

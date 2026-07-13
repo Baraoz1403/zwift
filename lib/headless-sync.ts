@@ -38,7 +38,6 @@ import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals }
 import { generateZwoXml, isRestDay, isRunWorkout } from "./zwo";
 import { workoutDateLabel, ensureWorkoutDates, normalizeToSix } from "./plan-shape";
 import { getIntervalsCredentials, markIntervalsSynced } from "./kv-plan-state";
-import { kvSet } from "./kv";
 import type { WeeklyPlan, WeeklyWorkout } from "./ai";
 
 export interface HeadlessSyncResult {
@@ -242,28 +241,29 @@ export interface IntervalsSyncResult {
  * the same plan doesn't redundantly re-push. Returns null (skips entirely)
  * when the rider hasn't connected ICU.
  *
- * `cookieFallback`, when provided, is the ICU key/id read straight from an
- * in-flight request's own cookies - a self-heal for the case where KV is
- * missing credentials that the browser's cookie already has (see
- * app/api/intervals/connect/route.ts's athleteId resolution fix for why
- * that gap could exist: the KV mirror used to be silently skipped whenever
- * session.athleteId happened to be empty). If KV comes back empty but the
- * cookie has a key, this mirrors it into KV right here so sync starts
- * working immediately, without needing a disconnect/reconnect.
+ * IMPORTANT: this used to also accept a `cookieFallback` (the ICU key/id
+ * read from an in-flight request's own cookies) to self-heal KV entries
+ * that were missing credentials. That was removed after it caused a real
+ * cross-account credential leak: the ICU cookie is scoped to the BROWSER,
+ * not to whichever Zwift athlete happens to be logged in on it - on a
+ * shared browser/device, a second rider logging in with their own Zwift
+ * account but inheriting the first rider's still-present ICU cookie had
+ * that first rider's Intervals.icu key silently written into their OWN KV
+ * entry, so their plan would have pushed to the FIRST rider's ICU/Zwift
+ * calendar. The KV-write bug that fallback existed to work around is fixed
+ * at its source now (app/api/intervals/connect/route.ts always resolves a
+ * real athleteId before writing), so there's no gap left to compensate for
+ * - only the credential-attribution risk. Never reintroduce a
+ * cookie-derived credential fallback here; KV is the only trustworthy
+ * source for which ICU account belongs to which Zwift athlete.
  */
 export async function syncPlanToIcuAndMark(
   athleteId: string,
   weekOf: string,
   plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
-  riddenDates: Set<string>,
-  cookieFallback?: { icuKey: string; icuId: string | null } | null
+  riddenDates: Set<string>
 ): Promise<IntervalsSyncResult | null> {
-  let creds = await getIntervalsCredentials(athleteId);
-  if (!creds && cookieFallback) {
-    await kvSet(`zwift:${athleteId}:icu_key`, cookieFallback.icuKey);
-    if (cookieFallback.icuId) await kvSet(`zwift:${athleteId}:icu_id`, cookieFallback.icuId);
-    creds = { icuKey: cookieFallback.icuKey, icuId: cookieFallback.icuId };
-  }
+  const creds = await getIntervalsCredentials(athleteId);
   if (!creds) return null;
 
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
