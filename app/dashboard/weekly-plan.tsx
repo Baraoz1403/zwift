@@ -6,6 +6,7 @@ import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structure
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from "@/lib/plan-shape";
 import WorkoutThumbnail from "./workout-thumbnail";
+import HeroBanner from "./hero-banner";
 import TrainingProfileCard from "./training-profile";
 import ConnectionsPanel from "./connections-panel";
 
@@ -1005,8 +1006,17 @@ export default function WeeklyPlan() {
     }
   }
 
+  const todayWorkoutForBanner = (() => {
+    const today = todayIso();
+    const w = displayWorkouts.find((x) => x.date === today);
+    if (!w || isRestDay(w.type)) return null;
+    return { title: w.title, type: w.type, durationMin: w.durationMin };
+  })();
+
   return (
     <div>
+
+      <HeroBanner cycleInfo={cycleInfo} todayWorkout={todayWorkoutForBanner} />
 
       {/* TP_DISABLED: modal kept for quick re-enable — just remove the `false &&` */}
       {false /* TP_DISABLED */ && showTPModal && (
