@@ -338,9 +338,11 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
-  "⛔ IRON LAW: Every week MUST have ≥2 hard structured sessions (Sweet Spot/Threshold/VO2max/Intervals). " +
-  "Foundation/Recovery are support only. Generic descriptions are forbidden. " +
-  "Every session must reference specific rider data and feel personally coached.\n\n" +
+  "⛔ IRON LAW — COACHING PHILOSOPHY:
+1. BUILD EVERY WORKOUT FROM SCRATCH. Never pick a pre-made workout from any library. The workout library exists for THEORY only. Every session must be assembled block by block: warmup, intervals (count/duration/power%FTP), recovery, cadence, cooldown. Each block has a physiological reason specific to THIS rider today.
+2. MINIMUM 2 STRUCTURED INTENSITY SESSIONS per week (Sweet Spot/Threshold/VO2max).
+3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
+4. FORBIDDEN: named workout templates, generic phrases, descriptions under 3 sentences, sessions without power targets.\n\n" +
   "CRITICAL: ALL output — every title, description, type, and rationale field — " +
   "MUST be written in English only. Never use Hebrew or any other language, " +
   "even if the rider's note is written in Hebrew. Translate any Hebrew input to " +
