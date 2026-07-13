@@ -111,8 +111,36 @@ export async function GET(req: NextRequest) {
       let runningMacroCycle: MacroCycleState | null = state.macroCycle;
       let runningPreviousPlan: { weekOf: string; workouts: WeeklyWorkout[] } | null = state.previousPlan;
 
+      // Rollback guard: if this athlete's stored macro-cycle pointer already
+      // sits AHEAD of the earliest week being repaired (e.g. a "next week"
+      // prefetch already ran before this repair), advanceMacroCycle would
+      // read regenerating an earlier week as a brand-new one and fast-forward
+      // the mesocycle (e.g. straight into a bogus Recovery week). Rebuild the
+      // pointer as it stood BEFORE that prefetch - subtract the number of
+      // weeks the stored pointer is ahead, using the earliest requested week
+      // as its lastWeekOf so advanceMacroCycle's "same week" branch holds
+      // instead of advancing. The stored previousPlan is similarly discarded
+      // in this case: it's chronologically AFTER the week about to be
+      // regenerated, so using it for adherence/variety comparison would be
+      // backwards - the loop below repopulates it correctly once the
+      // earliest week's own regeneration completes.
+      const sortedWeeks = [...weeks].sort();
+      if (runningMacroCycle && sortedWeeks.length > 0) {
+        const earliest = sortedWeeks[0];
+        const storedLastMs = new Date(runningMacroCycle.lastWeekOf + "T00:00:00Z").getTime();
+        const earliestMs = new Date(earliest + "T00:00:00Z").getTime();
+        if (storedLastMs > earliestMs) {
+          const weeksAhead = Math.round((storedLastMs - earliestMs) / (7 * 24 * 60 * 60 * 1000));
+          runningMacroCycle = {
+            weekIndex: Math.max(0, runningMacroCycle.weekIndex - weeksAhead),
+            lastWeekOf: earliest,
+          };
+          runningPreviousPlan = null;
+        }
+      }
+
       const weekResults: WeekRunResult[] = [];
-      for (const weekOf of [...weeks].sort()) {
+      for (const weekOf of sortedWeeks) {
         try {
           const result = await runWeeklyPlanGeneration({
             accessToken: refreshed.accessToken,
