@@ -1702,13 +1702,17 @@ export default function WeeklyPlan() {
                     display: "flex", flexDirection: "column",
                     background: "#fff",
                     border: rest ? "1px dashed #cbd5e1" : "none",
+                    // A real border (not a child div) paints at the box's own
+                    // edge regardless of this element's overflow:hidden -
+                    // a separate inner div was getting clipped/reduced to a
+                    // sliver on some cards, this can't be.
+                    borderTop: rest ? undefined : `5px solid ${accentColor}`,
                     borderRadius: 20,
                     overflow: "hidden",
                     boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
                     ["--card-accent" as string]: accentColor,
                   }}
                 >
-                  {!rest && <div style={{ height: 5, background: accentColor }} />}
                   {!rest && (
                     <WorkoutThumbnail workout={w} flush height={160} hideFooter lightGraph />
                   )}
