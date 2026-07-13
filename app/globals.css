@@ -334,6 +334,15 @@ a:hover {
    deepens and lifts on hover; --card-accent is set inline per card (the
    workout's own intensity-zone color) so the shadow tint always matches
    that card's accent bar/graph coloring instead of one fixed color. */
+/* .stat-card's generic ::before top strip (2.5px, single --accent color -
+   see the .stat-card::before rule above) was layering on top of this card's
+   own 5px per-workout-type borderTop accent, which is what actually caused
+   the reported "clipped to 2.5px" look - two competing top bars, not one
+   clipped bar. Disable the generic one specifically for these cards. */
+.workout-card-elevated::before {
+  display: none;
+}
+
 .workout-card-elevated:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 20px -6px var(--card-accent, transparent);

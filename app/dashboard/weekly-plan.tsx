@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay, zoneForPowerFraction, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
+import { generateZwoXml, zwoFileName, isRestDay, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from "@/lib/plan-shape";
 import WorkoutThumbnail from "./workout-thumbnail";
@@ -82,6 +82,21 @@ function colorForType(type: string): string {
   if (t.includes("interval") || t.includes("sweet") || t.includes("threshold")) return "c-orange";
   if (t.includes("endurance")) return "c-blue";
   return "c-teal";
+}
+
+/** Workout card top accent bar - matched by keyword against the workout's
+ *  own type/category string (not by computed intensity-factor zone, so a
+ *  Sweet Spot session always reads as Sweet Spot green regardless of that
+ *  particular week's exact wattage). Checked most-specific-first since
+ *  "sweet spot" and "threshold" can both contain "interval"-ish substrings. */
+function accentColorForWorkoutType(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("rest")) return "transparent";
+  if (t.includes("sweet")) return "#10b981";
+  if (t.includes("threshold")) return "#f59e0b";
+  if (t.includes("vo2")) return "#f97316";
+  if (t.includes("sprint") || t.includes("neuromuscular")) return "#8b5cf6";
+  return "#3b82f6"; // Zone2 / Foundation / Endurance / default
 }
 
 /** Hex values matching each colorForType bucket's existing icon color (see
@@ -1738,7 +1753,7 @@ export default function WeeklyPlan() {
               const ifTss = w.structure && w.structure.length > 0
                 ? computeIfTss(structureToBlocks(w.structure))
                 : null;
-              const accentColor = ifTss ? zoneForPowerFraction(ifTss.intensityFactor).color : TYPE_BAR_COLOR[colorForType(w.type)];
+              const accentColor = accentColorForWorkoutType(w.type);
               const rest = isRestDay(w.type);
               return (
                 <div
