@@ -5,7 +5,6 @@ import { WeeklyWorkout } from "@/lib/ai";
 import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { MacroCycleState, mondayOfCurrentWeek } from "@/lib/periodization";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { wideCleanupRange, cleanupIcuDuplicates } from "@/lib/headless-sync";
 import {
   mirrorStateToKv,
   mirrorZwiftAuthToKv,
