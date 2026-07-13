@@ -1811,21 +1811,21 @@ export default function WeeklyPlan() {
                               connected-and-succeeded one. lastIntervalsSync is null until
                               a generate response has actually arrived this session. */}
                           {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length === 0 && (
-                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 14, fontWeight: 600 }}>
                               <span style={{ color: "var(--accent)" }}>
                                 ✓ Synced → Intervals.icu → Zwift ({lastIntervalsSync.pushed} pushed{lastIntervalsSync.deleted > 0 ? `, ${lastIntervalsSync.deleted} duplicates removed` : ""})
                               </span>
                             </div>
                           )}
                           {intervalsConnected && lastIntervalsSync && lastIntervalsSync.errors.length > 0 && (
-                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 11, fontWeight: 600 }}>
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 14, fontWeight: 600 }}>
                               <span style={{ color: "var(--danger)" }} title={lastIntervalsSync.errors.join("; ")}>
                                 ⚠ Synced with {lastIntervalsSync.errors.length} error(s) — hover for detail
                               </span>
                             </div>
                           )}
                           {intervalsConnected && !lastIntervalsSync && (
-                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 10, color: "#64748b", opacity: 0.8 }}>
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 14, color: "#64748b", opacity: 0.8 }}>
                               Connected — syncs automatically when a plan is generated
                             </div>
                           )}
@@ -1835,7 +1835,7 @@ export default function WeeklyPlan() {
                             <button
                               type="button"
                               className="btn btn-secondary"
-                              style={{ width: "auto", padding: "8px 16px", fontSize: 12, fontWeight: 600 }}
+                              style={{ width: "auto", padding: "8px 16px", fontSize: 14, fontWeight: 600 }}
                               onClick={() => handleDownloadZwo(w)}
                             >
                               ↓ Download ZWO
@@ -2040,7 +2040,7 @@ export default function WeeklyPlan() {
                         flex: "1 1 calc(50% - 4px)", padding: "9px 8px", borderRadius: 7,
                         border: selected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
                         background: selected ? "rgba(47,143,224,0.09)" : "var(--panel)",
-                        fontSize: 12.5, fontWeight: selected ? 600 : 400,
+                        fontSize: 14, fontWeight: selected ? 600 : 400,
                         color: selected ? "var(--accent)" : "var(--text)",
                         cursor: "pointer", transition: "all 0.15s ease",
                         textAlign: "center" as const,
@@ -2059,7 +2059,7 @@ export default function WeeklyPlan() {
                 style={{
                   width: "100%", resize: "vertical", padding: "10px 13px",
                   borderRadius: 6, border: "1px solid var(--border)",
-                  background: "rgba(20,23,26,0.02)", fontSize: 13,
+                  background: "rgba(20,23,26,0.02)", fontSize: 14,
                   color: "var(--text)", fontFamily: "inherit", lineHeight: 1.5,
                   outline: "none", boxSizing: "border-box" as const,
                 }}
@@ -2069,7 +2069,7 @@ export default function WeeklyPlan() {
 
           {/* Loading indicator when auto-generating after note submit */}
           {loading && !noteOpen && (
-            <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 500, marginTop: 8, textAlign: "center", opacity: 0.9 }}>
+            <div style={{ fontSize: 14, color: "var(--accent)", fontWeight: 500, marginTop: 8, textAlign: "center", opacity: 0.9 }}>
               Adapting your plan…
             </div>
           )}
@@ -2099,7 +2099,7 @@ export default function WeeklyPlan() {
                   ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
                   : "#16a34a",
                 color: noteOpen ? "var(--accent)" : "#fff",
-                fontSize: 12, fontWeight: 600,
+                fontSize: 14, fontWeight: 600,
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.5 : 1,
                 fontFamily: "inherit",
@@ -2120,7 +2120,7 @@ export default function WeeklyPlan() {
           {/* Phase caption - folded in from the old standalone "Weekly
               training plan" info card, which no longer gets its own slot
               now that this section is full-width rather than 1-of-3 cards. */}
-          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 12, color: "var(--muted)" }}>
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14, color: "var(--muted)" }}>
             {cycleInfo
               ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
                 ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
