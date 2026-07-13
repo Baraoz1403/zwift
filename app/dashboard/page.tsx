@@ -53,6 +53,7 @@ export default async function CoachPage() {
   return (
     <>
       <HRAlertBanner />
+      <HeroBanner />
       <div className="section fade-in" id="weekly-plan" style={{ scrollMarginTop: 24 }}>
         <WeeklyPlan />
       </div>

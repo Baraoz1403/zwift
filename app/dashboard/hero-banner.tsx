@@ -31,6 +31,11 @@ return(
 </button>))}
 </div>
 </div>
+{/* Bottom fade - smooths the transition into the light card grid below
+    instead of a hard dark-to-light cut. Banner itself stays dark (its
+    per-slide gradient backgrounds are part of the design); only the
+    transition changes. */}
+<div style={{position:"absolute",left:0,right:0,bottom:0,height:90,background:"linear-gradient(to bottom, transparent, #f8fafc)",pointerEvents:"none"}}/>
 </div>
 );
 }

@@ -1384,129 +1384,6 @@ export default function WeeklyPlan() {
         </div>
       )}
 
-      {/* ── Today's Note — full-width, prominent, at the top of the Coach
-          page. Training Profile access moved to the header nav chip only
-          (TrainingProfileNavChip in page.tsx); the old 3rd "Weekly training
-          plan" info card's phase caption is folded in below instead of
-          taking its own card, per the Coach/Stats page split. ──────────── */}
-      <div id="todays-note" className="stat-card todays-note-card">
-        <div className="section-title" style={{ margin: "0 0 8px 0" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
-          Today&apos;s note
-        </div>
-        <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
-          {riderNote
-            ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 80 ? riderNote.slice(0, 80) + "…" : riderNote}</span>
-            : "How are you feeling today? Your AI coach adapts the session to your readiness."}
-        </div>
-
-          {/* Expanded content */}
-          {noteOpen && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-                {(["Feeling great", "Feeling OK", "Tired", "Very tired / sore"] as const).map((label) => {
-                  const selected = riderNote === label;
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => setRiderNote(prev => prev === label ? "" : label)}
-                      style={{
-                        flex: "1 1 calc(50% - 4px)", padding: "9px 8px", borderRadius: 7,
-                        border: selected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
-                        background: selected ? "rgba(47,143,224,0.09)" : "var(--panel)",
-                        fontSize: 12.5, fontWeight: selected ? 600 : 400,
-                        color: selected ? "var(--accent)" : "var(--text)",
-                        cursor: "pointer", transition: "all 0.15s ease",
-                        textAlign: "center" as const,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              <textarea
-                rows={2}
-                placeholder="More detail — e.g. tired legs, sore back, great form…"
-                value={typeof riderNote === "string" && !["Feeling great","Feeling OK","Tired","Very tired / sore"].includes(riderNote) ? riderNote : ""}
-                onChange={(e) => setRiderNote(e.target.value)}
-                style={{
-                  width: "100%", resize: "vertical", padding: "10px 13px",
-                  borderRadius: 6, border: "1px solid var(--border)",
-                  background: "rgba(20,23,26,0.02)", fontSize: 13,
-                  color: "var(--text)", fontFamily: "inherit", lineHeight: 1.5,
-                  outline: "none", boxSizing: "border-box" as const,
-                }}
-              />
-            </div>
-          )}
-
-          {/* Loading indicator when auto-generating after note submit */}
-          {loading && !noteOpen && (
-            <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 500, marginTop: 8, textAlign: "center", opacity: 0.9 }}>
-              Adapting your plan…
-            </div>
-          )}
-
-          {/* Button at bottom */}
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <button
-              type="button"
-              className="header-card-btn"
-              onClick={() => {
-                if (noteOpen) {
-                  // Close the note panel. If a note was entered, auto-trigger plan generation.
-                  setNoteOpen(false);
-                  if (riderNote.trim()) {
-                    handleGenerate();
-                  }
-                } else {
-                  setNoteOpen(true);
-                }
-              }}
-              disabled={loading}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                padding: "6px 14px", borderRadius: 6,
-                border: noteOpen ? "1.5px solid var(--accent)" : "1.5px solid #16a34a",
-                background: noteOpen
-                  ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
-                  : "#16a34a",
-                color: noteOpen ? "var(--accent)" : "#fff",
-                fontSize: 12, fontWeight: 600,
-                cursor: loading ? "default" : "pointer",
-                opacity: loading ? 0.5 : 1,
-                fontFamily: "inherit",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {noteOpen
-                ? (riderNote.trim() ? "Update plan ↗" : "Done")
-                : (riderNote ? "Edit note" : "Add today's note")}
-              {!noteOpen && (
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Phase caption - folded in from the old standalone "Weekly
-              training plan" info card, which no longer gets its own slot
-              now that this section is full-width rather than 1-of-3 cards. */}
-          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 12, color: "var(--muted)" }}>
-            {cycleInfo
-              ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
-                ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
-                : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
-              : "Seven structured sessions, built fresh each week"}
-            {" — generated automatically every Sunday night, adjusted by Today's note above."}
-          </div>
-      </div>{/* end todays-note-card */}
-
       {/* ── Connections panel — shown only when header CONNECTIONS button clicked ── */}
       {showConnections && (
         <div style={{ marginTop: 36, marginBottom: 24 }}>
@@ -2069,6 +1946,131 @@ export default function WeeklyPlan() {
           </div>
         </>
       )}
+
+      {/* ── Today's Note, relocated to the bottom of the page as "Talk to
+          your coach" - a natural conversation starter after the rider has
+          seen the week's cards, rather than the first thing on the page.
+          Training Profile access moved to the header nav chip only
+          (TrainingProfileNavChip in page.tsx); the old 3rd "Weekly training
+          plan" info card's phase caption is folded in below instead of
+          taking its own card, per the Coach/Stats page split. ──────────── */}
+      <div id="todays-note" className="stat-card todays-note-card" style={{ marginTop: 48 }}>
+        <div className="section-title" style={{ margin: "0 0 4px 0" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Talk to your coach
+        </div>
+        <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
+          {riderNote
+            ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 80 ? riderNote.slice(0, 80) + "…" : riderNote}</span>
+            : "How are you feeling today? Any notes before tomorrow's session?"}
+        </div>
+
+          {/* Expanded content */}
+          {noteOpen && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                {(["Feeling great", "Feeling OK", "Tired", "Very tired / sore"] as const).map((label) => {
+                  const selected = riderNote === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setRiderNote(prev => prev === label ? "" : label)}
+                      style={{
+                        flex: "1 1 calc(50% - 4px)", padding: "9px 8px", borderRadius: 7,
+                        border: selected ? "1.5px solid var(--accent)" : "1px solid var(--border)",
+                        background: selected ? "rgba(47,143,224,0.09)" : "var(--panel)",
+                        fontSize: 12.5, fontWeight: selected ? 600 : 400,
+                        color: selected ? "var(--accent)" : "var(--text)",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        textAlign: "center" as const,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <textarea
+                rows={2}
+                placeholder="More detail — e.g. tired legs, sore back, great form…"
+                value={typeof riderNote === "string" && !["Feeling great","Feeling OK","Tired","Very tired / sore"].includes(riderNote) ? riderNote : ""}
+                onChange={(e) => setRiderNote(e.target.value)}
+                style={{
+                  width: "100%", resize: "vertical", padding: "10px 13px",
+                  borderRadius: 6, border: "1px solid var(--border)",
+                  background: "rgba(20,23,26,0.02)", fontSize: 13,
+                  color: "var(--text)", fontFamily: "inherit", lineHeight: 1.5,
+                  outline: "none", boxSizing: "border-box" as const,
+                }}
+              />
+            </div>
+          )}
+
+          {/* Loading indicator when auto-generating after note submit */}
+          {loading && !noteOpen && (
+            <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 500, marginTop: 8, textAlign: "center", opacity: 0.9 }}>
+              Adapting your plan…
+            </div>
+          )}
+
+          {/* Button at bottom */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+            <button
+              type="button"
+              className="header-card-btn"
+              onClick={() => {
+                if (noteOpen) {
+                  // Close the note panel. If a note was entered, auto-trigger plan generation.
+                  setNoteOpen(false);
+                  if (riderNote.trim()) {
+                    handleGenerate();
+                  }
+                } else {
+                  setNoteOpen(true);
+                }
+              }}
+              disabled={loading}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 6,
+                border: noteOpen ? "1.5px solid var(--accent)" : "1.5px solid #16a34a",
+                background: noteOpen
+                  ? (riderNote.trim() ? "rgba(47,143,224,0.12)" : "rgba(47,143,224,0.07)")
+                  : "#16a34a",
+                color: noteOpen ? "var(--accent)" : "#fff",
+                fontSize: 12, fontWeight: 600,
+                cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.5 : 1,
+                fontFamily: "inherit",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {noteOpen
+                ? (riderNote.trim() ? "Update plan ↗" : "Done")
+                : (riderNote ? "Edit note" : "Add today's note")}
+              {!noteOpen && (
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Phase caption - folded in from the old standalone "Weekly
+              training plan" info card, which no longer gets its own slot
+              now that this section is full-width rather than 1-of-3 cards. */}
+          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 12, color: "var(--muted)" }}>
+            {cycleInfo
+              ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
+                ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
+                : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
+              : "Seven structured sessions, built fresh each week"}
+            {" — generated automatically every Sunday night, adjusted by Today's note above."}
+          </div>
+      </div>{/* end todays-note-card */}
 
       {/* Training profile - settings/config, not a stat, so it stays on the
           Coach page per the Coach/Stats split, but unobtrusively at the very
