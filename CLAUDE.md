@@ -189,3 +189,22 @@ that respects this choice; both underlying push functions (`pushPlanToTP`,
 | Adding `gridColumn: "1/-1"` to a flex child | Only works inside CSS grid |
 | Using `className="section"` as a section wrapper | Use `<div className="section fade-in">` |
 | Forgetting `style={{ margin: 0 }}` on `section-title` | Default margin adds unwanted space |
+
+
+## ⛔ עיקרון יסוד — בניית אימון
+
+**הספרייה (MyWhoosh/Zwift) היא תורה — לא קטלוג לבחירת אימונים.**
+
+כל אימון שה-AI מייצר חייב להיות:
+- מורכב block by block (warmup, intervals, cooldown) עם ערכים מדויקים
+- מנומק פיזיולוגית לכל בלוק
+- מותאם לנתוני המתאמן הספציפיים (TSB, FTP, שלב במחזור)
+
+אסור לבחור תבנית מוכנה ולשנות ערכים. כל אימון = יצירה חדשה.
+
+## ⛔ כלל עבודה — Claude Code ו-Claude
+
+שני הכלים לא עובדים על אותם קבצים בו-זמנית.
+Claude Code עובד על קוד מקומי.
+Claude עובד רק על בדיקות ו-API calls.
+לפני כל שינוי קוד — בדוק git log לראות מה השתנה.
