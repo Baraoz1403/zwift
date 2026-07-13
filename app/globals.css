@@ -329,13 +329,13 @@ a:hover {
   box-shadow: 0 8px 20px rgba(20, 23, 26, 0.09), 0 2px 8px rgba(20, 23, 26, 0.06);
 }
 
-/* Dark workout cards (weekly-plan.tsx planned-day cards) - glow uses the
-   per-card --card-accent custom property set inline (the workout's
-   intensity-zone color), so the hover glow always matches that card's own
-   accent bar/graph coloring instead of one fixed color for every card. */
-.workout-card-dark:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--card-accent, rgba(255,255,255,0.15)), 0 0 20px -4px var(--card-accent, transparent);
+/* Elevated white workout cards (weekly-plan.tsx planned-day cards) - shadow
+   deepens and lifts on hover; --card-accent is set inline per card (the
+   workout's own intensity-zone color) so the shadow tint always matches
+   that card's accent bar/graph coloring instead of one fixed color. */
+.workout-card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 20px -6px var(--card-accent, transparent);
 }
 
 .workout-card-body {

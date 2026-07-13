@@ -1816,42 +1816,53 @@ export default function WeeklyPlan() {
                 ? computeIfTss(structureToBlocks(w.structure))
                 : null;
               const accentColor = ifTss ? zoneForPowerFraction(ifTss.intensityFactor).color : TYPE_BAR_COLOR[colorForType(w.type)];
+              const rest = isRestDay(w.type);
               return (
                 <div
-                  className="stat-card workout-card-dark"
+                  className="stat-card workout-card-elevated"
                   key={i}
                   style={{
                     display: "flex", flexDirection: "column",
-                    background: "#0f172a",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 16,
+                    background: "#fff",
+                    border: rest ? "1px dashed #cbd5e1" : "none",
+                    borderRadius: 20,
                     overflow: "hidden",
+                    boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
                     ["--card-accent" as string]: accentColor,
                   }}
                 >
-                  <div style={{ height: 4, background: accentColor }} />
-                  {!isRestDay(w.type) && (
+                  {!rest && <div style={{ height: 5, background: accentColor }} />}
+                  {!rest && (
                     <WorkoutThumbnail workout={w} flush height={160} hideFooter />
                   )}
-                  <div className="workout-card-body" style={{ display: "flex", flexDirection: "column", flex: 1, padding: "16px 20px 20px" }}>
-                    <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                  <div
+                    className="workout-card-body"
+                    style={{
+                      display: "flex", flexDirection: "column", flex: 1,
+                      padding: rest ? "40px 20px" : "20px 24px 24px",
+                      justifyContent: rest ? "center" : undefined,
+                      alignItems: rest ? "center" : undefined,
+                    }}
+                  >
+                    {rest && <div style={{ fontSize: 40, marginBottom: 10 }}>🛌</div>}
+                    <div style={{ fontSize: 11.5, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
                       {w.title}
                     </div>
 
-                    {!isRestDay(w.type) && (
+                    {!rest && (
                       <div style={{
                         display: "flex", justifyContent: "center", gap: 18,
                         marginTop: 14, paddingTop: 14, paddingBottom: 14,
-                        borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.85)",
+                        borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
+                        fontSize: 15, fontWeight: 700, color: "#64748b",
                       }}>
                         <span>{w.durationMin} min</span>
                         {ifTss && <span>TSS {ifTss.tss}</span>}
                         {ifTss && <span>IF {ifTss.intensityFactor.toFixed(2)}</span>}
-                        {w.targetPowerPctFtp && <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>{w.targetPowerPctFtp} FTP</span>}
+                        {w.targetPowerPctFtp && <span style={{ fontWeight: 500 }}>{w.targetPowerPctFtp} FTP</span>}
                       </div>
                     )}
 
@@ -1879,7 +1890,7 @@ export default function WeeklyPlan() {
                             </div>
                           )}
                           {intervalsConnected && !lastIntervalsSync && (
-                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 10, color: "rgba(255,255,255,0.5)", opacity: 0.6 }}>
+                            <div style={{ marginBottom: 8, textAlign: "center", fontSize: 10, color: "#64748b", opacity: 0.8 }}>
                               Connected — syncs automatically when a plan is generated
                             </div>
                           )}
@@ -1889,12 +1900,7 @@ export default function WeeklyPlan() {
                             <button
                               type="button"
                               className="btn btn-secondary"
-                              style={{
-                                width: "auto", padding: "8px 16px", fontSize: 12, fontWeight: 600,
-                                background: "rgba(255,255,255,0.06)",
-                                border: "1px solid rgba(255,255,255,0.15)",
-                                color: "#fff",
-                              }}
+                              style={{ width: "auto", padding: "8px 16px", fontSize: 12, fontWeight: 600 }}
                               onClick={() => handleDownloadZwo(w)}
                             >
                               ↓ Download ZWO
