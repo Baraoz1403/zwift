@@ -20,11 +20,17 @@ function initialsFor(name: string | null): string {
 
 /**
  * Profile strip - the rider's own numbers at a glance, directly under the
- * hero banner. Redesigned to be bigger, more spacious and inviting than the
- * old 90px bar: bigger avatar, bigger name, roomier metric pills, and the
- * *entire* card is now a click target that opens the training-profile edit
- * form inline (via TrainingProfileCard, rendered directly below this card
- * in weekly-plan.tsx) instead of scrolling to the bottom of the page.
+ * hero banner. Big, spacious, and the *entire* card is a click target that
+ * opens the training-profile edit form inline (via TrainingProfileCard,
+ * rendered directly below this card in weekly-plan.tsx) instead of
+ * scrolling to the bottom of the page.
+ *
+ * White/light background, not dark - two stacked dark blocks (this + the
+ * hero banner right above it) read as too much solid black on the page.
+ * Only the hero banner keeps the dark "premium banner" treatment per
+ * DESIGN-SYSTEM.md; everything below it, including this strip, stays on
+ * the site's normal light card language (white bg, blue accent, subtle
+ * shadow) - same family as every other stat-card on the page.
  *
  * Edit form itself still lives in training-profile.tsx / TrainingProfileCard
  * - this component only decides WHEN it opens (dispatches the same
@@ -65,19 +71,19 @@ export default function PhaseCard({
   const pill = (icon: React.ReactNode, value: string, label: string) => (
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
-      background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.09)",
+      background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.14)",
       borderRadius: 14, padding: "12px 20px", minWidth: 108,
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-        background: `${ACCENT}22`, display: "flex", alignItems: "center", justifyContent: "center",
+        background: `${ACCENT}18`, display: "flex", alignItems: "center", justifyContent: "center",
         color: ACCENT,
       }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.05 }}>{value}</div>
-        <div style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.2, fontWeight: 600, letterSpacing: "0.02em" }}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)", lineHeight: 1.05 }}>{value}</div>
+        <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.2, fontWeight: 600, letterSpacing: "0.02em" }}>{label}</div>
       </div>
     </div>
   );
@@ -93,12 +99,13 @@ export default function PhaseCard({
       title={hasProfile ? "Click to edit your training profile" : "Click to set up your training profile"}
       style={{
         width: "100%", maxWidth: 1100, margin: "0 auto", boxSizing: "border-box",
-        background: "linear-gradient(135deg,#0a0e1a,#0d1f3c)",
+        background: "var(--panel)",
         borderRadius: 20,
-        border: `1px solid rgba(59,130,246,${hover ? 0.4 : 0.2})`,
+        border: `1px solid ${hover ? "rgba(59,130,246,0.3)" : "var(--border)"}`,
+        borderTop: `4px solid ${ACCENT}`,
         boxShadow: hover
-          ? `0 0 60px ${ACCENT}20, 0 20px 44px rgba(0,0,0,0.45)`
-          : `0 0 40px ${ACCENT}10, 0 12px 32px rgba(0,0,0,0.3)`,
+          ? "0 12px 32px rgba(47,143,224,0.14), 0 4px 14px rgba(0,0,0,0.06)"
+          : "0 4px 24px rgba(0,0,0,0.06)",
         position: "relative",
         overflow: "hidden",
         marginBottom: 40,
@@ -116,31 +123,25 @@ export default function PhaseCard({
       }}
     >
       <div style={{
-        position: "absolute", inset: 0, opacity: 0.035,
-        backgroundImage: `linear-gradient(${ACCENT} 1px,transparent 1px),linear-gradient(90deg,${ACCENT} 1px,transparent 1px)`,
-        backgroundSize: "36px 36px",
-      }} />
-      <div style={{
         position: "absolute", top: -80, right: "10%", width: 280, height: 280, borderRadius: "50%",
-        background: `radial-gradient(circle,${ACCENT}20,transparent 70%)`, pointerEvents: "none",
+        background: `radial-gradient(circle,${ACCENT}0c,transparent 70%)`, pointerEvents: "none",
       }} />
 
       {/* Left: avatar + name + goal */}
       <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 18, flexShrink: 0 }}>
         <div style={{
           width: 64, height: 64, borderRadius: "50%",
-          background: `${ACCENT}22`, border: `2px solid ${ACCENT}66`,
+          background: `${ACCENT}15`, border: `2px solid ${ACCENT}45`,
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 21, fontWeight: 800, color: ACCENT, flexShrink: 0,
-          boxShadow: `0 0 0 6px rgba(59,130,246,0.06)`,
         }}>
           {initialsFor(firstName)}
         </div>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", lineHeight: 1.2, letterSpacing: "-0.3px" }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "var(--text)", lineHeight: 1.2, letterSpacing: "-0.3px" }}>
             {firstName ?? "Rider"}
           </div>
-          <div style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.3, marginTop: 2 }}>
+          <div style={{ fontSize: 15, color: "var(--muted)", lineHeight: 1.3, marginTop: 2 }}>
             {hasProfile ? goalLabel : "No training profile yet — click to set one up"}
           </div>
         </div>
@@ -169,11 +170,11 @@ export default function PhaseCard({
         {hasProfile && (
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
-            background: `${ACCENT}15`, border: `1px solid ${ACCENT}35`,
+            background: `${ACCENT}0f`, border: `1px solid ${ACCENT}30`,
             borderRadius: 24, padding: "8px 16px",
           }}>
             <svg width={42} height={42} viewBox="0 0 42 42">
-              <circle cx={21} cy={21} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={5} />
+              <circle cx={21} cy={21} r={r} fill="none" stroke="rgba(15,23,42,0.08)" strokeWidth={5} />
               <circle
                 cx={21} cy={21} r={r} fill="none"
                 stroke={ACCENT} strokeWidth={5} strokeLinecap="round"
@@ -192,9 +193,9 @@ export default function PhaseCard({
           style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "10px 18px", borderRadius: 12,
-            background: hover ? ACCENT : "rgba(255,255,255,0.07)",
-            border: `1px solid ${hover ? ACCENT : "rgba(255,255,255,0.14)"}`,
-            color: hover ? "#fff" : "#cbd5e1",
+            background: hover ? ACCENT : "rgba(59,130,246,0.08)",
+            border: `1px solid ${hover ? ACCENT : "rgba(59,130,246,0.25)"}`,
+            color: hover ? "#fff" : ACCENT,
             fontSize: 14, fontWeight: 700, whiteSpace: "nowrap",
             transition: "all 0.2s ease",
           }}

@@ -108,36 +108,38 @@ export default function WorkoutThumbnail({
             borderTop: "1px dashed rgba(0,0,0,0.15)", pointerEvents: "none",
           }} />
         )}
-        {powers.map((p, i) => (
-          <div
-            key={i}
-            className="wo-thumb-bar"
-            style={{
-              flex: 1,
-              minWidth: 2,
-              height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
-              background: `linear-gradient(180deg, ${zoneForPowerFraction(p).color} 0%, ${zoneForPowerFraction(p).color}cc 100%)`,
-              borderRadius: "3px 3px 1px 1px",
-              boxShadow: lightGraph
-                ? `0 0 6px ${zoneForPowerFraction(p).color}40`
-                : `0 0 8px ${zoneForPowerFraction(p).color}55`,
-              animationDelay: `${(i / powers.length) * 260}ms`,
-            }}
-          />
-        ))}
+        {powers.map((p, i) => {
+          const color = zoneForPowerFraction(p).color;
+          return (
+            <div
+              key={i}
+              className="wo-thumb-bar"
+              style={{
+                flex: 1,
+                minWidth: 2,
+                height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
+                background: color,
+                boxShadow: `inset 0 6px 8px -6px rgba(255,255,255,0.55), 0 1px 0 rgba(0,0,0,0.12), 0 2px 3px -1px rgba(0,0,0,0.18)`,
+                borderRadius: "2px 2px 0 0",
+                animationDelay: `${(i / powers.length) * 220}ms`,
+              }}
+            />
+          );
+        })}
       </div>
       <style>{`
         @keyframes woThumbBarIn {
-          from { opacity: 0; transform: scaleY(0.4); }
+          from { opacity: 0; transform: scaleY(0.3); }
           to   { opacity: 1; transform: scaleY(1); }
         }
         .wo-thumb-bar {
           transform-origin: bottom;
-          animation: woThumbBarIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-          transition: filter 0.15s ease;
+          animation: woThumbBarIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+          transition: filter 0.12s ease, transform 0.12s ease;
         }
         .wo-thumb-bar:hover {
-          filter: brightness(1.15);
+          filter: brightness(1.12) saturate(1.1);
+          transform: scaleY(1.02);
         }
       `}</style>
       {!hideFooter && (

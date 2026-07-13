@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardNavTabs from "./dashboard-nav-tabs";
 import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
@@ -21,9 +21,6 @@ const SLIDES = [
   },
   {
     // Was a muddy orange/brown (#FF6B35) — swapped for a vivid, inviting red.
-    // "Who rides in the dark? Make it pop" — kept the dark banner shell
-    // (matches the rest of the site's premium banner language) but the
-    // accent itself is now a hot, energetic red instead of brown-orange.
     accent: "#FF3B5C",
     bg: "linear-gradient(135deg, #1a0508 0%, #2d0d16 60%, #1a0810 100%)",
     tag: "ZERO MANUAL STEPS",
@@ -32,49 +29,100 @@ const SLIDES = [
   },
 ];
 
-function CyclistSVG({ accent }: { accent: string }) {
+function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v));
+}
+
+/**
+ * LiveMetricsHUD — replaces the old hand-drawn bicycle illustration, which
+ * read as flat and generic ("סתמי") no matter how it was styled. This is a
+ * small animated telemetry panel instead — power/cadence/speed/heart-rate
+ * numbers that tick and drift like a live ride feed, echoing an actual
+ * Zwift/head-unit dashboard rather than a static drawing of a bike.
+ */
+function LiveMetricsHUD({ accent }: { accent: string }) {
+  const [power, setPower] = useState(215);
+  const [cadence, setCadence] = useState(88);
+  const [speed, setSpeed] = useState(31.4);
+  const [hr, setHr] = useState(148);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPower((p) => Math.round(clamp(p + (Math.random() * 18 - 8), 175, 275)));
+      setCadence((c) => Math.round(clamp(c + (Math.random() * 4 - 2), 80, 98)));
+      setSpeed((s) => Math.round(clamp(s + (Math.random() * 1.4 - 0.6), 26, 36) * 10) / 10);
+      setHr((h) => Math.round(clamp(h + (Math.random() * 5 - 2), 136, 164)));
+    }, 1400);
+    return () => clearInterval(id);
+  }, []);
+
+  const stat = (icon: React.ReactNode, value: string, unit: string, label: string) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <div style={{
+        width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+        background: `${accent}1c`, display: "flex", alignItems: "center", justifyContent: "center",
+        color: accent,
+      }}>
+        {icon}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span style={{ fontSize: 21, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</span>
+          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{unit}</span>
+        </div>
+        <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
+      </div>
+    </div>
+  );
+
   return (
-    <svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
-      {/* Trainer base */}
-      <ellipse cx="150" cy="200" rx="100" ry="8" fill={accent} fillOpacity="0.15" />
-      <rect x="80" y="185" width="140" height="8" rx="4" fill={accent} fillOpacity="0.3" />
-      <rect x="100" y="165" width="8" height="30" rx="3" fill="#334155" />
-      <rect x="192" y="165" width="8" height="30" rx="3" fill="#334155" />
-      {/* Rear wheel */}
-      <circle cx="110" cy="165" r="35" stroke="#334155" strokeWidth="4" fill="none" />
-      <circle cx="110" cy="165" r="25" stroke={accent} strokeWidth="2" fill="none" strokeOpacity="0.4" />
-      <circle cx="110" cy="165" r="5" fill={accent} fillOpacity="0.8" />
-      {/* Front wheel */}
-      <circle cx="210" cy="155" r="30" stroke="#334155" strokeWidth="4" fill="none" />
-      <circle cx="210" cy="155" r="20" stroke={accent} strokeWidth="2" fill="none" strokeOpacity="0.4" />
-      <circle cx="210" cy="155" r="5" fill={accent} fillOpacity="0.8" />
-      {/* Frame */}
-      <line x1="110" y1="165" x2="160" y2="120" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
-      <line x1="160" y1="120" x2="210" y2="155" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
-      <line x1="160" y1="120" x2="155" y2="90" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
-      <line x1="110" y1="165" x2="155" y2="90" stroke="#64748b" strokeWidth="4" strokeLinecap="round" />
-      {/* Handlebar */}
-      <line x1="155" y1="90" x2="200" y2="80" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
-      <line x1="195" y1="75" x2="205" y2="85" stroke={accent} strokeWidth="4" strokeLinecap="round" strokeOpacity="0.8" />
-      {/* Seat */}
-      <line x1="155" y1="90" x2="140" y2="75" stroke="#475569" strokeWidth="5" strokeLinecap="round" />
-      <rect x="128" y="68" width="28" height="7" rx="3" fill="#64748b" />
-      {/* Rider body */}
-      <ellipse cx="168" cy="70" rx="10" ry="10" fill="#94a3b8" />
-      <line x1="168" y1="80" x2="158" y2="110" stroke="#94a3b8" strokeWidth="8" strokeLinecap="round" />
-      <line x1="158" y1="110" x2="145" y2="75" stroke="#94a3b8" strokeWidth="6" strokeLinecap="round" />
-      <line x1="158" y1="110" x2="170" y2="130" stroke="#94a3b8" strokeWidth="6" strokeLinecap="round" />
-      <line x1="168" y1="80" x2="185" y2="95" stroke="#94a3b8" strokeWidth="6" strokeLinecap="round" />
-      <line x1="185" y1="95" x2="200" y2="82" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" />
-      <line x1="170" y1="130" x2="165" y2="150" stroke="#94a3b8" strokeWidth="6" strokeLinecap="round" />
-      {/* Power data overlay */}
-      <rect x="215" y="20" width="75" height="55" rx="8" fill={accent} fillOpacity="0.12" stroke={accent} strokeWidth="1" strokeOpacity="0.4" />
-      <text x="252" y="42" textAnchor="middle" fill={accent} fontSize="18" fontWeight="800">215W</text>
-      <text x="252" y="57" textAnchor="middle" fill="#64748b" fontSize="9">CURRENT POWER</text>
-      <text x="252" y="70" textAnchor="middle" fill={accent} fontSize="11" fontWeight="600">90% FTP</text>
-      {/* Pulse line */}
-      <polyline points="10,110 25,110 35,90 45,130 55,80 65,120 75,110 90,110" stroke={accent} strokeWidth="2" fill="none" strokeOpacity="0.5" />
-    </svg>
+    <div style={{
+      width: "100%", borderRadius: 16,
+      background: "rgba(255,255,255,0.035)", border: `1px solid ${accent}30`,
+      padding: "18px 22px", position: "relative", overflow: "hidden",
+      boxShadow: `0 0 30px ${accent}0c`,
+    }}>
+      <div style={{
+        position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none",
+        backgroundImage: `linear-gradient(${accent} 1px,transparent 1px),linear-gradient(90deg,${accent} 1px,transparent 1px)`,
+        backgroundSize: "18px 18px",
+      }} />
+
+      {/* Live badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, position: "relative" }}>
+        <div style={{
+          width: 7, height: 7, borderRadius: "50%", background: accent,
+          boxShadow: `0 0 8px ${accent}`, animation: "heroLivePulse 1.4s ease-in-out infinite",
+        }} />
+        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.14em", color: accent }}>LIVE SESSION</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, position: "relative" }}>
+        {stat(
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+          String(power), "W", "Power",
+        )}
+        {stat(
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>,
+          String(cadence), "rpm", "Cadence",
+        )}
+        {stat(
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-3"/><path d="M9 3h6"/></svg>,
+          speed.toFixed(1), "km/h", "Speed",
+        )}
+        {stat(
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.7-10-9.3C.4 8.2 2.3 5 5.6 5c1.9 0 3.4 1 4.4 2.4C11 6 12.5 5 14.4 5c3.3 0 5.2 3.2 3.6 6.7C19.5 16.3 12 21 12 21z"/></svg>,
+          String(hr), "bpm", "Heart rate",
+        )}
+      </div>
+
+      <style>{`
+        @keyframes heroLivePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(0.8); }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -88,7 +136,10 @@ function CyclistSVG({ accent }: { accent: string }) {
  * The nav row (Coach/Stats tabs, Connections, Sign out) that used to live in
  * a separate plain <div className="dashboard-header"> is now built into the
  * top of this banner instead, so there's a single header element rather
- * than two stacked bars.
+ * than two stacked bars. The right-hand visual is a small animated
+ * power/cadence/speed/HR "live" telemetry panel (LiveMetricsHUD) instead of
+ * the earlier hand-drawn cyclist SVG, which never read as anything but flat
+ * and generic no matter how it was restyled.
  */
 export default function HeroBanner({ firstName }: { firstName?: string | null }) {
   const [idx, setIdx] = useState(0);
@@ -150,10 +201,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         </div>
       </div>
 
-      {/* ── Message + illustration ───────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
+      {/* ── Message + live metrics panel ─────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap" }}>
         {/* Left: text */}
-        <div style={{flex:1,padding:"24px 40px 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+        <div style={{flex:"1 1 320px",padding:"24px 40px 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:8,
               background:`${s.accent}18`,border:`1px solid ${s.accent}40`,
@@ -180,9 +231,9 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
           </div>
         </div>
 
-        {/* Right: cyclist illustration */}
-        <div style={{width:320,padding:"20px 20px 20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1}}>
-          <CyclistSVG accent={s.accent} />
+        {/* Right: live metrics panel */}
+        <div style={{width:300,padding:"20px 24px 20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1,flex:"0 1 300px"}}>
+          <LiveMetricsHUD accent={s.accent} />
         </div>
       </div>
     </div>

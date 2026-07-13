@@ -222,7 +222,14 @@ a:hover {
   position: relative;
 }
 
-.dashboard::before {
+/* Thin top accent line - only meaningful above the old plain light
+   .dashboard-header (still used by the Intervals.icu onboarding gate in
+   layout.tsx). The hero banner (hero-banner.tsx, now the real header on
+   every other page) already has its own rounded corners + border + glow,
+   so this flat full-width line used to draw right across its rounded top
+   edge as a stray blue bar. Scoped with :has() so it only appears when the
+   old-style header is actually the thing sitting under it. */
+.dashboard:has(> .dashboard-header)::before {
   content: "";
   position: absolute;
   top: 0;

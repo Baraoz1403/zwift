@@ -1761,7 +1761,11 @@ export default function WeeklyPlan() {
                     // edge regardless of this element's overflow:hidden -
                     // a separate inner div was getting clipped/reduced to a
                     // sliver on some cards, this can't be.
-                    borderTop: rest ? undefined : `5px solid ${accentColor}`,
+                    // Always the site's blue accent, not a per-workout-type
+                    // color - matches every other accent bar on the site
+                    // (stat cards, record cards, trend cards all use the
+                    // same var(--accent) strip). Asked for repeatedly.
+                    borderTop: rest ? undefined : `2.5px solid var(--accent)`,
                     borderRadius: 20,
                     overflow: "hidden",
                     boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
