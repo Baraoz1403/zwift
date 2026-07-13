@@ -243,8 +243,8 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: -0.1px;
   margin: 0 0 14px;
   color: var(--text);
@@ -359,7 +359,7 @@ a:hover {
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 28px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
 }

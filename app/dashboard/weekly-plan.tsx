@@ -8,7 +8,7 @@ import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from 
 import WorkoutThumbnail from "./workout-thumbnail";
 import HeroBanner from "./hero-banner";
 import TrainingProfileCard from "./training-profile";
-import TrainingProfileStrip from "./training-profile-strip";
+import PhaseCard from "./phase-card";
 import ConnectionsPanel from "./connections-panel";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
 
@@ -1050,18 +1050,11 @@ export default function WeeklyPlan() {
     }
   }
 
-  const todayWorkoutForBanner = (() => {
-    const today = todayIso();
-    const w = displayWorkouts.find((x) => x.date === today);
-    if (!w || isRestDay(w.type)) return null;
-    return { title: w.title, type: w.type, durationMin: w.durationMin };
-  })();
-
   return (
     <div>
 
-      <HeroBanner cycleInfo={cycleInfo} todayWorkout={todayWorkoutForBanner} />
-      <TrainingProfileStrip
+      <HeroBanner />
+      <PhaseCard
         firstName={athleteFirstName}
         ftp={ftp}
         weightKg={athleteWeightKg}
@@ -1781,13 +1774,13 @@ export default function WeeklyPlan() {
                     className="workout-card-body"
                     style={{
                       display: "flex", flexDirection: "column", flex: 1,
-                      padding: rest ? "40px 20px" : "20px 24px 24px",
+                      padding: rest ? "40px 28px" : "28px",
                       justifyContent: rest ? "center" : undefined,
                       alignItems: rest ? "center" : undefined,
                     }}
                   >
                     {rest && <div style={{ fontSize: 40, marginBottom: 10 }}>🛌</div>}
-                    <div style={{ fontSize: 11.5, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                    <div style={{ fontSize: 14, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
                     <div style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
@@ -2026,7 +2019,7 @@ export default function WeeklyPlan() {
           </svg>
           Talk to your coach
         </div>
-        <div style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.55 }}>
+        <div style={{ fontSize: 16, color: "var(--muted)", lineHeight: 1.55 }}>
           {riderNote
             ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>✓ {riderNote.length > 80 ? riderNote.slice(0, 80) + "…" : riderNote}</span>
             : "How are you feeling today? Any notes before tomorrow's session?"}
