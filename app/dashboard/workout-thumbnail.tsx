@@ -91,7 +91,7 @@ export default function WorkoutThumbnail({
         style={{
           display: "flex",
           alignItems: "flex-end",
-          gap: 1,
+          gap: lightGraph ? 2 : 1,
           height,
           padding: "8px 6px 0",
           background: lightGraph ? "#f1f5f9" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
@@ -105,7 +105,7 @@ export default function WorkoutThumbnail({
               minWidth: 2,
               height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
               background: zoneForPowerFraction(p).color,
-              borderRadius: "1px 1px 0 0",
+              borderRadius: lightGraph ? "4px 4px 0 0" : "1px 1px 0 0",
             }}
           />
         ))}

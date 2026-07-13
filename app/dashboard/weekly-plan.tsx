@@ -1768,7 +1768,7 @@ export default function WeeklyPlan() {
                   }}
                 >
                   {!rest && (
-                    <WorkoutThumbnail workout={w} flush height={160} hideFooter lightGraph />
+                    <WorkoutThumbnail workout={w} flush height={140} hideFooter lightGraph />
                   )}
                   <div
                     className="workout-card-body"
@@ -1783,7 +1783,7 @@ export default function WeeklyPlan() {
                     <div style={{ fontSize: 14, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: "#0f172a", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
                       {w.title}
                     </div>
 

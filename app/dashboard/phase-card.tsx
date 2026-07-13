@@ -65,11 +65,11 @@ export default function PhaseCard({
     <div style={{
       display: "flex", alignItems: "center", gap: 8,
       background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 10, padding: "8px 14px",
+      borderRadius: 10, padding: "6px 14px",
     }}>
-      <span style={{ fontSize: 15 }}>{icon}</span>
+      <span style={{ fontSize: 16 }}>{icon}</span>
       <div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: ACCENT, lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: ACCENT, lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.1 }}>{label}</div>
       </div>
     </div>
