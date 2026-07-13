@@ -1,6 +1,6 @@
 "use client";
 
-import { type RiderTrainingProfile, GOAL_LABELS } from "@/lib/rider-profile";
+import { type RiderTrainingProfile, GOAL_LABELS, DAYS_RANGE_LABELS } from "@/lib/rider-profile";
 
 export interface PhaseCardCycleInfo {
   phase: "Base" | "Build" | "Recovery" | "Taper" | "RaceWeek";
@@ -9,17 +9,27 @@ export interface PhaseCardCycleInfo {
 
 const ACCENT = "#3b82f6";
 
+function initialsFor(name: string | null): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /**
- * Single card combining phase/week status + athlete profile summary,
- * styled to match hero-banner.tsx exactly (same dark blue gradient, grid
- * overlay, glow, tag pill) rather than sitting next to it as a visually
- * unrelated light card. Replaces the separate rotating-message banner
- * variant and the plain white TrainingProfileStrip that preceded this -
- * both read as inconsistent with the banner's own design language.
+ * Single compact profile strip - combines what used to be two visually
+ * inconsistent pieces (a white TrainingProfileStrip, then a taller
+ * dark PhaseCard) into one 90px dark strip matching hero-banner.tsx's own
+ * gradient/border/glow language: avatar+name+goal on the left, FTP/W-kg/
+ * days-per-week as pills in the center, phase+week progress + an edit
+ * shortcut on the right. Everything visible at a glance, no scrolling to a
+ * separate section needed to see the rider's own numbers.
  *
- * Read-only summary, same as the strip it replaces: it doesn't reuse
- * TrainingProfileCard's edit form, it just displays a subset of the same
- * underlying data (fetched once in weekly-plan.tsx, passed down as props).
+ * Read-only, same as its predecessors: the edit icon reuses the exact same
+ * scroll-to-#training-profile + "zwift:open-training-profile" event
+ * training-profile-nav-chip.tsx already dispatches, so TrainingProfileCard
+ * remains the single real edit UI in the app.
  */
 export default function PhaseCard({
   firstName,
@@ -39,11 +49,31 @@ export default function PhaseCard({
   const wPerKg = ftp && weightKg && weightKg > 0 ? ftp / weightKg : null;
   const goalLabel = riderProfile?.goals?.length
     ? riderProfile.goals.map((g) => GOAL_LABELS[g]).join(" · ")
-    : "Building fitness, one week at a time";
+    : "Building fitness";
+  const daysLabel = riderProfile?.daysRange ? DAYS_RANGE_LABELS[riderProfile.daysRange] : null;
 
-  const r = 42;
+  const r = 15;
   const circumference = 2 * Math.PI * r;
   const arcPct = Math.min(1, Math.max(0, weekInMesocycle / 4));
+
+  function openEditor() {
+    document.getElementById("training-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.dispatchEvent(new CustomEvent("zwift:open-training-profile"));
+  }
+
+  const pill = (icon: string, value: string, label: string) => (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 8,
+      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 10, padding: "8px 14px",
+    }}>
+      <span style={{ fontSize: 15 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: ACCENT, lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.1 }}>{label}</div>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -51,89 +81,95 @@ export default function PhaseCard({
         width: "100%", maxWidth: 1100, margin: "0 auto", boxSizing: "border-box",
         background: "linear-gradient(135deg,#0a0e1a,#0d1f3c)",
         borderRadius: 16,
-        border: `1px solid ${ACCENT}33`,
+        border: "1px solid rgba(59,130,246,0.2)",
         boxShadow: `0 0 50px ${ACCENT}12`,
         position: "relative",
         overflow: "hidden",
         marginBottom: 40,
-        minHeight: 160,
+        height: 90,
         fontFamily: "system-ui, sans-serif",
-        padding: "28px 36px",
+        padding: "0 28px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 28,
-        flexWrap: "wrap",
+        gap: 20,
       }}
     >
-      {/* Grid overlay + glow - same treatment as hero-banner.tsx */}
       <div style={{
         position: "absolute", inset: 0, opacity: 0.035,
         backgroundImage: `linear-gradient(${ACCENT} 1px,transparent 1px),linear-gradient(90deg,${ACCENT} 1px,transparent 1px)`,
         backgroundSize: "36px 36px",
       }} />
       <div style={{
-        position: "absolute", top: -60, right: "8%", width: 260, height: 260, borderRadius: "50%",
+        position: "absolute", top: -60, right: "15%", width: 220, height: 220, borderRadius: "50%",
         background: `radial-gradient(circle,${ACCENT}18,transparent 70%)`, pointerEvents: "none",
       }} />
 
-      {/* Left: phase tag + name + goal + numbers */}
-      <div style={{ position: "relative", zIndex: 1, flex: "1 1 320px", minWidth: 260 }}>
+      {/* Left: avatar + name + goal */}
+      <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          background: `${ACCENT}15`, border: `1px solid ${ACCENT}35`,
-          borderRadius: 20, padding: "4px 14px", marginBottom: 14,
+          width: 44, height: 44, borderRadius: "50%",
+          background: `${ACCENT}22`, border: `1px solid ${ACCENT}55`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 15, fontWeight: 700, color: ACCENT, flexShrink: 0,
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: ACCENT, boxShadow: `0 0 8px ${ACCENT}` }} />
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "2px", color: ACCENT }}>
-            {phase.toUpperCase()} PHASE · WEEK {weekInMesocycle} OF 4
-          </span>
+          {initialsFor(firstName)}
         </div>
-
-        <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1.15 }}>
-          {firstName ?? "Rider"}
-        </div>
-        <div style={{ fontSize: 16, color: "#94a3b8", marginTop: 4 }}>
-          {goalLabel}
-        </div>
-
-        <div style={{ display: "flex", gap: 28, marginTop: 14 }}>
-          {ftp != null && (
-            <div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: ACCENT, lineHeight: 1 }}>
-                {ftp}<span style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8" }}> W</span>
-              </div>
-              <div style={{ fontSize: 14, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>FTP</div>
-            </div>
-          )}
-          {wPerKg != null && (
-            <div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: ACCENT, lineHeight: 1 }}>{wPerKg.toFixed(1)}</div>
-              <div style={{ fontSize: 14, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>W/kg</div>
-            </div>
-          )}
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>
+            {firstName ?? "Rider"}
+          </div>
+          <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.2 }}>
+            {goalLabel}
+          </div>
         </div>
       </div>
 
-      {/* Right: circular week-progress arc */}
-      <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
-        <svg width={104} height={104} viewBox="0 0 104 104">
-          <circle cx={52} cy={52} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={9} />
-          <circle
-            cx={52} cy={52} r={r} fill="none"
-            stroke={ACCENT} strokeWidth={9} strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - arcPct)}
-            transform="rotate(-90 52 52)"
-            style={{ transition: "stroke-dashoffset 0.4s ease", filter: `drop-shadow(0 0 6px ${ACCENT}88)` }}
-          />
-          <text x={52} y={50} textAnchor="middle" fontSize={26} fontWeight={800} fill="#fff">
-            {weekInMesocycle}
-          </text>
-          <text x={52} y={68} textAnchor="middle" fontSize={10} fontWeight={700} fill="#94a3b8" letterSpacing="0.06em">
-            OF 4
-          </text>
-        </svg>
+      {/* Center: metric pills */}
+      <div style={{ position: "relative", zIndex: 1, display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+        {ftp != null && pill("⚡", `${ftp}W`, "FTP")}
+        {wPerKg != null && pill("🔥", wPerKg.toFixed(1), "W/kg")}
+        {daysLabel && pill("📅", daysLabel, "days/week")}
+      </div>
+
+      {/* Right: phase badge + mini progress arc + edit */}
+      <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8,
+          background: `${ACCENT}15`, border: `1px solid ${ACCENT}35`,
+          borderRadius: 20, padding: "6px 12px",
+        }}>
+          <svg width={34} height={34} viewBox="0 0 34 34">
+            <circle cx={17} cy={17} r={r} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={4} />
+            <circle
+              cx={17} cy={17} r={r} fill="none"
+              stroke={ACCENT} strokeWidth={4} strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - arcPct)}
+              transform="rotate(-90 17 17)"
+            />
+          </svg>
+          <span style={{ fontSize: 14, fontWeight: 700, color: ACCENT, letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+            {phase.toUpperCase()} · WEEK {weekInMesocycle}/4
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={openEditor}
+          title="Edit training profile"
+          aria-label="Edit training profile"
+          style={{
+            width: 34, height: 34, borderRadius: "50%",
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", flexShrink: 0,
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </button>
       </div>
     </div>
   );
