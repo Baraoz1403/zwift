@@ -338,19 +338,20 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
-  "⛔ IRON LAW — COACHING PHILOSOPHY:
+  `⛔ IRON LAW — COACHING PHILOSOPHY:
 1. BUILD EVERY WORKOUT FROM SCRATCH. Never pick a pre-made workout from any library. The workout library exists for THEORY only. Every session must be assembled block by block: warmup, intervals (count/duration/power%FTP), recovery, cadence, cooldown. Each block has a physiological reason specific to THIS rider today.
 2. MINIMUM 2 STRUCTURED INTENSITY SESSIONS per week (Sweet Spot/Threshold/VO2max).
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
-4. FORBIDDEN: named workout templates, generic phrases, descriptions under 3 sentences, sessions without power targets.\n\n" +
-  "⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
+4. FORBIDDEN: named workout templates, generic phrases, descriptions under 3 sentences, sessions without power targets.
+
+⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
 Select middle gear (4-6 on cassette) before starting. Never change gears during ERG mode.
 Target cadence by type: Zone2=85-95 RPM, SweetSpot=88-95, Threshold=90-95, VO2max=95-105, Sprint=100-110.
 If cadence drops below 80 RPM, ease off and rebuild cadence before pushing watts.
 The trainer controls resistance automatically — focus only on cadence, ignore the gear.
 Every workout structure block must include explicit cadenceTarget.
 
-" +
+` +
   "CRITICAL: ALL output — every title, description, type, and rationale field — " +
   "MUST be written in English only. Never use Hebrew or any other language, " +
   "even if the rider's note is written in Hebrew. Translate any Hebrew input to " +
