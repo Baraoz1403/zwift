@@ -1,16 +1,16 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardNavTabs from "./dashboard-nav-tabs";
 import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
 
-// Back to a different background per slide, per explicit feedback - the
-// single unified dark-blue background (previous version) read as flat.
-// Slide 1 keeps the rich dark blue; slides 2/3 are light (green/red) rather
-// than dark, since a different *dark* gradient per slide was the earlier
-// "too much black" complaint. The nav row has its own dark glass backing
-// (see .banner-nav in globals.css) so it stays legible against light or
-// dark slide backgrounds without needing its own light/dark variants.
+// A different rich, saturated background per slide (blue / emerald /
+// Zwift-orange) - a single unified background read as flat, and pale
+// pastel versions of the green/red slides read as washed out. All three
+// use the same dark-to-vivid-to-dark diagonal gradient treatment so they
+// carry equal visual weight. The nav row has its own dark glass backing
+// (see .banner-nav in globals.css) so it stays legible regardless of
+// which slide is showing, without needing its own per-slide variants.
 const SLIDES = [
   {
     dark: true,
@@ -32,10 +32,12 @@ const SLIDES = [
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    // Was a pale blush pastel - same fix as above, in a rich crimson hue.
+    // Zwift's own orange (#FF6600, already the site's established "brand
+    // orange" - see globals.css .stat-card-icon.c-orange) as the gradient's
+    // vivid midpoint, instead of red/crimson.
     dark: true,
-    bg: "linear-gradient(135deg, #7f1d2e 0%, #be123c 55%, #4c0f1c 100%)",
-    accent: "#FF6B85",
+    bg: "linear-gradient(135deg, #7a2e00 0%, #ff6600 55%, #431900 100%)",
+    accent: "#FFB07A",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
@@ -142,30 +144,18 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
 /**
  * HeroBanner — the site's persistent header (rendered once from
  * app/dashboard/layout.tsx, shared by Coach + Stats). Full-bleed width
- * (edge-to-edge). Auto-rotates through 3 messages again (blue dark / light
- * green / light red) on a 6s timer, same as the very original design -
- * manual dot navigation still works too.
+ * (edge-to-edge). One of 3 messages (blue / emerald / orange) is picked at
+ * random once per page load - no auto-advance timer, since a message that
+ * keeps changing while it's being read was more distracting than useful.
+ * The dots below still let the rider switch manually at any time.
  */
 export default function HeroBanner({ firstName }: { firstName?: string | null }) {
-  const [idx, setIdx] = useState(0);
-  const [pct, setPct] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // No auto-advance timer - picked once per page load/refresh instead of
+  // cycling while the rider is looking at it. useState's initializer runs
+  // exactly once on mount, so this stays fixed for the life of the page and
+  // only changes on the next real navigation/refresh, per explicit request.
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * SLIDES.length));
   const s = SLIDES[idx];
-
-  useEffect(() => {
-    if (timer.current) clearInterval(timer.current);
-    setPct(0);
-    const t0 = Date.now();
-    timer.current = setInterval(() => {
-      const p = Math.min(((Date.now() - t0) / 6000) * 100, 100);
-      setPct(p);
-      if (p >= 100) {
-        setIdx((i) => (i + 1) % SLIDES.length);
-        if (timer.current) clearInterval(timer.current);
-      }
-    }, 50);
-    return () => { if (timer.current) clearInterval(timer.current); };
-  }, [idx]);
 
   const headlineColor = s.dark ? "white" : "var(--text)";
   const subColor = s.dark ? "rgba(255,255,255,0.65)" : "var(--muted)";
@@ -260,10 +250,8 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
           <div style={{display:"flex",gap:10,marginTop:24}}>
             {SLIDES.map((_,i)=>(
               <button key={i} type="button" aria-label={`Show message ${i + 1}`} onClick={()=>setIdx(i)} style={{border:"none",cursor:"pointer",padding:0,background:"transparent"}}>
-                <div style={{position:"relative",width:i===idx?40:8,height:7,borderRadius:4,
-                  background:i===idx?`${s.accent}35`:(s.dark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.15)"),transition:"width .3s",overflow:"hidden"}}>
-                  {i===idx&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:s.accent,borderRadius:4}}/>}
-                </div>
+                <div style={{width:i===idx?40:8,height:7,borderRadius:4,
+                  background:i===idx?s.accent:(s.dark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.15)"),transition:"width .3s, background .3s"}} />
               </button>
             ))}
           </div>

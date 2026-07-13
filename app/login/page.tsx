@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +24,16 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      router.push("/dashboard");
+      // Hard navigation, not router.push. A client-side/soft navigation
+      // leaves Next.js's Router Cache in place, which can keep serving the
+      // PREVIOUS session's cached layout/page output (e.g. the header
+      // greeting) for a while after switching accounts on the same browser
+      // - a real cross-user data mix-up, not just a cosmetic staleness. A
+      // full page load guarantees every server component re-runs fresh for
+      // the new session, no cache left over from whoever was signed in
+      // before. Same pattern already used at connect-tp and after
+      // Intervals.icu onboarding.
+      window.location.href = "/dashboard";
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
