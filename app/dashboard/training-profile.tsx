@@ -284,46 +284,13 @@ export default function TrainingProfileCard() {
     setEditing(false);
   }
 
+  // Collapsed summary view removed — PhaseCard (phase-card.tsx) now shows
+  // the at-a-glance summary directly under the hero banner and IS the click
+  // target that opens this edit form (dispatches "zwift:open-training-
+  // profile", handled by startEdit() below). This component now renders
+  // nothing until editing is actually open.
   return (
     <>
-
-      {/* ── Profile card: thin blue top bar + white bg ─────────────────── */}
-      {!editing && (
-        <div className="stat-card" style={{
-          padding: "20px 22px",
-          display: "flex",
-          flexDirection: "column",
-        }}>
-          <div className="section-title" style={{ margin: "0 0 8px 0" }}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 1L7.3 4.4H11L8.3 6.5L9.3 10L6 8.1L2.7 10L3.7 6.5L1 4.4H4.7L6 1Z"/>
-            </svg>
-            Personalised AI coaching
-          </div>
-          <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, flex: 1 }}>
-            {profile
-              ? "Your goals, availability, and fitness level — stored once, wired into every plan your AI coach builds."
-              : "Answer 4 questions once. Your AI coach learns your goals, schedule, and limits — and never forgets them."}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-            <button type="button" onClick={startEdit} className="header-card-btn" style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "6px 14px", borderRadius: 6,
-              border: "1.5px solid #16a34a",
-              background: "#16a34a",
-              color: "#fff",
-              fontSize: 12, fontWeight: 600, cursor: "pointer",
-              fontFamily: "inherit",
-            }}>
-              {profile ? "Update my profile" : "Set up my profile"}
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* ── Edit form — only when editing ───────────────────────────────── */}
       {editing && (
         <div className="stat-card" style={{ padding: "24px 28px", gridColumn: "1 / -1" }}>

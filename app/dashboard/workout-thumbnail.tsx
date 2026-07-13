@@ -96,7 +96,7 @@ export default function WorkoutThumbnail({
           position: "relative",
           display: "flex",
           alignItems: "flex-end",
-          gap: lightGraph ? 2 : 1,
+          gap: 2,
           height,
           padding: "8px 6px 0",
           background: lightGraph ? "#f1f5f9" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
@@ -111,29 +111,35 @@ export default function WorkoutThumbnail({
         {powers.map((p, i) => (
           <div
             key={i}
-            className={lightGraph ? "wo-thumb-bar" : undefined}
+            className="wo-thumb-bar"
             style={{
               flex: 1,
               minWidth: 2,
               height: `${Math.max(8, Math.min(100, (p / maxPower) * 100))}%`,
-              background: zoneForPowerFraction(p).color,
-              borderRadius: lightGraph ? "3px 3px 0 0" : "1px 1px 0 0",
-              ...(lightGraph ? { animationDelay: `${(i / powers.length) * 300}ms` } : {}),
+              background: `linear-gradient(180deg, ${zoneForPowerFraction(p).color} 0%, ${zoneForPowerFraction(p).color}cc 100%)`,
+              borderRadius: "3px 3px 1px 1px",
+              boxShadow: lightGraph
+                ? `0 0 6px ${zoneForPowerFraction(p).color}40`
+                : `0 0 8px ${zoneForPowerFraction(p).color}55`,
+              animationDelay: `${(i / powers.length) * 260}ms`,
             }}
           />
         ))}
       </div>
-      {lightGraph && (
-        <style>{`
-          @keyframes woThumbBarIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          .wo-thumb-bar {
-            animation: woThumbBarIn 0.3s ease both;
-          }
-        `}</style>
-      )}
+      <style>{`
+        @keyframes woThumbBarIn {
+          from { opacity: 0; transform: scaleY(0.4); }
+          to   { opacity: 1; transform: scaleY(1); }
+        }
+        .wo-thumb-bar {
+          transform-origin: bottom;
+          animation: woThumbBarIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+          transition: filter 0.15s ease;
+        }
+        .wo-thumb-bar:hover {
+          filter: brightness(1.15);
+        }
+      `}</style>
       {!hideFooter && (
         <div
           style={{

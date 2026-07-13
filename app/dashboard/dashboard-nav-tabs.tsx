@@ -8,6 +8,10 @@ import { usePathname } from "next/navigation";
  * "what do I ride today" flow (Coach, default) free of statistics, moving
  * all metrics/history/records to their own page (Stats) instead of mixing
  * both concerns on one long scroll.
+ *
+ * Lives exclusively inside the dark hero-banner header now (see
+ * hero-banner.tsx), so the tab colors are tuned for a dark background
+ * rather than the light theme tokens (var(--text) etc.) used elsewhere.
  */
 export default function DashboardNavTabs() {
   const pathname = usePathname();
@@ -19,9 +23,9 @@ export default function DashboardNavTabs() {
     fontSize: 13,
     fontWeight: 700,
     textDecoration: "none",
-    color: active ? "#fff" : "var(--text)",
-    background: active ? "var(--accent)" : "transparent",
-    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
+    color: active ? "#0a0e1a" : "rgba(255,255,255,0.75)",
+    background: active ? "#fff" : "rgba(255,255,255,0.06)",
+    border: active ? "1px solid #fff" : "1px solid rgba(255,255,255,0.16)",
     transition: "all 0.15s ease",
   });
 

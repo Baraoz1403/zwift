@@ -1206,6 +1206,34 @@ tbody tr:hover {
   color: var(--accent);
 }
 
+/* Dark-background variant — used for nav chips/sign-out that now live
+   inside the dark hero-banner header (see hero-banner.tsx) instead of the
+   old light .dashboard-header bar. */
+.banner-nav .header-nav-chip {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.banner-nav .header-nav-chip svg {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.banner-nav .header-nav-chip:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.banner-nav .signout-btn {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.banner-nav .signout-btn:hover {
+  color: #fff;
+}
+
 /* ========================================================
    MOBILE RESPONSIVENESS
    ======================================================== */

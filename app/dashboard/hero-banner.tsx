@@ -1,5 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+import DashboardNavTabs from "./dashboard-nav-tabs";
+import ConnectionsNavChip from "./connections-nav-chip";
+import LogoutButton from "./logout-button";
 
 const SLIDES = [
   {
@@ -17,8 +20,12 @@ const SLIDES = [
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    accent: "#FF6B35",
-    bg: "linear-gradient(135deg, #1a0a05 0%, #2d1200 60%, #1a0c05 100%)",
+    // Was a muddy orange/brown (#FF6B35) — swapped for a vivid, inviting red.
+    // "Who rides in the dark? Make it pop" — kept the dark banner shell
+    // (matches the rest of the site's premium banner language) but the
+    // accent itself is now a hot, energetic red instead of brown-orange.
+    accent: "#FF3B5C",
+    bg: "linear-gradient(135deg, #1a0508 0%, #2d0d16 60%, #1a0810 100%)",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
@@ -71,26 +78,21 @@ function CyclistSVG({ accent }: { accent: string }) {
   );
 }
 
-export default function HeroBanner() {
+/**
+ * HeroBanner — now doubles as the site's persistent header (rendered once
+ * from app/dashboard/layout.tsx, shared by Coach + Stats). Previously this
+ * lived inside weekly-plan.tsx (Coach page only) and auto-rotated through
+ * its 3 messages on a 6s timer; per explicit feedback it no longer
+ * auto-advances ("לא מתחלף") — the dots below are still clickable so the
+ * 3 messages remain browsable, they just don't change on their own anymore.
+ * The nav row (Coach/Stats tabs, Connections, Sign out) that used to live in
+ * a separate plain <div className="dashboard-header"> is now built into the
+ * top of this banner instead, so there's a single header element rather
+ * than two stacked bars.
+ */
+export default function HeroBanner({ firstName }: { firstName?: string | null }) {
   const [idx, setIdx] = useState(0);
-  const [pct, setPct] = useState(0);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const s = SLIDES[idx];
-
-  useEffect(() => {
-    if (timer.current) clearInterval(timer.current);
-    setPct(0);
-    const t0 = Date.now();
-    timer.current = setInterval(() => {
-      const p = Math.min(((Date.now() - t0) / 6000) * 100, 100);
-      setPct(p);
-      if (p >= 100) {
-        setIdx((i) => (i + 1) % SLIDES.length);
-        if (timer.current) clearInterval(timer.current);
-      }
-    }, 50);
-    return () => { if (timer.current) clearInterval(timer.current); };
-  }, [idx]);
 
   return (
     <div style={{
@@ -99,12 +101,13 @@ export default function HeroBanner() {
       overflow: "hidden",
       position: "relative",
       display: "flex",
-      alignItems: "stretch",
+      flexDirection: "column",
       minHeight: 260,
       marginBottom: 32,
       border: `1px solid ${s.accent}22`,
       boxShadow: `0 0 60px ${s.accent}10, 0 16px 48px rgba(0,0,0,0.4)`,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
+      transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
     }}>
       {/* Grid */}
       <div style={{ position:"absolute",inset:0,opacity:0.04,pointerEvents:"none",
@@ -114,39 +117,73 @@ export default function HeroBanner() {
       <div style={{position:"absolute",top:-60,right:"25%",width:300,height:300,borderRadius:"50%",
         background:`radial-gradient(circle,${s.accent}18 0%,transparent 70%)`,pointerEvents:"none"}} />
 
-      {/* Left: text */}
-      <div style={{flex:1,padding:"36px 40px 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
-        <div>
-          <div style={{display:"inline-flex",alignItems:"center",gap:8,
-            background:`${s.accent}18`,border:`1px solid ${s.accent}40`,
-            borderRadius:20,padding:"4px 14px",marginBottom:20}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:s.accent,boxShadow:`0 0 8px ${s.accent}`}} />
-            <span style={{fontSize:11,fontWeight:700,letterSpacing:"2px",color:s.accent}}>{s.tag}</span>
+      {/* ── Nav row: brand + persistent nav actions ─────────────────────── */}
+      <div className="banner-nav" style={{
+        position: "relative", zIndex: 2, display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+        padding: "18px 28px 0",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+            background: s.accent, display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 2px 10px ${s.accent}55`,
+          }}>
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="#0a0e1a">
+              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+            </svg>
           </div>
-          {s.lines.map((line, i) => (
-            <div key={i} style={{
-              fontSize: 36, fontWeight: 800, lineHeight: 1.1,
-              color: i === s.lines.length - 1 ? s.accent : "white",
-              textShadow: i === s.lines.length - 1 ? `0 0 24px ${s.accent}60` : "none",
-            }}>{line}</div>
-          ))}
-          <p style={{fontSize:15,color:"#94a3b8",lineHeight:1.6,margin:"14px 0 0"}}>{s.sub}</p>
+          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", color: "rgba(255,255,255,0.85)" }}>
+            AI TRAINING COACH
+          </span>
+          {firstName && (
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginLeft: 4 }}>
+              · Hi, {firstName}
+            </span>
+          )}
         </div>
-        <div style={{display:"flex",gap:10,marginTop:24}}>
-          {SLIDES.map((_,i)=>(
-            <button key={i} onClick={()=>setIdx(i)} style={{border:"none",cursor:"pointer",padding:0,background:"transparent"}}>
-              <div style={{position:"relative",width:i===idx?40:8,height:7,borderRadius:4,
-                background:i===idx?`${s.accent}35`:"#334155",transition:"width .3s",overflow:"hidden"}}>
-                {i===idx&&<div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:s.accent,borderRadius:4}}/>}
-              </div>
-            </button>
-          ))}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <DashboardNavTabs />
+          <ConnectionsNavChip />
+          <LogoutButton />
         </div>
       </div>
 
-      {/* Right: cyclist illustration */}
-      <div style={{width:320,padding:"20px 20px 20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1}}>
-        <CyclistSVG accent={s.accent} />
+      {/* ── Message + illustration ───────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
+        {/* Left: text */}
+        <div style={{flex:1,padding:"24px 40px 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+          <div>
+            <div style={{display:"inline-flex",alignItems:"center",gap:8,
+              background:`${s.accent}18`,border:`1px solid ${s.accent}40`,
+              borderRadius:20,padding:"4px 14px",marginBottom:20}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:s.accent,boxShadow:`0 0 8px ${s.accent}`}} />
+              <span style={{fontSize:11,fontWeight:700,letterSpacing:"2px",color:s.accent}}>{s.tag}</span>
+            </div>
+            {s.lines.map((line, i) => (
+              <div key={i} style={{
+                fontSize: 36, fontWeight: 800, lineHeight: 1.1,
+                color: i === s.lines.length - 1 ? s.accent : "white",
+                textShadow: i === s.lines.length - 1 ? `0 0 24px ${s.accent}60` : "none",
+              }}>{line}</div>
+            ))}
+            <p style={{fontSize:15,color:"#94a3b8",lineHeight:1.6,margin:"14px 0 0"}}>{s.sub}</p>
+          </div>
+          <div style={{display:"flex",gap:10,marginTop:24}}>
+            {SLIDES.map((_,i)=>(
+              <button key={i} type="button" aria-label={`Show message ${i + 1}`} onClick={()=>setIdx(i)} style={{border:"none",cursor:"pointer",padding:0,background:"transparent"}}>
+                <div style={{width:i===idx?32:8,height:7,borderRadius:4,
+                  background:i===idx?s.accent:"#334155",transition:"width .3s, background .3s"}} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: cyclist illustration */}
+        <div style={{width:320,padding:"20px 20px 20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1}}>
+          <CyclistSVG accent={s.accent} />
+        </div>
       </div>
     </div>
   );
