@@ -35,6 +35,8 @@ import {
   wasIntervalsSynced,
 } from "@/lib/kv-plan-state";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
+import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
+import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
 
 export { AiInsightsError };
 
@@ -261,12 +263,35 @@ export async function runWeeklyPlanGeneration(
   const fingerprint = await getFingerprint(athleteId);
   const riderFingerprint = fingerprintToPromptSummary(fingerprint);
 
+  // ── Coaching state + selection engine ────────────────────────────────────
+  // Load persistent coaching state (null on first-ever generation or KV
+  // unavailable — both are fine, engine handles null gracefully).
+  const coachingState = await getCoachingState(athleteId);
+
+  const weightKg = profile.weight ? profile.weight / 1000 : undefined;
+  const cyclingLevel =
+    profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined;
+
+  // Run the deterministic selection engine BEFORE the AI call. It analyzes
+  // recent stimulus exposure, determines priority family, and produces the
+  // eligible workout list. This replaces "hope the AI picks well" with a
+  // code-guaranteed constraint set.
+  const selectionCtx = runSelectionEngine({
+    coachingState,
+    riderProfile: opts.riderProfile,
+    trainingLoad,
+    phase: cycle.phase,
+    cyclingLevel,
+    ftp: effectiveFtp,
+    weightKg,
+  });
+  const selectionContextPrompt = selectionContextToPrompt(selectionCtx);
+
   const plan = await generateWeeklyPlan({
     firstName: profile.firstName,
     ftp: effectiveFtp,
-    weightKg: profile.weight ? profile.weight / 1000 : undefined,
-    cyclingLevel:
-      profile.achievementLevel != null ? Math.floor(profile.achievementLevel / 100) : undefined,
+    weightKg,
+    cyclingLevel,
     runLevel:
       profile.runAchievementLevel != null ? Math.floor(profile.runAchievementLevel / 100) : undefined,
     ageYears: resolvedAge,
@@ -280,7 +305,27 @@ export async function runWeeklyPlanGeneration(
     currentPlan,
     previousWeekTitles,
     riderFingerprint,
+    selectionContext: selectionContextPrompt,
   });
+
+  // ── Save updated coaching state ───────────────────────────────────────────
+  // Best-effort — never blocks the return of the plan.
+  try {
+    const weeklyObjective = plan.summary.slice(0, 120); // first 120 chars as objective
+    const updatedState = buildUpdatedCoachingState(
+      coachingState,
+      athleteId,
+      plan.workouts,
+      cycle.phase,
+      lastWeekAdherence,
+      weeklyObjective,
+      selectionCtx.priorityFamily,
+      selectionCtx.priorityReason,
+    );
+    await saveCoachingState(updatedState);
+  } catch {
+    // never propagate coaching-state errors — the plan is already generated
+  }
 
   return { athleteId, plan, macroCycle, cycle, weekOf, rides };
 }

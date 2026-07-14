@@ -921,6 +921,14 @@ export async function generateWeeklyPlan(params: {
    * just won't have the accumulated-memory section.
    */
   riderFingerprint?: string | null;
+  /**
+   * Pre-formatted output from lib/workout-selection-engine.ts.
+   * When present, injected into the system prompt as a hard constraint
+   * block that tells the AI which workouts it is eligible to prescribe
+   * (and why), replacing open-ended session selection with engine-guided
+   * choices. Absent = engine wasn't run — AI falls back to the full library.
+   */
+  selectionContext?: string | null;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -1088,11 +1096,20 @@ export async function generateWeeklyPlan(params: {
       "chosen differently.\n\n"
     : "";
 
-  // Build system prompt — append accumulated rider fingerprint when available.
-  // The fingerprint is coach context ("this rider struggles with VO2max, excels
-  // at sweet spot") rather than per-request input data, so it belongs in the
-  // system prompt rather than the user message.
-  const systemPrompt = selectorOverride + WEEKLY_PLAN_SYSTEM_PROMPT +
+  // Build system prompt — append accumulated rider fingerprint and selection
+  // engine output when available. Both are coach context rather than
+  // per-request input data, so they belong in the system prompt.
+  //
+  // Order: selectorOverride (if deterministic path) → WEEKLY_PLAN_SYSTEM_PROMPT
+  //        → selectionContext (engine constraints) → riderFingerprint (memory)
+  //
+  // The selectionContext block is injected AFTER the main prompt so it reads
+  // as the final word on workout selection — the engine overrides any
+  // open-ended selection the main prompt might otherwise allow.
+  const systemPrompt =
+    selectorOverride +
+    WEEKLY_PLAN_SYSTEM_PROMPT +
+    (params.selectionContext ? "\n\n" + params.selectionContext : "") +
     (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "");
 
   let resp: Response;

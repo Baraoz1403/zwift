@@ -8,19 +8,19 @@
  *
  * FIXED WEEKLY TEMPLATE (every day has a permanent role - this is not a
  * dynamic placement algorithm anymore, see the history note below for why):
- *   Monday:    Z2 with Cadence Drills   (65-73% FTP, 60 min)
- *   Tuesday:   Sweet Spot / Threshold   (88-97% FTP, ~55-60 min) - PRIMARY
+ *   Monday:    Z2 with Cadence Drills       (65-73% FTP, 60 min) — intervals
+ *   Tuesday:   Sweet Spot / Threshold       (88-97% FTP, ~50-60 min) - PRIMARY
  *   Wednesday: Rest
- *   Thursday:  Sprint Builder or Threshold, depending on phase/week
- *   Friday:    Easy Zone 2              (65-73% FTP, 45 min)
- *   Saturday:  Long Endurance           (65-73% FTP, 75-90 min)
+ *   Thursday:  Sprint Builder or Threshold  (50-56 min) — secondary intensity
+ *   Friday:    Surge Ride                   (65-73% + 110% surges, 50 min) — intervals
+ *   Saturday:  Endurance with Muscle Tension (65-73% Z2, 70-80 min) — intervals
  *   Sunday:    Rest
  *
  * Progression (weekInMesocycle 1-4, 4 is always Recovery):
  *   Base week 1: Tuesday Sweet Spot 2x8  + Thursday Sprint Builder
  *   Base week 2: Tuesday Sweet Spot 2x10 + Thursday Sprint Builder
  *   Base week 3: Tuesday Sweet Spot 3x8  + Thursday Sprint Builder
- *   Recovery:    Tuesday Spin & Recover only - every other day is Rest
+ *   Recovery:    All Rest Days (no flat Spin & Recover — intervals-only rule)
  *   Build week 1: Tuesday Sweet Spot Classic + Thursday Threshold 3x6
  *   Build week 2: Tuesday Sweet Spot Classic + Thursday Threshold 3x8
  *   Build week 3: Tuesday Sweet Spot Classic + Thursday Threshold 2x12
@@ -92,29 +92,16 @@ const DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satu
 
 // ─── Structure builders ──────────────────────────────────────────────────
 // Titles that exactly match an existing canonical library entry (Sprint
-// Builder, Spin & Recover, Sweet Spot Classic, Z2 with Cadence Drills, Long
-// Endurance at its canonical 90 min) are deliberately reused so
+// Builder, Sweet Spot Classic, Z2 with Cadence Drills, Surge Ride,
+// Endurance with Muscle Tension) are deliberately reused so
 // normalizeWeeklyPlan's canonical-injection step in lib/ai.ts uses the
 // library's own precise blocks; titles for custom rep-schemes this
 // progression needs (e.g. "Sweet Spot 2×8") are unique on purpose so that
 // same injection step leaves them untouched.
-
-function zone2Ride(title: string, durationMin: number): SelectedWorkout {
-  const warm = Math.max(8, Math.round(durationMin * 0.17));
-  const cool = Math.max(8, Math.round(durationMin * 0.13));
-  const steady = durationMin - warm - cool;
-  return {
-    category: "Foundation",
-    title,
-    durationMin,
-    targetPowerPctFtp: "65-73%",
-    structure: [
-      { type: "warmup", durationMin: warm, powerFtp: 0.65, label: "Easy warm-up" },
-      { type: "steadystate", durationMin: steady, powerFtp: 0.69, label: "Z2 @ 65-73% FTP" },
-      { type: "cooldown", durationMin: cool, powerFtp: 0.55, label: "Easy cool-down" },
-    ],
-  };
-}
+//
+// NOTE: zone2Ride() (flat steadystate) has been removed — all sessions must
+// be interval-structured per the intervals-only rule. Any flat fallback now
+// uses zone2CadenceDrills() instead.
 
 /** Monday - matches CANONICAL_WORKOUT_STRUCTURES["Z2 with Cadence Drills"]
  *  exactly (60 min total). */
@@ -133,26 +120,51 @@ function zone2CadenceDrills(): SelectedWorkout {
   };
 }
 
-/** Friday - deliberately distinct from Monday (no cadence drills, shorter,
- *  titled differently) so the two Z2 days don't read as the same session. */
-function easyZone2(): SelectedWorkout {
-  return zone2Ride("Easy Spin", 45);
-}
-
-/** Saturday - duration varies 75-90 min by phase/week, matching how much
- *  volume is appropriate that week (Build weeks run the longer end). */
-function longEndurance(durationMin: number): SelectedWorkout {
-  const warm = Math.max(10, Math.round(durationMin * 0.17));
-  const cool = Math.max(8, Math.round(durationMin * 0.11));
-  const steady = durationMin - warm - cool;
+/** Friday - Surge Ride: 6×1 min surges @ 110% FTP within Z2 base.
+ *  Interval-structured (complies with intervals-only rule), low metabolic cost.
+ *  Distinct from Monday (surges vs. cadence drills) so the two easy days
+ *  don't read as the same session. */
+function surgeRide(): SelectedWorkout {
   return {
     category: "Endurance",
-    title: "Long Endurance",
-    durationMin,
-    targetPowerPctFtp: "65-73%",
+    title: "Surge Ride",
+    durationMin: 50,
+    targetPowerPctFtp: "65-73% with 110% surges",
     structure: [
-      { type: "warmup", durationMin: warm, powerFtp: 0.65, label: "Easy warm-up" },
-      { type: "steadystate", durationMin: steady, powerFtp: 0.69, label: "Z2 @ 65-73% FTP" },
+      { type: "warmup", durationMin: 10, powerFtp: 0.68, label: "Easy warm-up" },
+      { type: "intervals", durationMin: 30, powerFtp: 1.10, recoveryPowerFtp: 0.68,
+        repeats: 6, onSec: 60, offSec: 240, label: "6×1 min @ 110% FTP, 4 min Z2 recovery" },
+      { type: "cooldown", durationMin: 10, powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
+/** Saturday - Endurance with Muscle Tension: 4×5 min low-cadence (55 rpm)
+ *  blocks within Z2. Interval-structured (complies with intervals-only rule),
+ *  builds leg strength with minimal lactate load. Duration varies by phase.
+ *  REPLACES flat "Long Endurance" which violated the intervals-only rule. */
+function enduranceWithMuscleTension(durationMin: number): SelectedWorkout {
+  // Warmup / cooldown scale with total duration; 4 blocks are always 4×5 min = 20 min work.
+  const warm = Math.max(10, Math.round(durationMin * 0.20));
+  const cool = Math.max(8, Math.round(durationMin * 0.15));
+  // Remaining time after blocks (4×5 = 20 min) split as Z2 bridges between blocks
+  const blockWork = 20; // 4 × 5 min
+  const blockRec = Math.round((durationMin - warm - cool - blockWork) / 3); // 3 recovery bridges
+  const actualRec = Math.max(3, blockRec);
+  const bridgeTotal = actualRec * 3;
+  // Recalculate warmup to hit exact durationMin
+  const adjustedWarm = durationMin - cool - blockWork - bridgeTotal;
+
+  return {
+    category: "Endurance",
+    title: "Endurance with Muscle Tension",
+    durationMin,
+    targetPowerPctFtp: "65-73% Z2, cadence 55 rpm during blocks",
+    structure: [
+      { type: "warmup", durationMin: Math.max(8, adjustedWarm), powerFtp: 0.67, label: "Easy warm-up, build to Z2" },
+      { type: "intervals", durationMin: blockWork + bridgeTotal, powerFtp: 0.70, recoveryPowerFtp: 0.67,
+        repeats: 4, onSec: 300, offSec: actualRec * 60,
+        label: "4×5 min @ 68-72% FTP, cadence 55 rpm; recover Z2 between" },
       { type: "cooldown", durationMin: cool, powerFtp: 0.55, label: "Easy cool-down" },
     ],
   };
@@ -282,21 +294,10 @@ function sprintBuilder(): SelectedWorkout {
   };
 }
 
-/** Recovery week's sole session - matches CANONICAL_WORKOUT_STRUCTURES["Spin
- *  & Recover"] exactly. */
-function spinAndRecover(): SelectedWorkout {
-  return {
-    category: "Recovery",
-    title: "Spin & Recover",
-    durationMin: 30,
-    targetPowerPctFtp: "50-60%",
-    structure: [
-      { type: "warmup", durationMin: 3, powerFtp: 0.55, label: "Easy spin in" },
-      { type: "steadystate", durationMin: 24, powerFtp: 0.55, label: "Z1 active recovery @ 50-60% FTP, 90+ rpm" },
-      { type: "cooldown", durationMin: 3, powerFtp: 0.50, label: "Easy spin out" },
-    ],
-  };
-}
+// spinAndRecover() REMOVED — flat session, violates the intervals-only rule.
+// Recovery week sessions are now pure Rest Days. See Recovery case in
+// selectWeeklyWorkouts below. A rider who wants movement can ride at their
+// own discretion; the coach doesn't prescribe a flat spin as a workout.
 
 // ─── Safety gates ────────────────────────────────────────────────────────
 
@@ -332,8 +333,8 @@ const FALLBACK_CATEGORY: Record<string, string> = {
   "Sweet Spot Classic": "Sweet Spot",
   "Tempo Cruise": "Tempo",
   "Sprint Builder": "Neuromuscular",
-  "Foundation Ride": "Foundation",
-  "Spin & Recover": "Recovery",
+  "Z2 with Cadence Drills": "Foundation",
+  // Foundation Ride and Spin & Recover removed — flat sessions violate the intervals-only rule.
 };
 
 /** Falls back to a named library entry via the shared canonical-structure
@@ -356,7 +357,9 @@ function downgrade(session: SelectedWorkout): SelectedWorkout {
   const key = sessionPrereqKey(session.category);
   if (!key) return session;
   const fallbackName = SESSION_PREREQUISITES[key].fallback;
-  return buildFromLibrary(fallbackName) ?? zone2Ride("Foundation Ride", 60);
+  // Final fallback: Z2 with Cadence Drills (interval-structured, always safe).
+  // Foundation Ride is flat and violates the intervals-only rule.
+  return buildFromLibrary(fallbackName) ?? zone2CadenceDrills();
 }
 
 /** Applies the W/kg gate then the TSB gate to a single day's session -
@@ -402,27 +405,27 @@ function thursdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): S
 
 export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
   if (input.phase === "Recovery") {
-    // "Spin & Recover only" - every other day is Rest, no Foundation-Ride
-    // companion session (a deliberate change from an earlier version of
-    // this file, which paired it with a Foundation Ride).
-    return DAY_ORDER.map((day) => ({
-      day,
-      workout: day === "Tuesday" ? spinAndRecover() : null,
-    }));
+    // Recovery week = all Rest Days. The intervals-only rule prohibits
+    // prescribing a flat Spin & Recover session. The rider rests;
+    // adaptation converts last mesocycle's training stress into fitness.
+    return DAY_ORDER.map((day) => ({ day, workout: null }));
   }
 
   const weekInMesocycle = (input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle) as 1 | 2 | 3;
   const tuesday = applyGates(tuesdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
   const thursday = applyGates(thursdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
-  const saturdayDurationMin = input.phase === "Build" ? 90 : 75;
+  // Saturday duration: Build = 80 min (was 90 - but Endurance with Muscle Tension
+  // at 90 min would mean very long recovery bridges; 80 min is appropriate),
+  // Base = 70 min. These are structured interval sessions now, not flat rides.
+  const saturdayDurationMin = input.phase === "Build" ? 80 : 70;
 
   return [
     { day: "Monday", workout: zone2CadenceDrills() },
     { day: "Tuesday", workout: tuesday },
     { day: "Wednesday", workout: null },
     { day: "Thursday", workout: thursday },
-    { day: "Friday", workout: easyZone2() },
-    { day: "Saturday", workout: longEndurance(saturdayDurationMin) },
+    { day: "Friday", workout: surgeRide() },
+    { day: "Saturday", workout: enduranceWithMuscleTension(saturdayDurationMin) },
     { day: "Sunday", workout: null },
   ];
 }

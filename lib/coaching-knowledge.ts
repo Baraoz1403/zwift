@@ -593,7 +593,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     tss: 90,
     rationale: "The standard field test for estimating FTP — a 20-minute all-out effort where 95% of average power estimates functional threshold. Use when FTP hasn't been tested in 4+ weeks or when rider performance has significantly changed.",
     structure: "15 min progressive warmup (include 3×1 min @ 110%) → 5 min easy → 20 min ALL OUT time trial → 20 min easy cooldown",
-    executionCue: "Start the 20-minute effort conservatively — most riders go too hard in the first 5 minutes and blow up. Aim for even power across all 20 minutes or a slight negative split. Your FTP = 0.95 × average power for the 20 minutes.",
+    executionCue: "Start the 20-minute effort conservatively — most riders go too hard in the first 5 minutes and blow up. Aim for even power across all 20 minutes or a slight negative split. After the test, Zwift will calculate and display your FTP result — update your profile.ftp manually from that value.",
     successFeel: "Completely exhausted at minute 20 — you should have nothing left. If you felt strong at the end, you rode too conservatively. Average power in the last 5 minutes should be ≥ average of first 5 minutes.",
     tags: ["threshold", "test", "assessment"],
   },
@@ -869,7 +869,7 @@ THRESHOLD (97-105% FTP — requires TSB ≥ -12):
 • "2×20 FTP Blocks" — 70 min (10 warmup → 2×20 min @ 98% / 7 rec → 6 cooldown). Gold standard. Start at 97% — pacing discipline is the entire test.
 • "Descending Threshold" — 65 min (12 warmup → 12+10+8+6 min stepping 97→103% / 4 rec each → 5 cooldown). Builds mental toughness. Final block at 103% feels like a sprint.
 • "Over-Under Intervals" — 65 min (12 warmup → 3×9 min cycling 3 min@105%/3 min@93% / 5 rec → 11 cooldown). Never ease below 90% during 'under' phases.
-• "FTP Test Protocol" — 60 min (15 progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). Assessment only. FTP = 0.95 × average power for 20 min.
+• "FTP Test Protocol" — 60 min (15 progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). Assessment only. After the effort, Zwift displays the FTP result — the rider updates profile.ftp from that value.
 
 VO2MAX (106-120% FTP — requires TSB ≥ -5 and intermediate+ rider):
 • "Micro Intervals" — 55 min (12 warmup → 12×1 min @ 117% / 1 rec → 19 cooldown). Entry-level VO2max. Last 4 reps harder than first 4.
