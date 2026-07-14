@@ -1762,18 +1762,15 @@ export default function WeeklyPlan() {
                   key={i}
                   style={{
                     display: "flex", flexDirection: "column",
-                    background: rest ? "#f8fafc" : "#fff",
-                    border: rest ? "2px dashed #e2e8f0" : "none",
-                    // Accent strip is .stat-card's own generic ::before now
-                    // (2.5px, var(--accent)) - see globals.css. That strip is
-                    // clipped to the card's rounded corners by overflow:hidden,
-                    // which a real `borderTop` on the card itself can't be -
-                    // its corners were visibly not following the card's
-                    // radius. Rest-day cards hide the strip via the
-                    // ...--rest className above instead of an inline override.
+                    background: "#fff",
+                    border: rest
+                      ? "1.5px dashed rgba(15,23,42,0.18)"
+                      : "1.5px solid rgba(15,23,42,0.10)",
                     borderRadius: 8,
                     overflow: "hidden",
-                    boxShadow: rest ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
+                    boxShadow: rest
+                      ? "0 2px 8px rgba(0,0,0,0.04)"
+                      : "0 4px 24px rgba(0,0,0,0.08)",
                     ["--card-accent" as string]: accentColor,
                   }}
                 >
@@ -2015,8 +2012,9 @@ export default function WeeklyPlan() {
             style={{
               marginTop: 48,
               padding: "28px 26px 22px",
-              background: "linear-gradient(145deg, var(--panel-solid) 0%, rgba(47,143,224,0.05) 100%)",
-              border: "1px solid rgba(47,143,224,0.2)",
+              background: "#fff",
+              border: "1.5px solid rgba(15,23,42,0.12)",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 0 0 0 transparent",
               position: "relative",
               overflow: "hidden",
             }}
@@ -2076,7 +2074,7 @@ export default function WeeklyPlan() {
                         padding: "12px 4px 10px",
                         border: selected ? "2px solid var(--accent)" : "1.5px solid var(--border)",
                         borderRadius: 14,
-                        background: selected ? s.color : "rgba(255,255,255,0.03)",
+                        background: selected ? s.color : "#fff",
                         cursor: "pointer",
                         transition: "all 0.15s cubic-bezier(0.34,1.56,0.64,1)",
                         transform: selected ? "translateY(-3px) scale(1.05)" : "translateY(0) scale(1)",

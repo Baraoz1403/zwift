@@ -231,20 +231,27 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         <div style={{flex:"1 1 320px",padding:"24px 0 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
           <div>
             <div style={{display:"inline-flex",alignItems:"center",gap:8,
-              background:`${s.accent}18`,border:`1px solid ${s.accent}40`,
-              borderRadius:20,padding:"4px 14px",marginBottom:20,transition:"background 0.4s ease, border-color 0.4s ease"}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:s.accent,boxShadow:`0 0 8px ${s.accent}`}} />
-              <span style={{fontSize:11,fontWeight:700,letterSpacing:"2px",color:s.accent}}>{s.tag}</span>
+              background:`${s.accent}22`,border:`1.5px solid ${s.accent}60`,
+              borderRadius:20,padding:"5px 16px",marginBottom:22,
+              boxShadow:`0 0 16px ${s.accent}30`,
+              transition:"background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease"}}>
+              <div style={{width:7,height:7,borderRadius:"50%",background:s.accent,
+                boxShadow:`0 0 10px ${s.accent}, 0 0 4px #fff`}} />
+              <span style={{fontSize:11.5,fontWeight:800,letterSpacing:"2.5px",color:s.accent,textTransform:"uppercase"}}>{s.tag}</span>
             </div>
             {s.lines.map((line, i) => (
               <div key={i} style={{
-                fontSize: 36, fontWeight: 800, lineHeight: 1.1,
+                fontSize: i === s.lines.length - 1 ? 46 : 40,
+                fontWeight: 900, lineHeight: 1.05,
+                letterSpacing: "-1px",
                 color: i === s.lines.length - 1 ? s.accent : headlineColor,
-                textShadow: i === s.lines.length - 1 && s.dark ? `0 0 24px ${s.accent}60` : "none",
+                textShadow: i === s.lines.length - 1 && s.dark
+                  ? `0 0 32px ${s.accent}80, 0 2px 8px rgba(0,0,0,0.3)`
+                  : s.dark ? "0 2px 6px rgba(0,0,0,0.25)" : "none",
                 transition: "color 0.3s ease",
               }}>{line}</div>
             ))}
-            <p style={{fontSize:15,color:subColor,lineHeight:1.6,margin:"14px 0 0"}}>{s.sub}</p>
+            <p style={{fontSize:15.5,color:subColor,lineHeight:1.65,margin:"16px 0 0",fontWeight:400,maxWidth:420}}>{s.sub}</p>
           </div>
           <div style={{display:"flex",gap:10,marginTop:24}}>
             {SLIDES.map((_,i)=>(
