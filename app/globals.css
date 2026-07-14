@@ -1327,8 +1327,8 @@ tbody tr:hover {
   margin-left: calc(-50vw + 50%);
   border-radius: 0;
   box-sizing: border-box;
-  padding-left: max(24px, calc((100vw - 1100px) / 2 + 24px));
-  padding-right: max(24px, calc((100vw - 1100px) / 2 + 24px));
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* ========================================================

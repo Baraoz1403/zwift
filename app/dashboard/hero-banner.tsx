@@ -9,19 +9,19 @@ const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E"
 
 const SLIDES = [
   {
-    tag: "COGNITIVE LOAD ENGINE",
-    lines: ["CTL 42.", "TSB −12.", "Trending ↑"],
-    sub: "Real-time fitness trajectory derived from every watt you've ever pushed. Your training state computed — not guessed.",
+    tag: "AI COACHING ENGINE",
+    lines: ["Learns every ride.", "Adapts every week.", "Gets smarter."],
+    sub: "Your FTP, CTL, and TSB tracked across every session. The plan evolves as your fitness does — automatically, with no input from you.",
   },
   {
-    tag: "PRECISION POWER ZONES",
-    lines: ["88% FTP.", "3 × 15 min.", "Sweet Spot."],
-    sub: "Every block built on Coggan's 7-zone model. Physiologically justified, progressively loaded — never a template.",
+    tag: "PERSONAL TO THE WATT",
+    lines: ["Your FTP.", "Your zones.", "Your targets."],
+    sub: "Power targets derived from your numbers, not averages. Sweet Spot, Threshold, VO2max — prescribed exactly when your body is ready for them.",
   },
   {
-    tag: "AUTONOMOUS SYNC ENGINE",
-    lines: ["Generate.", "Push.", "Ride."],
-    sub: "Sunday night: Zwift, Intervals.icu and TrainingPeaks receive next week's structured .zwo. Just show up.",
+    tag: "BUILT FOR YOUR GOALS",
+    lines: ["Lose weight.", "Raise your FTP.", "Ride fast."],
+    sub: "You set the goals once. Every Sunday night the AI calibrates next week's plan around them — synced to Zwift, Intervals.icu and TrainingPeaks.",
   },
 ];
 
@@ -295,10 +295,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         pointerEvents: "none",
       }} />
 
-      {/* ── Full-bleed container — stretches to page edges */}
+      {/* ── Full-bleed container — content reaches page edges */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
-        width: "100%", padding: "0 32px",
+        width: "100%", padding: "0 24px",
         position: "relative", zIndex: 3,
       }}>
 
@@ -458,8 +458,8 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       }}>
         <div style={{
           display: "flex", alignItems: "center",
-          animation: "hbTicker 32s linear infinite",
-          whiteSpace: "nowrap", padding: "7px 0",
+          animation: "hbTicker 40s linear infinite",
+          whiteSpace: "nowrap", padding: "10px 0",
           gap: 0,
         }}>
           {/* Repeat twice so the scroll loops seamlessly */}
@@ -478,20 +478,20 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
               ].map((item, i) => (
                 <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
                   <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "0 28px",
-                    fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
-                    color: "rgba(248,250,252,0.32)",
+                    display: "inline-flex", alignItems: "center", gap: 10,
+                    padding: "0 36px",
+                    fontSize: 14, fontWeight: 700, letterSpacing: "0.14em",
+                    color: "rgba(248,250,252,0.55)",
                     fontFamily: "'SF Mono','Fira Code',monospace",
                     textTransform: "uppercase",
                   }}>
                     <span style={{
-                      width: 4, height: 4, borderRadius: "50%", flexShrink: 0,
-                      background: item.dot, boxShadow: `0 0 6px ${item.dot}`,
+                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                      background: item.dot, boxShadow: `0 0 8px ${item.dot}`,
                     }} />
                     {item.text}
                   </span>
-                  <span style={{ color: "rgba(248,250,252,0.1)", fontSize: 10 }}>·</span>
+                  <span style={{ color: "rgba(248,250,252,0.15)", fontSize: 14 }}>·</span>
                 </span>
               ))}
             </span>
