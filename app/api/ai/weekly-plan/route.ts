@@ -102,7 +102,10 @@ export async function POST(req: NextRequest) {
   //   2. No athleteId in session: can't key the cache, just generate.
   const effectiveWeekOf = targetWeekOf ?? mondayOfCurrentWeek();
   if (session.athleteId && !riderNote) {
-    const cached = await getCachedPlan(session.athleteId, effectiveWeekOf);
+    // Wrap in try-catch: a transient KV failure must never crash the handler
+    // with a non-JSON 500 response. On error we fall through to live generation.
+    let cached: Awaited<ReturnType<typeof getCachedPlan>> | null = null;
+    try { cached = await getCachedPlan(session.athleteId, effectiveWeekOf); } catch { /* fall through */ }
     if (cached) {
       // A profile edit (training-profile.tsx's "zwift:profile-saved" ->
       // handleGenerate()) reaches this exact branch almost every time,
