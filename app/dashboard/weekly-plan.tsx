@@ -860,14 +860,15 @@ export default function WeeklyPlan() {
     }
   }
 
-  /** Manual "generate new plan" button - always targets the real current week. */
+  /** Manual "generate new plan" / profile-save trigger — always current week. */
   async function handleGenerate() {
     const targetWeekOf = currentWeekOf();
-    // Always pass the current plan so the AI can make incremental changes
-    // (e.g. "add Sunday" after already having changed Friday and Saturday).
-    // Without this, each generate starts from scratch and resets prior edits.
     const previousPlanForAI = plan ?? null;
-    await generateAndActivate(targetWeekOf, previousPlanForAI);
+    // Pass a synthetic note so the server-side KV cache is ALWAYS bypassed.
+    // Without this, if a plan for this week already exists in cache, the
+    // server returns it immediately without calling the AI — the rider sees
+    // no change even though they explicitly asked to regenerate.
+    await generateAndActivate(targetWeekOf, previousPlanForAI, "Plan regeneration requested by rider");
   }
 
   // Rolling 6-day-ahead window actually rendered below - see
