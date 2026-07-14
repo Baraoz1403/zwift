@@ -295,10 +295,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         pointerEvents: "none",
       }} />
 
-      {/* ── Full-bleed container — content reaches page edges */}
+      {/* ── Inner content constrained to match .dashboard width below */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
-        width: "100%", padding: "0 24px",
+        maxWidth: 1100, margin: "0 auto", width: "100%", padding: "0 24px",
         position: "relative", zIndex: 3,
       }}>
 
