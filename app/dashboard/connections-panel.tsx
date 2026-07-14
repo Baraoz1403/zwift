@@ -438,6 +438,8 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
         {/* ── Service tiles — 2-column grid ──────────────────────────────── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
 
+          {/* TP_DISABLED: not in use — tile hidden */}
+          {false && (
           <ServiceTile
             icon={<IconMountain size={20} />}
             brand="trainingpeaks"
@@ -451,6 +453,7 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
             }
             action={tpAction}
           />
+          )}
 
           <ServiceTile
             icon={<IconTrend size={20} />}
