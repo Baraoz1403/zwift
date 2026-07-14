@@ -81,46 +81,39 @@ function ArcGauge({
             fontFamily: "'SF Mono', 'Fira Code', monospace",
           }}>{value}</span>
           <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
             color, marginTop: 2,
           }}>{unit}</span>
         </div>
       </div>
       <span style={{
-        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
         textTransform: "uppercase", color: "rgba(248,250,252,0.4)",
       }}>{label}</span>
     </div>
   );
 }
 
-// ─── Stat row (bar + label + value) ─────────────────────────────────────────
-function StatBar({ label, value, display, max, color }: {
-  label: string; value: number; display: string; max: number; color: string;
+// ─── Metric row (label + value, no fill bar) ─────────────────────────────────
+function MetricRow({ label, display, color }: {
+  label: string; display: string; color: string;
 }) {
-  const pct = Math.min(100, (value / max) * 100);
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{
-          fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: "rgba(248,250,252,0.45)",
-          fontFamily: "'SF Mono', 'Fira Code', monospace",
-        }}>{label}</span>
-        <span style={{
-          fontSize: 11.5, fontWeight: 800, color: "#F8FAFC",
-          fontVariantNumeric: "tabular-nums",
-          fontFamily: "'SF Mono', 'Fira Code', monospace",
-        }}>{display}</span>
-      </div>
-      <div style={{ height: 3, background: "rgba(248,250,252,0.07)", borderRadius: 2 }}>
-        <div style={{
-          height: "100%", width: `${pct}%`, borderRadius: 2,
-          background: `linear-gradient(90deg, ${color}70, ${color})`,
-          boxShadow: `0 0 6px ${color}50`,
-          transition: "width 0.5s ease",
-        }} />
-      </div>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "8px 0", borderBottom: "1px solid rgba(248,250,252,0.06)",
+    }}>
+      <span style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
+        textTransform: "uppercase", color: "rgba(248,250,252,0.42)",
+        fontFamily: "'SF Mono', 'Fira Code', monospace",
+      }}>{label}</span>
+      <span style={{
+        fontSize: 16, fontWeight: 800, color,
+        fontVariantNumeric: "tabular-nums",
+        fontFamily: "'SF Mono', 'Fira Code', monospace",
+        textShadow: `0 0 14px ${color}70`,
+      }}>{display}</span>
     </div>
   );
 }
@@ -149,7 +142,7 @@ function EcgStrip({ phase }: { phase: number }) {
   return (
     <div style={{ borderTop: "1px solid rgba(248,250,252,0.05)", paddingTop: 10, overflow: "hidden" }}>
       <div style={{
-        fontSize: 9, color: "rgba(248,250,252,0.25)", marginBottom: 4,
+        fontSize: 11, color: "rgba(248,250,252,0.32)", marginBottom: 4,
         fontFamily: "'SF Mono', 'Fira Code', monospace", letterSpacing: "0.12em",
       }}>ECG · REAL-TIME</div>
       <svg width="100%" height="32" viewBox="0 0 240 32" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
@@ -214,12 +207,12 @@ function TelemetryPanel() {
             animation: "hbLivePulse 1.4s ease-in-out infinite",
           }} />
           <span style={{
-            fontSize: 9.5, fontWeight: 800, letterSpacing: "0.18em",
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.18em",
             color: C.cyan, fontFamily: "'SF Mono', 'Fira Code', monospace",
           }}>LIVE · NEURAL ANALYSIS</span>
         </div>
         <span style={{
-          fontSize: 8.5, color: "rgba(248,250,252,0.25)",
+          fontSize: 10, color: "rgba(248,250,252,0.3)",
           fontFamily: "'SF Mono', 'Fira Code', monospace",
         }}>AI v3.1</span>
       </div>
@@ -230,10 +223,10 @@ function TelemetryPanel() {
         <ArcGauge value={hr}    max={200} label="Heart Rate" unit="bpm" color={C.pink} />
       </div>
 
-      {/* Stat bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 14 }}>
-        <StatBar label="Cadence" value={cadence} display={`${cadence} rpm`} max={120} color={C.purple} />
-        <StatBar label="Speed"   value={speed}   display={`${speed} km/h`} max={45}  color={C.gold} />
+      {/* Metric rows */}
+      <div style={{ display: "flex", flexDirection: "column", marginBottom: 14 }}>
+        <MetricRow label="Cadence" display={`${cadence} rpm`} color={C.purple} />
+        <MetricRow label="Speed"   display={`${speed} km/h`} color={C.gold} />
       </div>
 
       <EcgStrip phase={ecgPhase} />
@@ -302,16 +295,20 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         pointerEvents: "none",
       }} />
 
+      {/* ── Inner constrained container (aligns nav + content to same left edge) */}
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        width: "100%", maxWidth: 1200, margin: "0 auto", padding: "0 28px",
+        position: "relative", zIndex: 3,
+      }}>
+
       {/* ── Nav row ─────────────────────────────────────────────────────── */}
       <div className="banner-nav" style={{
-        position: "relative", zIndex: 3,
         display: "flex", alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16, flexWrap: "wrap",
-        margin: "16px 0 0",
+        gap: 8, margin: "16px 0 0",
       }}>
-        {/* Brand chip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {/* Left: Brand chip + greeting */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 9,
             background: `linear-gradient(135deg, ${C.purple}30, ${C.cyan}18)`,
@@ -341,7 +338,19 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        {/* Center: wordmark */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <div style={{ width: 1, height: 14, background: "rgba(248,250,252,0.12)", borderRadius: 1 }} />
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.22em",
+            color: "rgba(248,250,252,0.22)", textTransform: "uppercase",
+            fontFamily: "'SF Mono', 'Fira Code', monospace", whiteSpace: "nowrap",
+          }}>ZWIFT · AI · DASHBOARD</span>
+          <div style={{ width: 1, height: 14, background: "rgba(248,250,252,0.12)", borderRadius: 1 }} />
+        </div>
+
+        {/* Right: Nav */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
           <DashboardNavTabs />
           <ConnectionsNavChip />
           <LogoutButton />
@@ -350,8 +359,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
 
       {/* ── Main content row ────────────────────────────────────────────── */}
       <div style={{
-        flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap",
-        maxWidth: 1100, width: "100%", margin: "0 auto", gap: 28,
+        flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap", gap: 28,
       }}>
         {/* Left — copy block */}
         <div style={{
@@ -414,7 +422,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
             <p style={{
               fontSize: 15.5, color: "rgba(248,250,252,0.58)",
               lineHeight: 1.65, margin: "20px 0 0",
-              fontWeight: 400, maxWidth: 420,
+              fontWeight: 400, maxWidth: 560,
             }}>{s.sub}</p>
           </div>
 
@@ -441,15 +449,16 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
 
         {/* Right — telemetry card */}
         <div style={{
-          width: 296, padding: "20px 0",
+          width: 314, padding: "20px 0",
           display: "flex", alignItems: "center",
-          position: "relative", zIndex: 1, flex: "0 1 296px",
+          position: "relative", zIndex: 1, flex: "0 1 314px",
         }}>
           <div style={{ width: "100%" }}>
             <TelemetryPanel />
           </div>
         </div>
       </div>
+      </div>{/* end inner constrained container */}
 
       {/* ── Keyframes ───────────────────────────────────────────────────── */}
       <style>{`
