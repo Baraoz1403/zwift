@@ -131,13 +131,15 @@ a:hover {
   margin-bottom: 6px;
 }
 
-/* All text inputs and textareas: always white background */
+/* All text inputs, selects and textareas: always white background */
 input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
 input[type="search"],
+input[type="date"],
 input:not([type]),
+select,
 textarea {
   background: #ffffff !important;
   color: var(--text);
@@ -263,11 +265,11 @@ textarea {
   align-items: center;
   gap: 8px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.1px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
   margin: 0 0 14px;
   color: var(--text);
-  padding-left: 13px;
+  padding-left: 16px;
   position: relative;
 }
 
@@ -282,16 +284,32 @@ textarea {
   color: var(--accent);
 }
 
+/* Accent bar — gradient, taller, with a glow effect */
 .section-title::before {
   content: "";
   position: absolute;
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 14px;
-  background: var(--accent);
-  border-radius: 2px;
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent) 60%, rgba(47,143,224,0.3) 100%);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(47,143,224,0.35);
+}
+
+/* Subtle glow behind the title text */
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 32px;
+  background: radial-gradient(ellipse at left center, rgba(47,143,224,0.07) 0%, transparent 70%);
+  pointer-events: none;
+  border-radius: 4px;
 }
 
 /* .dot is kept for backward compatibility but no longer used */

@@ -1569,11 +1569,13 @@ export default function WeeklyPlan() {
                       padding: 0, overflow: "hidden",
                     }}
                   >
-                    {/* Thumbnail — full-bleed, "flush" skips the -20px margin */}
+                    {/* Thumbnail — full-bleed, 140px to match planned workout cards */}
                     <div style={{ position: "relative" }}>
                       <WorkoutThumbnail
                         workout={completedThumbWorkout}
                         flush
+                        height={140}
+                        hideFooter
                         realPowerSamples={actual.id ? realPowerByRideId.get(actual.id) : undefined}
                       />
                       {/* "Ride done" pill badge overlaid on the thumbnail */}
@@ -1711,6 +1713,8 @@ export default function WeeklyPlan() {
                       <WorkoutThumbnail
                         workout={bonusWorkout}
                         flush
+                        height={140}
+                        hideFooter
                         realPowerSamples={actual.id ? realPowerByRideId.get(actual.id) : undefined}
                       />
                       <div style={{

@@ -166,33 +166,46 @@ function SelectCards<T extends string>({
   }
   const colStyle = columns ? `repeat(${columns}, 1fr)` : "repeat(auto-fill, minmax(130px, 1fr))";
   return (
-    <div style={{ display: "grid", gridTemplateColumns: colStyle, gap: 8 }}>
+    <div style={{ display: "grid", gridTemplateColumns: colStyle, gap: 10 }}>
       {options.map(o => {
         const active = selected.includes(o);
         return (
           <button key={o} type="button" onClick={() => toggle(o)} style={{
-            position: "relative", padding: "12px 14px 11px", borderRadius: 6,
-            border: `1.5px solid ${active ? "var(--accent)" : "var(--border)"}`,
-            background: active ? "rgba(47,143,224,0.07)" : "var(--panel-solid)",
+            position: "relative", padding: "14px 14px 12px", borderRadius: 10,
+            border: `1.5px solid ${active ? "rgba(47,143,224,0.7)" : "var(--border)"}`,
+            background: active
+              ? "linear-gradient(135deg, rgba(47,143,224,0.13) 0%, rgba(47,143,224,0.06) 100%)"
+              : "#fff",
             cursor: "pointer", textAlign: "left",
-            transition: "border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease",
-            boxShadow: active ? "0 0 0 3px rgba(47,143,224,0.12)" : "none",
+            transition: "all 0.18s ease",
+            boxShadow: active
+              ? "0 0 0 3px rgba(47,143,224,0.15), 0 4px 12px rgba(47,143,224,0.12)"
+              : "0 1px 4px rgba(0,0,0,0.04)",
           }}>
+            {/* Active check badge */}
             {active && (
               <div style={{
-                position: "absolute", top: 8, right: 8, width: 18, height: 18,
-                borderRadius: "50%", background: "var(--accent)",
+                position: "absolute", top: 8, right: 8, width: 20, height: 20,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #2f8fe0, #1a6bb5)",
                 display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 2px 6px rgba(47,143,224,0.4)",
               }}>
                 <CheckIcon />
               </div>
             )}
-            <div style={{ marginBottom: 7, opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }}>
+            {/* Icon — colored when active */}
+            <div style={{
+              marginBottom: 8,
+              color: active ? "#2f8fe0" : "var(--muted)",
+              transition: "color 0.18s",
+              filter: active ? "drop-shadow(0 0 4px rgba(47,143,224,0.4))" : "none",
+            }}>
               {icons[o]}
             </div>
             <div style={{
-              fontSize: 12, fontWeight: active ? 700 : 500, lineHeight: 1.3,
-              color: active ? "var(--accent)" : "var(--text)", transition: "color 0.15s",
+              fontSize: 12.5, fontWeight: active ? 700 : 500, lineHeight: 1.3,
+              color: active ? "#1a6bb5" : "var(--text)", transition: "color 0.18s",
             }}>
               {labels[o]}
             </div>
@@ -293,35 +306,92 @@ export default function TrainingProfileCard() {
     <>
       {/* ── Edit form — only when editing ───────────────────────────────── */}
       {editing && (
-        <div className="stat-card" style={{ padding: "24px 28px", gridColumn: "1 / -1" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>
-                {profile ? "Edit your training profile" : "Welcome — let's personalise your plan"}
+        <div className="stat-card" style={{ padding: 0, gridColumn: "1 / -1", overflow: "hidden" }}>
+
+          {/* ── Card header strip ── */}
+          <div style={{
+            padding: "20px 28px 18px",
+            background: "linear-gradient(135deg, rgba(47,143,224,0.06) 0%, rgba(47,143,224,0.02) 100%)",
+            borderBottom: "1px solid rgba(47,143,224,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            position: "relative", overflow: "hidden",
+          }}>
+            {/* Accent strip at very top */}
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, height: 3,
+              background: "linear-gradient(90deg, #2f8fe0 0%, #2f8fe0cc 40%, #2f8fe055 75%, transparent 100%)",
+            }} />
+            {/* Ambient glow */}
+            <div style={{
+              position: "absolute", top: -40, right: -20, width: 160, height: 160,
+              borderRadius: "50%", background: "radial-gradient(circle, rgba(47,143,224,0.08) 0%, transparent 65%)",
+              pointerEvents: "none",
+            }} />
+
+            <div style={{ position: "relative" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 3 }}>
+                {/* Icon */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  background: "linear-gradient(135deg, #2f8fe0 0%, #1a6bb5 100%)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 3px 8px rgba(47,143,224,0.35)",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", letterSpacing: "-0.2px" }}>
+                  {profile ? "Training Profile" : "Welcome — Set Up Your Profile"}
+                </div>
+                {phaseLabel && (
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, color: "#2f8fe0",
+                    background: "rgba(47,143,224,0.10)", border: "1px solid rgba(47,143,224,0.25)",
+                    borderRadius: 20, padding: "2px 9px", letterSpacing: "0.03em",
+                  }}>
+                    {phaseLabel}
+                  </div>
+                )}
               </div>
               {!profile && (
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5 }}>
-                  Tell me about your goals and schedule so I can build a training plan that fits your life.
+                <div style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, paddingLeft: 42 }}>
+                  Tell me your goals and schedule — I'll build a plan that fits your life.
                 </div>
               )}
             </div>
+
+            {/* Close button */}
             <button
               type="button"
               onClick={() => setEditing(false)}
               style={{
-                flexShrink: 0, marginLeft: 12,
-                padding: "4px 12px", borderRadius: 6,
+                flexShrink: 0, marginLeft: 16,
+                width: 32, height: 32, borderRadius: 8,
                 border: "1px solid var(--border)",
-                background: "var(--panel)",
-                fontSize: 11.5, fontWeight: 600,
-                color: "var(--muted)", cursor: "pointer",
-                fontFamily: "inherit", letterSpacing: "0.03em",
+                background: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "var(--muted)",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(47,143,224,0.08)";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(47,143,224,0.4)";
+                (e.currentTarget as HTMLButtonElement).style.color = "#2f8fe0";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "#fff";
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)";
               }}
             >
-              Hide ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
             </button>
           </div>
 
+          <div style={{ padding: "24px 28px" }}>
           <Divider />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 20 }}>
@@ -402,7 +472,7 @@ export default function TrainingProfileCard() {
               <div>
                 <FieldLabel>Age (optional)</FieldLabel>
                 <input type="number" min={10} max={100} placeholder="e.g. 42"
-                  style={{ width: "100%", padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
+                  style={{ width: "100%", padding: "8px 10px", background: "#ffffff", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
                   value={draft.ageYears ?? ""}
                   onChange={e => setDraft(d => ({ ...d, ageYears: e.target.value ? Number(e.target.value) : undefined }))}
                 />
@@ -413,7 +483,7 @@ export default function TrainingProfileCard() {
               <div>
                 <FieldLabel>Target event date</FieldLabel>
                 <input type="date"
-                  style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
+                  style={{ width: "100%", maxWidth: 260, padding: "8px 10px", background: "#ffffff", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
                   value={draft.eventDate ?? ""}
                   onChange={e => setDraft(d => ({ ...d, eventDate: e.target.value || undefined }))}
                 />
@@ -424,7 +494,7 @@ export default function TrainingProfileCard() {
               <FieldLabel>Anything else? (optional)</FieldLabel>
               <textarea rows={2}
                 placeholder='e.g. "Can only ride mornings, bad knee — avoid high-cadence sprints"'
-                style={{ width: "100%", padding: "10px 12px", background: "var(--panel-solid)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
+                style={{ width: "100%", padding: "10px 12px", background: "#ffffff", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, outline: "none" }}
                 value={draft.notes ?? ""}
                 onChange={e => setDraft(d => ({ ...d, notes: e.target.value || undefined }))}
               />
@@ -432,15 +502,56 @@ export default function TrainingProfileCard() {
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
-            <button type="button" className="btn" style={{ width: "auto", padding: "9px 28px" }} onClick={handleSave}>
+            {/* Save — gradient, prominent */}
+            <button
+              type="button"
+              onClick={handleSave}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                padding: "10px 28px", borderRadius: 9, border: "none",
+                background: "linear-gradient(135deg, #2f8fe0 0%, #1a6bb5 100%)",
+                color: "#fff", fontSize: 13.5, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                boxShadow: "0 4px 14px rgba(47,143,224,0.35)",
+                transition: "opacity 0.15s, box-shadow 0.15s",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.9"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
               Save profile
             </button>
+
+            {/* Cancel — clean secondary */}
             {profile && (
-              <button type="button" className="btn btn-secondary" style={{ width: "auto", padding: "9px 18px" }} onClick={() => setEditing(false)}>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                style={{
+                  display: "inline-flex", alignItems: "center",
+                  padding: "10px 20px", borderRadius: 9,
+                  border: "1.5px solid var(--border)",
+                  background: "#fff", color: "var(--muted)",
+                  fontSize: 13.5, fontWeight: 600,
+                  cursor: "pointer", fontFamily: "inherit",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(47,143,224,0.4)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "#2f8fe0";
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)";
+                }}
+              >
                 Cancel
               </button>
             )}
           </div>
+          </div>{/* end padding wrapper */}
         </div>
       )}
     </>
