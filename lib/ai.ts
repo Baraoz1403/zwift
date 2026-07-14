@@ -593,18 +593,22 @@ Every workout structure block must include explicit cadenceTarget.
   "rather than a forward-looking prescription. " +
 
   // ── Rider W/kg classification ──
-  "The input includes a wPerKg field (FTP ÷ body weight in kg). Use it to " +
-  "classify the rider before choosing sessions: " +
-  "< 2.5 W/kg = beginner (Foundation, Tempo, Sprint Builder only; no threshold or VO2max; " +
-  "sweet spot maximum 3×10 min in late Build); " +
-  "2.5-3.0 W/kg = novice (add Sweet Spot Classic, Micro Intervals, 30/30 Blitz; " +
-  "Threshold Cruise Intervals only in late Build at TSB ≥ -8); " +
-  "3.0-3.5 W/kg = intermediate (full sweet spot range + Threshold Development + " +
-  "Threshold Cruise Intervals + 4×4 Two-Set; Norwegian 4×4 only if TSB ≥ 0); " +
-  "3.5+ W/kg = trained/advanced (full library including Norwegian 4×4, 2×20 FTP Blocks, " +
+  "The input includes a wPerKg field (FTP ÷ body weight in kg) - one input " +
+  "among several, not a sole gate (also weigh age, training history, injury/medical " +
+  "history, technical skill, stated goal, and how this rider has actually responded " +
+  "to intensity before - see riderProfile.notes for any of that). Use it as a coarse " +
+  "default: " +
+  "< 2.5 W/kg = beginner-leaning (default to Foundation, Tempo, Sprint Builder; " +
+  "true threshold/VO2max only if the rider's own history/notes show real prior intensity tolerance); " +
+  "2.5-3.0 W/kg = novice-leaning (add Sweet Spot Classic, Micro Intervals, 30/30 Blitz; " +
+  "Threshold typically later in Build, sooner if history supports it); " +
+  "3.0-3.5 W/kg = intermediate-leaning (full sweet spot range + Threshold Development + " +
+  "Threshold Cruise Intervals + 4×4 Two-Set); " +
+  "3.5+ W/kg = trained/advanced-leaning (full library including Norwegian 4×4, 2×20 FTP Blocks, " +
   "Over-Under Intervals, Descending Threshold). " +
-  "If wPerKg is null, infer from ftpWatts: < 150 W = beginner, " +
-  "150-220 W = novice/intermediate, > 220 W = trained. " +
+  "If wPerKg is null, infer cautiously from ftpWatts (< 150 W = beginner-leaning, " +
+  "150-220 W = novice/intermediate-leaning, > 220 W = trained-leaning) and weigh " +
+  "riderProfile/notes more heavily since the power-to-weight signal is missing. " +
   "Always mention the rider's W/kg level in the plan summary (e.g. 'At 3.2 W/kg " +
   "you're in the intermediate range — this week introduces Threshold Development.') " +
 
