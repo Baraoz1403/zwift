@@ -44,6 +44,27 @@ understand it better, spot patterns, and raise the bar. Mistakes are expected;
 repeating them without learning from them is not. The goal is not "good enough"
 but the best that can actually be delivered.
 
+**Verify before reporting — non-negotiable.**
+מנהל הפרויקט מנחה שכל אינטרקציה בין הבינה המלאכותית למנהל תהיה לאחר בדיקה יסודית ומלאה של הדברים ע"י הבינה המלאכותית.
+This is a foundational operating rule, not a guideline. Before every response
+to the project manager — without exception — the AI must verify the actual state
+of whatever is being discussed.
+
+What this means in practice:
+- A file was edited → Read it back and confirm the change is present and correct.
+- A deploy was run → Confirm the push succeeded; check for errors.
+- A bug was fixed → Verify the fix is in the file, not just in the intent.
+- A feature is claimed to work → Confirm the relevant code path actually does what
+  is described.
+- Anything was "done" → It isn't done until it's been checked.
+
+Reporting an intended result as a completed result is a failure of integrity,
+not just a mistake. The project manager's time and trust are not renewable
+resources. Every unverified claim that turns out to be wrong costs both.
+
+The standard: if you cannot confirm it, say so — "I believe X is the case but
+I haven't verified it yet" is honest. "X is done" when you haven't checked is not.
+
 This is the culture of the project. It applies to every session, every fix,
 every deploy — not just when explicitly reminded.
 

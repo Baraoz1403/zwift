@@ -2097,9 +2097,11 @@ export default function WeeklyPlan() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!hasInput) return;
+                if (!hasInput || loading) return;
                 const today = new Date().toISOString().slice(0, 10);
-                // Save text note to AI memory (coaching fingerprint in KV)
+                // 1. Save text note to AI memory (fingerprint in KV) — best-effort,
+                //    done BEFORE generateAndActivate so the fingerprint includes it
+                //    even if generate fails.
                 if (riderNote.trim()) {
                   try {
                     await fetch("/api/ai/coaching-note", {
@@ -2108,14 +2110,14 @@ export default function WeeklyPlan() {
                       body: JSON.stringify({ date: today, note: riderNote.trim() }),
                     });
                   } catch {
-                    // best-effort — feeling was already saved on emoji click
+                    // best-effort
                   }
                 }
-                setNoteSaved(true);
-                setRiderNote("");
+                // 2. Generate a new plan using riderNote (still in state) + fingerprint.
+                //    This is the ONLY way a plan is generated — the rider's note to the
+                //    coach is the trigger. generateAndActivate clears riderNote on success.
                 setBottomFeeling(null);
-                // Auto-reset the "Saved" confirmation after 3 s
-                setTimeout(() => setNoteSaved(false), 3000);
+                await handleGenerate();
               }}
             >
               <textarea
@@ -2137,33 +2139,31 @@ export default function WeeklyPlan() {
                 onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-                <div style={{ fontSize: 12.5, color: noteSaved ? "var(--good)" : "var(--muted)", transition: "color 0.3s", fontWeight: noteSaved ? 600 : 400 }}>
-                  {noteSaved
-                    ? "✓ Saved to AI memory"
-                    : bottomFeeling
-                      ? `${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label} — add a note or send`
-                      : "Rate the ride above, add a note, or both"}
+                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {bottomFeeling
+                    ? `${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label} — add a note or send`
+                    : "Rate the ride, add a note, or both — your input updates the plan"}
                 </div>
                 <button
                   type="submit"
-                  disabled={!hasInput}
+                  disabled={!hasInput || loading}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "11px 22px", borderRadius: 10,
                     border: "none",
-                    background: hasInput
+                    background: hasInput && !loading
                       ? "linear-gradient(135deg, var(--accent) 0%, rgba(47,143,224,0.7) 100%)"
                       : "rgba(47,143,224,0.2)",
-                    color: hasInput ? "#fff" : "var(--muted)",
+                    color: hasInput && !loading ? "#fff" : "var(--muted)",
                     fontSize: 14.5, fontWeight: 700,
-                    cursor: !hasInput ? "default" : "pointer",
+                    cursor: !hasInput || loading ? "default" : "pointer",
                     fontFamily: "inherit", whiteSpace: "nowrap",
                     transition: "all 0.2s ease",
-                    boxShadow: hasInput ? "0 4px 14px rgba(47,143,224,0.3)" : "none",
+                    boxShadow: hasInput && !loading ? "0 4px 14px rgba(47,143,224,0.3)" : "none",
                   }}
                 >
-                  {noteSaved ? "Sent ✓" : "Send to coach"}
-                  {!noteSaved && (
+                  {loading ? "Updating plan…" : "Send to coach"}
+                  {!loading && (
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                     </svg>
