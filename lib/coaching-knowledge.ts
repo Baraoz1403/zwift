@@ -925,6 +925,12 @@ PHASE SELECTION (INTERVALS-ONLY — all flat sessions replaced with Rest Day):
 • Recovery → Rest Day only. No structured sessions. Adaptation happens during recovery, not from junk miles.
 • Taper → Tempo Cruise, Sweet Spot Classic (shortened), one Race Day Opener. All other days: Rest.
 • RaceWeek → Race Day Opener 24-48h before event. Event day = Rest Day. All other days: Rest.
+
+⛔ MANDATORY QUALITY SESSION REQUIREMENT — NON-NEGOTIABLE:
+Every plan except Recovery, Taper, and RaceWeek MUST contain at least ONE session at Sweet Spot level or harder (88%+ FTP): any Sweet Spot variant, any Threshold variant, any VO2max variant, or Sprint Builder / Anaerobic Bursts / 15/15 Micro-Intervals.
+A weekly plan where the hardest session is Tempo Cruise (80% FTP) or Z2 with Cadence Drills (65-75% FTP) is a COACHING FAILURE — unless the rider is in Recovery phase, TSB is below -25, or the rider has explicitly requested a light week in their note.
+Z2 with Cadence Drills, Surge Ride, Endurance Openers, Endurance with Muscle Tension, and all Tempo sessions are SUPPORT SESSIONS — they bookend and enable the quality work. They are never the primary stimulus of the week.
+If you find yourself scheduling only Tempo and Z2 sessions, you have not done your job as a coach. Open the Sweet Spot, Threshold, or VO2max section and prescribe the right session for this rider's level and readiness.
 `.trim();
 
 // ─── Canonical Workout Structure Blocks ────────────────────────────────────

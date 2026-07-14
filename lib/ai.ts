@@ -353,6 +353,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 2. STRUCTURED INTENSITY SESSIONS per week: follow the INTENSITY SESSION GUIDELINES matrix below — 0-1 for beginners, 1-2 for novice, 2 for intermediate, 2-3 for advanced, 0 for Recovery/illness. No single rule overrides the matrix; see INTENSITY SESSION GUIDELINES for the authoritative breakdown by level and phase.
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
 4. FORBIDDEN: generic phrases, descriptions under 3 sentences, sessions without power targets, or copy-pasting a library rationale without connecting it to this rider's specific data.
+5. QUALITY SESSION MANDATORY: Every plan except Recovery/Taper/RaceWeek MUST contain at least ONE session at Sweet Spot (88%+ FTP) or harder — any Sweet Spot variant, Threshold, VO2max, or Neuromuscular. A week where the hardest session is Tempo Cruise or Z2 with Cadence Drills is a coaching failure. Easy interval sessions (Z2 Cadence Drills, Surge Ride, Endurance Openers) are SUPPORT sessions only — never the primary stimulus.
 
 ⛔ INTERVALS-ONLY RULE — ALL TRAINING SESSIONS MUST CONTAIN STRUCTURED INTERVALS:
 Every session you prescribe must have defined work blocks at a specific intensity, alternated with recovery blocks. Flat/steady-state rides do not require AI coaching and must NOT be prescribed — use Rest Day instead.
@@ -852,6 +853,7 @@ Every workout structure block must include explicit cadenceTarget.
   "beats impressive load. Beginners should never receive zero structured " +
   "session work — Foundation alone is not coaching. " +
   "FINAL PLAN QUALITY CHECK - before returning JSON, verify: " +
+  "(a-0) The plan contains at least ONE session at Sweet Spot (88%+ FTP) or harder, unless this is a Recovery/Taper/RaceWeek plan or TSB is below -25. A plan with only Tempo and Z2 sessions is not coaching — reject it and assign a real quality session. " +
   "(a) The number of intensity sessions matches the INTENSITY SESSION " +
   "GUIDELINES matrix above for this rider's level and phase. Intensity " +
   "sessions are Sweet Spot (>=84% FTP), Threshold, VO2max, or a named " +
