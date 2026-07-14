@@ -9,7 +9,7 @@ html {
      (.stat-card et al) already reference them rather than hardcoding
      colors, so this cascades consistently instead of needing a
      per-component pass. */
-  --bg: #f0f2f5;
+  --bg: #f4f7fb;
   --bg-glow: none;
   --panel: #ffffff;
   --panel-solid: #ffffff;
@@ -20,13 +20,13 @@ html {
   --accent-blue: #3b82f6;
   --good: #1a8f4c;
   --bad: #d6362a;
-  --border: rgba(15, 23, 42, 0.06);
-  --border-strong: rgba(15, 23, 42, 0.12);
+  --border: rgba(15, 23, 42, 0.10);
+  --border-strong: rgba(15, 23, 42, 0.18);
   --danger: #d6362a;
   --radius: 8px; /* was 20px, then 12px - "reduce rounded corners everywhere", asked again */
   --strip-height: 2.5px;   /* top accent strip on all cards — ONE place to change */
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.14);
+  --shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(47,143,224,0.08);
+  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(47,143,224,0.15);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -80,6 +80,23 @@ a:hover {
   100% {
     background-position: 200% 0;
   }
+}
+
+@keyframes sectionBarPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59,130,246,0.7), 0 0 3px rgba(147,197,253,0.9);
+    height: calc(100% - 10px);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(59,130,246,1), 0 0 8px rgba(147,197,253,1), 0 0 40px rgba(59,130,246,0.55);
+    height: calc(100% - 6px);
+  }
+}
+
+@keyframes sectionGradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @keyframes pulseGlow {
@@ -263,13 +280,22 @@ textarea {
 .section-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  margin: 0 0 14px;
-  color: var(--text);
-  padding-left: 16px;
+  font-weight: 900;
+  letter-spacing: -0.45px;
+  margin: 0 0 20px;
+  color: #0f172a;
+  text-shadow: 0 1px 3px rgba(15,23,42,0.08);
+  /* Animated premium chip */
+  background: linear-gradient(to right,
+    rgba(59,130,246,0.14) 0%,
+    rgba(99,102,241,0.07) 45%,
+    transparent 100%);
+  border-radius: 0 12px 12px 0;
+  border-top: 1px solid rgba(59,130,246,0.18);
+  border-bottom: 1px solid rgba(59,130,246,0.08);
+  padding: 11px 22px 11px 20px;
   position: relative;
 }
 
@@ -284,32 +310,30 @@ textarea {
   color: var(--accent);
 }
 
-/* Accent bar — gradient, taller, with a glow effect */
+/* Animated glowing left accent bar */
 .section-title::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 20px;
-  background: linear-gradient(180deg, var(--accent) 0%, var(--accent) 60%, rgba(47,143,224,0.3) 100%);
-  border-radius: 3px;
-  box-shadow: 0 0 8px rgba(47,143,224,0.35);
+  top: 5px;
+  bottom: 5px;
+  width: 5px;
+  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 40%, #1d4ed8 80%, #1e40af 100%);
+  border-radius: 0 4px 4px 0;
+  animation: sectionBarPulse 2.8s ease-in-out infinite;
 }
 
-/* Subtle glow behind the title text */
+/* Inner glow at the left edge behind the bar */
 .section-title::after {
   content: "";
   position: absolute;
-  left: -4px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 120px;
-  height: 32px;
-  background: radial-gradient(ellipse at left center, rgba(47,143,224,0.07) 0%, transparent 70%);
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  background: linear-gradient(to right, rgba(59,130,246,0.12) 0%, transparent 100%);
+  border-radius: 0 0 12px 0;
   pointer-events: none;
-  border-radius: 4px;
 }
 
 /* .dot is kept for backward compatibility but no longer used */
