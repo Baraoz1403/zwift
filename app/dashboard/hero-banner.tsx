@@ -4,13 +4,14 @@ import DashboardNavTabs from "./dashboard-nav-tabs";
 import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
 
-// A different rich, saturated background per slide (blue / emerald /
-// Zwift-orange) - a single unified background read as flat, and pale
-// pastel versions of the green/red slides read as washed out. All three
-// use the same dark-to-vivid-to-dark diagonal gradient treatment so they
-// carry equal visual weight. The nav row has its own dark glass backing
-// (see .banner-nav in globals.css) so it stays legible regardless of
-// which slide is showing, without needing its own per-slide variants.
+// A different rich, saturated background per slide (blue / emerald / red) -
+// a single unified background read as flat, and pale pastel versions of
+// the green/red slides read as washed out. All three use the same
+// dark-to-vivid-to-dark diagonal gradient treatment so they carry equal
+// visual weight. Blue is the default/first slide. The nav row has its own
+// dark glass backing (see .banner-nav in globals.css) so it stays legible
+// regardless of which slide is showing, without needing its own per-slide
+// variants.
 const SLIDES = [
   {
     dark: true,
@@ -144,17 +145,15 @@ function LiveMetricsHUD({ accent }: { accent: string }) {
 /**
  * HeroBanner — the site's persistent header (rendered once from
  * app/dashboard/layout.tsx, shared by Coach + Stats). Full-bleed width
- * (edge-to-edge). One of 3 messages (blue / emerald / orange) is picked at
- * random once per page load - no auto-advance timer, since a message that
- * keeps changing while it's being read was more distracting than useful.
- * The dots below still let the rider switch manually at any time.
+ * (edge-to-edge). Blue always shows first on load - no auto-advance timer
+ * and no randomness, since a message that keeps changing while it's being
+ * read was more distracting than useful. The dots below still let the
+ * rider switch to the emerald/red messages manually at any time.
  */
 export default function HeroBanner({ firstName }: { firstName?: string | null }) {
-  // No auto-advance timer - picked once per page load/refresh instead of
-  // cycling while the rider is looking at it. useState's initializer runs
-  // exactly once on mount, so this stays fixed for the life of the page and
-  // only changes on the next real navigation/refresh, per explicit request.
-  const [idx, setIdx] = useState(() => Math.floor(Math.random() * SLIDES.length));
+  // Blue (index 0) always shows first on load - no auto-advance timer and
+  // no random pick. The dots below still let the rider switch manually.
+  const [idx, setIdx] = useState(0);
   const s = SLIDES[idx];
 
   const headlineColor = s.dark ? "white" : "var(--text)";
