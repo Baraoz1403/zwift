@@ -338,7 +338,7 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
-  `⛔ IRON LAW â COACHING PHILOSOPHY:
+  `⛔ IRON LAW — COACHING PHILOSOPHY:
 1. SELECT FROM THE NAMED WORKOUT LIBRARY BELOW - these are curated, evidence-based protocols, not a contradiction of real coaching (a real coach reuses proven session formats too). The job is choosing the RIGHT one for this rider today and explaining why - never just print a template verbatim. Every session's rationale, execution cue, and WHY/HOW/SUCCESS explanation must reference THIS rider's actual TSB, phase, history, and stated goals, not generic boilerplate.
 2. MINIMUM 2 STRUCTURED INTENSITY SESSIONS per week (Sweet Spot/Threshold/VO2max) when the rider's level and current TSB support it - see RIDER LEVEL GUIDANCE and SESSION READINESS above, which are defaults to weigh alongside the rider's own history and notes, not absolute gates.
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
@@ -572,8 +572,8 @@ Every workout structure block must include explicit cadenceTarget.
   "(1) Repeating the same named hard session across consecutive weeks with a small " +
 "progressive change (duration/reps/power) is a legitimate, often-correct choice - it enables specific " +
 "adaptation and a reliable week-over-week comparison, not a failure of variety. Progress up the ladder " +
-"(Sweet Spot Classic â Extended Sweet Spot or Sweet Spot Progression; Threshold Development â " +
-"Threshold Cruise Intervals; Norwegian 4Ã4 â 5Ã5 VO2max) when the rider's TSB/history shows they're " +
+"(Sweet Spot Classic → Extended Sweet Spot or Sweet Spot Progression; Threshold Development → " +
+"Threshold Cruise Intervals; Norwegian 4×4 → 5×5 VO2max) when the rider's TSB/history shows they're " +
 "ready for more, or repeat the same session with a small bump when consolidation is the right call - " +
 "either is valid coaching, and either beats swapping categories just to look varied. " +
 "(2) Foundation/Recovery/Endurance sessions may repeat freely (Foundation Ride twice in a row is fine). " +
@@ -758,8 +758,8 @@ Every workout structure block must include explicit cadenceTarget.
   '"offSec":number,"recoveryPowerFtp":number}. ' +
   "CRITICAL: sum of all structure[].durationMin MUST equal the workout's durationMin. " +
   "PROGRESSION: choose the specific library variant that matches this rider's current load and readiness. " +
-"If this rider had Sweet Spot Classic (3Ã10 min) last week and their TSB/history shows they're ready for more, " +
-"step up to Extended Sweet Spot (2Ã20 min) or Sweet Spot Progression (10+15+20 min) - but repeating Sweet Spot " +
+"If this rider had Sweet Spot Classic (3×10 min) last week and their TSB/history shows they're ready for more, " +
+"step up to Extended Sweet Spot (2×20 min) or Sweet Spot Progression (10+15+20 min) - but repeating Sweet Spot " +
 "Classic again with a small bump (e.g. slightly higher power or an extra block) is equally valid when consolidation, " +
 "not escalation, is the right call this week. " +
   "The structure should reflect the EXACT protocol from the named workout library (correct repeats, durations, power targets). " +
@@ -815,7 +815,7 @@ Every workout structure block must include explicit cadenceTarget.
 "last week's equivalent, or deliberately repeats it with a small bump (duration/reps/power) - both are " +
 "valid; swapping to a different category purely to avoid repeating a name is not required and is often worse. " +
   "A plan that fails (a)-(c) is a template, not coaching. Fix before responding. " +
-  "Riders should feel challenged, engaged, and coached — not like they got a generic template..)}";
+  "Riders should feel challenged, engaged, and coached — not like they got a generic template.";
 
 export async function generateWeeklyPlan(params: {
   firstName?: string;
