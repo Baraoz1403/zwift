@@ -184,7 +184,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 90,
     tss: 90,
-    rationale: "Extended aerobic volume trains the body to spare glycogen and run predominantly on fat — the metabolic foundation that separates trained cyclists from untrained ones.",
+    rationale: "Extended aerobic volume promotes fat-oxidation and glycogen-sparing adaptations — a key metabolic shift associated with endurance training that improves sustained performance.",
     structure: "15 min warmup → 65 min Z2 @ 65-73% FTP → 10 min cooldown",
     executionCue: "The first 30 minutes feel easy — resist the temptation to increase intensity. The last 20 minutes are where real metabolic adaptation happens as glycogen depletes and fat oxidation rises.",
     successFeel: "Slightly tired but not depleted at 90 minutes. If you're wiped out, you rode too hard in the first half.",
@@ -453,7 +453,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
     category: "endurance",
     durationMin: 120,
     tss: 120,
-    rationale: "The cornerstone of long-term aerobic development — two hours at true Z2 intensity triggers maximal mitochondrial biogenesis and fat-oxidation enzyme upregulation, adaptations that shorter rides simply cannot produce. Used systematically in every elite endurance program from Seiler's polarized model to Friel's periodization.",
+    rationale: "The cornerstone of long-term aerobic development — extended Z2 duration is associated with enhanced mitochondrial adaptation and fat-oxidation enzyme upregulation, responses that appear to scale with sustained aerobic time. Used systematically in elite endurance programs including Seiler's polarized model and Friel's periodization.",
     structure: "20 min easy warmup → 85 min Z2 @ 65-73% FTP → 15 min cooldown",
     executionCue: "Power must stay in Z2 for the full 85 minutes. The first 40 minutes should feel suspiciously easy — that's correct. Fat metabolism takes 30-40 minutes to fully activate; riders who start at 75% miss most of the adaptation. Check power every 10 minutes and drift down if anything.",
     successFeel: "Pleasantly tired, not depleted. If you're wiped out, you were riding at Z3 for parts of it. You should be able to ride again tomorrow without issue.",
@@ -668,7 +668,7 @@ export const WORKOUT_LIBRARY: NamedWorkout[] = [
   {
     name: "VO2max Pyramid",
     category: "vo2max",
-    durationMin: 60,
+    durationMin: 59,
     tss: 78,
     rationale: "Ascending and descending intervals (1-2-3-2-1 min) allow the rider to experience VO2max stress without committing to full 4-5 minute blocks — excellent introduction to high-intensity work, or a volume-reduced VO2max session on a high-fatigue week.",
     structure: "15 min warmup → 1+2+3+2+1 min @ 115% FTP (2 min recovery between each) → 15 min cooldown",
@@ -841,10 +841,10 @@ RECOVERY (always appropriate regardless of TSB):
 • "Extended Recovery Flush" — 50 min (10 easy → 30 Z1 @ 54% → 10 wind-down). For days after back-to-back hard efforts.
 • "Easy Flush" — 45 min (10 warmup → 25 Z1 @ 55% → 10 cooldown). Never push harder even if feeling strong.
 
-ENDURANCE / FOUNDATION (Z2 — 65-76% FTP, always appropriate):
+ENDURANCE / FOUNDATION (Z2 — 56-75% FTP per Coggan; Foundation rides typically target the upper half 65-73% FTP for aerobic stimulus; always appropriate regardless of TSB):
 • "Foundation Ride" — 60 min (10 warmup → 40 Z2 @ 65-73% → 10 cooldown). If you can't complete full sentences, you're above Z2.
 • "Long Endurance" — 90 min (15 warmup → 65 Z2 @ 65-73% → 10 cooldown). Last 20 min = primary fat-oxidation adaptation window.
-• "Two-Hour Foundation" — 120 min (20 warmup → 85 Z2 → 15 cooldown). Cornerstone of elite aerobic base — triggers mitochondrial biogenesis that shorter rides can't. Use in Base/Build with adequate recovery.
+• "Two-Hour Foundation" — 120 min (20 warmup → 85 Z2 → 15 cooldown). Cornerstone of aerobic base — extended Z2 duration is associated with greater mitochondrial adaptation than shorter rides. Use in Base/Build with adequate recovery.
 • "Over-Distance Ride" — 100 min (15 warmup → 70 Z2 → 15 cooldown). Extends aerobic window for riders whose CTL can handle moderate volume.
 • "Z2 with Cadence Drills" — 60 min, Z2 with 4×2 min @ 100-110 rpm. Eliminates dead-spots in pedal stroke.
 • "Surge Ride" — 60 min, Z2 with 6×1 min surges @ 110% FTP (5 min apart). Metabolic variety without recovery cost.
@@ -862,27 +862,27 @@ TEMPO (Z3 — 76-90% FTP, always appropriate, never needs high TSB):
 
 SWEET SPOT (88-93% FTP — the most time-efficient zone. Requires TSB ≥ -20):
 • "Sweet Spot Primer" — 55 min (12 warmup → 4×7 min @ 88% / 3 min rec → 3 cooldown). Beginner entry to sweet spot — fewer, shorter blocks than Classic.
-• "Sweet Spot Classic" — 60 min (12 warmup → 3×10 min @ 90% / 4 rec → 14 cooldown). Pacing: start 88%, not 93%. Block 1 discipline makes block 3 possible.
+• "Sweet Spot Classic" — 60 min (10 warmup → 3×10 min @ 90% / 4 rec → 8 cooldown). Pacing: start 88%, not 93%. Block 1 discipline makes block 3 possible.
 • "3×15 Sweet Spot" — 75 min (12 warmup → 3×15 min @ 90% / 5 rec → 3 cooldown). Natural progression from 3×10 min. If block 3 fades, power was too high.
 • "Extended Sweet Spot" — 75 min (15 warmup → 2×20 min @ 90% / 8 rec → 4 cooldown). Second block within 3% of first = progression ready.
-• "Sweet Spot Progression" — 70 min (12 warmup → 10+15+20 min @ 90% / 5 each → 8 cooldown). Ascending difficulty in a single session.
+• "Sweet Spot Progression" — 70 min (12 warmup → 10+15+20 min @ 90% / 5 each → 3 cooldown). Ascending difficulty in a single session.
 • "Sweet Spot Time Trial" — 65 min (12 warmup → 35 min continuous @ 89% → 18 cooldown). No recovery — builds tolerance for sustained effort.
 • "Low-Cadence Sweet Spot" — 65 min (15 warmup → 3×12 min @ 89% / 70-75 rpm / 4 rec → 2 cooldown). Dual stimulus: cardiovascular + muscular endurance.
 
 THRESHOLD (97-105% FTP — requires TSB ≥ -12):
 • "Short Threshold Intervals" — 60 min (12 warmup → 6×5 min @ 100% / 2.5 rec → 3 cooldown). Short recovery accumulates lactate deliberately — the stress IS the workout.
-• "Threshold Development" — 60 min (12 warmup → 4×8 min @ 100% / 4 rec → 4 cooldown). Quality > quantity — 3 quality blocks > 4 faded ones.
+• "Threshold Development" — 60 min (8 warmup → 4×8 min @ 100% / 4 rec → 4 cooldown). Quality > quantity — 3 quality blocks > 4 faded ones.
 • "Threshold Cruise Intervals" — 60 min (12 warmup → 5×5 min @ 100% / 2.5 rec → 10.5 cooldown). High threshold volume, lower per-rep commitment.
 • "Critical Power Development" — 70 min (12 warmup → 3×12 min @ 102% / 6 rec → 4 cooldown). Above-threshold work targets the critical power ceiling. Advanced only.
 • "Threshold Pyramid" — 75 min (12 warmup → 5+8+10+8+5 min @ ascending % / 4 rec each → 11 cooldown). Peak effort in the middle of the session; descending blocks train fatigue-resistance.
-• "2×20 FTP Blocks" — 70 min (15 warmup → 2×20 min @ 98% / 7 rec → 6 cooldown). Gold standard. Start at 97% — pacing discipline is the entire test.
+• "2×20 FTP Blocks" — 70 min (10 warmup → 2×20 min @ 98% / 7 rec → 6 cooldown). Gold standard. Start at 97% — pacing discipline is the entire test.
 • "Descending Threshold" — 65 min (12 warmup → 12+10+8+6 min stepping 97→103% / 4 rec each → 5 cooldown). Builds mental toughness. Final block at 103% feels like a sprint.
 • "Over-Under Intervals" — 65 min (12 warmup → 3×9 min cycling 3 min@105%/3 min@93% / 5 rec → 11 cooldown). Never ease below 90% during 'under' phases.
 • "FTP Test Protocol" — 60 min (15 progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). Assessment only. FTP = 0.95 × average power for 20 min.
 
 VO2MAX (106-120% FTP — requires TSB ≥ -5 and intermediate+ rider):
 • "Micro Intervals" — 55 min (12 warmup → 12×1 min @ 117% / 1 rec → 19 cooldown). Entry-level VO2max. Last 4 reps harder than first 4.
-• "VO2max Pyramid" — 60 min (15 warmup → 1+2+3+2+1 min @ 115% / 2 rec each → 27 cooldown). Intro to VO2max without long rep commitment. Great variety session.
+• "VO2max Pyramid" — 59 min (15 warmup → 1+2+3+2+1 min @ 115% / 2 rec each → 27 cooldown). Intro to VO2max without long rep commitment. Great variety session.
 • "60/60 Intervals" — 65 min (15 warmup → 3 sets of 6×(60s@115% / 60s@50%) / 5 set-rest → 4 cooldown). Equal work:rest. Set 3 significantly harder than set 1 = correct execution.
 • "4×4 Two-Set" — 65 min (12 warmup → [2×4 min@108%/4 rec] + 8 Z2 + [2×4 min@108%/4 rec] → 13 cooldown). Beginner Norwegian variant. Graduate to full 4×4 when this feels manageable.
 • "Norwegian 4×4" — 60 min (12 warmup → 4×4 min @ 108% / 4 rec → 16 cooldown). Last 2 min of each rep MUST be genuinely hard. Cadence 95+ rpm.
@@ -895,7 +895,7 @@ NEUROMUSCULAR (acceptable even in Base — minimal lactate, neurological only):
 • "Sprint Builder" — 50 min (15 warmup → 8×15s ALL OUT / 2.5 min rec → 13 Z2 flush). Last sprint near-equal to first = success.
 • "Spin-Up Sprints" — 50 min (15 warmup → 8×30s cadence spin-ups / 2 min rec → 15 cooldown). Builds pedaling speed and motor unit recruitment. Light gear, max cadence.
 • "Anaerobic Bursts" — 55 min (15 warmup → 6×1 min @ 130% / 4 min rec → 10 cooldown). Trains anaerobic capacity for attacks and climbs. Full recovery between reps is non-negotiable.
-• "Race Day Opener" — 35 min (10 warmup → 3×1 min @ 110% / 3 min easy → 5 min @ 80% → 10 spindown). Pre-event only (24-48h before race). Activation, not training stress.
+• "Race Day Opener" — 35 min (10 warmup → 3×1 min @ 110% / 3 min easy → 5 min @ 80% → 8 spindown). Pre-event only (24-48h before race). Activation, not training stress.
 
 INTERMITTENT (requires TSB ≥ -8 — metabolically demanding):
 • "15/15 Micro-Intervals" — 50 min (12 warmup → 4 sets of 10×(15s@135% / 15s@50%) / 4 set-rest → 6 cooldown). High-power, low-recovery-cost intermittent work. Good starter for riders new to above-threshold.
@@ -1493,12 +1493,10 @@ export const CANONICAL_WORKOUT_STRUCTURES: Record<string, CanonicalWorkoutEntry>
     ],
   },
   "VO2max Pyramid": {
-    totalMin: 60,
-    // 1+2+3+2+1 min at 115% with 2 min recovery each = (1+2+2+3+2+2+2+2+1) = 18 min intervals
-    // Total structure: 15 warmup + 9 work + 8 recovery + 28 cooldown = ...
-    // Actually: 15 wu + [1+2+2+3+2+2+2+2+1] = 15+18=33 + 15 cd = 48... let me recalculate
+    totalMin: 59,
+    // 1+2+3+2+1 min at 115% with 2 min recovery each:
     // 5 intervals: 1+2+3+2+1 = 9 min work; 4 recoveries of 2 min = 8 min; total interval section = 17 min
-    // 15 warmup + 17 intervals + 28 cooldown = 60 min
+    // 15 warmup + 17 intervals + 27 cooldown = 59 min
     blocks: [
       { type: "warmup",      durationMin: 15, powerFtp: 0.70, label: "Easy warm-up" },
       { type: "steadystate", durationMin: 1,  powerFtp: 1.15, label: "1 min @ 115% FTP" },
