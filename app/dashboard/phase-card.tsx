@@ -121,11 +121,6 @@ export default function PhaseCard({
           position: "relative", overflow: "hidden",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20,
         }}>
-          {/* Top accent strip — full-width solid, identical to .stat-card::before */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: "2.5px",
-            background: phaseColor,
-          }} />
 
           {/* Ambient glow */}
           <div style={{
@@ -180,7 +175,7 @@ export default function PhaseCard({
 
               {/* Goals */}
               <div style={{
-                fontSize: 12.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.5, maxWidth: 400,
+                fontSize: 14.5, color: "rgba(255,255,255,0.88)", lineHeight: 1.6, maxWidth: 440, fontWeight: 400,
               }}>
                 {hasProfile ? goalLabel : "Click to set up your training profile"}
               </div>
@@ -257,10 +252,10 @@ export default function PhaseCard({
             ══════════════════════════════════════════════ */}
         <div style={{
           background: "#fff",
-          padding: "20px 32px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          gap: 20, flexWrap: "wrap",
+          padding: "20px 32px 16px",
+          display: "flex", flexDirection: "column", gap: 16,
         }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
 
           {/* Stats row */}
           {hasProfile && (
@@ -316,8 +311,8 @@ export default function PhaseCard({
                       lineHeight: 1, letterSpacing: "-0.5px",
                     }}>{stat.value}</div>
                     <div style={{
-                      fontSize: 10.5, fontWeight: 700, color: "#64748b",
-                      textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 2,
+                      fontSize: 12, fontWeight: 700, color: "#64748b",
+                      textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3,
                     }}>{stat.label}</div>
                   </div>
                 </div>
@@ -396,6 +391,27 @@ export default function PhaseCard({
                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
               </svg>
             </button>
+          </div>
+          </div>{/* end inner row */}
+
+          {/* Tips strip — full width, below stats + actions */}
+          <div style={{
+            display: "flex", gap: 10, flexWrap: "wrap",
+            paddingTop: 12, borderTop: "1px solid rgba(15,23,42,0.07)",
+          }}>
+            {[
+              { icon: "⚡", color: "#f59e0b", text: "After an FTP test, update your FTP in your Zwift personal profile — workouts auto-adjust." },
+              { icon: "🎛️", color: "#3b82f6", text: "At the start of each structured workout in Zwift, select ERG mode for automatic power control." },
+            ].map((tip, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: 10,
+                padding: "10px 14px", borderRadius: 9, flex: "1 1 220px",
+                background: `${tip.color}09`, border: `1px solid ${tip.color}25`,
+              }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{tip.icon}</span>
+                <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.6, fontWeight: 500 }}>{tip.text}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

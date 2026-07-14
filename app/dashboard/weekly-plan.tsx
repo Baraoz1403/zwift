@@ -1637,18 +1637,23 @@ export default function WeeklyPlan() {
                     </div>
 
                     {/* Card body */}
-                    <div style={{ padding: "12px 16px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
-                      {/* Actual ride name — most prominent */}
-                      <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.3, marginBottom: 3 }}>
-                        {actual.name}
-                      </div>
-                      {/* Day + date */}
-                      <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>
+                    <div style={{ padding: "16px 20px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      {/* Day + date — same style as planned cards */}
+                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
                         {w.day}{w.date ? ` · ${w.date}` : ""}
                       </div>
-                      {/* Stats */}
+                      {/* Actual ride name — prominent, centered like planned */}
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
+                        {actual.name}
+                      </div>
+                      {/* Stats — centered, same visual weight as planned card */}
                       {stats && (
-                        <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8 }}>
+                        <div style={{
+                          textAlign: "center", fontSize: 13.5, color: "#475569", fontWeight: 600,
+                          paddingTop: 10, paddingBottom: 10,
+                          borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
+                          marginBottom: 10,
+                        }}>
                           {stats}
                         </div>
                       )}
@@ -1668,8 +1673,8 @@ export default function WeeklyPlan() {
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
                             {/* Coach prompt — left bubble */}
                             <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-                              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>🏋️</div>
-                              <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500 }}>
+                              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🏋️</div>
+                              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
                                 How did that feel?
                               </div>
                             </div>
@@ -1720,7 +1725,7 @@ export default function WeeklyPlan() {
                       <div style={{
                         marginTop: 10, paddingTop: 8,
                         borderTop: "1px solid var(--border)",
-                        fontSize: 10.5, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.4,
+                        fontSize: 12, color: "var(--muted)", fontStyle: "italic", lineHeight: 1.4,
                       }}>
                         Planned: {w.title}
                       </div>
@@ -1768,15 +1773,24 @@ export default function WeeklyPlan() {
                         BONUS
                       </div>
                     </div>
-                    <div style={{ padding: "12px 16px 14px", display: "flex", flexDirection: "column", flex: 1 }}>
-                      <div style={{ fontSize: 14.5, fontWeight: 700, color: "var(--text)", lineHeight: 1.3, marginBottom: 3 }}>
+                    <div style={{ padding: "16px 20px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
+                        {w.day}{w.date ? ` · ${w.date}` : ""} · Bonus!
+                      </div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
                         {actual.name}
                       </div>
-                      <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 500, marginBottom: 10 }}>
-                        {w.day}{w.date ? ` · ${w.date}` : ""} · Bonus ride!
-                      </div>
-                      {bonusStats && <div style={{ fontSize: 12.5, color: "var(--text)", opacity: 0.8 }}>{bonusStats}</div>}
-                      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 10.5, color: "var(--muted)", fontStyle: "italic" }}>
+                      {bonusStats && (
+                        <div style={{
+                          textAlign: "center", fontSize: 13.5, color: "#475569", fontWeight: 600,
+                          paddingTop: 10, paddingBottom: 10,
+                          borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
+                          marginBottom: 10,
+                        }}>
+                          {bonusStats}
+                        </div>
+                      )}
+                      <div style={{ marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--border)", fontSize: 12, color: "var(--muted)", fontStyle: "italic" }}>
                         Planned: Rest Day — great job riding anyway!
                       </div>
                     </div>
@@ -1825,24 +1839,24 @@ export default function WeeklyPlan() {
                     }}
                   >
                     {rest && <div style={{ fontSize: 48, marginBottom: 10 }}>🛌</div>}
-                    <div style={{ fontSize: 14, color: "#64748b", fontWeight: 600, textAlign: "center", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                    <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", textAlign: "center", lineHeight: 1.25, marginTop: 6 }}>
+                    <div style={{ fontSize: 23, fontWeight: 800, color: "#0f172a", textAlign: "center", lineHeight: 1.2, marginTop: 7 }}>
                       {w.title}
                     </div>
 
                     {!rest && (
                       <div style={{
-                        display: "flex", justifyContent: "center", gap: 18,
+                        display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
                         marginTop: 14, paddingTop: 14, paddingBottom: 14,
                         borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
-                        fontSize: 15, fontWeight: 700, color: "#64748b",
+                        fontSize: 14, fontWeight: 700, color: "#475569",
                       }}>
                         <span>{w.durationMin} min</span>
-                        {ifTss && <span>TSS {ifTss.tss}</span>}
+                        {ifTss && <span>TSS {Math.round(ifTss.tss)}</span>}
                         {ifTss && <span>IF {ifTss.intensityFactor.toFixed(2)}</span>}
-                        {w.targetPowerPctFtp && <span style={{ fontWeight: 500 }}>{w.targetPowerPctFtp} FTP</span>}
+                        {w.targetPowerPctFtp && <span style={{ fontWeight: 600, color: "#3b82f6" }}>{w.targetPowerPctFtp} FTP</span>}
                       </div>
                     )}
 
@@ -1869,17 +1883,6 @@ export default function WeeklyPlan() {
                               </span>
                             </div>
                           )}
-                          {/* Download .zwo — always available as fallback */}
-                          <div style={{ display: "flex", justifyContent: "center" }}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              style={{ width: "auto", padding: "8px 16px", fontSize: 14, fontWeight: 600 }}
-                              onClick={() => handleDownloadZwo(w)}
-                            >
-                              ↓ Download ZWO
-                            </button>
-                          </div>
                         </div>
                       );
                     })()}
@@ -2075,10 +2078,10 @@ export default function WeeklyPlan() {
                 boxShadow: "0 4px 12px rgba(47,143,224,0.3)",
               }}>🏋️</div>
               <div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", lineHeight: 1.2 }}>
                   Talk to your coach
                 </div>
-                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
+                <div style={{ fontSize: 14, color: "var(--muted)", marginTop: 3 }}>
                   Your input enters AI memory — sharpening your future sessions
                 </div>
               </div>
@@ -2086,7 +2089,7 @@ export default function WeeklyPlan() {
 
             {/* Emoji rating */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 12, opacity: 0.8 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 14 }}>
                 How did today{"'"}s ride feel?
               </div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -2120,9 +2123,9 @@ export default function WeeklyPlan() {
                         outline: "none",
                       }}
                     >
-                      <span style={{ fontSize: 28, lineHeight: 1 }}>{s.emoji}</span>
+                      <span style={{ fontSize: 30, lineHeight: 1 }}>{s.emoji}</span>
                       <span style={{
-                        fontSize: 10, fontWeight: 700,
+                        fontSize: 11.5, fontWeight: 700,
                         color: selected ? "var(--text)" : "var(--muted)",
                         textAlign: "center", lineHeight: 1.3,
                         transition: "color 0.15s",
@@ -2179,8 +2182,8 @@ export default function WeeklyPlan() {
                 style={{
                   width: "100%", padding: "13px 15px", borderRadius: 10,
                   border: "1.5px solid var(--border)",
-                  background: "rgba(255,255,255,0.03)",
-                  fontSize: 15, color: "var(--text)", fontFamily: "inherit",
+                  background: "#fafafa",
+                  fontSize: 15.5, color: "var(--text)", fontFamily: "inherit",
                   resize: "none", outline: "none", lineHeight: 1.6,
                   boxSizing: "border-box",
                   transition: "border 0.15s",
@@ -2189,7 +2192,7 @@ export default function WeeklyPlan() {
                 onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                <div style={{ fontSize: 14, color: "var(--muted)" }}>
                   {bottomFeeling
                     ? `${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label} — add a note or send`
                     : "Rate the ride, add a note, or both — your input updates the plan"}
@@ -2223,7 +2226,7 @@ export default function WeeklyPlan() {
             </form>
 
             {/* Phase info footer */}
-            <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(47,143,224,0.12)", textAlign: "center", fontSize: 13, color: "var(--muted)" }}>
+            <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(47,143,224,0.12)", textAlign: "center", fontSize: 14, color: "var(--muted)" }}>
               {cycleInfo
                 ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
                   ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`

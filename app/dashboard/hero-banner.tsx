@@ -166,7 +166,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       position: "relative",
       display: "flex",
       flexDirection: "column",
-      minHeight: 260,
+      minHeight: 290,
       marginBottom: 32,
       borderBottom: `1px solid ${s.accent}30`,
       boxShadow: `0 16px 40px rgba(0,0,0,0.18)`,
@@ -237,21 +237,21 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
               transition:"background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease"}}>
               <div style={{width:7,height:7,borderRadius:"50%",background:s.accent,
                 boxShadow:`0 0 10px ${s.accent}, 0 0 4px #fff`}} />
-              <span style={{fontSize:11.5,fontWeight:800,letterSpacing:"2.5px",color:s.accent,textTransform:"uppercase"}}>{s.tag}</span>
+              <span style={{fontSize:12,fontWeight:800,letterSpacing:"2.8px",color:s.accent,textTransform:"uppercase"}}>{s.tag}</span>
             </div>
             {s.lines.map((line, i) => (
               <div key={i} style={{
-                fontSize: i === s.lines.length - 1 ? 46 : 40,
-                fontWeight: 900, lineHeight: 1.05,
-                letterSpacing: "-1px",
+                fontSize: i === s.lines.length - 1 ? 52 : 44,
+                fontWeight: 900, lineHeight: 1.0,
+                letterSpacing: "-1.5px",
                 color: i === s.lines.length - 1 ? s.accent : headlineColor,
                 textShadow: i === s.lines.length - 1 && s.dark
-                  ? `0 0 32px ${s.accent}80, 0 2px 8px rgba(0,0,0,0.3)`
-                  : s.dark ? "0 2px 6px rgba(0,0,0,0.25)" : "none",
+                  ? `0 0 40px ${s.accent}90, 0 2px 10px rgba(0,0,0,0.35)`
+                  : s.dark ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
                 transition: "color 0.3s ease",
               }}>{line}</div>
             ))}
-            <p style={{fontSize:15.5,color:subColor,lineHeight:1.65,margin:"16px 0 0",fontWeight:400,maxWidth:420}}>{s.sub}</p>
+            <p style={{fontSize:16,color:subColor,lineHeight:1.7,margin:"18px 0 0",fontWeight:400,maxWidth:440}}>{s.sub}</p>
           </div>
           <div style={{display:"flex",gap:10,marginTop:24}}>
             {SLIDES.map((_,i)=>(
