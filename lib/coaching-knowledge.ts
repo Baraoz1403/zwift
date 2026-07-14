@@ -923,16 +923,21 @@ WEEKLY SEQUENCING:
 • Never two hard sessions on consecutive days — insert a Foundation Ride, Spin & Recover, or Rest Day between.
 
 PHASE SELECTION:
-• Base → Foundation Ride, Long Endurance, Z2 with Cadence Drills, Surge Ride, Endurance with Muscle Tension, Sprint Builder, Tempo Cruise, Tempo Ladder, Endurance Openers. Max 1 quality session/week (Sweet Spot+). Easy days = Foundation or Z2 variants; rest when volume is met.
-• Build → Sweet Spot series, Threshold series, VO2max series as primary sessions (2-3/week). Easy days = Foundation Ride, Spin & Recover, or Z2 with Cadence Drills.
-• Recovery → Rest Days, Spin & Recover, and Easy Flush only. Nothing above 60% FTP. Volume cut 40-60% from normal week.
+• Base → Hard sessions (Sweet Spot+) per the HARD-SESSION MATRIX in the system prompt — the target depends on rider level, NOT a universal cap. An Intermediate Base rider can handle 1-2 hard sessions/week when TSB supports it; a new beginner targets 0-1. Support sessions: Foundation Ride, Long Endurance, Z2 with Cadence Drills, Surge Ride, Endurance with Muscle Tension, Tempo Cruise, Tempo Ladder, Endurance Openers, Sprint Builder. Continuous endurance (Foundation Ride, Long Endurance) is fully eligible as a purposeful session — do not force interval structure onto a session whose purpose is aerobic volume. Easy days = Foundation or Z2 variants when they serve a clear role.
+• Build → Hard sessions (Sweet Spot+, Threshold, VO2max): 2 per week for most riders, per HARD-SESSION MATRIX. Easy days = Foundation Ride, Spin & Recover, Z2 with Cadence Drills, or Long Endurance. Continuous endurance remains eligible as a purposeful aerobic support session.
+• Recovery → Genuine reduced-load week: cut volume 40-60%. No formal hard sessions. Optional one short easy activation (easy spin, Foundation Ride, or a brief Z2 session — not a Sweet Spot or Threshold session). Rest Days when appropriate; do not automatically fill every day with Rest — some easy movement supports recovery.
 • Taper → Foundation Ride, Tempo Cruise, one Sweet Spot Classic session, one Race Day Opener. No VO2max or Threshold volume work.
 • RaceWeek → Race Day Opener placed 1-2 days before event. Foundation Ride or Spin & Recover on other days. Event day and day after = Rest Day.
 
 COACHING QUALITY CHECK:
-For Base/Build weeks: include at least ONE session at Sweet Spot (88%+ FTP) or harder — unless TSB is below -25, this is a Recovery phase week, or the rider explicitly requested a lighter week. A plan with only Tempo and easy sessions is under-prescribing for most riders outside those exceptions; verify you have a clear justification before returning it.
-Foundation, Endurance, Recovery, and Tempo sessions are support sessions — they enable hard work, bookend it, and accelerate recovery between hard days. They are legitimate and necessary coaching tools. They are not sufficient as the ONLY weekly content for a Build or Base rider who is ready for more.
-When selecting support sessions, choose the right one for the day's role: Foundation Ride or Long Endurance for aerobic volume; Spin & Recover or Easy Flush the day after a hard session; Z2 with Cadence Drills or Surge Ride when some structure is preferred on an easy day.
+SEPARATE THREE SESSION TYPES — count them independently:
+  (1) TRAINING SESSIONS: any planned cycling session (total sessions this week)
+  (2) STRUCTURED SESSIONS: sessions with defined blocks, power targets, or execution cues (includes Z2 Cadence Drills, Tempo, Sweet Spot, Threshold, VO2max, Sprint Builder, Surge Ride — excludes plain Foundation Ride and Long Endurance which are continuous endurance)
+  (3) HARD-INTENSITY SESSIONS: sessions creating meaningful high-intensity metabolic load — Sweet Spot (≥88% FTP), Threshold (≥97%), VO2max (≥106%), or Intermittent/Anaerobic sessions. Sprint Builder and Neuromuscular sessions do NOT count as hard-intensity. Foundation, Recovery, Tempo (<84% FTP), and continuous endurance do NOT count.
+
+HARD-SESSION MINIMUM ENFORCEMENT: Before returning the plan, count hard-intensity sessions. Compare to the target from the HARD-SESSION MATRIX. If the count is below the target, either: (a) add a hard session if the week structure allows it, or (b) return a specific rider-data-grounded reason in the summary: exact TSB value, what prevented the second session, and what that means for progression. Returning fewer than target without an explicit named reason is a quality failure.
+
+Support sessions (Foundation, Long Endurance, Recovery, Spin & Recover, Easy Flush) are legitimate and necessary coaching tools — they are not filler. Choose them with a clear purpose: Foundation Ride or Long Endurance for aerobic volume; Spin & Recover or Easy Flush after a hard session; Z2 with Cadence Drills or Surge Ride when structured variety is appropriate on an easy day. Continuous endurance sessions must have a stated role in the weekly plan.
 `.trim();
 
 // ─── Canonical Workout Structure Blocks ────────────────────────────────────

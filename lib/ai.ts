@@ -815,47 +815,68 @@ Every workout structure block must include explicit cadenceTarget.
   "and use type='Rest', title='Rest Day', durationMin=0 for non-training " +
   "days until you have exactly 7. Return all 7 days — the display layer " +
   "filters the window but coaching logic requires the complete week. " +
-  "INTENSITY SESSION GUIDELINES — one authoritative matrix, no minimum overrides: " +
-  "The correct number of intensity sessions (Sweet Spot >=84% FTP, Threshold, " +
-  "VO2max, or named interval protocol) per week depends on rider level, phase, " +
-  "and current readiness: " +
-  "• New beginner (<2.5 W/kg, early weeks): 0-1 structured-intensity sessions. " +
-  "  Sprint Builder and Tempo are their structured sessions — true " +
-  "  threshold/VO2max not yet appropriate. " +
-  "• Beginner with established tolerance (<2.5 W/kg, later Build): " +
-  "  1 structured-intensity session; add Sweet Spot up to 3×10 min. " +
-  "• Novice (2.5-3.0 W/kg): 1-2 structured-intensity sessions. " +
-  "• Intermediate (3.0-3.5 W/kg): usually 2 structured-intensity sessions. " +
-  "• Trained/advanced (3.5+ W/kg): usually 2; occasionally 3 when TSB supports it. " +
-  "• Recovery Week: 0 intensity; at most one short activation (Z2 upper or " +
-  "  one brief sweet-spot block, max 20-30 min). " +
-  "• Taper: 1-2 short race-specific touches only (no high volume). " +
-  "• Race Week: at most 1 short opener — no new training stress. " +
-  "• Illness, severe fatigue, hrTrend='suppressed': 0 intensity sessions. " +
-  "Foundation, Recovery, and Tempo (<84% FTP) sessions do NOT count as " +
-  "intensity sessions in this matrix. " +
-  "When scheduling fewer than the matrix default (e.g. due to fatigue, " +
-  "phase, or illness), state the specific reason in the summary. " +
-  "Never exceed the matrix to 'look comprehensive' — appropriate load " +
-  "beats impressive load. Beginners should never receive zero structured " +
-  "session work — Foundation alone is not coaching. " +
-  "FINAL PLAN QUALITY CHECK - before returning JSON, verify: " +
-  "(a-0) Unless this is a Recovery/Taper/RaceWeek plan, TSB is below -25, or the rider explicitly requested lighter training: the plan contains at least ONE session at Sweet Spot (88%+ FTP) or harder. If all sessions are Tempo and below, verify this is intentional and clearly justified for this rider — for most Base/Build riders it is under-prescribing. " +
-  "(a) The number of intensity sessions matches the INTENSITY SESSION " +
-  "GUIDELINES matrix above for this rider's level and phase. Intensity " +
-  "sessions are Sweet Spot (>=84% FTP), Threshold, VO2max, or a named " +
-  "interval protocol — Foundation, Recovery, Tempo, and Neuromuscular " +
-  "do NOT count. The same title should not repeat across the week where " +
-  "an alternative exists; varying categories is preferred but not required " +
-  "when consolidation is the right coaching call. " +
-  "(b) Every description names at least one specific data point from this rider's actual input - " +
-  "exact TSB value, CTL number, phase week number, their W/kg, or a title from previousWeekTitles. " +
-  "Generic statements like 'Build aerobic base' or 'Improve your fitness with intervals' are NOT descriptions - " +
-  "they are placeholder text that makes a rider feel they received a template, not coaching. Replace them. " +
-  "(c) If previousWeekTitles is present: each structured session either progresses up the ladder from " +
-"last week's equivalent, or deliberately repeats it with a small bump (duration/reps/power) - both are " +
-"valid; swapping to a different category purely to avoid repeating a name is not required and is often worse. " +
-  "A plan that fails (a)-(c) is a template, not coaching. Fix before responding. " +
+  "HARD-SESSION MATRIX — minimum, target, and maximum per level and phase. " +
+  "Hard sessions = Sweet Spot (≥88% FTP), Threshold (≥97%), VO2max (≥106%), Anaerobic. " +
+  "Sprint Builder, Neuromuscular, Tempo, Foundation, and continuous endurance do NOT count. " +
+  "When wPerKg is null or unknown, classify as Unknown and apply conservative Novice defaults; " +
+  "do NOT silently treat Unknown as Beginner — record the reason for any conservative choice. " +
+  "W/kg is ONE input: also weigh training history, phase, adherence, riderNote, and TSB.\n" +
+  "BASE PHASE:\n" +
+  "• Unknown level: min 0, target 1, max 1. Apply Novice defaults; state uncertainty.\n" +
+  "• New beginner (<2.5 W/kg, early weeks, no structured training history): min 0, target 0-1, max 1. Sprint Builder and Tempo are their quality sessions; Sweet Spot is the ceiling.\n" +
+  "• Beginner with established tolerance (<2.5 W/kg, has completed Sweet Spot previously): min 1, target 1, max 1.\n" +
+  "• Novice (2.5-3.0 W/kg): min 1, target 1, max 1.\n" +
+  "• Intermediate (3.0-3.5 W/kg): min 1, target 1-2, max 2. Target 2 when TSB ≥ -15 and recent history shows sessions were completed.\n" +
+  "• Trained/Advanced (3.5+ W/kg): min 1, target 2, max 2. Target 3 only with TSB ≥ -5 and strong recent completion history.\n" +
+  "BUILD PHASE:\n" +
+  "• Unknown level: min 1, target 1-2, max 2. Use conservative selection; state uncertainty.\n" +
+  "• New beginner: min 0, target 1, max 1.\n" +
+  "• Beginner established: min 1, target 1, max 1.\n" +
+  "• Novice: min 1, target 1-2, max 2.\n" +
+  "• Intermediate: min 1, target 2, max 2. The DEFAULT is 2 hard sessions — explicitly justify any plan with only 1.\n" +
+  "• Trained/Advanced: min 2, target 2, max 3.\n" +
+  "RECOVERY WEEK: min 0, target 0, max 0 hard sessions. Optional one easy activation (Foundation or brief Z2 — not Sweet Spot or higher). Do not prescribe all 7 days as Rest Days; include appropriate easy riding.\n" +
+  "TAPER: min 1, target 1-2, max 2 short race-specific touches (Sweet Spot or Threshold, reduced volume).\n" +
+  "RACE WEEK: min 0, target 0-1, max 1 short opener. No new training stress.\n" +
+  "ILLNESS/SEVERE FATIGUE/hrTrend=suppressed: override all above — min 0, target 0, max 0.\n" +
+  "HARD-SESSION MINIMUM RULE: If the final plan contains fewer hard sessions than the TARGET: " +
+  "this MUST be explained in the summary with a specific, data-grounded reason (exact TSB, " +
+  "what adherence issue, what symptom) — not a vague 'recovery needed' statement. " +
+  "Returning fewer sessions than target without a named reason is a quality failure. " +
+  "For an Intermediate or higher rider in Build phase: the plan MUST contain 2 hard sessions " +
+  "unless TSB is below -20, the rider reported illness/injury, or adherence shows repeated " +
+  "session failures — in those cases, state the exact reason. " +
+  "TSB alone is not sufficient justification for dropping from target 2 to target 1 " +
+  "unless TSB is below -20. A TSB of -8 to -15 is normal training fatigue, not a reason to halve intensity. " +
+  "FINAL PLAN QUALITY CHECK — before returning JSON, count and verify:\n" +
+  "STEP 1 — COUNT THREE SESSION TYPES:\n" +
+  "  (1) Total training sessions this week (non-Rest days)\n" +
+  "  (2) Structured sessions: sessions with defined power targets, blocks, or drills\n" +
+  "  (3) Hard-intensity sessions: Sweet Spot (≥88%), Threshold (≥97%), VO2max (≥106%), Anaerobic\n" +
+  "      → Sprint Builder, Neuromuscular, Tempo (<84%), Foundation, Long Endurance do NOT count\n" +
+  "STEP 2 — HARD-SESSION MINIMUM CHECK:\n" +
+  "  Compare hard-intensity count to the HARD-SESSION MATRIX target for this rider's level+phase.\n" +
+  "  If count < target: you MUST either (a) add a hard session where the week structure allows, " +
+  "or (b) state the specific reason in the summary (exact TSB value, specific adherence failure, " +
+  "or named symptom). A generic 'recovery needed' is not acceptable. " +
+  "For an Intermediate+ rider in Build phase, a plan with only 1 hard session requires an explicit named justification. " +
+  "For an Intermediate+ rider in Base phase with TSB ≥ -15, 2 hard sessions is within target range. " +
+  "CHECK (a-0): Unless Recovery/Taper/RaceWeek, TSB < -25, or rider explicitly requested lighter training: " +
+  "the plan contains at least ONE hard-intensity session. If every session is Tempo and below, " +
+  "verify this is intentional and clearly justified — for most Base/Build riders it is under-prescribing.\n" +
+  "STEP 3 — DESCRIPTION QUALITY:\n" +
+  "  Every description names at least one specific data point: exact TSB value, CTL number, " +
+  "phase week number, their W/kg, or a title from previousWeekTitles. " +
+  "Generic statements like 'Build aerobic base' or 'Improve your fitness with intervals' are NOT descriptions — " +
+  "they are placeholder text that makes a rider feel they received a template, not coaching. Replace them.\n" +
+  "STEP 4 — PROGRESSION:\n" +
+  "  If previousWeekTitles is present: each structured session either progresses from last week's equivalent, " +
+  "or deliberately repeats with a small bump (duration/reps/power) — both valid. " +
+  "Swapping to a different category purely to avoid repeating a name is not required and is often worse.\n" +
+  "STEP 5 — STRUCTURE:\n" +
+  "  No two hard sessions on consecutive days. The same title should not repeat across the week " +
+  "where a clear alternative exists.\n" +
+  "A plan that fails STEP 2 without a named reason, or fails STEP 3, is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template.";
 
 export async function generateWeeklyPlan(params: {

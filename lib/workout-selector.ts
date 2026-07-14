@@ -405,10 +405,41 @@ function thursdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): S
 
 export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
   if (input.phase === "Recovery") {
-    // Recovery week = all Rest Days. The intervals-only rule prohibits
-    // prescribing a flat Spin & Recover session. The rider rests;
-    // adaptation converts last mesocycle's training stress into fitness.
-    return DAY_ORDER.map((day) => ({ day, workout: null }));
+    // Recovery week: genuine reduced-load week — not all Rest Days.
+    // Wednesday and Sunday are full rest; other days get easy movement
+    // that supports recovery without creating new fatigue.
+    // No hard sessions, no structured intervals above Z2.
+    const easyFlush: SelectedWorkout = {
+      category: "Recovery",
+      title: "Easy Flush",
+      durationMin: 45,
+      targetPowerPctFtp: "55% FTP",
+      structure: [
+        { type: "warmup",      durationMin: 10, powerFtp: 0.55, label: "Easy warm-up" },
+        { type: "steadystate", durationMin: 25, powerFtp: 0.55, label: "Z1 @ 55% FTP — flush fatigue, no new stress" },
+        { type: "cooldown",    durationMin: 10, powerFtp: 0.50, label: "Easy cool-down" },
+      ],
+    };
+    const foundationShort: SelectedWorkout = {
+      category: "Foundation",
+      title: "Foundation Ride",
+      durationMin: 45,
+      targetPowerPctFtp: "65-70% FTP",
+      structure: [
+        { type: "warmup",      durationMin: 8,  powerFtp: 0.65, label: "Easy warm-up" },
+        { type: "steadystate", durationMin: 30, powerFtp: 0.67, label: "Z2 @ 65-70% FTP — aerobic movement, minimal stress" },
+        { type: "cooldown",    durationMin: 7,  powerFtp: 0.55, label: "Easy cool-down" },
+      ],
+    };
+    return [
+      { day: "Monday",    workout: easyFlush },
+      { day: "Tuesday",   workout: foundationShort },
+      { day: "Wednesday", workout: null },           // full rest
+      { day: "Thursday",  workout: easyFlush },
+      { day: "Friday",    workout: foundationShort },
+      { day: "Saturday",  workout: null },           // full rest
+      { day: "Sunday",    workout: null },           // full rest
+    ];
   }
 
   const weekInMesocycle = (input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle) as 1 | 2 | 3;
