@@ -32,12 +32,12 @@ const SLIDES = [
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    // Zwift's own orange (#FF6600, already the site's established "brand
-    // orange" - see globals.css .stat-card-icon.c-orange) as the gradient's
-    // vivid midpoint, instead of red/crimson.
+    // Orange didn't land - back to red, vivid and saturated (not the pale
+    // pastel from earlier), same dark-to-vivid-to-dark treatment as the
+    // other two slides.
     dark: true,
-    bg: "linear-gradient(135deg, #7a2e00 0%, #ff6600 55%, #431900 100%)",
-    accent: "#FFB07A",
+    bg: "linear-gradient(135deg, #7f1d2e 0%, #dc2626 55%, #450a12 100%)",
+    accent: "#FF8FA3",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
