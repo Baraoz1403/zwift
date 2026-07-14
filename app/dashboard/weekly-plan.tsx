@@ -245,7 +245,7 @@ export default function WeeklyPlan() {
   const [lastIntervalsSync, setLastIntervalsSync] = useState<
     { pushed: number; deleted: number; errors: string[] } | null
   >(null);
-  // summaryOpen removed — rationale is now always-visible styled bullets
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [riderNote, setRiderNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   // Bottom card emoji feeling: null = unset, 1–5 = selected
@@ -712,7 +712,13 @@ export default function WeeklyPlan() {
    * the rider returns to a fully stale dashboard (no pre-fetched plan could
    * cover the current week).
    */
-  async function generateAndActivate(targetWeekOf: string, previousPlanForAI?: WeeklyPlan | null) {
+  async function generateAndActivate(
+    targetWeekOf: string,
+    previousPlanForAI?: WeeklyPlan | null,
+    /** Explicit note to send — bypasses riderNote state (needed when state
+     *  hasn't updated yet, e.g. feeling-only submits from the coach panel). */
+    noteOverride?: string,
+  ) {
     setLoading(true);
     setError(null);
     try {
@@ -722,6 +728,7 @@ export default function WeeklyPlan() {
         const raw = window.localStorage.getItem("zwiftRiderProfile");
         if (raw) riderProfile = JSON.parse(raw);
       } catch {}
+      const resolvedNote = noteOverride !== undefined ? noteOverride : riderNote.trim();
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -729,8 +736,8 @@ export default function WeeklyPlan() {
           macroCycle,
           previousPlan: previousPlanForAI ?? null,
           riderProfile,
-          riderNote: riderNote.trim()
-            ? `[Today is ${new Date().toISOString().slice(0,10)} (${new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})})] ${riderNote.trim()}`
+          riderNote: resolvedNote
+            ? `[Today is ${new Date().toISOString().slice(0,10)} (${new Date().toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})})] ${resolvedNote}`
             : undefined,
           targetWeekOf,
         }),
@@ -1476,8 +1483,6 @@ export default function WeeklyPlan() {
       {plan && (
         <>
           {plan.summary && (() => {
-            // Split summary into up to 5 bullet points.
-            // Try splitting on existing bullets first (• or -), then on sentences.
             const raw = plan.summary.trim();
             let bullets: string[] = [];
             if (raw.includes("•") || raw.match(/\n\s*[-–]/)) {
@@ -1486,49 +1491,69 @@ export default function WeeklyPlan() {
               bullets = raw.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 15);
             }
             bullets = bullets.slice(0, 5);
-
             const BULLET_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
             const BULLET_ICONS = ["⚡", "🎯", "📈", "💡", "🔥"];
-
             return (
               <div style={{ marginTop: 32, marginBottom: 14 }}>
-                <div className="section-title" style={{ margin: "0 0 14px" }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                  </svg>
-                  This week&apos;s coaching focus
+                {/* Header row with toggle button */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 12 : 0 }}>
+                  <div className="section-title" style={{ margin: 0 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                    </svg>
+                    This week&apos;s coaching focus
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryOpen(v => !v)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "5px 14px", borderRadius: 6, flexShrink: 0,
+                      border: "1px solid var(--border)",
+                      background: summaryOpen ? "rgba(59,130,246,0.08)" : "#fff",
+                      fontSize: 12, fontWeight: 600, color: "var(--accent)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {summaryOpen ? "Hide" : "Show coaching rationale"}
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                      style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {bullets.map((bullet, i) => {
-                    const color = BULLET_COLORS[i % BULLET_COLORS.length];
-                    const icon = BULLET_ICONS[i % BULLET_ICONS.length];
-                    return (
-                      <div key={i} style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "11px 16px", borderRadius: 10,
-                        background: "#fff",
-                        border: `1.5px solid rgba(15,23,42,0.09)`,
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                      }}>
-                        <div style={{
-                          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                          background: `${color}14`,
-                          border: `1.5px solid ${color}30`,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 15,
+                {/* Collapsible bullets — one line each, no wrap */}
+                {summaryOpen && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {bullets.map((bullet, i) => {
+                      const color = BULLET_COLORS[i % BULLET_COLORS.length];
+                      const icon = BULLET_ICONS[i % BULLET_ICONS.length];
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "9px 14px", borderRadius: 9,
+                          background: "#fff",
+                          border: "1.5px solid rgba(15,23,42,0.09)",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                          overflow: "hidden",
                         }}>
-                          {icon}
+                          <div style={{
+                            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                            background: `${color}14`, border: `1.5px solid ${color}30`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 14,
+                          }}>{icon}</div>
+                          <span style={{
+                            fontSize: 13.5, color: "#0f172a", fontWeight: 500,
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          }}>
+                            {bullet.replace(/\.$/, "").trim()}
+                          </span>
                         </div>
-                        <span style={{
-                          fontSize: 13.5, color: "#0f172a",
-                          lineHeight: 1.5, fontWeight: 500,
-                        }}>
-                          {bullet.replace(/\.$/, "").trim()}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -2113,25 +2138,35 @@ export default function WeeklyPlan() {
                 e.preventDefault();
                 if (!hasInput || loading) return;
                 const today = new Date().toISOString().slice(0, 10);
-                // 1. Save text note to AI memory (fingerprint in KV) — best-effort,
-                //    done BEFORE generateAndActivate so the fingerprint includes it
-                //    even if generate fails.
-                if (riderNote.trim()) {
+
+                // Build the effective note NOW (before any state clears).
+                // If the rider only selected a feeling emoji with no text,
+                // synthesise a note so the API bypasses its plan cache and
+                // actually regenerates — without this the cache check
+                // (!riderNote) short-circuits and returns the old plan.
+                const textNote = riderNote.trim();
+                const feelingLabel = bottomFeeling !== null
+                  ? `${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label}`
+                  : null;
+                const effectiveNote = textNote
+                  || (feelingLabel ? `Session feeling: ${feelingLabel}` : "");
+
+                // 1. Save text note to AI memory — best-effort.
+                if (textNote) {
                   try {
                     await fetch("/api/ai/coaching-note", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ date: today, note: riderNote.trim() }),
+                      body: JSON.stringify({ date: today, note: textNote }),
                     });
-                  } catch {
-                    // best-effort
-                  }
+                  } catch { /* best-effort */ }
                 }
-                // 2. Generate a new plan using riderNote (still in state) + fingerprint.
-                //    This is the ONLY way a plan is generated — the rider's note to the
-                //    coach is the trigger. generateAndActivate clears riderNote on success.
+
+                // 2. Regenerate. Pass effectiveNote explicitly so the cache is
+                //    always bypassed (even when textNote is empty but a feeling
+                //    score was selected).
                 setBottomFeeling(null);
-                await handleGenerate();
+                await generateAndActivate(currentWeekOf(), plan ?? null, effectiveNote || undefined);
               }}
             >
               <textarea
