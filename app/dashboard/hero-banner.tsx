@@ -9,19 +9,19 @@ const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E"
 
 const SLIDES = [
   {
-    tag: "AI COACHING ENGINE",
-    lines: ["Learns every ride.", "Adapts every week.", "Gets smarter."],
-    sub: "Your FTP, CTL, and TSB tracked across every session. The plan evolves as your fitness does — automatically, with no input from you.",
+    tag: "THE AI KNOWS YOUR BODY",
+    lines: ["Tired today?", "It already knows.", "You don't have to."],
+    sub: "CTL, ATL, TSB — your real fitness state computed from every ride. The coach reads your readiness before writing a single interval.",
   },
   {
-    tag: "PERSONAL TO THE WATT",
-    lines: ["Your FTP.", "Your zones.", "Your targets."],
-    sub: "Power targets derived from your numbers, not averages. Sweet Spot, Threshold, VO2max — prescribed exactly when your body is ready for them.",
+    tag: "NOT A PLAN. A PRESCRIPTION.",
+    lines: ["Your FTP.", "Your history.", "Your exact session."],
+    sub: "Every power target calculated from your actual numbers. Sweet Spot when you're ready. Recovery when you're not. The system decides — correctly.",
   },
   {
-    tag: "BUILT FOR YOUR GOALS",
-    lines: ["Lose weight.", "Raise your FTP.", "Ride fast."],
-    sub: "You set the goals once. Every Sunday night the AI calibrates next week's plan around them — synced to Zwift, Intervals.icu and TrainingPeaks.",
+    tag: "YOUR GOALS. EVERY SESSION.",
+    lines: ["Lose fat.", "Build power.", "Or both."],
+    sub: "Set your goals once. The AI structures every week around them — then syncs the plan to Zwift, Intervals.icu and TrainingPeaks automatically.",
   },
 ];
 
@@ -352,7 +352,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       }}>
         {/* Left — copy block */}
         <div style={{
-          flex: "1 1 300px", padding: "26px 0 28px",
+          flex: "0 0 58%", padding: "26px 0 28px",
           position: "relative", zIndex: 1,
           display: "flex", flexDirection: "column", justifyContent: "space-between",
         }}>
@@ -438,9 +438,9 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
 
         {/* Right — telemetry card */}
         <div style={{
-          width: 314, padding: "20px 0",
+          flex: "0 0 calc(42% - 28px)", padding: "20px 0",
           display: "flex", alignItems: "center",
-          position: "relative", zIndex: 1, flex: "0 1 314px",
+          position: "relative", zIndex: 1,
         }}>
           <div style={{ width: "100%" }}>
             <TelemetryPanel />

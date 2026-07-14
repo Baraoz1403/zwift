@@ -101,8 +101,8 @@ export default function WorkoutThumbnail({
         {/* FTP reference line — dark mode: subtle white dashed; light mode: dark dashed */}
         <div style={{
           position: "absolute", left: 0, right: 0, bottom: `${ftpLinePct}%`,
-          borderTop: lightGraph ? "1px dashed rgba(0,0,0,0.18)" : "1px dashed rgba(255,255,255,0.2)",
-          pointerEvents: "none", zIndex: 1,
+          borderTop: lightGraph ? "1px dashed rgba(0,0,0,0.12)" : "1px dashed rgba(255,255,255,0.15)",
+          pointerEvents: "none", zIndex: 2,
         }} />
         {/* Zwift's own workout graph: flat, matte, contiguous blocks (a
             stepped skyline of interval segments), evenly spaced.
@@ -118,15 +118,15 @@ export default function WorkoutThumbnail({
         <svg
           viewBox="0 0 1000 100"
           preserveAspectRatio="none"
-          style={{ position: "absolute", top: 8, left: 0, right: 0, bottom: 0, width: "100%", height: "calc(100% - 8px)" }}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }}
         >
           {powers.map((p, i) => {
             const color = zoneForPowerFraction(p).color;
             const slot = 1000 / powers.length;
-            const gap = slot * 0.16;
+            const gap = slot * 0.10;
             const barW = slot - gap;
             const x = i * slot + gap / 2;
-            const hPct = Math.max(8, Math.min(100, (p / maxPower) * 100));
+            const hPct = Math.max(4, Math.min(100, (p / maxPower) * 100));
             const y = 100 - hPct;
             return <rect key={i} x={x} y={y} width={barW} height={hPct} fill={color} />;
           })}

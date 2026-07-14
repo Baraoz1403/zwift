@@ -1651,19 +1651,19 @@ export default function WeeklyPlan() {
                     {/* Card body */}
                     <div style={{ padding: "16px 20px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
                       {/* Day + date — same style as planned cards */}
-                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
+                      <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
                         {w.day}{w.date ? ` · ${w.date}` : ""}
                       </div>
                       {/* Actual ride name — prominent, centered like planned */}
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
+                      <div style={{ fontSize: 23, fontWeight: 800, color: "var(--text)", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
                         {actual.name}
                       </div>
                       {/* Stats — centered, same visual weight as planned card */}
                       {stats && (
                         <div style={{
-                          textAlign: "center", fontSize: 13.5, color: "#475569", fontWeight: 600,
+                          textAlign: "center", fontSize: 13.5, color: "var(--muted)", fontWeight: 600,
                           paddingTop: 10, paddingBottom: 10,
-                          borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
+                          borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
                           marginBottom: 10,
                         }}>
                           {stats}
@@ -1792,17 +1792,17 @@ export default function WeeklyPlan() {
                       </div>
                     </div>
                     <div style={{ padding: "16px 20px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
-                      <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
+                      <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "center", marginBottom: 5 }}>
                         {w.day}{w.date ? ` · ${w.date}` : ""} · Bonus!
                       </div>
-                      <div style={{ fontSize: 20, fontWeight: 800, color: "#0f172a", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
+                      <div style={{ fontSize: 23, fontWeight: 800, color: "var(--text)", lineHeight: 1.2, marginBottom: 10, textAlign: "center" }}>
                         {actual.name}
                       </div>
                       {bonusStats && (
                         <div style={{
-                          textAlign: "center", fontSize: 13.5, color: "#475569", fontWeight: 600,
+                          textAlign: "center", fontSize: 13.5, color: "var(--muted)", fontWeight: 600,
                           paddingTop: 10, paddingBottom: 10,
-                          borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
+                          borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
                           marginBottom: 10,
                         }}>
                           {bonusStats}
@@ -1857,10 +1857,10 @@ export default function WeeklyPlan() {
                     }}
                   >
                     {rest && <div style={{ fontSize: 48, marginBottom: 10 }}>🛌</div>}
-                    <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700, textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 700, textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 5 }}>
                       {w.day}{w.date ? ` · ${w.date}` : ""}
                     </div>
-                    <div style={{ fontSize: 23, fontWeight: 800, color: "#0f172a", textAlign: "center", lineHeight: 1.2, marginTop: 7 }}>
+                    <div style={{ fontSize: 23, fontWeight: 800, color: "var(--text)", textAlign: "center", lineHeight: 1.2, marginTop: 7 }}>
                       {w.title}
                     </div>
 
@@ -1868,13 +1868,24 @@ export default function WeeklyPlan() {
                       <div style={{
                         display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
                         marginTop: 14, paddingTop: 14, paddingBottom: 14,
-                        borderTop: "1px solid #f1f5f9", borderBottom: "1px solid #f1f5f9",
-                        fontSize: 14, fontWeight: 700, color: "#475569",
+                        borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
+                        fontSize: 14, fontWeight: 700, color: "var(--muted)",
                       }}>
                         <span>{w.durationMin} min</span>
                         {ifTss && <span>TSS {Math.round(ifTss.tss)}</span>}
                         {ifTss && <span>IF {ifTss.intensityFactor.toFixed(2)}</span>}
-                        {w.targetPowerPctFtp && <span style={{ fontWeight: 600, color: "#3b82f6" }}>{w.targetPowerPctFtp} FTP</span>}
+                        {w.targetPowerPctFtp && <span style={{ fontWeight: 600, color: "var(--accent)" }}>{w.targetPowerPctFtp} FTP</span>}
+                      </div>
+                    )}
+
+                    {!rest && w.description && (
+                      <div style={{
+                        marginTop: 14, fontSize: 13, color: "var(--muted)",
+                        lineHeight: 1.6, display: "-webkit-box",
+                        WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const,
+                        overflow: "hidden",
+                      }}>
+                        {w.description}
                       </div>
                     )}
 
