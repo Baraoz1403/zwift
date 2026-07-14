@@ -248,6 +248,8 @@ export default function WeeklyPlan() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [riderNote, setRiderNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
+  // Bottom card emoji feeling: null = unset, 1–5 = selected
+  const [bottomFeeling, setBottomFeeling] = useState<number | null>(null);
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
@@ -1988,30 +1990,100 @@ export default function WeeklyPlan() {
         </>
       )}
 
-      {/* ── Today's Note — shrunk from the old multi-step "mood buttons +
-          textarea + expand/collapse" card down to one short field, per
-          explicit feedback that the old box was oversized. Still writes to
-          the same riderNote state and still triggers handleGenerate() on
-          submit, just with far less UI in the way. ──────────────────────── */}
+      {/* ── Talk to your coach — unified card: emoji feeling + text note.
+          Previously these were two separate elements (emoji rating inside
+          each workout card, text-only input here). Now combined into one
+          place so the rider rates the ride AND writes a note in a single
+          interaction. Emoji click → saves feeling to coach memory (KV) for
+          today's date + pre-selects the mood; text field stays optional.
+          Send is active when either an emoji is selected OR text is typed. */}
       <div id="todays-note" className="stat-card todays-note-card" style={{ marginTop: 48, padding: "18px 22px" }}>
-        <div className="section-title" style={{ margin: "0 0 12px 0" }}>
+        <div className="section-title" style={{ margin: "0 0 14px 0" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
           Talk to your coach
         </div>
 
+        {/* ── Emoji feeling row ── */}
+        {(() => {
+          const BOTTOM_SCORES = [
+            { emoji: "💀", label: "Couldn't finish" },
+            { emoji: "😓", label: "Harder than expected" },
+            { emoji: "😐", label: "Got it done" },
+            { emoji: "💪", label: "Strong & controlled" },
+            { emoji: "🚀", label: "Felt great!" },
+          ];
+          return (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8, fontWeight: 600 }}>
+                How did today{"'"}s ride feel?
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {BOTTOM_SCORES.map((s, idx) => {
+                  const val = idx + 1;
+                  const selected = bottomFeeling === val;
+                  return (
+                    <button
+                      key={val}
+                      type="button"
+                      title={s.label}
+                      onClick={() => {
+                        setBottomFeeling(selected ? null : val);
+                        if (!selected) {
+                          // Save to coaching memory for today
+                          submitFeelingScore(
+                            new Date().toISOString().slice(0, 10),
+                            "Daily note",
+                            "General",
+                            val
+                          );
+                        }
+                      }}
+                      style={{
+                        width: 44, height: 40,
+                        border: selected
+                          ? "2px solid var(--accent)"
+                          : "1px solid var(--border)",
+                        borderRadius: 10,
+                        background: selected
+                          ? "rgba(47,143,224,0.15)"
+                          : "var(--panel-solid)",
+                        cursor: "pointer",
+                        fontSize: 20, lineHeight: 1,
+                        transition: "border 0.12s, background 0.12s, transform 0.1s",
+                        transform: selected ? "scale(1.15)" : "scale(1)",
+                        flexShrink: 0,
+                      }}
+                    >{s.emoji}</button>
+                  );
+                })}
+                {bottomFeeling && (
+                  <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginLeft: 4 }}>
+                    {BOTTOM_SCORES[bottomFeeling - 1].label}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Text + send ── */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (riderNote.trim() && !loading) handleGenerate();
+            const hasInput = riderNote.trim() || bottomFeeling !== null;
+            if (hasInput && !loading) {
+              handleGenerate();
+              setBottomFeeling(null);
+            }
           }}
           style={{ display: "flex", gap: 10, alignItems: "center" }}
         >
           <input
             type="text"
             autoFocus={noteOpen}
-            placeholder="How are you feeling today? Any notes for tomorrow's session?"
+            placeholder="Any notes for your coach? (optional)"
             value={riderNote}
             onChange={(e) => setRiderNote(e.target.value)}
             disabled={loading}
@@ -2024,22 +2096,14 @@ export default function WeeklyPlan() {
           />
           <button
             type="submit"
-            disabled={loading || !riderNote.trim()}
+            disabled={loading || (!riderNote.trim() && bottomFeeling === null)}
             style={{
-              // Same recipe as the "Edit profile" button in phase-card.tsx
-              // (padding, border-radius, font-size/weight, icon gap, border
-              // width) - asked to make these two match exactly, and they'd
-              // drifted (12px/18px vs 10px/18px padding, 15px vs 14px text,
-              // 600 vs 700 weight, 6px vs 8px gap, 1.5px vs 1px border).
-              // Color stays a distinct green (var(--good), not a one-off
-              // hardcoded hex) since this is the one true "submit" action on
-              // the page - everything else about it now lines up.
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "10px 18px", borderRadius: 8,
               border: "1px solid var(--good)",
-              background: riderNote.trim() ? "var(--good)" : "rgba(26,143,76,0.4)",
+              background: (riderNote.trim() || bottomFeeling !== null) ? "var(--good)" : "rgba(26,143,76,0.4)",
               color: "#fff", fontSize: 14, fontWeight: 700,
-              cursor: loading || !riderNote.trim() ? "default" : "pointer",
+              cursor: loading || (!riderNote.trim() && bottomFeeling === null) ? "default" : "pointer",
               fontFamily: "inherit", whiteSpace: "nowrap",
               transition: "background 0.15s ease",
             }}
@@ -2053,8 +2117,6 @@ export default function WeeklyPlan() {
           </button>
         </form>
 
-        {/* Phase caption - folded in from the old standalone "Weekly
-            training plan" info card, which no longer gets its own slot. */}
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14.5, color: "var(--muted)" }}>
           {cycleInfo
             ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null

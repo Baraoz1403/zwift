@@ -6576,3 +6576,40 @@ Tue 07/14/2026 13:44:22.61
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'docs/zwift-ai-prompts.txt', LF will be replaced by CRLF the next time Git touches it
+[main 9084a24] Auto deploy Tue 07/14/2026 13:44:22.95
+ 6 files changed, 851 insertions(+), 132 deletions(-)
+ create mode 100644 docs/Coach-Training-Methodology-v4.1.docx
+ create mode 100644 docs/Coach-Training-Methodology-v5.docx
+ create mode 100644 docs/zwift-ai-prompts-v5.txt
+ create mode 100644 docs/zwift-ai-prompts.txt
+To https://github.com/Baraoz1403/zwift.git
+   96bdef1..9084a24  main -> main
+Tue 07/14/2026 13:44:25.03 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/14/2026 13:53:23.23 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
