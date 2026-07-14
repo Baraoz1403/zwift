@@ -835,21 +835,24 @@ export const PROGRESSION_LADDER = [
 export const WORKOUT_LIBRARY_PROMPT = `
 NAMED WORKOUT PROTOCOLS — use these exact names as session titles. Choose from this library every time. Plans must feel like they were designed by a professional coach who studied this rider's actual data, not generated from a template.
 
-RECOVERY — INTERVALS-ONLY RULE: All flat recovery sessions (Short Active Recovery, Spin & Recover, Extended Recovery Flush, Easy Flush) are FORBIDDEN. Recovery days = Rest Day. The rider does not need a .zwo file to rest.
+RECOVERY (active recovery — flush fatigue without creating new stress. Use the day after a hard session when Rest Day is not needed but new stress must be avoided):
+• "Spin & Recover" — 30 min, Z1 @ 50-60% FTP, 90+ rpm. Legs should feel noticeably better by minute 25 than minute 5.
+• "Easy Flush" — 45 min, easy build → 25 min Z1 @ 55% FTP → cooldown. Slightly more volume than Spin & Recover; purely physiological clearance, not training stimulus.
 
 ENDURANCE / FOUNDATION (Z2 — 56-75% FTP per Coggan):
-NOTE — INTERVALS-ONLY RULE: Foundation Ride, Long Endurance, Two-Hour Foundation, Over-Distance Ride, and Aerobic Threshold Ride are FLAT sessions and must NOT be prescribed. Use Rest Day instead. The four sessions below are the ONLY allowed Z2-range options because they contain actual interval structure:
-• "Z2 with Cadence Drills" — 60 min, Z2 base with 4×8 min drills @ 100-110 rpm (2 min recovery between). Structured cadence work eliminates dead-spots in pedal stroke. Use for easy-but-active days.
-• "Surge Ride" — 60 min, Z2 base with 6×1 min surges @ 110% FTP (5 min Z2 between). Metabolic variety without meaningful recovery cost. Easy-day option.
+Continuous Z2 rides are legitimate coaching tools — they build mitochondrial density and aerobic base, serve as essential bookends between hard sessions, and provide genuine aerobic volume. Prescribe them with a clear purpose (not as generic filler). Choose the right option for the day's role:
+• "Foundation Ride" — 60 min, Z2 @ 65-73% FTP, conversational pace. Primary aerobic base builder and hard-session bookend. The most versatile easy-day option.
+• "Long Endurance" — 90 min, Z2 @ 65-73% FTP. Higher aerobic volume stimulus; use when the rider's session-length budget allows.
+• "Z2 with Cadence Drills" — 60 min, 4× (8 min Z2 @ 68% FTP + 2 min cadence drills @ 100-110 rpm), bookended by 10 min warmup/cooldown. The 8-min Z2 blocks are the aerobic base; the 2-min blocks are the technique drills.
+• "Surge Ride" — 60 min, Z2 base with 6×1 min surges @ 110% FTP (5 min Z2 between). Metabolic variety without meaningful recovery cost.
 • "Endurance with Muscle Tension" — 65 min, Z2 base with 4×5 min low-cadence blocks @ 55 rpm (3 min normal cadence between). Cycling-specific strength stimulus within the aerobic zone.
 • "Endurance Openers" — 60 min, Z2 base with 5×30s openers @ 110% FTP (3 min between). Activation session for the day before a hard session or event.
 
 TEMPO (Z3 — 76-90% FTP, always appropriate, never needs high TSB):
-NOTE — INTERVALS-ONLY RULE: Continuous Tempo and Progressive Tempo are flat sessions (no work/rest alternation) and must NOT be prescribed. Use the structured options below only:
-• "Tempo Cruise" — 60 min (10 warmup → 2×15 min @ 80% / 5 rec → 15 cooldown). 3-4 word sentences at target. Second block harder = correct. STRUCTURED ✓
-• "Tempo Ladder" — 75 min (12 warmup → 10+15+20 min @ 80% / 5 rec each → 13 cooldown). 20-min block is the real stimulus. STRUCTURED ✓
-• "Sub-Threshold Blocks" — 75 min (12 warmup → 3×15 min @ 88% / 5 min rec → 3 cooldown). Bridge from sweet spot to threshold. Requires TSB ≥ -15. STRUCTURED ✓
-• "Strength Endurance" — 65 min (15 warmup → 3×8 min @ 81% FTP / 55-65 rpm / 4 min rec → 14 cooldown). Quads burn muscularly — that's the correct signal. STRUCTURED ✓
+• "Tempo Cruise" — 60 min (10 warmup → 2×15 min @ 80% / 5 rec → 15 cooldown). 3-4 word sentences at target. Second block harder = correct.
+• "Tempo Ladder" — 75 min (12 warmup → 10+15+20 min @ 80% / 5 min recovery between blocks → 8 cooldown). 20-min block is the real stimulus.
+• "Sub-Threshold Blocks" — 75 min (12 warmup → 3×15 min @ 88% / 5 min rec → 3 cooldown). Bridge from sweet spot to threshold. Requires TSB ≥ -15.
+• "Strength Endurance" — 65 min (15 warmup → 3×8 min @ 81% FTP / 55-65 rpm / 4 min rec → 14 cooldown). Quads burn muscularly — that's the correct signal.
 
 SWEET SPOT (88-93% FTP — the most time-efficient zone. Requires TSB ≥ -20):
 • "Sweet Spot Primer" — 55 min (12 warmup → 4×7 min @ 88% / 3 min rec → 3 cooldown). Beginner entry to sweet spot — fewer, shorter blocks than Classic.
@@ -892,17 +895,17 @@ INTERMITTENT (requires TSB ≥ -8 — metabolically demanding):
 • "15/15 Micro-Intervals" — 50 min (12 warmup → 4 sets of 10×(15s@135% / 15s@50%) / 4 set-rest → 6 cooldown). High-power, low-recovery-cost intermittent work. Good starter for riders new to above-threshold.
 • "30/30 Blitz" — 60 min (12 warmup → 3 sets of 8×(30s@120% / 30s@50%) / 5 set-rest → 14 cooldown). Never coast the off intervals — active recovery maintains elevated VO2.
 • "Tabata Protocol" — 30 min (12 warmup → 8×(20s@170% / 10s complete rest) → 5 min @ 60% → 9 cooldown). True Tabata: 4 min of supramaximal work achieves VO2max in minimal time.
-• "40/20 HIIT" — 50 min (12 warmup → 3 sets of 8×(40s@120% / 20s@50%) / 4 set-rest → 6 cooldown). Slightly lower than Ronnestad intensity — appropriate at TSB -10 to -15 where full Ronnestad would be counterproductive.
+• "40/20 HIIT" — 50 min (12 warmup → 3 sets of 8×(40s@120% / 20s@50%) / 4 set-rest → 6 cooldown). Slightly lower intensity than Ronnestad — eligible at TSB down to -8 (where Ronnestad requires ≥ -5). Below TSB -8, use Tempo Cruise instead.
 
 RIDER LEVEL GUIDANCE (W/kg is ONE input, not the sole gate - also weigh age, training history, injury/medical history, technical skill, stated goal, and how this rider has actually responded to intensity before):
-• < 2.5 W/kg (Beginner): default to Recovery, Foundation, Surge Ride, Tempo Cruise, Sprint Builder, Short Active Recovery. Sweet spot/threshold/VO2max only if the rider's own history/notes show real prior intensity tolerance - otherwise build aerobic base first.
+• < 2.5 W/kg (Beginner): default to Foundation Ride, Spin & Recover, Surge Ride, Tempo Cruise, Sprint Builder. Sweet spot/threshold/VO2max only if the rider's own history/notes show real prior intensity tolerance — otherwise build aerobic base first.
 • 2.5-3.0 W/kg (Novice): Add Sweet Spot Primer, Sweet Spot Classic, Micro Intervals, 30/30 Blitz, 15/15 Micro-Intervals. Threshold typically late Build at TSB >= -8, sooner if the rider's history supports it.
 • 3.0-3.5 W/kg (Intermediate): Full sweet spot range including 3x15. Add Threshold Development, Short Threshold Intervals, 4x4 Two-Set, VO2max Pyramid, 60/60 Intervals.
 • 3.5+ W/kg (Trained): Full library, including Norwegian 4x4, 2x20, Over-Under, Seiler 4x8, 40/20 Ronnestad, Critical Power Development.
-• If wPerKg is null: infer cautiously from FTP alone (< 150 W = beginner-leaning, 150-220 W = novice/intermediate-leaning, > 220 W = trained-leaning), and weigh riderProfile/notes more heavily than usual since the power-to-weight signal is missing.
+• If wPerKg is null: mark rider level as unknown and apply conservative beginner-leaning defaults. Do NOT infer level from absolute FTP watts alone — raw wattage is not comparable across body mass, sex, age, or rider type. Rely on ride history (recent TSS, how hard sessions were completed) and riderProfile/notes for level signals.
 
 SESSION READINESS - TSB is a training-load MODEL (derived from CTL/ATL), not a direct measurement of the rider's body: it cannot see sleep, illness, stress, or pain. Treat these as soft defaults, and let the rider's own notes/subjective feel override the number - always cite the actual TSB when substituting, but say so as "today's estimated load balance," not as settled fact:
-• VO2max (106%+): TSB >= -5 as a default. Below, or if the rider mentions feeling unusually fatigued/unwell → substitute Sweet Spot Classic or 60/60 Intervals regardless of the number.
+• VO2max (106%+): TSB >= -5 as a default. Below, or if the rider mentions feeling unusually fatigued/unwell → substitute Sweet Spot Classic or Sub-Threshold Blocks (not 60/60 Intervals — that IS a VO2max session at 115% FTP).
 • Threshold (100%+): TSB >= -12 as a default → substitute Sweet Spot Classic or Sub-Threshold Blocks.
 • Sweet Spot (88%+): TSB >= -20 as a default → substitute Tempo Cruise or Tempo Ladder.
 • Intermittent (30/30, 40/20): TSB >= -8 as a default → substitute 15/15 Micro-Intervals or Tempo Cruise.
@@ -910,27 +913,26 @@ SESSION READINESS - TSB is a training-load MODEL (derived from CTL/ATL), not a d
 • Tempo structured sessions: always appropriate regardless of TSB.
 • SAFETY: any rider-reported chest pain, dizziness, unusually elevated resting HR, or sharp/orthopedic pain overrides every threshold above — default to Rest Day and suggest they check with a doctor before resuming intensity.
 
-PROGRESSION LADDER - a DEFAULT path, not a mandatory one-way sequence. Flat sessions removed per INTERVALS-ONLY rule:
-Surge Ride → Z2 with Cadence Drills → Tempo Cruise → Sweet Spot Primer → Sweet Spot Classic → 3×15 Sweet Spot → Extended Sweet Spot → Sub-Threshold Blocks → Threshold Development → Over-Under Intervals → Critical Power Development → Norwegian 4×4 → Seiler 4×8
+PROGRESSION LADDER - a DEFAULT path, not a mandatory one-way sequence. Progress means the right next challenge — repeat with a small bump, consolidate, or step up as the coaching situation demands:
+Foundation Ride / Long Endurance → Surge Ride / Z2 with Cadence Drills → Tempo Cruise → Tempo Ladder → Sub-Threshold Blocks → Sweet Spot Primer → Sweet Spot Classic → 3×15 Sweet Spot → Extended Sweet Spot → Short Threshold Intervals → Threshold Development → Over-Under Intervals → Critical Power Development → Norwegian 4×4 → Seiler 4×8
 
 WEEKLY SEQUENCING:
-• Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
-• Pattern: rest → hard → easy structured (Z2 with Cadence Drills / Surge Ride) → hard → moderate → rest.
-• After Norwegian 4x4 / 2x20 / Seiler 4x8: mandatory Rest Day.
-• Never two hard sessions on consecutive days — always insert Z2 with Cadence Drills or Rest Day between.
+• Hardest session: when TSB is highest (typically day 2-3 after a rest or easy day opening the week).
+• Pattern: rest/easy → hard → easy (Foundation Ride / Spin & Recover / Z2 with Cadence Drills) → hard → moderate → endurance → rest.
+• After Norwegian 4×4 / 2×20 / Seiler 4×8: mandatory Rest Day.
+• Never two hard sessions on consecutive days — insert a Foundation Ride, Spin & Recover, or Rest Day between.
 
-PHASE SELECTION (INTERVALS-ONLY — all flat sessions replaced with Rest Day):
-• Base → Surge Ride, Z2 with Cadence Drills, Endurance with Muscle Tension, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 hard structured session/week. All other days: Rest.
-• Build → Sweet Spot series, Threshold series, VO2max series. 2-3 hard sessions/week max. Easy days: Z2 with Cadence Drills or Surge Ride. All other days: Rest.
-• Recovery → Rest Day only. No structured sessions. Adaptation happens during recovery, not from junk miles.
-• Taper → Tempo Cruise, Sweet Spot Classic (shortened), one Race Day Opener. All other days: Rest.
-• RaceWeek → Race Day Opener 24-48h before event. Event day = Rest Day. All other days: Rest.
+PHASE SELECTION:
+• Base → Foundation Ride, Long Endurance, Z2 with Cadence Drills, Surge Ride, Endurance with Muscle Tension, Sprint Builder, Tempo Cruise, Tempo Ladder, Endurance Openers. Max 1 quality session/week (Sweet Spot+). Easy days = Foundation or Z2 variants; rest when volume is met.
+• Build → Sweet Spot series, Threshold series, VO2max series as primary sessions (2-3/week). Easy days = Foundation Ride, Spin & Recover, or Z2 with Cadence Drills.
+• Recovery → Rest Days, Spin & Recover, and Easy Flush only. Nothing above 60% FTP. Volume cut 40-60% from normal week.
+• Taper → Foundation Ride, Tempo Cruise, one Sweet Spot Classic session, one Race Day Opener. No VO2max or Threshold volume work.
+• RaceWeek → Race Day Opener placed 1-2 days before event. Foundation Ride or Spin & Recover on other days. Event day and day after = Rest Day.
 
-⛔ MANDATORY QUALITY SESSION REQUIREMENT — NON-NEGOTIABLE:
-Every plan except Recovery, Taper, and RaceWeek MUST contain at least ONE session at Sweet Spot level or harder (88%+ FTP): any Sweet Spot variant, any Threshold variant, any VO2max variant, or Sprint Builder / Anaerobic Bursts / 15/15 Micro-Intervals.
-A weekly plan where the hardest session is Tempo Cruise (80% FTP) or Z2 with Cadence Drills (65-75% FTP) is a COACHING FAILURE — unless the rider is in Recovery phase, TSB is below -25, or the rider has explicitly requested a light week in their note.
-Z2 with Cadence Drills, Surge Ride, Endurance Openers, Endurance with Muscle Tension, and all Tempo sessions are SUPPORT SESSIONS — they bookend and enable the quality work. They are never the primary stimulus of the week.
-If you find yourself scheduling only Tempo and Z2 sessions, you have not done your job as a coach. Open the Sweet Spot, Threshold, or VO2max section and prescribe the right session for this rider's level and readiness.
+COACHING QUALITY CHECK:
+For Base/Build weeks: include at least ONE session at Sweet Spot (88%+ FTP) or harder — unless TSB is below -25, this is a Recovery phase week, or the rider explicitly requested a lighter week. A plan with only Tempo and easy sessions is under-prescribing for most riders outside those exceptions; verify you have a clear justification before returning it.
+Foundation, Endurance, Recovery, and Tempo sessions are support sessions — they enable hard work, bookend it, and accelerate recovery between hard days. They are legitimate and necessary coaching tools. They are not sufficient as the ONLY weekly content for a Build or Base rider who is ready for more.
+When selecting support sessions, choose the right one for the day's role: Foundation Ride or Long Endurance for aerobic volume; Spin & Recover or Easy Flush the day after a hard session; Z2 with Cadence Drills or Surge Ride when some structure is preferred on an easy day.
 `.trim();
 
 // ─── Canonical Workout Structure Blocks ────────────────────────────────────

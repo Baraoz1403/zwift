@@ -295,13 +295,6 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         maskImage: `radial-gradient(ellipse 95% 85% at 68% 25%, black 0%, transparent 78%)`,
       }} />
 
-      {/* ── Scan line ───────────────────────────────────────────────────── */}
-      <div style={{
-        position: "absolute", left: 0, right: 0, height: 1, pointerEvents: "none",
-        background: `linear-gradient(90deg, transparent 0%, ${C.cyan}55 35%, ${C.purple}40 65%, transparent 100%)`,
-        animation: "hbScan 5s linear infinite",
-      }} />
-
       {/* ── Bottom glow edge ────────────────────────────────────────────── */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
@@ -467,12 +460,6 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         @keyframes hbAurora {
           0%, 100% { transform: scale(1) rotate(0deg);   opacity: 0.7; }
           50%       { transform: scale(1.18) rotate(9deg); opacity: 1; }
-        }
-        @keyframes hbScan {
-          0%   { top: -2px;  opacity: 0; }
-          5%   { opacity: 1; }
-          92%  { opacity: 0.35; }
-          100% { top: 102%; opacity: 0; }
         }
         @keyframes hbGradShift {
           0%, 100% { background-position: 0% 50%; }

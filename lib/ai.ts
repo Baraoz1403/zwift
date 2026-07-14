@@ -353,35 +353,22 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 2. STRUCTURED INTENSITY SESSIONS per week: follow the INTENSITY SESSION GUIDELINES matrix below — 0-1 for beginners, 1-2 for novice, 2 for intermediate, 2-3 for advanced, 0 for Recovery/illness. No single rule overrides the matrix; see INTENSITY SESSION GUIDELINES for the authoritative breakdown by level and phase.
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
 4. FORBIDDEN: generic phrases, descriptions under 3 sentences, sessions without power targets, or copy-pasting a library rationale without connecting it to this rider's specific data.
-5. QUALITY SESSION MANDATORY: Every plan except Recovery/Taper/RaceWeek MUST contain at least ONE session at Sweet Spot (88%+ FTP) or harder — any Sweet Spot variant, Threshold, VO2max, or Neuromuscular. A week where the hardest session is Tempo Cruise or Z2 with Cadence Drills is a coaching failure. Easy interval sessions (Z2 Cadence Drills, Surge Ride, Endurance Openers) are SUPPORT sessions only — never the primary stimulus.
+5. QUALITY SESSION MINIMUM: Base and Build weeks MUST include at least ONE session at Sweet Spot (88%+ FTP) or harder — unless TSB is below -25, this is a Recovery phase week, or the rider explicitly requested a lighter week. If every session is Tempo and below, verify you have a clear justification — for most riders in Base/Build it is under-prescribing.
 
-⛔ INTERVALS-ONLY RULE — ALL TRAINING SESSIONS MUST CONTAIN STRUCTURED INTERVALS:
-Every session you prescribe must have defined work blocks at a specific intensity, alternated with recovery blocks. Flat/steady-state rides do not require AI coaching and must NOT be prescribed — use Rest Day instead.
+⚡ PURPOSEFUL SESSIONS PRINCIPLE: Every session must have a clear coaching rationale connecting it to this rider's specific data and needs. Foundation Ride and Long Endurance are legitimate choices when they serve a clear role — aerobic volume development, bookend recovery between hard sessions, or aerobic base-building. Recovery sessions (Spin & Recover, Easy Flush) are legitimate the day after a hard session. None of these are defaults — they must be purposeful. A session that cannot be justified by the rider's phase, TSB, history, or stated goal should be reconsidered.
 
-FORBIDDEN sessions (flat, no interval structure — never prescribe these):
-Foundation Ride | Long Endurance | Two-Hour Foundation | Over-Distance Ride | Aerobic Threshold Ride | Continuous Tempo | Progressive Tempo | Easy Flush | Spin & Recover | Extended Recovery Flush | Short Active Recovery
-
-ALLOWED easy-day sessions (structured interval format, low metabolic cost):
-• Z2 with Cadence Drills — 4×8 min Z2 with 2 min cadence drill (100-110 rpm). Use when the rider needs an easy aerobic day WITH structure.
-• Surge Ride — 6×1 min surges @ 110% FTP within Z2 base. Light stimulation without recovery cost.
-• Endurance with Muscle Tension — 4×5 min low-cadence (55 rpm) blocks within Z2. Strength stimulus, minimal lactate.
-• Endurance Openers — 5×30s @ 110% FTP within Z2. Use the day before a hard session.
-
-FULL INTERVAL SESSIONS (use for hard days — all zones from Tempo upward):
-Tempo Cruise | Tempo Ladder | Sub-Threshold Blocks | Strength Endurance | all Sweet Spot variants | all Threshold variants | all VO2max variants | all Neuromuscular variants | all Intermittent variants
-
-WEEK SHAPE WITH INTERVALS-ONLY RULE:
-• Hard days (2-3/week): full intensity session from the library (Sweet Spot / Threshold / VO2max / Neuromuscular)
-• Easy-but-active days (1-2/week): Z2 with Cadence Drills OR Surge Ride OR Endurance with Muscle Tension
-• All other days: Rest Day
-• Never schedule more consecutive training days than recovery allows — insert Rest Days to protect adaptation.
+WEEK SHAPE:
+• Hard days (1-3/week per INTENSITY SESSION GUIDELINES): quality session from the library — Sweet Spot / Threshold / VO2max / Neuromuscular
+• Easy/recovery days: Foundation Ride, Long Endurance, Spin & Recover, Z2 with Cadence Drills, or Surge Ride — chosen for what the day needs physiologically
+• Rest days: type='Rest' when no training benefit justifies activity
+• Never schedule two hard sessions on consecutive days.
 
 ⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
 GEAR SELECTION: Select middle gear (4-6 on cassette, roughly 53×15 equivalent) before starting and keep it there for the entire session.
 WHY THIS MATTERS: In ERG mode the trainer — not the gear — controls resistance. Shifting to an easier gear during a hard interval does NOT make it easier; the trainer immediately compensates to maintain the target watts. What changes is flywheel speed: easier gear = slower flywheel = trainer must apply more torque = sluggish, less accurate power delivery. For threshold and VO2max intervals, a moderate gear gives the flywheel enough speed for the trainer to respond smoothly.
 EXCEPTION: intentional low-cadence strength blocks (e.g. Big Gear Force work, cadence < 65 rpm) or sprint sessions (Neuromuscular/Sprint Builder) are designed to be ridden outside ERG or with gear manipulation — note this explicitly when the session calls for it.
 Target cadence by type: Zone2=85-95 RPM, SweetSpot=88-92, Threshold=88-93, VO2max=90-100, Sprint=100-110.
-CADENCE FAILURE PROTOCOL: if cadence drops below 80 RPM during a steady-state or interval block: (1) ease off pressure for 5-10 seconds to let cadence rise, then re-engage — do NOT shift to an easier gear (see above). If cadence consistently fails to reach target across multiple intervals despite correct gear and technique, note this explicitly in the workout summary and flag: the rider's FTP may be overestimated and a fresh test should be scheduled.
+CADENCE FAILURE PROTOCOL: if cadence drops below 80 RPM during a steady-state or interval block: (1) ease off pressure for 5-10 seconds to let cadence rise, then re-engage — do NOT shift to an easier gear (see above). If cadence consistently fails to reach target across multiple intervals despite correct gear and technique, note this in the workout description and suggest a technique-focus session before retrying. Cadence failure alone does not diagnose FTP — other factors (fatigue, technique, trainer calibration) may be responsible.
 A cadence spiral (drop cadence → trainer increases resistance → cadence drops further) is the #1 ERG failure mode. Breaking it requires backing off, not gear changes.
 Every workout structure block must include explicit cadenceTarget.
 
@@ -853,7 +840,7 @@ Every workout structure block must include explicit cadenceTarget.
   "beats impressive load. Beginners should never receive zero structured " +
   "session work — Foundation alone is not coaching. " +
   "FINAL PLAN QUALITY CHECK - before returning JSON, verify: " +
-  "(a-0) The plan contains at least ONE session at Sweet Spot (88%+ FTP) or harder, unless this is a Recovery/Taper/RaceWeek plan or TSB is below -25. A plan with only Tempo and Z2 sessions is not coaching — reject it and assign a real quality session. " +
+  "(a-0) Unless this is a Recovery/Taper/RaceWeek plan, TSB is below -25, or the rider explicitly requested lighter training: the plan contains at least ONE session at Sweet Spot (88%+ FTP) or harder. If all sessions are Tempo and below, verify this is intentional and clearly justified for this rider — for most Base/Build riders it is under-prescribing. " +
   "(a) The number of intensity sessions matches the INTENSITY SESSION " +
   "GUIDELINES matrix above for this rider's level and phase. Intensity " +
   "sessions are Sweet Spot (>=84% FTP), Threshold, VO2max, or a named " +

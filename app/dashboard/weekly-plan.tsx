@@ -1495,14 +1495,22 @@ export default function WeeklyPlan() {
             const BULLET_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
             const BULLET_ICONS = ["⚡", "🎯", "📈", "💡", "🔥"];
             return (
-              <div style={{ marginTop: 32, marginBottom: 14 }}>
+              <div style={{ marginTop: 36, marginBottom: 14 }}>
                 {/* Header row with toggle button */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 12 : 0 }}>
-                  <div className="section-title" style={{ margin: 0 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                    </svg>
-                    This week&apos;s coaching focus
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 14 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      width: 3, height: 28, borderRadius: 2, flexShrink: 0,
+                      background: "linear-gradient(180deg, var(--accent) 0%, rgba(124,58,237,0.65) 100%)",
+                    }} />
+                    <div>
+                      <div style={{ fontSize: 16.5, fontWeight: 800, color: "var(--text)", letterSpacing: "-0.015em", lineHeight: 1.2 }}>
+                        This week&apos;s coaching focus
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2, letterSpacing: "0.01em" }}>
+                        AI analysis · personalized to your training data
+                      </div>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -1672,9 +1680,15 @@ export default function WeeklyPlan() {
                         return (
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--border)" }}>
                             {/* Coach prompt — left bubble */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-                              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>🏋️</div>
-                              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+                              <div style={{
+                                width: 30, height: 30, borderRadius: "50%",
+                                background: "linear-gradient(135deg, var(--accent) 0%, rgba(124,58,237,0.7) 100%)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: 14, flexShrink: 0,
+                                boxShadow: "0 2px 10px rgba(47,143,224,0.3)",
+                              }}>🧠</div>
+                              <div style={{ fontSize: 15.5, color: "var(--text)", fontWeight: 700, letterSpacing: "-0.01em" }}>
                                 How did that feel?
                               </div>
                             </div>
@@ -1695,7 +1709,7 @@ export default function WeeklyPlan() {
                                   </div>
                                 </div>
                               ) : (
-                                <div style={{ display: "flex", gap: 5 }}>
+                                <div style={{ display: "flex", gap: 6 }}>
                                   {SCORES.map((s, idx) => (
                                     <button
                                       key={idx + 1}
@@ -1703,14 +1717,14 @@ export default function WeeklyPlan() {
                                       title={s.label}
                                       onClick={() => !submitting && submitFeelingScore(w.date!, w.title || (actual?.name as string) || "", w.type, idx + 1)}
                                       style={{
-                                        width: 34, height: 30,
-                                        border: "1px solid var(--border)",
-                                        borderRadius: 7,
+                                        width: 42, height: 38,
+                                        border: "1.5px solid var(--border)",
+                                        borderRadius: 10,
                                         background: "transparent",
                                         cursor: submitting ? "default" : "pointer",
-                                        fontSize: 15, lineHeight: 1,
+                                        fontSize: 19, lineHeight: 1,
                                         opacity: submitting ? 0.4 : 1,
-                                        transition: "transform 0.1s",
+                                        transition: "transform 0.1s, border-color 0.15s",
                                       }}
                                     >{s.emoji}</button>
                                   ))}
@@ -2052,44 +2066,70 @@ export default function WeeklyPlan() {
             className="stat-card todays-note-card"
             style={{
               marginTop: 48,
-              padding: "28px 26px 22px",
+              padding: 0,
               background: "#fff",
-              border: "1.5px solid rgba(15,23,42,0.12)",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 0 0 0 transparent",
+              border: "1.5px solid rgba(47,143,224,0.22)",
+              boxShadow: "0 4px 28px rgba(47,143,224,0.09), 0 1px 3px rgba(0,0,0,0.05)",
               position: "relative",
               overflow: "hidden",
             }}
           >
-            {/* Background glow */}
+            {/* Dark AI header band */}
             <div style={{
-              position: "absolute", top: -60, right: -60, width: 180, height: 180,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(47,143,224,0.08) 0%, transparent 70%)",
-              pointerEvents: "none",
-            }} />
-
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              padding: "22px 26px 20px",
+              background: "linear-gradient(135deg, #0b1629 0%, #11204a 55%, #0d1a38 100%)",
+              position: "relative",
+              overflow: "hidden",
+            }}>
+              {/* Aurora glows */}
               <div style={{
-                width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
-                background: "linear-gradient(135deg, var(--accent) 0%, rgba(47,143,224,0.5) 100%)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 18,
-                boxShadow: "0 4px 12px rgba(47,143,224,0.3)",
-              }}>🏋️</div>
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", lineHeight: 1.2 }}>
-                  Talk to your coach
-                </div>
-                <div style={{ fontSize: 14, color: "var(--muted)", marginTop: 3 }}>
-                  Your input enters AI memory — sharpening your future sessions
+                position: "absolute", top: -40, right: -40, width: 160, height: 160,
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(47,143,224,0.28) 0%, transparent 70%)",
+                pointerEvents: "none",
+              }} />
+              <div style={{
+                position: "absolute", bottom: -30, left: 40, width: 110, height: 110,
+                borderRadius: "50%",
+                background: "radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 70%)",
+                pointerEvents: "none",
+              }} />
+              {/* Header row */}
+              <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 12, flexShrink: 0,
+                  background: "linear-gradient(135deg, rgba(47,143,224,0.35) 0%, rgba(124,58,237,0.35) 100%)",
+                  border: "1px solid rgba(47,143,224,0.45)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 21,
+                  boxShadow: "0 0 22px rgba(47,143,224,0.28)",
+                }}>🧠</div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
+                    <div style={{ fontSize: 19, fontWeight: 800, color: "#F8FAFC", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                      Talk to your coach
+                    </div>
+                    <div style={{
+                      fontSize: 9, fontWeight: 800, letterSpacing: "0.16em",
+                      color: "rgba(0,212,255,0.85)", textTransform: "uppercase",
+                      background: "rgba(0,212,255,0.13)",
+                      border: "1px solid rgba(0,212,255,0.28)",
+                      borderRadius: 5, padding: "2px 8px",
+                    }}>AI</div>
+                  </div>
+                  <div style={{ fontSize: 13, color: "rgba(248,250,252,0.5)", lineHeight: 1.4 }}>
+                    Your input enters AI memory — sharpening your future sessions
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Content area */}
+            <div style={{ padding: "22px 26px 20px" }}>
+
             {/* Emoji rating */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 14 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 16, letterSpacing: "-0.01em" }}>
                 How did today{"'"}s ride feel?
               </div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -2234,6 +2274,7 @@ export default function WeeklyPlan() {
                 : "Seven structured sessions, built fresh each week"}
               {" — your feedback enters AI memory and sharpens future sessions."}
             </div>
+            </div>{/* end content area */}
           </div>
         );
       })()}
