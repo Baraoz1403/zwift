@@ -80,7 +80,7 @@ export default function IntervalsOnboarding() {
       {/* Prominent banner */}
       <div style={{
         background: "var(--accent)", color: "#fff",
-        borderRadius: 12, padding: "18px 22px",
+        borderRadius: 8, padding: "18px 22px",
         fontSize: 16, fontWeight: 800, textAlign: "center",
         marginBottom: 24,
         boxShadow: "0 4px 14px rgba(47,143,224,0.3)",

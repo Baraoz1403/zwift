@@ -1170,7 +1170,7 @@ export default function WeeklyPlan() {
               .tpdemo-check { animation: tpdemoCheck 7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
             `}</style>
             <div style={{
-              marginBottom: 14, padding: "10px 8px", borderRadius: 12,
+              marginBottom: 14, padding: "10px 8px", borderRadius: 8,
               border: "1px solid var(--border)", background: "rgba(20,23,26,0.02)",
             }}>
               <svg viewBox="0 0 400 130" width="100%" height="auto" style={{ display: "block" }}>
@@ -1224,7 +1224,7 @@ export default function WeeklyPlan() {
 
             {/* ── Step 1 ──────────────────────────────────────────────── */}
             <div style={{
-              marginBottom: 10, padding: "16px", borderRadius: 12,
+              marginBottom: 10, padding: "16px", borderRadius: 8,
               border: "1px solid var(--border)", background: "rgba(20,23,26,0.03)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -1292,7 +1292,7 @@ export default function WeeklyPlan() {
 
             {/* ── Step 2 ──────────────────────────────────────────────── */}
             <div style={{
-              padding: "16px", borderRadius: 12,
+              padding: "16px", borderRadius: 8,
               border: tpPolling ? "1.5px solid rgba(47,143,224,0.35)" : "1px solid var(--border)",
               background: tpPolling ? "rgba(47,143,224,0.04)" : "rgba(20,23,26,0.03)",
               transition: "border-color 0.2s, background 0.2s",

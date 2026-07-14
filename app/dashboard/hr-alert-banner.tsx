@@ -167,7 +167,7 @@ export default function HRAlertBanner() {
       style={{
         background: s.bg,
         border: `1.5px solid ${s.border}`,
-        borderRadius: 10,
+        borderRadius: 8,
         padding: "14px 18px",
         marginBottom: 16,
         position: "relative",

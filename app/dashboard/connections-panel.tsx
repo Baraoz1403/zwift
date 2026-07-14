@@ -137,7 +137,7 @@ function ServiceTile({ icon, brand, name, status, description, action }: Service
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
       padding: "15px 16px",
-      borderRadius: 12,
+      borderRadius: 8,
       border: "1px solid var(--border)",
       background: isOk ? bc.tint : "var(--panel, #fff)",
     }}>

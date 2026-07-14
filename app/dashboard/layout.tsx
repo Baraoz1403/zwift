@@ -61,7 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="dashboard-header fade-in">
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{
-              width: 50, height: 50, borderRadius: 14, flexShrink: 0, marginTop: 3,
+              width: 50, height: 50, borderRadius: 10, flexShrink: 0, marginTop: 3,
               background: "var(--accent)",
               display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 4px 12px rgba(47,143,224,0.35)",
