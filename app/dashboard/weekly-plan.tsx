@@ -1963,24 +1963,24 @@ export default function WeeklyPlan() {
                             fontSize: 13, marginTop: 2,
                           }}>🏋️</div>
                           <div style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid var(--border)",
-                            borderRadius: "3px 12px 12px 12px",
-                            padding: "11px 14px",
+                            background: "rgba(47,143,224,0.07)",
+                            border: "1px solid rgba(47,143,224,0.18)",
+                            borderRadius: "3px 14px 14px 14px",
+                            padding: "13px 16px",
                             maxWidth: "85%",
                           }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginBottom: 2 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", marginBottom: 3 }}>
                               {w.title}
                             </div>
-                            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: w.description ? 8 : 0 }}>
+                            <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: w.description ? 9 : 0 }}>
                               {w.day} · {w.date} · {w.durationMin} min
                             </div>
                             {w.description && (
-                              <div style={{ fontSize: 12, color: "var(--text)", opacity: 0.8, lineHeight: 1.55, fontStyle: "italic" }}>
+                              <div style={{ fontSize: 13, color: "var(--text)", opacity: 0.82, lineHeight: 1.6, fontStyle: "italic" }}>
                                 &ldquo;{w.description}&rdquo;
                               </div>
                             )}
-                            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 9, fontWeight: 600 }}>
+                            <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 10, fontWeight: 600 }}>
                               How did it feel?
                             </div>
                           </div>
@@ -1999,7 +1999,7 @@ export default function WeeklyPlan() {
                               <span style={{ fontSize: 22 }}>{savedScore.emoji}</span>
                               <div>
                                 <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>{savedScore.label}</div>
-                                <div style={{ fontSize: 10, color: "var(--muted)" }}>✓ Your coach will remember this</div>
+                                <div style={{ fontSize: 11.5, color: "var(--muted)" }}>✓ Your coach will remember this</div>
                               </div>
                             </div>
                           ) : (
@@ -2009,10 +2009,10 @@ export default function WeeklyPlan() {
                               borderRadius: "12px 12px 3px 12px",
                               padding: "9px 12px",
                             }}>
-                              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 7, textAlign: "right" }}>
+                              <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8, textAlign: "right" }}>
                                 Tap to reply
                               </div>
-                              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                              <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
                                 {SCORES.map((s, idx) => (
                                   <button
                                     key={idx + 1}
@@ -2020,14 +2020,15 @@ export default function WeeklyPlan() {
                                     title={s.label}
                                     onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, idx + 1)}
                                     style={{
-                                      width: 38, height: 34,
-                                      border: "1px solid var(--border)",
-                                      borderRadius: 9,
-                                      background: "transparent",
+                                      width: 42, height: 38,
+                                      border: "1.5px solid var(--border)",
+                                      borderRadius: 10,
+                                      background: "#fff",
                                       cursor: submitting ? "default" : "pointer",
-                                      fontSize: 17, lineHeight: 1,
+                                      fontSize: 19, lineHeight: 1,
                                       opacity: submitting ? 0.4 : 1,
-                                      transition: "transform 0.1s, opacity 0.15s",
+                                      transition: "transform 0.12s, box-shadow 0.12s",
+                                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                                     }}
                                   >{s.emoji}</button>
                                 ))}
