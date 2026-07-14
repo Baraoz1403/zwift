@@ -1,45 +1,41 @@
 
 /**
  * ============================================================
- * FTP VERIFICATION PROTOCOL — MANDATORY BEFORE ANY PLAN
+ * FTP HANDLING - a rough estimate is not a substitute for a real test
  * ============================================================
  *
- * ⛔ HARD RULE: Workouts are the core of this project.
- * A wrong FTP destroys every workout. Manual profile.ftp is NEVER
- * trusted — always use estimatedFtp from the Coggan Protocol below.
+ * REVISED (July 2026) after an external methodology review: the previous
+ * version of this note described an invented "Coggan Power-Duration
+ * Protocol" that estimated FTP from the average power of ANY ride 20-120+
+ * minutes long, and claimed that estimate should ALWAYS override the
+ * rider's own manually-entered FTP. That's backwards. A real FTP number
+ * comes from a genuine near-maximal effort - a 20-minute all-out time
+ * trial (see the "FTP Test Protocol" workout below, FTP = 0.95 x average
+ * power), a ramp test, or a Critical-Power model built from several true
+ * maximal efforts. The duration of an ordinary ride says nothing about
+ * whether it was ridden anywhere near the rider's ceiling - an easy Z2
+ * spin, a drafted group ride, or a ride with coffee-stop coasting all
+ * produce a power number that is not FTP data at all.
  *
- * WHY THIS MATTERS:
- * profile.ftp=276W (manual, stale) → workout at 150% = 414W (impossible)
- * estimatedFtp=214W (computed)     → workout at 150% = 321W (hard but doable)
+ * CURRENT BEHAVIOR (lib/plan-runner.ts, estimateFtpFromRides):
+ * - A manually-entered profile.ftp is now ALWAYS trusted when present. It is
+ *   never silently overridden by a computation from ride history.
+ * - The ride-based estimate is used ONLY when there is no manual FTP at
+ *   all, is built only from the rider's hardest recent rides (not just any
+ *   ride over 80W), and is explicitly a rough fallback, not a validated
+ *   number.
+ * - One correction to the old note: draft does not "inflate" power the way
+ *   it was previously described. Draft lets a rider hold a given SPEED at
+ *   LOWER power - so if anything, a drafted ride's power data
+ *   underrepresents solo capability, it doesn't inflate an FTP estimate.
  *
- * THE COGGAN POWER-DURATION PROTOCOL:
- * For each qualifying ride (CYCLING, 30-120 min):
- *   FTP_estimate = avgWatts / coggan_factor(duration_min)
- *
- *   coggan_factor:
- *     < 20 min → 1.10 | < 30 min → 1.05 | < 45 min → 1.00
- *     < 60 min → 0.97 | < 75 min → 0.95 | < 90 min → 0.93
- *     < 120 min → 0.91 | ≥ 120 min → 0.88 (group ride — use cautiously)
- *
- *   FTP = average of TOP 3 estimates (filters outliers)
- *
- * VALIDATION:
- * - Sweet Spot ride: avgWatts ÷ 0.82 = upper bound, ÷ 0.90 = lower bound
- * - High-elevation rides (>300m): minimal draft → most accurate
- * - Group/pacer rides: subtract 10-15W (draft effect)
- *
- * CONFIDENCE LEVELS:
- * - HIGH: 5+ rides, estimates within 10W → use directly
- * - MEDIUM: 3-4 rides, spread 10-20W → use with ±5W buffer
- * - LOW: <3 rides or spread >20W → Ramp Test first, no intensity above Z2
- *
- * HARD RULE:
- * IF manual_ftp > computed_ftp + 15W → REJECT manual, USE computed
- * IF no qualifying rides → Ramp Test is workout #1, no plan without it
- *
- * RAMP TEST PROTOCOL (when needed):
- * Warmup 10min 50→75% FTP | +20W every 1min from 50% estimated FTP
- * FTP = 75% × highest completed wattage
+ * WHAT THE APP SHOULD TELL THE RIDER:
+ * - If FTP has never been tested, recommend the "FTP Test Protocol"
+ *   workout (20 min all-out) as the very next hard session, rather than
+ *   quietly building calibrated intensity work around a guess.
+ * - If FTP hasn't been tested in 8+ weeks or performance has clearly
+ *   shifted (better or worse), suggest a re-test rather than adjusting the
+ *   number automatically from ordinary ride data.
  * ============================================================
  */
 
@@ -74,9 +70,18 @@ export const POWER_ZONES = {
 
 // âââ W/kg Rider Classification ââââââââââââââââââââââââââââââââââââââââââââââ
 /**
- * Power-to-weight categories (FTP Ã· body mass in kg) used to calibrate session
- * prescription. A 2.0 W/kg rider has very different recovery needs and intensity
- * tolerance than a 3.5 W/kg rider even at the same TSB.
+ * Power-to-weight is ONE input into session selection, not the sole gate.
+ * REVISED (July 2026): an external review correctly pointed out that W/kg
+ * mainly measures climbing performance and says nothing on its own about
+ * whether a rider can handle structured intervals - a heavy, strong rider
+ * can have a high FTP but modest W/kg, while a very light rider can post a
+ * high W/kg with little training experience. Real session-readiness also
+ * depends on age, training history, injury/medical history, technical
+ * skill, goals, recovery capacity, and how the rider has actually responded
+ * to intensity before. This table stays as a coarse, useful starting point
+ * (a genuine beginner should not open with Norwegian 4x4), but the AI should
+ * treat it as a default to override when the rider's own profile/notes/
+ * history say otherwise, not as a hard physiological law.
  */
 export const RIDER_LEVEL_THRESHOLDS = [
   { label: "Beginner",     minWkg: 0.0,  maxWkg: 2.5,  note: "Foundation + Tempo + Sprint Builder only. No true threshold or VO2max." },
@@ -89,9 +94,17 @@ export const RIDER_LEVEL_THRESHOLDS = [
 
 // âââ Session Readiness Prerequisites (minimum TSB) âââââââââââââââââââââââââ
 /**
- * Minimum TSB (Training Stress Balance) required for each session category
- * to be physiologically productive rather than just accumulating more fatigue.
- * These are soft thresholds â cite them when the AI makes substitutions.
+ * Minimum TSB (Training Stress Balance) suggested for each session category.
+ * REVISED (July 2026): TSB is a mathematical training-load MODEL derived
+ * from CTL/ATL (which are themselves just exponentially-weighted averages
+ * of daily TSS) - it is not a direct measurement of the rider's body. TSB
+ * has no way of knowing whether the rider slept two hours, is fighting off
+ * a cold, is dehydrated, stressed, or nursing a sore knee. These thresholds
+ * are soft, population-level heuristics, not scientific facts - the AI must
+ * treat the rider's own stated notes, subjective feel, and any illness/
+ * injury signal as equal or higher priority than the TSB number itself, and
+ * say so explicitly when making a substitution rather than citing TSB alone
+ * as if it settled the question.
  */
 export const SESSION_PREREQUISITES = {
   vo2max:        { minTsb: -5,  fallback: "Sweet Spot Classic",   note: "VO2max demands near-maximal cardiac output â legs must be fresh." },
@@ -775,9 +788,20 @@ export const PHASE_GUIDELINES = {
 } as const;
 
 /**
- * PROGRESSION LADDER â advance one rung per mesocycle, never skip.
- * Used by the AI to determine appropriate workout intensity for the rider's
- * current fitness level and training phase.
+ * PROGRESSION LADDER - a DEFAULT reference ordering, not a mandatory
+ * one-directional sequence. REVISED (July 2026): an external review
+ * correctly noted that forcing every rider through all 22 rungs in order
+ * (never skipping) doesn't match how real coaching works - a rider training
+ * for a hilly gran fondo, a short crit, or pure weight loss needs different
+ * emphasis, and this ladder should bend to the rider's stated goal rather
+ * than the goal bending to the ladder. It's most useful for a rider with no
+ * strong goal preference of their own, as a sensible default path from
+ * aerobic base toward higher intensity. Repeating the same named workout
+ * across consecutive weeks (with a small, deliberate change in duration,
+ * reps, or power) is often the RIGHT call, not a failure of variety - it's
+ * what allows specific adaptation, reliable week-over-week comparison, and
+ * genuine progressive overload. Variety for its own sake is not a coaching
+ * goal.
  */
 export const PROGRESSION_LADDER = [
   "Foundation Ride",            // Rung 1: aerobic base, mitochondrial density
@@ -879,30 +903,31 @@ INTERMITTENT (requires TSB â¥ -8 â metabolically demanding):
 â¢ "Tabata Protocol" â 30 min (12 warmup â 8Ã(20s@170% / 10s complete rest) â 5 min @ 60% â 9 cooldown). True Tabata: 4 min of supramaximal work achieves VO2max in minimal time.
 â¢ "40/20 HIIT" â 50 min (12 warmup â 3 sets of 8Ã(40s@120% / 20s@50%) / 4 set-rest â 6 cooldown). Slightly lower than Ronnestad intensity â appropriate at TSB -10 to -15 where full Ronnestad would be counterproductive.
 
-RIDER LEVEL GUIDANCE:
-â¢ < 2.5 W/kg (Beginner): Recovery, Foundation, Surge Ride, Tempo Cruise, Sprint Builder, Short Active Recovery ONLY. No sweet spot > 4Ã7 min. No threshold. No VO2max.
-â¢ 2.5â3.0 W/kg (Novice): Add Sweet Spot Primer, Sweet Spot Classic, Micro Intervals, 30/30 Blitz, 15/15 Micro-Intervals. Threshold only in late Build at TSB â¥ -8.
-â¢ 3.0â3.5 W/kg (Intermediate): Full sweet spot range including 3Ã15. Add Threshold Development, Short Threshold Intervals, 4Ã4 Two-Set, VO2max Pyramid, 60/60 Intervals. No Norwegian 4Ã4 or 2Ã20.
-â¢ 3.5+ W/kg (Trained): Full library. Norwegian 4Ã4, 2Ã20, Over-Under, Seiler 4Ã8, 40/20 Ronnestad, Critical Power Development all unlocked.
-â¢ If wPerKg is null: infer from FTP â < 150 W = beginner, 150-220 W = novice/intermediate, > 220 W = trained.
+RIDER LEVEL GUIDANCE (W/kg is ONE input, not the sole gate - also weigh age, training history, injury/medical history, technical skill, stated goal, and how this rider has actually responded to intensity before):
+• < 2.5 W/kg (Beginner): default to Recovery, Foundation, Surge Ride, Tempo Cruise, Sprint Builder, Short Active Recovery. Sweet spot/threshold/VO2max only if the rider's own history/notes show real prior intensity tolerance - otherwise build aerobic base first.
+• 2.5-3.0 W/kg (Novice): Add Sweet Spot Primer, Sweet Spot Classic, Micro Intervals, 30/30 Blitz, 15/15 Micro-Intervals. Threshold typically late Build at TSB >= -8, sooner if the rider's history supports it.
+• 3.0-3.5 W/kg (Intermediate): Full sweet spot range including 3x15. Add Threshold Development, Short Threshold Intervals, 4x4 Two-Set, VO2max Pyramid, 60/60 Intervals.
+• 3.5+ W/kg (Trained): Full library, including Norwegian 4x4, 2x20, Over-Under, Seiler 4x8, 40/20 Ronnestad, Critical Power Development.
+• If wPerKg is null: infer cautiously from FTP alone (< 150 W = beginner-leaning, 150-220 W = novice/intermediate-leaning, > 220 W = trained-leaning), and weigh riderProfile/notes more heavily than usual since the power-to-weight signal is missing.
 
-SESSION READINESS (substitute and cite the actual TSB when doing so):
-â¢ VO2max (106%+): TSB â¥ -5. Below â substitute Sweet Spot Classic or 60/60 Intervals.
-â¢ Threshold (100%+): TSB â¥ -12. Below â substitute Sweet Spot Classic or Sub-Threshold Blocks.
-â¢ Sweet Spot (88%+): TSB â¥ -20. Below â substitute Tempo Cruise or Continuous Tempo.
-â¢ Intermittent (30/30, 40/20): TSB â¥ -8. Below â substitute 15/15 Micro-Intervals or Tempo Cruise.
-â¢ Neuromuscular/Sprint: TSB â¥ -15. Below â substitute Sprint Builder (shorter) or Foundation Ride.
-â¢ Tempo, Foundation, Recovery: always appropriate regardless of TSB.
+SESSION READINESS - TSB is a training-load MODEL (derived from CTL/ATL), not a direct measurement of the rider's body: it cannot see sleep, illness, stress, or pain. Treat these as soft defaults, and let the rider's own notes/subjective feel override the number - always cite the actual TSB when substituting, but say so as "today's estimated load balance," not as settled fact:
+• VO2max (106%+): TSB >= -5 as a default. Below, or if the rider mentions feeling unusually fatigued/unwell → substitute Sweet Spot Classic or 60/60 Intervals regardless of the number.
+• Threshold (100%+): TSB >= -12 as a default → substitute Sweet Spot Classic or Sub-Threshold Blocks.
+• Sweet Spot (88%+): TSB >= -20 as a default → substitute Tempo Cruise or Continuous Tempo.
+• Intermittent (30/30, 40/20): TSB >= -8 as a default → substitute 15/15 Micro-Intervals or Tempo Cruise.
+• Neuromuscular/Sprint: TSB >= -15 as a default → substitute Sprint Builder (shorter) or Foundation Ride.
+• Tempo, Foundation, Recovery: always appropriate regardless of TSB.
+• SAFETY: any rider-reported chest pain, dizziness, unusually elevated resting HR, or sharp/orthopedic pain overrides every threshold above - default to Recovery/Foundation and suggest they check with a doctor before resuming intensity.
 
-PROGRESSION LADDER â advance one rung per mesocycle, never skip:
+PROGRESSION LADDER - a DEFAULT path for a rider with no strong goal of their own, not a mandatory one-way sequence (bend it to the rider's actual goal - a climbing event, a short crit, or general fitness/weight loss each favor a different order). Repeating the same named workout across consecutive weeks with a small progressive change (duration/reps/power) is often correct, not a variety failure:
 Foundation Ride â Tempo Cruise â Sweet Spot Primer â Sweet Spot Classic â 3Ã15 Sweet Spot â Extended Sweet Spot â Sub-Threshold Blocks â Threshold Development â Over-Under Intervals â Critical Power Development â Norwegian 4Ã4 â Seiler 4Ã8
 
 WEEKLY SEQUENCING:
-â¢ Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
-â¢ Two-Hour Foundation / Long Endurance: schedule late in the week (pre-fatigued legs = fat-oxidation training signal).
-â¢ Pattern: rest â hard â easy/recovery â hard â moderate â long endurance â rest.
-â¢ After Norwegian 4Ã4 / 2Ã20 / Seiler 4Ã8: mandatory easy or rest day.
-â¢ Never two hard sessions on consecutive days â always insert Foundation or Recovery between.
+• Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
+• Two-Hour Foundation / Long Endurance late in the week is fine for TRAINED/experienced riders as an occasional deliberate low-glycogen session - it is NOT a universal rule that long rides should be done on tired legs. For beginners or anyone without a solid aerobic base, prioritize completing the ride with good form over teaching fat oxidation - fatigue that degrades technique or turns an easy aerobic ride into a grind raises injury risk and isn't worth the tradeoff.
+• Pattern: rest → hard → easy/recovery → hard → moderate → long endurance → rest.
+• After Norwegian 4x4 / 2x20 / Seiler 4x8: mandatory easy or rest day.
+• Never two hard sessions on consecutive days - always insert Foundation or Recovery between.
 
 PHASE SELECTION:
 â¢ Base â Foundation Ride, Two-Hour Foundation, Long Endurance, Surge Ride, Z2 Cadence Drills, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 structured hard session/week.

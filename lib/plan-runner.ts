@@ -39,70 +39,89 @@ import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 export { AiInsightsError };
 
 /**
- * Coggan Power-Duration FTP Estimation Ã¢ÂÂ applied to last 30 CYCLING rides.
+ * Rough FTP cross-check from recent ride power data - NOT a validated test.
  *
- * METHODOLOGY (Coggan, 2003):
- * Every ride duration has an anaerobic contribution that inflates avgWatts
- * above true FTP. We divide by a duration-specific factor to remove that
- * contribution and recover the underlying FTP estimate.
+ * REVISED (July 2026) after an external methodology review correctly flagged
+ * the previous version as unsound: it divided the average power of ANY ride
+ * 20-180 min long (qualifying bar was just "> 80W", which almost every ride
+ * clears, including easy Z2 spins) by a duration-based factor borrowed from
+ * Coggan's naming but not his actual protocol, and used the result to
+ * SILENTLY OVERRIDE the rider's own manually-entered, presumably
+ * properly-tested FTP. A real FTP test requires a genuine near-maximal
+ * effort (a 20-min all-out time trial, a ramp test, or a Critical-Power model
+ * built from several true maximal efforts) - duration alone says nothing
+ * about whether a given ride was ridden anywhere near that rider's ceiling.
+ * An easy endurance ride, a drafted group ride, or a ride with coasting/
+ * stoplights all produce a low average power that this formula would have
+ * happily divided into a fabricated "FTP".
  *
- *   < 20 min Ã¢ÂÂ ÃÂ· 1.10  (high anaerobic contribution)
- *   < 30 min Ã¢ÂÂ ÃÂ· 1.05
- *   < 45 min Ã¢ÂÂ ÃÂ· 1.00  (Ã¢ÂÂ FTP effort zone)
- *   < 60 min Ã¢ÂÂ ÃÂ· 0.97
- *   < 75 min Ã¢ÂÂ ÃÂ· 0.95
- *   < 90 min Ã¢ÂÂ ÃÂ· 0.93
- *   < 120 min Ã¢ÂÂ ÃÂ· 0.91
- *   Ã¢ÂÂ¥ 120 min Ã¢ÂÂ ÃÂ· 0.88 (group ride / draft Ã¢ÂÂ discounted)
+ * Fix, in order of what changed:
+ *   1. A manually-entered profile.ftp (from a real test the rider did) is now
+ *      ALWAYS the authoritative value when present. This function no longer
+ *      overrides it - it only fills the gap when no manual FTP exists at all,
+ *      and even then the result is explicitly a rough estimate, not a
+ *      replacement for the real "FTP Test Protocol" workout already in the
+ *      library (20 min all-out, FTP = 0.95 x average power - see
+ *      WORKOUT_LIBRARY in lib/coaching-knowledge.ts).
+ *   2. The qualifying bar is now "genuinely hard for this rider" (power at or
+ *      above roughly tempo effort relative to whatever FTP reference is
+ *      available), not merely ">80W" - this excludes easy rides that say
+ *      nothing about ceiling.
+ *   3. Draft on a group ride doesn't "inflate" power the way the old comment
+ *      claimed - draft lets a rider hold a given SPEED at LOWER power, so if
+ *      anything a drafted ride's power data underrepresents solo capability.
+ *      The old per-duration factor table conflated "long ride" with "drafted
+ *      ride", which aren't the same thing; this version drops that assumption
+ *      and instead only downweights rides long enough that pacing/fueling
+ *      strategy (not just draft) would blunt a true maximal effort.
  *
- * Uses Normalized Power (NP) over avgWatts when available Ã¢ÂÂ NP is the
- * physiologically correct measure of sustained effort for variable-pace rides.
- *
- * Result: weighted average of TOP 5 estimates. Group rides (Ã¢ÂÂ¥120 min) are
- * weighted at 0.5ÃÂ to reduce draft-inflated outliers.
- *
- * HARD RULES:
- * - Requires Ã¢ÂÂ¥ 3 qualifying rides (20-180 min, CYCLING, power > 80W)
- * - Result < 100W Ã¢ÂÂ suspect data Ã¢ÂÂ returns null (falls back to profile.ftp)
- * - This function's result ALWAYS overrides manual profile.ftp when Ã¢ÂÂ¥ 100W
+ * Returns null whenever there isn't a reasonably confident signal - callers
+ * must fall back to profile.ftp, and if that's also missing, treat this
+ * rider as needing an actual FTP Test Protocol before any calibrated
+ * intensity work.
  */
-function estimateFtpFromRides(rides: RideSummary[]): number | null {
-  function cogganFactor(durMin: number): number {
-    if (durMin < 20)  return 1.10;
-    if (durMin < 30)  return 1.05;
-    if (durMin < 45)  return 1.00;
-    if (durMin < 60)  return 0.97;
-    if (durMin < 75)  return 0.95;
-    if (durMin < 90)  return 0.93;
-    if (durMin < 120) return 0.91;
-    return 0.88;
-  }
-
+function estimateFtpFromRides(rides: RideSummary[], referenceFtp?: number): number | null {
   const qualifying = rides.filter(
     (r) =>
       (!r.sport || r.sport.toLowerCase().includes("cycling")) &&
-      (r.normalizedPower ?? r.avgWatts) > 80 &&
       r.durationMin >= 20 &&
-      r.durationMin <= 180
+      r.durationMin <= 180 &&
+      (r.normalizedPower ?? r.avgWatts) > 80 &&
+      // A ride only tells us anything about FTP if it was actually hard.
+      // Without a reference we can't judge "hard" in absolute watts, so we
+      // fall back to keeping only the top half of rides by power - a crude
+      // but honest way to avoid averaging in easy spins when this is the
+      // rider's very first estimate.
+      (referenceFtp == null || (r.normalizedPower ?? r.avgWatts) >= referenceFtp * 0.75)
   );
 
   if (qualifying.length < 3) return null;
 
-  const estimates = qualifying.map((r) => {
+  // Sort by power descending; when we have no reference at all, this keeps
+  // only genuinely hard efforts instead of blending in easy rides.
+  const hardest = [...qualifying]
+    .sort((a, b) => (b.normalizedPower ?? b.avgWatts) - (a.normalizedPower ?? a.avgWatts))
+    .slice(0, referenceFtp == null ? Math.max(3, Math.ceil(qualifying.length / 2)) : 5);
+
+  // A single sustained ~45-60 min effort near threshold is the closest
+  // approximation to a real FTP test we can pull from ordinary ride data -
+  // shorter rides overestimate (anaerobic contribution), much longer rides
+  // underestimate (pacing/fueling, not draft, is the reason). This mild
+  // duration adjustment only nudges the estimate; it never claims precision
+  // a single non-maximal ride can't actually provide.
+  function durationAdjustment(durMin: number): number {
+    if (durMin < 30)  return 1.05;
+    if (durMin < 45)  return 1.00;
+    if (durMin < 75)  return 0.97;
+    if (durMin < 120) return 0.94;
+    return 0.90;
+  }
+
+  const estimates = hardest.map((r) => {
     const power = r.normalizedPower ?? r.avgWatts;
-    const estimate = Math.round(power / cogganFactor(r.durationMin));
-    const weight = r.durationMin >= 120 ? 0.5 : 1.0;
-    return { estimate, weight };
+    return Math.round(power / durationAdjustment(r.durationMin));
   });
-
-  // Weighted average of top 5 estimates by value
-  const top5 = estimates
-    .sort((a, b) => b.estimate - a.estimate)
-    .slice(0, 5);
-
-  const totalWeight = top5.reduce((s, e) => s + e.weight, 0);
-  const weightedSum = top5.reduce((s, e) => s + e.estimate * e.weight, 0);
-  const result = Math.round(weightedSum / totalWeight);
+  const result = Math.round(estimates.reduce((s, v) => s + v, 0) / estimates.length);
 
   return result < 100 ? null : result;
 }
@@ -171,11 +190,17 @@ export async function runWeeklyPlanGeneration(
     throw new AiInsightsError("Not enough ride history yet to build a plan.");
   }
 
-  // Coggan Protocol: computed FTP from last 30 rides ALWAYS overrides manual entry.
-  // Manual profile.ftp is a stale fallback only Ã¢ÂÂ never the primary source.
-  // See estimateFtpFromRides() doc for the full methodology.
-  const estimatedFtp = estimateFtpFromRides(rides);
-  const effectiveFtp = estimatedFtp ?? profile.ftp ?? undefined;
+  // Manual profile.ftp - a real test result the rider entered - is now the
+  // authoritative source whenever it exists. estimateFtpFromRides() only
+  // fills the gap when there's no manual value at all, and even then it's a
+  // rough cross-check, not a replacement for a real test. This inverts the
+  // previous "computed always wins" behavior, which is the fix for the
+  // external review's most serious finding: silently overriding a rider's
+  // real, tested FTP with a number derived from the average power of
+  // whatever rides happened to be in their recent history (including easy
+  // ones) is not defensible. See estimateFtpFromRides()'s doc for the rest.
+  const estimatedFtp = estimateFtpFromRides(rides, profile.ftp ?? undefined);
+  const effectiveFtp = profile.ftp ?? estimatedFtp ?? undefined;
 
   // Auto-sync computed FTP to Intervals.icu — fire-and-forget.
   // Ensures every ZWO file pushed to Intervals uses the same FTP as the plan.

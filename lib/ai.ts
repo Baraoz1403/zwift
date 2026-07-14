@@ -338,11 +338,11 @@ function isRestDayType(type: string | undefined): boolean {
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
-  `⛔ IRON LAW — COACHING PHILOSOPHY:
-1. BUILD EVERY WORKOUT FROM SCRATCH. Never pick a pre-made workout from any library. The workout library exists for THEORY only. Every session must be assembled block by block: warmup, intervals (count/duration/power%FTP), recovery, cadence, cooldown. Each block has a physiological reason specific to THIS rider today.
-2. MINIMUM 2 STRUCTURED INTENSITY SESSIONS per week (Sweet Spot/Threshold/VO2max).
+  `⛔ IRON LAW â COACHING PHILOSOPHY:
+1. SELECT FROM THE NAMED WORKOUT LIBRARY BELOW - these are curated, evidence-based protocols, not a contradiction of real coaching (a real coach reuses proven session formats too). The job is choosing the RIGHT one for this rider today and explaining why - never just print a template verbatim. Every session's rationale, execution cue, and WHY/HOW/SUCCESS explanation must reference THIS rider's actual TSB, phase, history, and stated goals, not generic boilerplate.
+2. MINIMUM 2 STRUCTURED INTENSITY SESSIONS per week (Sweet Spot/Threshold/VO2max) when the rider's level and current TSB support it - see RIDER LEVEL GUIDANCE and SESSION READINESS above, which are defaults to weigh alongside the rider's own history and notes, not absolute gates.
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
-4. FORBIDDEN: named workout templates, generic phrases, descriptions under 3 sentences, sessions without power targets.
+4. FORBIDDEN: generic phrases, descriptions under 3 sentences, sessions without power targets, or copy-pasting a library rationale without connecting it to this rider's specific data.
 
 ⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
 Select middle gear (4-6 on cassette) before starting. Never change gears during ERG mode.
@@ -569,16 +569,17 @@ Every workout structure block must include explicit cadenceTarget.
   "The input may also include a previousWeekTitles array — the named " +
   "workout titles from last week's plan (non-rest days only). When present, " +
   "use it to ensure week-over-week variety and progression: " +
-  "(1) Never repeat the exact same named title in consecutive weeks for " +
-  "hard sessions (Threshold, Sweet Spot, VO2max, Intermittent) — " +
-  "either progress up the ladder (Sweet Spot Classic → Extended Sweet Spot " +
-  "or Sweet Spot Progression; Threshold Development → Threshold Cruise " +
-  "Intervals; Norwegian 4×4 → 5×5 VO2max) or choose a different session " +
-  "from the same category if TSB demands scaling back. " +
-  "(2) Foundation/Recovery/Endurance sessions may repeat (Foundation Ride " +
-  "twice in a row is fine); hard sessions must rotate. " +
-  "(3) If previousWeekTitles shows 3+ consecutive weeks of sweet spot, " +
-  "progress to threshold or add a VO2max session this week. " +
+  "(1) Repeating the same named hard session across consecutive weeks with a small " +
+"progressive change (duration/reps/power) is a legitimate, often-correct choice - it enables specific " +
+"adaptation and a reliable week-over-week comparison, not a failure of variety. Progress up the ladder " +
+"(Sweet Spot Classic â Extended Sweet Spot or Sweet Spot Progression; Threshold Development â " +
+"Threshold Cruise Intervals; Norwegian 4Ã4 â 5Ã5 VO2max) when the rider's TSB/history shows they're " +
+"ready for more, or repeat the same session with a small bump when consolidation is the right call - " +
+"either is valid coaching, and either beats swapping categories just to look varied. " +
+"(2) Foundation/Recovery/Endurance sessions may repeat freely (Foundation Ride twice in a row is fine). " +
+"(3) If previousWeekTitles shows several consecutive weeks of the same category with no progression at all " +
+"(same session, same numbers, no change), that's a sign to progress - either a bigger dose of the same session " +
+"or a step up the ladder. " +
   "Absent/null previousWeekTitles means this is the first plan — proceed " +
   "normally using only phase/TSB guidance. " +
   "For any day at or before the today field that already has a matching " +
@@ -752,8 +753,11 @@ Every workout structure block must include explicit cadenceTarget.
   'and for intervals also: "repeats":number,"onSec":number,' +
   '"offSec":number,"recoveryPowerFtp":number}. ' +
   "CRITICAL: sum of all structure[].durationMin MUST equal the workout's durationMin. " +
-  "VARIETY: choose the specific library variant that matches this rider's current load and progression. " +
-  "If this rider had Sweet Spot Classic (3×10 min) last week, use Extended Sweet Spot (2×20 min) or Sweet Spot Progression (10+15+20 min) this week — never repeat the same interval pattern two weeks running. " +
+  "PROGRESSION: choose the specific library variant that matches this rider's current load and readiness. " +
+"If this rider had Sweet Spot Classic (3Ã10 min) last week and their TSB/history shows they're ready for more, " +
+"step up to Extended Sweet Spot (2Ã20 min) or Sweet Spot Progression (10+15+20 min) - but repeating Sweet Spot " +
+"Classic again with a small bump (e.g. slightly higher power or an extra block) is equally valid when consolidation, " +
+"not escalation, is the right call this week. " +
   "The structure should reflect the EXACT protocol from the named workout library (correct repeats, durations, power targets). " +
   "Example (75-min VO2max): structure:[" +
   '{"type":"warmup","durationMin":15,"powerFtp":0.60,"label":"Easy warm-up"},' +
