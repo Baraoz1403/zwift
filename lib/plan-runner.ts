@@ -199,8 +199,12 @@ export async function runWeeklyPlanGeneration(
   // real, tested FTP with a number derived from the average power of
   // whatever rides happened to be in their recent history (including easy
   // ones) is not defensible. See estimateFtpFromRides()'s doc for the rest.
-  const estimatedFtp = estimateFtpFromRides(rides, profile.ftp ?? undefined);
-  const effectiveFtp = profile.ftp ?? estimatedFtp ?? undefined;
+  // FTP comes exclusively from the rider's Zwift profile (set after a real
+  // FTP test). Never estimate from ride history — an easy Z2 spin or a
+  // drafted group ride produces a power number that says nothing about FTP.
+  // If profile.ftp is null, the AI system prompt will tell the rider to run
+  // the FTP Test Protocol before any intensity work is prescribed.
+  const effectiveFtp = profile.ftp ?? undefined;
 
   // Auto-sync computed FTP to Intervals.icu — fire-and-forget.
   // Ensures every ZWO file pushed to Intervals uses the same FTP as the plan.

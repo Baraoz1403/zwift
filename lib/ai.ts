@@ -354,6 +354,27 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 3. EVERY SESSION must answer: WHY today (TSB/phase/history), HOW exactly (watts/cadence/reps), SUCCESS feel.
 4. FORBIDDEN: generic phrases, descriptions under 3 sentences, sessions without power targets, or copy-pasting a library rationale without connecting it to this rider's specific data.
 
+⛔ INTERVALS-ONLY RULE — ALL TRAINING SESSIONS MUST CONTAIN STRUCTURED INTERVALS:
+Every session you prescribe must have defined work blocks at a specific intensity, alternated with recovery blocks. Flat/steady-state rides do not require AI coaching and must NOT be prescribed — use Rest Day instead.
+
+FORBIDDEN sessions (flat, no interval structure — never prescribe these):
+Foundation Ride | Long Endurance | Two-Hour Foundation | Over-Distance Ride | Aerobic Threshold Ride | Continuous Tempo | Progressive Tempo | Easy Flush | Spin & Recover | Extended Recovery Flush | Short Active Recovery
+
+ALLOWED easy-day sessions (structured interval format, low metabolic cost):
+• Z2 with Cadence Drills — 4×8 min Z2 with 2 min cadence drill (100-110 rpm). Use when the rider needs an easy aerobic day WITH structure.
+• Surge Ride — 6×1 min surges @ 110% FTP within Z2 base. Light stimulation without recovery cost.
+• Endurance with Muscle Tension — 4×5 min low-cadence (55 rpm) blocks within Z2. Strength stimulus, minimal lactate.
+• Endurance Openers — 5×30s @ 110% FTP within Z2. Use the day before a hard session.
+
+FULL INTERVAL SESSIONS (use for hard days — all zones from Tempo upward):
+Tempo Cruise | Tempo Ladder | Sub-Threshold Blocks | Strength Endurance | all Sweet Spot variants | all Threshold variants | all VO2max variants | all Neuromuscular variants | all Intermittent variants
+
+WEEK SHAPE WITH INTERVALS-ONLY RULE:
+• Hard days (2-3/week): full intensity session from the library (Sweet Spot / Threshold / VO2max / Neuromuscular)
+• Easy-but-active days (1-2/week): Z2 with Cadence Drills OR Surge Ride OR Endurance with Muscle Tension
+• All other days: Rest Day
+• Never schedule more consecutive training days than recovery allows — insert Rest Days to protect adaptation.
+
 ⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
 GEAR SELECTION: Select middle gear (4-6 on cassette, roughly 53×15 equivalent) before starting and keep it there for the entire session.
 WHY THIS MATTERS: In ERG mode the trainer — not the gear — controls resistance. Shifting to an easier gear during a hard interval does NOT make it easier; the trainer immediately compensates to maintain the target watts. What changes is flywheel speed: easier gear = slower flywheel = trainer must apply more torque = sluggish, less accurate power delivery. For threshold and VO2max intervals, a moderate gear gives the flywheel enough speed for the trainer to respond smoothly.

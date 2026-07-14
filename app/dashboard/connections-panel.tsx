@@ -384,6 +384,28 @@ export default function ConnectionsPanel({ onOpenTPModal, onConnectStrava, onHid
                   : `Last checked ${lastChecked.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`
                 : "Sync plans to Intervals.icu automatically · TrainingPeaks for outdoor/Garmin rides"}
             </div>
+            {/* ICU connected banner — visible and prominent when connected */}
+            {intervalsStatus === "ok" && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                marginTop: 10, padding: "6px 12px",
+                borderRadius: 20, border: "1.5px solid #0d948855",
+                background: "rgba(13,148,136,0.07)",
+              }}>
+                <div style={{ position: "relative", width: 8, height: 8, flexShrink: 0 }}>
+                  <div style={{
+                    position: "absolute", inset: -4, borderRadius: "50%",
+                    border: "1.5px solid #0d9488",
+                    animation: "statusPulse 2.5s ease-out infinite",
+                  }} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0d9488" }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#0d9488", letterSpacing: "0.02em" }}>
+                  Connected to Intervals.icu
+                  {health?.intervals.athleteName ? ` · ${health.intervals.athleteName}` : " — plans sync automatically"}
+                </span>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
             <button

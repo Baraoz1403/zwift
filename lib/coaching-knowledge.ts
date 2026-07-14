@@ -835,30 +835,21 @@ export const PROGRESSION_LADDER = [
 export const WORKOUT_LIBRARY_PROMPT = `
 NAMED WORKOUT PROTOCOLS — use these exact names as session titles. Choose from this library every time. Plans must feel like they were designed by a professional coach who studied this rider's actual data, not generated from a template.
 
-RECOVERY (always appropriate regardless of TSB):
-• "Short Active Recovery" — 20 min @ 45-55% FTP. Use on time-crunched days or after a very hard week. No structure, just blood flow.
-• "Spin & Recover" — 30 min, 50-60% FTP, 90+ rpm. Metabolic waste clearance. Heaviness should ease in last 10 min — if it doesn't, power was too high.
-• "Extended Recovery Flush" — 50 min (10 easy → 30 Z1 @ 54% → 10 wind-down). For days after back-to-back hard efforts.
-• "Easy Flush" — 45 min (10 warmup → 25 Z1 @ 55% → 10 cooldown). Never push harder even if feeling strong.
+RECOVERY — INTERVALS-ONLY RULE: All flat recovery sessions (Short Active Recovery, Spin & Recover, Extended Recovery Flush, Easy Flush) are FORBIDDEN. Recovery days = Rest Day. The rider does not need a .zwo file to rest.
 
-ENDURANCE / FOUNDATION (Z2 — 56-75% FTP per Coggan; Foundation rides typically target the upper half 65-73% FTP for aerobic stimulus; always appropriate regardless of TSB):
-• "Foundation Ride" — 60 min (10 warmup → 40 Z2 @ 65-73% → 10 cooldown). If you can't complete full sentences, you're above Z2.
-• "Long Endurance" — 90 min (15 warmup → 65 Z2 @ 65-73% → 10 cooldown). Last 20 min = primary fat-oxidation adaptation window.
-• "Two-Hour Foundation" — 120 min (20 warmup → 85 Z2 → 15 cooldown). Cornerstone of aerobic base — extended Z2 duration is associated with greater mitochondrial adaptation than shorter rides. Use in Base/Build with adequate recovery.
-• "Over-Distance Ride" — 100 min (15 warmup → 70 Z2 → 15 cooldown). Extends aerobic window for riders whose CTL can handle moderate volume.
-• "Z2 with Cadence Drills" — 60 min, Z2 with 4×2 min @ 100-110 rpm. Eliminates dead-spots in pedal stroke.
-• "Surge Ride" — 60 min, Z2 with 6×1 min surges @ 110% FTP (5 min apart). Metabolic variety without recovery cost.
-• "Aerobic Threshold Ride" — 60 min (10 warmup → 40 min @ 72-76% AeT → 10 cooldown). Targets the fat/carb crossover point — builds aerobic ceiling.
-• "Endurance with Muscle Tension" — 65 min, Z2 with 4×5 min low-cadence (55 rpm) blocks. Cycling-specific leg strength within the aerobic zone.
-• "Endurance Openers" — 60 min, Z2 with 5×30s openers @ 110% FTP. Activation ride for the day before a race or hard session.
+ENDURANCE / FOUNDATION (Z2 — 56-75% FTP per Coggan):
+NOTE — INTERVALS-ONLY RULE: Foundation Ride, Long Endurance, Two-Hour Foundation, Over-Distance Ride, and Aerobic Threshold Ride are FLAT sessions and must NOT be prescribed. Use Rest Day instead. The four sessions below are the ONLY allowed Z2-range options because they contain actual interval structure:
+• "Z2 with Cadence Drills" — 60 min, Z2 base with 4×8 min drills @ 100-110 rpm (2 min recovery between). Structured cadence work eliminates dead-spots in pedal stroke. Use for easy-but-active days.
+• "Surge Ride" — 60 min, Z2 base with 6×1 min surges @ 110% FTP (5 min Z2 between). Metabolic variety without meaningful recovery cost. Easy-day option.
+• "Endurance with Muscle Tension" — 65 min, Z2 base with 4×5 min low-cadence blocks @ 55 rpm (3 min normal cadence between). Cycling-specific strength stimulus within the aerobic zone.
+• "Endurance Openers" — 60 min, Z2 base with 5×30s openers @ 110% FTP (3 min between). Activation session for the day before a hard session or event.
 
 TEMPO (Z3 — 76-90% FTP, always appropriate, never needs high TSB):
-• "Tempo Cruise" — 60 min (10 warmup → 2×15 min @ 80% / 5 rec → 15 cooldown). 3-4 word sentences at target. Second block harder = correct.
-• "Tempo Ladder" — 75 min (12 warmup → 10+15+20 min @ 80% / 5 rec each → 13 cooldown). 20-min block is the real stimulus.
-• "Continuous Tempo" — 60 min (12 warmup → 35 min non-stop @ 81% → 13 cooldown). No rest — the continuous challenge builds lactate buffering and mental toughness.
-• "Progressive Tempo" — 65 min (12 warmup → 10+10+10+10 min stepping 76→79→82→85% → 13 cooldown). Pacing discipline trainer — start conservative, finish strong.
-• "Sub-Threshold Blocks" — 75 min (12 warmup → 3×15 min @ 88% / 5 min rec → 3 cooldown). Bridge from sweet spot to threshold. Requires TSB ≥ -15.
-• "Strength Endurance" — 65 min (15 warmup → 3×8 min @ 81% FTP / 55-65 rpm / 4 min rec → 14 cooldown). Quads burn muscularly — that's the correct signal.
+NOTE — INTERVALS-ONLY RULE: Continuous Tempo and Progressive Tempo are flat sessions (no work/rest alternation) and must NOT be prescribed. Use the structured options below only:
+• "Tempo Cruise" — 60 min (10 warmup → 2×15 min @ 80% / 5 rec → 15 cooldown). 3-4 word sentences at target. Second block harder = correct. STRUCTURED ✓
+• "Tempo Ladder" — 75 min (12 warmup → 10+15+20 min @ 80% / 5 rec each → 13 cooldown). 20-min block is the real stimulus. STRUCTURED ✓
+• "Sub-Threshold Blocks" — 75 min (12 warmup → 3×15 min @ 88% / 5 min rec → 3 cooldown). Bridge from sweet spot to threshold. Requires TSB ≥ -15. STRUCTURED ✓
+• "Strength Endurance" — 65 min (15 warmup → 3×8 min @ 81% FTP / 55-65 rpm / 4 min rec → 14 cooldown). Quads burn muscularly — that's the correct signal. STRUCTURED ✓
 
 SWEET SPOT (88-93% FTP — the most time-efficient zone. Requires TSB ≥ -20):
 • "Sweet Spot Primer" — 55 min (12 warmup → 4×7 min @ 88% / 3 min rec → 3 cooldown). Beginner entry to sweet spot — fewer, shorter blocks than Classic.
@@ -913,28 +904,27 @@ RIDER LEVEL GUIDANCE (W/kg is ONE input, not the sole gate - also weigh age, tra
 SESSION READINESS - TSB is a training-load MODEL (derived from CTL/ATL), not a direct measurement of the rider's body: it cannot see sleep, illness, stress, or pain. Treat these as soft defaults, and let the rider's own notes/subjective feel override the number - always cite the actual TSB when substituting, but say so as "today's estimated load balance," not as settled fact:
 • VO2max (106%+): TSB >= -5 as a default. Below, or if the rider mentions feeling unusually fatigued/unwell → substitute Sweet Spot Classic or 60/60 Intervals regardless of the number.
 • Threshold (100%+): TSB >= -12 as a default → substitute Sweet Spot Classic or Sub-Threshold Blocks.
-• Sweet Spot (88%+): TSB >= -20 as a default → substitute Tempo Cruise or Continuous Tempo.
+• Sweet Spot (88%+): TSB >= -20 as a default → substitute Tempo Cruise or Tempo Ladder.
 • Intermittent (30/30, 40/20): TSB >= -8 as a default → substitute 15/15 Micro-Intervals or Tempo Cruise.
-• Neuromuscular/Sprint: TSB >= -15 as a default → substitute Sprint Builder (shorter) or Foundation Ride.
-• Tempo, Foundation, Recovery: always appropriate regardless of TSB.
-• SAFETY: any rider-reported chest pain, dizziness, unusually elevated resting HR, or sharp/orthopedic pain overrides every threshold above - default to Recovery/Foundation and suggest they check with a doctor before resuming intensity.
+• Neuromuscular/Sprint: TSB >= -15 as a default → substitute Sprint Builder (shorter) or Z2 with Cadence Drills.
+• Tempo structured sessions: always appropriate regardless of TSB.
+• SAFETY: any rider-reported chest pain, dizziness, unusually elevated resting HR, or sharp/orthopedic pain overrides every threshold above — default to Rest Day and suggest they check with a doctor before resuming intensity.
 
-PROGRESSION LADDER - a DEFAULT path for a rider with no strong goal of their own, not a mandatory one-way sequence (bend it to the rider's actual goal - a climbing event, a short crit, or general fitness/weight loss each favor a different order). Repeating the same named workout across consecutive weeks with a small progressive change (duration/reps/power) is often correct, not a variety failure:
-Foundation Ride → Tempo Cruise → Sweet Spot Primer → Sweet Spot Classic → 3×15 Sweet Spot → Extended Sweet Spot → Sub-Threshold Blocks → Threshold Development → Over-Under Intervals → Critical Power Development → Norwegian 4×4 → Seiler 4×8
+PROGRESSION LADDER - a DEFAULT path, not a mandatory one-way sequence. Flat sessions removed per INTERVALS-ONLY rule:
+Surge Ride → Z2 with Cadence Drills → Tempo Cruise → Sweet Spot Primer → Sweet Spot Classic → 3×15 Sweet Spot → Extended Sweet Spot → Sub-Threshold Blocks → Threshold Development → Over-Under Intervals → Critical Power Development → Norwegian 4×4 → Seiler 4×8
 
 WEEKLY SEQUENCING:
 • Hardest session: when TSB is highest (typically day 2-3 after rest day opening the week).
-• Two-Hour Foundation / Long Endurance late in the week is fine for TRAINED/experienced riders as an occasional deliberate low-glycogen session - it is NOT a universal rule that long rides should be done on tired legs. For beginners or anyone without a solid aerobic base, prioritize completing the ride with good form over teaching fat oxidation - fatigue that degrades technique or turns an easy aerobic ride into a grind raises injury risk and isn't worth the tradeoff.
-• Pattern: rest → hard → easy/recovery → hard → moderate → long endurance → rest.
-• After Norwegian 4x4 / 2x20 / Seiler 4x8: mandatory easy or rest day.
-• Never two hard sessions on consecutive days - always insert Foundation or Recovery between.
+• Pattern: rest → hard → easy structured (Z2 with Cadence Drills / Surge Ride) → hard → moderate → rest.
+• After Norwegian 4x4 / 2x20 / Seiler 4x8: mandatory Rest Day.
+• Never two hard sessions on consecutive days — always insert Z2 with Cadence Drills or Rest Day between.
 
-PHASE SELECTION:
-• Base → Foundation Ride, Two-Hour Foundation, Long Endurance, Surge Ride, Z2 Cadence Drills, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 structured hard session/week.
-• Build → Sweet Spot series, Threshold series, VO2max series. Bookend with Foundation. 2-3 hard sessions/week max. Never increase volume AND intensity in the same week.
-• Recovery → Short Active Recovery, Spin & Recover, Easy Flush, Foundation Ride only. At most one Tempo Cruise. Cut volume 40-60%. Adaptation happens DURING recovery.
-• Taper → Foundation Ride, Tempo Cruise, Sweet Spot Classic. Cut volume ~20-30%. Keep 1-2 short race-pace touches. Cut duration before cutting intensity.
-• RaceWeek → Short Active Recovery, Spin & Recover, Foundation Ride, one "Race Day Opener" 24-48h before event. No new stress. Event day is a Rest Day in the plan.
+PHASE SELECTION (INTERVALS-ONLY — all flat sessions replaced with Rest Day):
+• Base → Surge Ride, Z2 with Cadence Drills, Endurance with Muscle Tension, Sprint Builder, Tempo Cruise, Endurance Openers. Max 1 hard structured session/week. All other days: Rest.
+• Build → Sweet Spot series, Threshold series, VO2max series. 2-3 hard sessions/week max. Easy days: Z2 with Cadence Drills or Surge Ride. All other days: Rest.
+• Recovery → Rest Day only. No structured sessions. Adaptation happens during recovery, not from junk miles.
+• Taper → Tempo Cruise, Sweet Spot Classic (shortened), one Race Day Opener. All other days: Rest.
+• RaceWeek → Race Day Opener 24-48h before event. Event day = Rest Day. All other days: Rest.
 `.trim();
 
 // ─── Canonical Workout Structure Blocks ────────────────────────────────────
