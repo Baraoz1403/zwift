@@ -98,12 +98,12 @@ export default function WorkoutThumbnail({
           background: lightGraph ? "#eef2f6" : "linear-gradient(180deg, #1c2b3a, #0f1922)",
         }}
       >
-        {lightGraph && (
-          <div style={{
-            position: "absolute", left: 0, right: 0, bottom: `${ftpLinePct}%`,
-            borderTop: "1px dashed rgba(0,0,0,0.18)", pointerEvents: "none", zIndex: 1,
-          }} />
-        )}
+        {/* FTP reference line — dark mode: subtle white dashed; light mode: dark dashed */}
+        <div style={{
+          position: "absolute", left: 0, right: 0, bottom: `${ftpLinePct}%`,
+          borderTop: lightGraph ? "1px dashed rgba(0,0,0,0.18)" : "1px dashed rgba(255,255,255,0.2)",
+          pointerEvents: "none", zIndex: 1,
+        }} />
         {/* Zwift's own workout graph: flat, matte, contiguous blocks (a
             stepped skyline of interval segments), evenly spaced.
             Rendered as ONE svg, not N separate flex/DOM boxes - a row of
