@@ -1990,142 +1990,185 @@ export default function WeeklyPlan() {
         </>
       )}
 
-      {/* ── Talk to your coach — unified card: emoji feeling + text note.
-          Previously these were two separate elements (emoji rating inside
-          each workout card, text-only input here). Now combined into one
-          place so the rider rates the ride AND writes a note in a single
-          interaction. Emoji click → saves feeling to coach memory (KV) for
-          today's date + pre-selects the mood; text field stays optional.
-          Send is active when either an emoji is selected OR text is typed. */}
-      <div id="todays-note" className="stat-card todays-note-card" style={{ marginTop: 48, padding: "18px 22px" }}>
-        <div className="section-title" style={{ margin: "0 0 14px 0" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
-          Talk to your coach
-        </div>
+      {/* ── AI Coach Panel — modern unified design: emoji feeling + text note.
+          Full redesign: gradient card, large emoji selectors with labels,
+          textarea instead of single-line input, premium send button.
+          Active when emoji selected OR text typed. */}
+      {(() => {
+        const COACH_SCORES = [
+          { emoji: "💀", label: "Couldn't finish", color: "rgba(220,38,38,0.18)" },
+          { emoji: "😓", label: "Too hard", color: "rgba(249,115,22,0.18)" },
+          { emoji: "😐", label: "Got it done", color: "rgba(100,116,139,0.18)" },
+          { emoji: "💪", label: "Strong", color: "rgba(34,197,94,0.18)" },
+          { emoji: "🚀", label: "Crushed it!", color: "rgba(47,143,224,0.18)" },
+        ];
+        const hasInput = riderNote.trim() || bottomFeeling !== null;
+        return (
+          <div
+            id="todays-note"
+            className="stat-card todays-note-card"
+            style={{
+              marginTop: 48,
+              padding: "28px 26px 22px",
+              background: "linear-gradient(145deg, var(--panel-solid) 0%, rgba(47,143,224,0.05) 100%)",
+              border: "1px solid rgba(47,143,224,0.2)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* Background glow */}
+            <div style={{
+              position: "absolute", top: -60, right: -60, width: 180, height: 180,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(47,143,224,0.08) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }} />
 
-        {/* ── Emoji feeling row ── */}
-        {(() => {
-          const BOTTOM_SCORES = [
-            { emoji: "💀", label: "Couldn't finish" },
-            { emoji: "😓", label: "Harder than expected" },
-            { emoji: "😐", label: "Got it done" },
-            { emoji: "💪", label: "Strong & controlled" },
-            { emoji: "🚀", label: "Felt great!" },
-          ];
-          return (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8, fontWeight: 600 }}>
-                How did today{"'"}s ride feel?
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
+                background: "linear-gradient(135deg, var(--accent) 0%, rgba(47,143,224,0.5) 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18,
+                boxShadow: "0 4px 12px rgba(47,143,224,0.3)",
+              }}>🏋️</div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", lineHeight: 1.2 }}>
+                  Talk to your coach
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
+                  Your feedback adapts tomorrow{"'"}s plan in real time
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {BOTTOM_SCORES.map((s, idx) => {
+            </div>
+
+            {/* Emoji rating */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 12, opacity: 0.8 }}>
+                How did today{"'"}s session feel?
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {COACH_SCORES.map((s, idx) => {
                   const val = idx + 1;
                   const selected = bottomFeeling === val;
                   return (
                     <button
                       key={val}
                       type="button"
-                      title={s.label}
                       onClick={() => {
                         setBottomFeeling(selected ? null : val);
                         if (!selected) {
-                          // Save to coaching memory for today
                           submitFeelingScore(
                             new Date().toISOString().slice(0, 10),
-                            "Daily note",
-                            "General",
-                            val
+                            "Daily note", "General", val
                           );
                         }
                       }}
                       style={{
-                        width: 44, height: 40,
-                        border: selected
-                          ? "2px solid var(--accent)"
-                          : "1px solid var(--border)",
-                        borderRadius: 10,
-                        background: selected
-                          ? "rgba(47,143,224,0.15)"
-                          : "var(--panel-solid)",
+                        flex: 1,
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                        padding: "12px 4px 10px",
+                        border: selected ? "2px solid var(--accent)" : "1.5px solid var(--border)",
+                        borderRadius: 14,
+                        background: selected ? s.color : "rgba(255,255,255,0.03)",
                         cursor: "pointer",
-                        fontSize: 20, lineHeight: 1,
-                        transition: "border 0.12s, background 0.12s, transform 0.1s",
-                        transform: selected ? "scale(1.15)" : "scale(1)",
-                        flexShrink: 0,
+                        transition: "all 0.15s cubic-bezier(0.34,1.56,0.64,1)",
+                        transform: selected ? "translateY(-3px) scale(1.05)" : "translateY(0) scale(1)",
+                        boxShadow: selected ? "0 6px 16px rgba(47,143,224,0.18)" : "none",
+                        outline: "none",
                       }}
-                    >{s.emoji}</button>
+                    >
+                      <span style={{ fontSize: 28, lineHeight: 1 }}>{s.emoji}</span>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700,
+                        color: selected ? "var(--text)" : "var(--muted)",
+                        textAlign: "center", lineHeight: 1.3,
+                        transition: "color 0.15s",
+                      }}>{s.label}</span>
+                    </button>
                   );
                 })}
-                {bottomFeeling && (
-                  <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginLeft: 4 }}>
-                    {BOTTOM_SCORES[bottomFeeling - 1].label}
-                  </span>
-                )}
               </div>
             </div>
-          );
-        })()}
 
-        {/* ── Text + send ── */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const hasInput = riderNote.trim() || bottomFeeling !== null;
-            if (hasInput && !loading) {
-              handleGenerate();
-              setBottomFeeling(null);
-            }
-          }}
-          style={{ display: "flex", gap: 10, alignItems: "center" }}
-        >
-          <input
-            type="text"
-            autoFocus={noteOpen}
-            placeholder="Any notes for your coach? (optional)"
-            value={riderNote}
-            onChange={(e) => setRiderNote(e.target.value)}
-            disabled={loading}
-            style={{
-              flex: 1, padding: "12px 16px", borderRadius: 8,
-              border: "1px solid var(--border)", background: "var(--panel-solid)",
-              fontSize: 16, color: "var(--text)", fontFamily: "inherit",
-              outline: "none",
-            }}
-          />
-          <button
-            type="submit"
-            disabled={loading || (!riderNote.trim() && bottomFeeling === null)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              padding: "10px 18px", borderRadius: 8,
-              border: "1px solid var(--good)",
-              background: (riderNote.trim() || bottomFeeling !== null) ? "var(--good)" : "rgba(26,143,76,0.4)",
-              color: "#fff", fontSize: 14, fontWeight: 700,
-              cursor: loading || (!riderNote.trim() && bottomFeeling === null) ? "default" : "pointer",
-              fontFamily: "inherit", whiteSpace: "nowrap",
-              transition: "background 0.15s ease",
-            }}
-          >
-            {loading ? "Adapting…" : "Send"}
-            {!loading && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            )}
-          </button>
-        </form>
+            {/* Text area + send */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (hasInput && !loading) {
+                  handleGenerate();
+                  setBottomFeeling(null);
+                }
+              }}
+            >
+              <textarea
+                autoFocus={noteOpen}
+                placeholder="Anything else for your coach? Sore legs, schedule change, what to focus on next…"
+                value={riderNote}
+                onChange={(e) => setRiderNote(e.target.value)}
+                disabled={loading}
+                rows={2}
+                style={{
+                  width: "100%", padding: "13px 15px", borderRadius: 10,
+                  border: "1.5px solid var(--border)",
+                  background: "rgba(255,255,255,0.03)",
+                  fontSize: 15, color: "var(--text)", fontFamily: "inherit",
+                  resize: "none", outline: "none", lineHeight: 1.6,
+                  boxSizing: "border-box",
+                  transition: "border 0.15s",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {bottomFeeling
+                    ? `Feeling: ${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label}`
+                    : "Select a rating above, or just write a note"}
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || !hasInput}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "11px 22px", borderRadius: 10,
+                    border: "none",
+                    background: hasInput
+                      ? "linear-gradient(135deg, var(--accent) 0%, rgba(47,143,224,0.7) 100%)"
+                      : "rgba(47,143,224,0.2)",
+                    color: hasInput ? "#fff" : "var(--muted)",
+                    fontSize: 14.5, fontWeight: 700,
+                    cursor: loading || !hasInput ? "default" : "pointer",
+                    fontFamily: "inherit", whiteSpace: "nowrap",
+                    transition: "all 0.2s ease",
+                    boxShadow: hasInput ? "0 4px 14px rgba(47,143,224,0.3)" : "none",
+                    transform: hasInput ? "none" : "none",
+                  }}
+                >
+                  {loading ? "Adapting plan…" : "Send to coach"}
+                  {!loading && (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </form>
 
-        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14.5, color: "var(--muted)" }}>
-          {cycleInfo
-            ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
-              ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
-              : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
-            : "Seven structured sessions, built fresh each week"}
-          {" — generated automatically every Sunday night, adjusted by Today's note above."}
-        </div>
-      </div>{/* end todays-note-card */}
+            {/* Phase info footer */}
+            <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(47,143,224,0.12)", textAlign: "center", fontSize: 13, color: "var(--muted)" }}>
+              {cycleInfo
+                ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
+                  ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
+                  : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
+                : "Seven structured sessions, built fresh each week"}
+              {" — auto-generated weekly, refined by your notes above."}
+            </div>
+          </div>
+        );
+      })()}
+      {/* end todays-note-card */}
     </div>
   );
 }
