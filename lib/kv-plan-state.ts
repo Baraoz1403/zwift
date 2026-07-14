@@ -109,6 +109,33 @@ export async function mirrorStateToKv(athleteId: string, data: MirrorPlanStateIn
   }
 }
 
+/**
+ * Updates ONLY the stored rider profile, independent of any plan/macro-cycle
+ * write. Needed for the weekly-plan route's cache-hit path: when a plan for
+ * the requested week already sits in KV, that route intentionally skips the
+ * whole generation pipeline (and therefore skips mirrorStateToKv, which
+ * requires a freshly generated macroCycle + plan to write alongside the
+ * profile) - but the request can still be carrying a just-edited
+ * riderProfile (training-profile.tsx dispatches "zwift:profile-saved", which
+ * immediately calls handleGenerate() with the new profile, regardless of
+ * whether the plan itself changes). Without this, a profile edit made after
+ * this week's plan was already generated (i.e. almost every edit, since the
+ * plan is usually already cached) never reached KV at all: the rider's own
+ * next page load re-fetches /api/ai/weekly-plan/state, which reads back
+ * whatever rider_profile was stored the LAST time a plan was actually
+ * generated for this week - silently reverting every edit made since,
+ * including deletions, back to that stale snapshot, forever, until the plan
+ * cache itself expires or a riderNote forces a real regeneration.
+ */
+export async function updateStoredRiderProfile(athleteId: string, riderProfile: RiderTrainingProfile): Promise<void> {
+  if (!kvAvailable() || !athleteId) return;
+  try {
+    await kvSet(`zwift:${athleteId}:rider_profile`, JSON.stringify(riderProfile));
+  } catch {
+    // best-effort — never block the response
+  }
+}
+
 export interface StoredAthleteState {
   riderProfile?: RiderTrainingProfile;
   macroCycle: MacroCycleState | null;
@@ -182,40 +209,4 @@ export async function markIntervalsSynced(athleteId: string, weekOf: string): Pr
 
 /** Reads back everything the cron job needs to regenerate + push a plan for one athlete. */
 export async function getStoredAthleteState(athleteId: string): Promise<StoredAthleteState> {
-  const [profileRaw, macroRaw, planRaw, icuKey, icuId] = await Promise.all([
-    kvGet(`zwift:${athleteId}:rider_profile`),
-    kvGet(`zwift:${athleteId}:macro_cycle`),
-    kvGet(`zwift:${athleteId}:last_plan`),
-    kvGet(`zwift:${athleteId}:icu_key`),
-    kvGet(`zwift:${athleteId}:icu_id`),
-  ]);
-  return {
-    riderProfile: profileRaw ? (JSON.parse(profileRaw) as RiderTrainingProfile) : undefined,
-    macroCycle: macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null,
-    previousPlan: planRaw ? (JSON.parse(planRaw) as { weekOf: string; workouts: WeeklyWorkout[] }) : null,
-    icuKey,
-    icuId,
-  };
-}
-
-export interface IntervalsCredentials {
-  icuKey: string;
-  icuId: string | null;
-}
-
-/**
- * Lighter read than getStoredAthleteState for callers that only need the
- * Intervals.icu credentials - e.g. the interactive weekly-plan route, which
- * pushes the freshly generated plan to ICU server-side right after
- * generation instead of leaving that to the browser (see the doc comment on
- * the sync call in app/api/ai/weekly-plan/route.ts for why). Returns null
- * when the rider hasn't connected Intervals.icu, so callers can just skip
- * the sync rather than branching on an empty string.
- */
-export async function getIntervalsCredentials(athleteId: string): Promise<IntervalsCredentials | null> {
-  if (!kvAvailable() || !athleteId) return null;
-  const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
-  if (!icuKey) return null;
-  const icuId = await kvGet(`zwift:${athleteId}:icu_id`);
-  return { icuKey, icuId };
-}
+  const [profileRaw, macroR

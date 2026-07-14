@@ -2026,11 +2026,19 @@ export default function WeeklyPlan() {
             type="submit"
             disabled={loading || !riderNote.trim()}
             style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              padding: "12px 18px", borderRadius: 8,
-              border: "1.5px solid #16a34a",
-              background: riderNote.trim() ? "#16a34a" : "rgba(22,163,74,0.4)",
-              color: "#fff", fontSize: 15, fontWeight: 600,
+              // Same recipe as the "Edit profile" button in phase-card.tsx
+              // (padding, border-radius, font-size/weight, icon gap, border
+              // width) - asked to make these two match exactly, and they'd
+              // drifted (12px/18px vs 10px/18px padding, 15px vs 14px text,
+              // 600 vs 700 weight, 6px vs 8px gap, 1.5px vs 1px border).
+              // Color stays a distinct green (var(--good), not a one-off
+              // hardcoded hex) since this is the one true "submit" action on
+              // the page - everything else about it now lines up.
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "10px 18px", borderRadius: 8,
+              border: "1px solid var(--good)",
+              background: riderNote.trim() ? "var(--good)" : "rgba(26,143,76,0.4)",
+              color: "#fff", fontSize: 14, fontWeight: 700,
               cursor: loading || !riderNote.trim() ? "default" : "pointer",
               fontFamily: "inherit", whiteSpace: "nowrap",
               transition: "background 0.15s ease",
@@ -2049,13 +2057,4 @@ export default function WeeklyPlan() {
             training plan" info card, which no longer gets its own slot. */}
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14.5, color: "var(--muted)" }}>
           {cycleInfo
-            ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
-              ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
-              : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
-            : "Seven structured sessions, built fresh each week"}
-          {" — generated automatically every Sunday night, adjusted by Today's note above."}
-        </div>
-      </div>{/* end todays-note-card */}
-    </div>
-  );
-}
+            ? (cycleInfo.phase === "Taper" || cycle

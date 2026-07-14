@@ -11,6 +11,7 @@ import {
   getCachedPlan,
   setCachedPlan,
   wasIntervalsSynced,
+  updateStoredRiderProfile,
 } from "@/lib/kv-plan-state";
 import { kvGet } from "@/lib/kv";
 import { syncPlanToIcuAndMark, type IntervalsSyncResult } from "@/lib/headless-sync";
@@ -103,6 +104,19 @@ export async function POST(req: NextRequest) {
   if (session.athleteId && !riderNote) {
     const cached = await getCachedPlan(session.athleteId, effectiveWeekOf);
     if (cached) {
+      // A profile edit (training-profile.tsx's "zwift:profile-saved" ->
+      // handleGenerate()) reaches this exact branch almost every time,
+      // because editing the profile rarely invalidates the already-cached
+      // plan for the current week. Without this write, the riderProfile this
+      // request just carried would be silently dropped on the floor - the
+      // cache-hit path used to return early with no KV write at all, so the
+      // server's stored profile stayed frozen at whatever it was the last
+      // time a plan was genuinely (re)generated. See updateStoredRiderProfile's
+      // doc comment for the full user-visible symptom this caused.
+      if (riderProfile) {
+        await updateStoredRiderProfile(session.athleteId, riderProfile);
+      }
+
       // Also return the stored macro cycle so the client can update its cycle display.
       let cachedMacroCycle: MacroCycleState | null = null;
       try {
@@ -200,26 +214,4 @@ export async function POST(req: NextRequest) {
     let intervalsSync: IntervalsSyncResult | null = null;
     try {
       const riddenDates = new Set(
-        result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
-      );
-      intervalsSync = await syncPlanToIcuAndMark(
-        result.athleteId,
-        result.weekOf,
-        { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
-        riddenDates
-      );
-    } catch {
-      // best-effort — never fail plan generation because ICU sync hiccuped
-    }
-
-    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle, intervalsSync });
-  } catch (e) {
-    if (e instanceof AiInsightsError) {
-      return NextResponse.json({ ok: false, error: e.message }, { status: 200 });
-    }
-    return NextResponse.json(
-      { ok: false, error: "Unexpected error generating the weekly plan." },
-      { status: 500 }
-    );
-  }
-}
+        result.rides.map
