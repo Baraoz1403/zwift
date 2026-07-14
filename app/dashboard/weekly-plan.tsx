@@ -2057,4 +2057,13 @@ export default function WeeklyPlan() {
             training plan" info card, which no longer gets its own slot. */}
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--border)", textAlign: "center", fontSize: 14.5, color: "var(--muted)" }}>
           {cycleInfo
-            ? (cycleInfo.phase === "Taper" || cycle
+            ? (cycleInfo.phase === "Taper" || cycleInfo.phase === "RaceWeek") && cycleInfo.weeksToEvent != null
+              ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
+              : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
+            : "Seven structured sessions, built fresh each week"}
+          {" — generated automatically every Sunday night, adjusted by Today's note above."}
+        </div>
+      </div>{/* end todays-note-card */}
+    </div>
+  );
+}

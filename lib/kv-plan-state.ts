@@ -209,4 +209,40 @@ export async function markIntervalsSynced(athleteId: string, weekOf: string): Pr
 
 /** Reads back everything the cron job needs to regenerate + push a plan for one athlete. */
 export async function getStoredAthleteState(athleteId: string): Promise<StoredAthleteState> {
-  const [profileRaw, macroR
+  const [profileRaw, macroRaw, planRaw, icuKey, icuId] = await Promise.all([
+    kvGet(`zwift:${athleteId}:rider_profile`),
+    kvGet(`zwift:${athleteId}:macro_cycle`),
+    kvGet(`zwift:${athleteId}:last_plan`),
+    kvGet(`zwift:${athleteId}:icu_key`),
+    kvGet(`zwift:${athleteId}:icu_id`),
+  ]);
+  return {
+    riderProfile: profileRaw ? (JSON.parse(profileRaw) as RiderTrainingProfile) : undefined,
+    macroCycle: macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null,
+    previousPlan: planRaw ? (JSON.parse(planRaw) as { weekOf: string; workouts: WeeklyWorkout[] }) : null,
+    icuKey,
+    icuId,
+  };
+}
+
+export interface IntervalsCredentials {
+  icuKey: string;
+  icuId: string | null;
+}
+
+/**
+ * Lighter read than getStoredAthleteState for callers that only need the
+ * Intervals.icu credentials - e.g. the interactive weekly-plan route, which
+ * pushes the freshly generated plan to ICU server-side right after
+ * generation instead of leaving that to the browser (see the doc comment on
+ * the sync call in app/api/ai/weekly-plan/route.ts for why). Returns null
+ * when the rider hasn't connected Intervals.icu, so callers can just skip
+ * the sync rather than branching on an empty string.
+ */
+export async function getIntervalsCredentials(athleteId: string): Promise<IntervalsCredentials | null> {
+  if (!kvAvailable() || !athleteId) return null;
+  const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
+  if (!icuKey) return null;
+  const icuId = await kvGet(`zwift:${athleteId}:icu_id`);
+  return { icuKey, icuId };
+}

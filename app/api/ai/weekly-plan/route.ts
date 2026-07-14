@@ -214,4 +214,26 @@ export async function POST(req: NextRequest) {
     let intervalsSync: IntervalsSyncResult | null = null;
     try {
       const riddenDates = new Set(
-        result.rides.map
+        result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
+      );
+      intervalsSync = await syncPlanToIcuAndMark(
+        result.athleteId,
+        result.weekOf,
+        { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
+        riddenDates
+      );
+    } catch {
+      // best-effort — never fail plan generation because ICU sync hiccuped
+    }
+
+    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle, intervalsSync });
+  } catch (e) {
+    if (e instanceof AiInsightsError) {
+      return NextResponse.json({ ok: false, error: e.message }, { status: 200 });
+    }
+    return NextResponse.json(
+      { ok: false, error: "Unexpected error generating the weekly plan." },
+      { status: 500 }
+    );
+  }
+}
