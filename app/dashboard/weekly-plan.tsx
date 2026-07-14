@@ -250,6 +250,7 @@ export default function WeeklyPlan() {
   const [noteOpen, setNoteOpen] = useState(false);
   // Bottom card emoji feeling: null = unset, 1–5 = selected
   const [bottomFeeling, setBottomFeeling] = useState<number | null>(null);
+  const [noteSaved, setNoteSaved] = useState(false);
   // Map of YYYY-MM-DD → actual Zwift ride done on that day (this week only)
   const [weekActivities, setWeekActivities] = useState<Map<string, ActualRide>>(new Map());
 
@@ -2038,7 +2039,7 @@ export default function WeeklyPlan() {
                   Talk to your coach
                 </div>
                 <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
-                  Your feedback adapts tomorrow{"'"}s plan in real time
+                  Your input enters AI memory — sharpening your future sessions
                 </div>
               </div>
             </div>
@@ -2046,7 +2047,7 @@ export default function WeeklyPlan() {
             {/* Emoji rating */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", marginBottom: 12, opacity: 0.8 }}>
-                How did today{"'"}s session feel?
+                How did today{"'"}s ride feel?
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 {COACH_SCORES.map((s, idx) => {
@@ -2094,20 +2095,34 @@ export default function WeeklyPlan() {
 
             {/* Text area + send */}
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                if (hasInput && !loading) {
-                  handleGenerate();
-                  setBottomFeeling(null);
+                if (!hasInput) return;
+                const today = new Date().toISOString().slice(0, 10);
+                // Save text note to AI memory (coaching fingerprint in KV)
+                if (riderNote.trim()) {
+                  try {
+                    await fetch("/api/ai/coaching-note", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ date: today, note: riderNote.trim() }),
+                    });
+                  } catch {
+                    // best-effort — feeling was already saved on emoji click
+                  }
                 }
+                setNoteSaved(true);
+                setRiderNote("");
+                setBottomFeeling(null);
+                // Auto-reset the "Saved" confirmation after 3 s
+                setTimeout(() => setNoteSaved(false), 3000);
               }}
             >
               <textarea
                 autoFocus={noteOpen}
-                placeholder="Anything else for your coach? Sore legs, schedule change, what to focus on next…"
+                placeholder="Sore legs? Schedule change? Something to focus on? Write anything and the AI will factor it into your next plan."
                 value={riderNote}
                 onChange={(e) => setRiderNote(e.target.value)}
-                disabled={loading}
                 rows={2}
                 style={{
                   width: "100%", padding: "13px 15px", borderRadius: 10,
@@ -2122,14 +2137,16 @@ export default function WeeklyPlan() {
                 onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                  {bottomFeeling
-                    ? `Feeling: ${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label}`
-                    : "Select a rating above, or just write a note"}
+                <div style={{ fontSize: 12.5, color: noteSaved ? "var(--good)" : "var(--muted)", transition: "color 0.3s", fontWeight: noteSaved ? 600 : 400 }}>
+                  {noteSaved
+                    ? "✓ Saved to AI memory"
+                    : bottomFeeling
+                      ? `${COACH_SCORES[bottomFeeling - 1].emoji} ${COACH_SCORES[bottomFeeling - 1].label} — add a note or send`
+                      : "Rate the ride above, add a note, or both"}
                 </div>
                 <button
                   type="submit"
-                  disabled={loading || !hasInput}
+                  disabled={!hasInput}
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 8,
                     padding: "11px 22px", borderRadius: 10,
@@ -2139,15 +2156,14 @@ export default function WeeklyPlan() {
                       : "rgba(47,143,224,0.2)",
                     color: hasInput ? "#fff" : "var(--muted)",
                     fontSize: 14.5, fontWeight: 700,
-                    cursor: loading || !hasInput ? "default" : "pointer",
+                    cursor: !hasInput ? "default" : "pointer",
                     fontFamily: "inherit", whiteSpace: "nowrap",
                     transition: "all 0.2s ease",
                     boxShadow: hasInput ? "0 4px 14px rgba(47,143,224,0.3)" : "none",
-                    transform: hasInput ? "none" : "none",
                   }}
                 >
-                  {loading ? "Adapting plan…" : "Send to coach"}
-                  {!loading && (
+                  {noteSaved ? "Sent ✓" : "Send to coach"}
+                  {!noteSaved && (
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                     </svg>
@@ -2163,7 +2179,7 @@ export default function WeeklyPlan() {
                   ? `${cycleInfo.phase === "RaceWeek" ? "Race week" : "Taper"} · ${cycleInfo.weeksToEvent === 0 ? "event this week" : `${cycleInfo.weeksToEvent} week${cycleInfo.weeksToEvent === 1 ? "" : "s"} to your event`}`
                   : `${cycleInfo.phase} phase · Week ${cycleInfo.weekInMesocycle} of 4`
                 : "Seven structured sessions, built fresh each week"}
-              {" — auto-generated weekly, refined by your notes above."}
+              {" — your feedback enters AI memory and sharpens future sessions."}
             </div>
           </div>
         );

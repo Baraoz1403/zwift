@@ -66,6 +66,14 @@ export interface RiderFingerprint {
    */
   sessionLog: SessionLogEntry[];
 
+  /**
+   * Free-text notes from the rider to the coach — not tied to a specific
+   * workout. Saved via the "Talk to your coach" bottom card. Injected into
+   * the AI planning prompt so the next auto-generated plan reflects them.
+   * Capped at 20 most-recent entries.
+   */
+  coachingNotes?: Array<{ date: string; note: string }>;
+
   /** ISO timestamp of last update. */
   updatedAt: string;
 }
@@ -103,6 +111,7 @@ function emptyFingerprint(): RiderFingerprint {
     weekdaySkipCounts: {},
     weekdayPlannedCounts: {},
     sessionLog: [],
+    coachingNotes: [],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -156,6 +165,33 @@ export async function updateFingerprintWithFeedback(
     fp.categoryResponses = recomputeCategories(fp.sessionLog);
     fp.updatedAt = new Date().toISOString();
 
+    await saveFingerprint(athleteId, fp);
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * Saves a free-text coaching note from the rider (not tied to a specific
+ * workout). These notes are injected into the next AI planning prompt via
+ * fingerprintToPromptSummary so the auto-generated plan can reflect them.
+ * Caps at 20 most-recent entries.
+ */
+export async function saveCoachingNote(
+  athleteId: string,
+  date: string,
+  note: string,
+): Promise<void> {
+  if (!kvAvailable() || !athleteId || !note.trim()) return;
+  try {
+    const fp = (await getFingerprint(athleteId)) ?? emptyFingerprint();
+    if (!fp.coachingNotes) fp.coachingNotes = [];
+    // Upsert: replace any note already stored for the same date
+    fp.coachingNotes = fp.coachingNotes.filter((n) => n.date !== date);
+    fp.coachingNotes.push({ date, note: note.trim() });
+    fp.coachingNotes.sort((a, b) => a.date.localeCompare(b.date));
+    if (fp.coachingNotes.length > 20) fp.coachingNotes = fp.coachingNotes.slice(-20);
+    fp.updatedAt = new Date().toISOString();
     await saveFingerprint(athleteId, fp);
   } catch {
     // best-effort
@@ -296,6 +332,27 @@ export function fingerprintToPromptSummary(fp: RiderFingerprint | null): string 
     lines.push("\nCoaching implications from this rider's history:");
     for (const imp of implications) {
       lines.push(`  → ${imp}`);
+    }
+  }
+
+  // ── Recent coaching notes from the rider ──
+  const recentNotes = (fp.coachingNotes ?? []).slice(-5);
+  if (recentNotes.length > 0) {
+    lines.push("\nRecent rider messages to coach:");
+    for (const n of recentNotes) {
+      lines.push(`  [${n.date}] "${n.note}"`);
+    }
+  }
+
+  // ── Notes attached to recent session log entries ──
+  const sessionNotes = fp.sessionLog
+    .slice(-10)
+    .filter((e) => e.note)
+    .slice(-3);
+  if (sessionNotes.length > 0) {
+    lines.push("\nRecent post-workout notes:");
+    for (const e of sessionNotes) {
+      lines.push(`  [${e.date} · ${e.workoutTitle}] "${e.note}"`);
     }
   }
 
