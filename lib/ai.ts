@@ -811,7 +811,9 @@ Every workout structure block must include explicit cadenceTarget.
   "exact TSB value, CTL number, phase week number, their W/kg, or a title from previousWeekTitles. " +
   "Generic statements like 'Build aerobic base' or 'Improve your fitness with intervals' are NOT descriptions - " +
   "they are placeholder text that makes a rider feel they received a template, not coaching. Replace them. " +
-  "(c) If previousWeekTitles is present: structured sessions must use different names AND progress logically. " +
+  "(c) If previousWeekTitles is present: each structured session either progresses up the ladder from " +
+"last week's equivalent, or deliberately repeats it with a small bump (duration/reps/power) - both are " +
+"valid; swapping to a different category purely to avoid repeating a name is not required and is often worse. " +
   "A plan that fails (a)-(c) is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template..)}";
 
