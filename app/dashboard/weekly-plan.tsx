@@ -245,7 +245,7 @@ export default function WeeklyPlan() {
   const [lastIntervalsSync, setLastIntervalsSync] = useState<
     { pushed: number; deleted: number; errors: string[] } | null
   >(null);
-  const [summaryOpen, setSummaryOpen] = useState(false);
+  // summaryOpen removed — rationale is now always-visible styled bullets
   const [riderNote, setRiderNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   // Bottom card emoji feeling: null = unset, 1–5 = selected
@@ -1475,51 +1475,63 @@ export default function WeeklyPlan() {
 
       {plan && (
         <>
-          {plan.summary && (
-            <div style={{ marginTop: 32, marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: summaryOpen ? 10 : 0 }}>
-                <div className="section-title" style={{ margin: 0 }}>
+          {plan.summary && (() => {
+            // Split summary into up to 5 bullet points.
+            // Try splitting on existing bullets first (• or -), then on sentences.
+            const raw = plan.summary.trim();
+            let bullets: string[] = [];
+            if (raw.includes("•") || raw.match(/\n\s*[-–]/)) {
+              bullets = raw.split(/[•\n]\s*[-–]?\s*/).map(s => s.trim()).filter(s => s.length > 10);
+            } else {
+              bullets = raw.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 15);
+            }
+            bullets = bullets.slice(0, 5);
+
+            const BULLET_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
+            const BULLET_ICONS = ["⚡", "🎯", "📈", "💡", "🔥"];
+
+            return (
+              <div style={{ marginTop: 32, marginBottom: 14 }}>
+                <div className="section-title" style={{ margin: "0 0 14px" }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
                   </svg>
-                  Plan rationale
+                  This week&apos;s coaching focus
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => setSummaryOpen(v => !v)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 5,
-                      padding: "5px 14px",
-                      borderRadius: 6,
-                      border: "1px solid var(--border)",
-                      background: "rgba(47,143,224,0.05)",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--accent)",
-                      cursor: "pointer",
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    {summaryOpen ? "Hide" : "Show"}
-                    <svg
-                      width="10" height="10" viewBox="0 0 10 10" fill="none"
-                      style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
-                    >
-                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {bullets.map((bullet, i) => {
+                    const color = BULLET_COLORS[i % BULLET_COLORS.length];
+                    const icon = BULLET_ICONS[i % BULLET_ICONS.length];
+                    return (
+                      <div key={i} style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "11px 16px", borderRadius: 10,
+                        background: "#fff",
+                        border: `1.5px solid rgba(15,23,42,0.09)`,
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                          background: `${color}14`,
+                          border: `1.5px solid ${color}30`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 15,
+                        }}>
+                          {icon}
+                        </div>
+                        <span style={{
+                          fontSize: 13.5, color: "#0f172a",
+                          lineHeight: 1.5, fontWeight: 500,
+                        }}>
+                          {bullet.replace(/\.$/, "").trim()}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              {summaryOpen && (
-                <div className="notice" style={{ color: "var(--text)", lineHeight: 1.6 }}>
-                  {plan.summary}
-                </div>
-              )}
-            </div>
-          )}
+            );
+          })()}
 
           <div className="stat-grid workout-grid" style={{ marginTop: 32 }}>
             {displayWorkouts.map((w, i) => {
