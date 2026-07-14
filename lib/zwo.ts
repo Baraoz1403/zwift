@@ -134,8 +134,21 @@ function powerAtTime(blocks: ZwoBlock[], t: number): number {
 export function sampleWorkoutPower(blocks: ZwoBlock[], steps = 40): number[] {
   const total = blocks.reduce((s, b) => s + blockDurationSec(b), 0) || 1;
   const samples: number[] = [];
+  // 8 sub-samples per bar, take the peak — guarantees short sprint intervals
+  // (15-second Sprint Builder bursts etc.) register as visible spikes instead
+  // of being silently missed by single-midpoint sampling (which skips intervals
+  // shorter than ~75s for a 50-min workout with 40 bars).
+  const SUB = 8;
   for (let i = 0; i < steps; i++) {
-    samples.push(powerAtTime(blocks, ((i + 0.5) / steps) * total));
+    const t0 = (i / steps) * total;
+    const t1 = ((i + 1) / steps) * total;
+    let peak = 0;
+    for (let j = 0; j < SUB; j++) {
+      const t = t0 + ((j + 0.5) / SUB) * (t1 - t0);
+      const p = powerAtTime(blocks, t);
+      if (p > peak) peak = p;
+    }
+    samples.push(peak);
   }
   return samples;
 }

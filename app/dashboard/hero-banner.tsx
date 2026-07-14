@@ -9,19 +9,19 @@ const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E"
 
 const SLIDES = [
   {
-    tag: "THE AI KNOWS YOUR BODY",
-    lines: ["Tired today?", "It already knows.", "You don't have to."],
-    sub: "CTL, ATL, TSB — your real fitness state computed from every ride. The coach reads your readiness before writing a single interval.",
+    tag: "THE AI READS YOUR LEGS",
+    lines: ["Every ride.", "Every watt.", "One coach that never forgets."],
+    sub: "CTL, ATL, TSB — your fitness fingerprint rebuilt from every session. By the time you open the app, the AI already knows what your body needs this week.",
   },
   {
-    tag: "NOT A PLAN. A PRESCRIPTION.",
-    lines: ["Your FTP.", "Your history.", "Your exact session."],
-    sub: "Every power target calculated from your actual numbers. Sweet Spot when you're ready. Recovery when you're not. The system decides — correctly.",
+    tag: "INTERVALS BUILT FOR ONE RIDER",
+    lines: ["Not a template.", "Not a guess.", "Your exact prescription."],
+    sub: "FTP, training load, weekly history — every power target calculated from your actual numbers. The plan is different this week because you are different this week.",
   },
   {
-    tag: "YOUR GOALS. EVERY SESSION.",
-    lines: ["Lose fat.", "Build power.", "Or both."],
-    sub: "Set your goals once. The AI structures every week around them — then syncs the plan to Zwift, Intervals.icu and TrainingPeaks automatically.",
+    tag: "BUILD ONCE. TRAIN EVERYWHERE.",
+    lines: ["AI builds the week.", "You approve the plan.", "Zwift runs the session."],
+    sub: "One click pushes your personalized plan to Zwift, Intervals.icu, and TrainingPeaks. Training intelligence meets platform convenience — zero manual entry.",
   },
 ];
 
@@ -169,13 +169,15 @@ function TelemetryPanel() {
   const [ecgPhase, setPhase]  = useState(0);
 
   useEffect(() => {
+    // Fast tick: ECG phase and small wander on every tick (150ms)
+    // Occasional larger jumps happen naturally when small steps accumulate
     const id = setInterval(() => {
-      setPower(p   => Math.round(clamp(p + (Math.random() * 22 - 10), 175, 275)));
-      setHr(h      => Math.round(clamp(h + (Math.random() * 6 - 3), 136, 164)));
-      setCadence(c => Math.round(clamp(c + (Math.random() * 5 - 2.5), 80, 98)));
-      setSpeed(s   => +clamp(s + (Math.random() * 1.8 - 0.8), 26, 36).toFixed(1));
+      setPower(p   => Math.round(clamp(p + (Math.random() * 8 - 3.5), 175, 275)));
+      setHr(h      => Math.round(clamp(h + (Math.random() * 3 - 1.2), 136, 164)));
+      setCadence(c => Math.round(clamp(c + (Math.random() * 2 - 0.9), 80, 98)));
+      setSpeed(s   => +clamp(s + (Math.random() * 0.6 - 0.25), 26, 36).toFixed(1));
       setPhase(p   => (p + 1) % 37);
-    }, 900);
+    }, 150);
     return () => clearInterval(id);
   }, []);
 
