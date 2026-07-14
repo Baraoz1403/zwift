@@ -1516,18 +1516,22 @@ export default function WeeklyPlan() {
                     type="button"
                     onClick={() => setSummaryOpen(v => !v)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      padding: "5px 14px", borderRadius: 6, flexShrink: 0,
-                      border: "1px solid var(--border)",
-                      background: summaryOpen ? "rgba(59,130,246,0.08)" : "#fff",
-                      fontSize: 12, fontWeight: 600, color: "var(--accent)",
-                      cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "7px 16px", borderRadius: 20, flexShrink: 0,
+                      border: `1.5px solid ${summaryOpen ? "rgba(47,143,224,0.4)" : "var(--border)"}`,
+                      background: summaryOpen
+                        ? "linear-gradient(135deg, rgba(47,143,224,0.12), rgba(124,58,237,0.08))"
+                        : "#fff",
+                      fontSize: 13, fontWeight: 700, color: "var(--accent)",
+                      cursor: "pointer", letterSpacing: "-0.01em",
+                      boxShadow: summaryOpen ? "0 2px 8px rgba(47,143,224,0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
+                      transition: "all 0.2s ease",
                     }}
                   >
                     {summaryOpen ? "Hide" : "Show coaching rationale"}
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none"
                       style={{ transform: summaryOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
-                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                 </div>

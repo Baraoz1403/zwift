@@ -9,19 +9,19 @@ const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E"
 
 const SLIDES = [
   {
-    tag: "POWERED BY AI",
-    lines: ["Your Rides.", "Your Data.", "Your Coach."],
-    sub: "Real-time training plans built from your Zwift performance — not templates.",
+    tag: "COGNITIVE LOAD ENGINE",
+    lines: ["CTL 42.", "TSB −12.", "Trending ↑"],
+    sub: "Real-time fitness trajectory derived from every watt you've ever pushed. Your training state computed — not guessed.",
   },
   {
-    tag: "STRUCTURED TRAINING",
-    lines: ["Sweet Spot.", "Threshold.", "VO2max."],
-    sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
+    tag: "PRECISION POWER ZONES",
+    lines: ["88% FTP.", "3 × 15 min.", "Sweet Spot."],
+    sub: "Every block built on Coggan's 7-zone model. Physiologically justified, progressively loaded — never a template.",
   },
   {
-    tag: "ZERO MANUAL STEPS",
-    lines: ["Generate.", "Sync.", "Ride."],
-    sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
+    tag: "AUTONOMOUS SYNC ENGINE",
+    lines: ["Generate.", "Push.", "Ride."],
+    sub: "Sunday night: Zwift, Intervals.icu and TrainingPeaks receive next week's structured .zwo. Just show up.",
   },
 ];
 
@@ -33,36 +33,36 @@ function clamp(v: number, lo: number, hi: number) {
 function ArcGauge({
   value, max, label, unit, color,
 }: { value: number; max: number; label: string; unit: string; color: string }) {
-  const r = 36;
-  const circ = 2 * Math.PI * r;        // 226.19
-  const arcLen = circ * 0.75;           // 169.64  (270°)
+  const r = 38;
+  const circ = 2 * Math.PI * r;
+  const arcLen = circ * 0.75;
   const filled = (value / max) * arcLen;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-      <div style={{ position: "relative", width: 88, height: 88 }}>
-        <svg width="88" height="88" viewBox="0 0 88 88" style={{ overflow: "visible" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      <div style={{ position: "relative", width: 96, height: 96 }}>
+        <svg width="96" height="96" viewBox="0 0 96 96" style={{ overflow: "visible" }}>
           {/* Track */}
           <circle
-            cx="44" cy="44" r={r}
+            cx="48" cy="48" r={r}
             fill="none"
             stroke={`${color}1a`}
             strokeWidth="5"
             strokeLinecap="round"
             strokeDasharray={`${arcLen} ${circ}`}
-            transform="rotate(135 44 44)"
+            transform="rotate(135 48 48)"
           />
           {/* Value arc */}
           <circle
-            cx="44" cy="44" r={r}
+            cx="48" cy="48" r={r}
             fill="none"
             stroke={color}
             strokeWidth="5"
             strokeLinecap="round"
             strokeDasharray={`${filled} ${circ}`}
-            transform="rotate(135 44 44)"
+            transform="rotate(135 48 48)"
             style={{
-              filter: `drop-shadow(0 0 5px ${color}90)`,
+              filter: `drop-shadow(0 0 6px ${color}99)`,
               transition: "stroke-dasharray 0.5s ease",
             }}
           />
@@ -295,10 +295,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         pointerEvents: "none",
       }} />
 
-      {/* ── Inner constrained container (aligns nav + content to same left edge) */}
+      {/* ── Full-bleed container — stretches to page edges */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
-        width: "100%", maxWidth: 1200, margin: "0 auto", padding: "0 28px",
+        width: "100%", padding: "0 32px",
         position: "relative", zIndex: 3,
       }}>
 
@@ -336,17 +336,6 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
               Hi, {firstName}
             </span>
           )}
-        </div>
-
-        {/* Center: wordmark */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <div style={{ width: 1, height: 14, background: "rgba(248,250,252,0.12)", borderRadius: 1 }} />
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: "0.22em",
-            color: "rgba(248,250,252,0.22)", textTransform: "uppercase",
-            fontFamily: "'SF Mono', 'Fira Code', monospace", whiteSpace: "nowrap",
-          }}>ZWIFT · AI · DASHBOARD</span>
-          <div style={{ width: 1, height: 14, background: "rgba(248,250,252,0.12)", borderRadius: 1 }} />
         </div>
 
         {/* Right: Nav */}
@@ -460,6 +449,56 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       </div>
       </div>{/* end inner constrained container */}
 
+      {/* ── AI status ticker ─────────────────────────────────────────────── */}
+      <div style={{
+        position: "relative", zIndex: 3,
+        borderTop: `1px solid ${C.cyan}18`,
+        background: `linear-gradient(90deg, rgba(0,212,255,0.04) 0%, rgba(124,58,237,0.04) 100%)`,
+        overflow: "hidden", flexShrink: 0,
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center",
+          animation: "hbTicker 32s linear infinite",
+          whiteSpace: "nowrap", padding: "7px 0",
+          gap: 0,
+        }}>
+          {/* Repeat twice so the scroll loops seamlessly */}
+          {[0, 1].map(rep => (
+            <span key={rep} style={{ display: "inline-flex", alignItems: "center", gap: 0 }}>
+              {[
+                { dot: C.cyan,   text: "NEURAL NET ACTIVE" },
+                { dot: C.purple, text: "ADAPTIVE TRAINING ENGINE v3.1" },
+                { dot: C.cyan,   text: "REAL-TIME POWER ANALYSIS" },
+                { dot: C.gold,   text: "COGGAN 7-ZONE MODEL" },
+                { dot: C.purple, text: "TSB · CTL · ATL TRACKING" },
+                { dot: C.cyan,   text: "INTERVALS.ICU SYNC READY" },
+                { dot: C.pink,   text: "PHYSIOLOGICAL LOAD MONITORING" },
+                { dot: C.purple, text: "PROGRESSIVE OVERLOAD ALGORITHM" },
+                { dot: C.cyan,   text: "PLAN PERSONALISATION ACTIVE" },
+              ].map((item, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "0 28px",
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.18em",
+                    color: "rgba(248,250,252,0.32)",
+                    fontFamily: "'SF Mono','Fira Code',monospace",
+                    textTransform: "uppercase",
+                  }}>
+                    <span style={{
+                      width: 4, height: 4, borderRadius: "50%", flexShrink: 0,
+                      background: item.dot, boxShadow: `0 0 6px ${item.dot}`,
+                    }} />
+                    {item.text}
+                  </span>
+                  <span style={{ color: "rgba(248,250,252,0.1)", fontSize: 10 }}>·</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── Keyframes ───────────────────────────────────────────────────── */}
       <style>{`
         @keyframes hbLivePulse {
@@ -473,6 +512,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         @keyframes hbGradShift {
           0%, 100% { background-position: 0% 50%; }
           50%       { background-position: 100% 50%; }
+        }
+        @keyframes hbTicker {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
       `}</style>
     </div>
