@@ -131,10 +131,22 @@ a:hover {
   margin-bottom: 6px;
 }
 
+/* All text inputs and textareas: always white background */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input:not([type]),
+textarea {
+  background: #ffffff !important;
+  color: var(--text);
+}
+
 .field input {
   width: 100%;
   padding: 10px 12px;
-  background: var(--panel);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);

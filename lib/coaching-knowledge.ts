@@ -892,7 +892,7 @@ VO2MAX (106-120% FTP — requires TSB ≥ -5 and intermediate+ rider):
 • "Seiler 4×8" — 70 min (14 warmup → 4×8 min @ 107% / 4 rec → 8 cooldown). Extended VO2max intervals — HR must reach 90%+ max in last 2 min each rep. Advanced only.
 
 NEUROMUSCULAR (acceptable even in Base — minimal lactate, neurological only):
-• "Sprint Builder" — 50 min (15 warmup → 8×15s ALL OUT / 2.5 min rec → 13 Z2 flush). Last sprint near-equal to first = success.
+• "Sprint Builder" — 50 min (15 warmup → 8×15s ALL OUT ~150% FTP, pure neuromuscular — NOT sub-FTP / 2.5 min rec @ 52% FTP → 13 Z2 flush). Last sprint near-equal to first = success. IMPORTANT: describe sprints as "~150% FTP neuromuscular", never "ALL OUT FTP" (contradictory).
 • "Spin-Up Sprints" — 50 min (15 warmup → 8×30s cadence spin-ups / 2 min rec → 15 cooldown). Builds pedaling speed and motor unit recruitment. Light gear, max cadence.
 • "Anaerobic Bursts" — 55 min (15 warmup → 6×1 min @ 130% / 4 min rec → 10 cooldown). Trains anaerobic capacity for attacks and climbs. Full recovery between reps is non-negotiable.
 • "Race Day Opener" — 35 min (10 warmup → 3×1 min @ 110% / 3 min easy → 5 min @ 80% → 8 spindown). Pre-event only (24-48h before race). Activation, not training stress.
