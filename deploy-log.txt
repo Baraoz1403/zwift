@@ -7246,3 +7246,37 @@ Tue 07/14/2026 19:22:33.14
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'coaching-prompt.html', LF will be replaced by CRLF the next time Git touches it
+[main 0805448] Auto deploy Tue 07/14/2026 19:22:33.59
+ 4 files changed, 432 insertions(+)
+ create mode 100644 coaching-prompt.html
+To https://github.com/Baraoz1403/zwift.git
+   6582ec1..0805448  main -> main
+Tue 07/14/2026 19:22:35.71 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Tue 07/14/2026 19:36:05.17 
+=============================== 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 

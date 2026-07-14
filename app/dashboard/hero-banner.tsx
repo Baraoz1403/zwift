@@ -4,216 +4,346 @@ import DashboardNavTabs from "./dashboard-nav-tabs";
 import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
 
-// A different rich, saturated background per slide (blue / emerald / red) -
-// a single unified background read as flat, and pale pastel versions of
-// the green/red slides read as washed out. All three use the same
-// dark-to-vivid-to-dark diagonal gradient treatment so they carry equal
-// visual weight. Blue is the default/first slide. The nav row has its own
-// dark glass backing (see .banner-nav in globals.css) so it stays legible
-// regardless of which slide is showing, without needing its own per-slide
-// variants.
+// Unified accent palette - one source of truth for all slides
+const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E" };
+
 const SLIDES = [
   {
-    dark: true,
-    bg: "linear-gradient(135deg, #0b2f6b 0%, #123f8f 55%, #0d1f4d 100%)",
-    accent: "#5EC8FF",
     tag: "POWERED BY AI",
     lines: ["Your Rides.", "Your Data.", "Your Coach."],
     sub: "Real-time training plans built from your Zwift performance — not templates.",
   },
   {
-    // Was a pale mint pastel - read as washed-out/weak. Same deep-to-mid
-    // diagonal gradient treatment as the blue slide, just in a rich emerald
-    // hue, so it carries the same visual weight instead of looking faded.
-    dark: true,
-    bg: "linear-gradient(135deg, #064e3b 0%, #059669 55%, #033a2c 100%)",
-    accent: "#4ADE9E",
     tag: "STRUCTURED TRAINING",
     lines: ["Sweet Spot.", "Threshold.", "VO2max."],
     sub: "Progressive 8-week cycles. Every session has a purpose and a target.",
   },
   {
-    // Orange didn't land - back to red, vivid and saturated (not the pale
-    // pastel from earlier), same dark-to-vivid-to-dark treatment as the
-    // other two slides.
-    dark: true,
-    bg: "linear-gradient(135deg, #7f1d2e 0%, #dc2626 55%, #450a12 100%)",
-    accent: "#FF8FA3",
     tag: "ZERO MANUAL STEPS",
     lines: ["Generate.", "Sync.", "Ride."],
     sub: "Plans push to Zwift every Sunday night automatically. Just show up.",
   },
 ];
 
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
+function clamp(v: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, v));
 }
 
-/**
- * LiveMetricsHUD — replaces the old hand-drawn bicycle illustration, which
- * read as flat and generic ("סתמי") no matter how it was styled. This is a
- * small animated telemetry panel instead — power/cadence/speed/heart-rate
- * numbers that tick and drift like a live ride feed, echoing an actual
- * Zwift/head-unit dashboard rather than a static drawing of a bike.
- */
-function LiveMetricsHUD({ accent }: { accent: string }) {
-  const [power, setPower] = useState(215);
-  const [cadence, setCadence] = useState(88);
-  const [speed, setSpeed] = useState(31.4);
-  const [hr, setHr] = useState(148);
+// ─── Circular arc gauge ──────────────────────────────────────────────────────
+function ArcGauge({
+  value, max, label, unit, color,
+}: { value: number; max: number; label: string; unit: string; color: string }) {
+  const r = 36;
+  const circ = 2 * Math.PI * r;        // 226.19
+  const arcLen = circ * 0.75;           // 169.64  (270°)
+  const filled = (value / max) * arcLen;
 
-  // Solid white panel regardless of the slide's own background - it's the
-  // one element on the banner meant to pop rather than blend, so it reads
-  // the same (and stays maximally legible) whether it's sitting on the dark
-  // blue slide or a light green/red one. Ticks quickly (900ms, was 1400ms)
-  // so the numbers visibly feel "live" rather than idling.
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+      <div style={{ position: "relative", width: 88, height: 88 }}>
+        <svg width="88" height="88" viewBox="0 0 88 88" style={{ overflow: "visible" }}>
+          {/* Track */}
+          <circle
+            cx="44" cy="44" r={r}
+            fill="none"
+            stroke={`${color}1a`}
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={`${arcLen} ${circ}`}
+            transform="rotate(135 44 44)"
+          />
+          {/* Value arc */}
+          <circle
+            cx="44" cy="44" r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeDasharray={`${filled} ${circ}`}
+            transform="rotate(135 44 44)"
+            style={{
+              filter: `drop-shadow(0 0 5px ${color}90)`,
+              transition: "stroke-dasharray 0.5s ease",
+            }}
+          />
+          {/* Tick at top of arc (135° from 3-o'clock = just past bottom-left) */}
+        </svg>
+
+        {/* Center value */}
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{
+            fontSize: 20, fontWeight: 800, color: "#F8FAFC",
+            fontVariantNumeric: "tabular-nums", lineHeight: 1,
+            fontFamily: "'SF Mono', 'Fira Code', monospace",
+          }}>{value}</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+            color, marginTop: 2,
+          }}>{unit}</span>
+        </div>
+      </div>
+      <span style={{
+        fontSize: 9, fontWeight: 700, letterSpacing: "0.12em",
+        textTransform: "uppercase", color: "rgba(248,250,252,0.4)",
+      }}>{label}</span>
+    </div>
+  );
+}
+
+// ─── Stat row (bar + label + value) ─────────────────────────────────────────
+function StatBar({ label, value, display, max, color }: {
+  label: string; value: number; display: string; max: number; color: string;
+}) {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{
+          fontSize: 9.5, fontWeight: 600, letterSpacing: "0.1em",
+          textTransform: "uppercase", color: "rgba(248,250,252,0.45)",
+          fontFamily: "'SF Mono', 'Fira Code', monospace",
+        }}>{label}</span>
+        <span style={{
+          fontSize: 11.5, fontWeight: 800, color: "#F8FAFC",
+          fontVariantNumeric: "tabular-nums",
+          fontFamily: "'SF Mono', 'Fira Code', monospace",
+        }}>{display}</span>
+      </div>
+      <div style={{ height: 3, background: "rgba(248,250,252,0.07)", borderRadius: 2 }}>
+        <div style={{
+          height: "100%", width: `${pct}%`, borderRadius: 2,
+          background: `linear-gradient(90deg, ${color}70, ${color})`,
+          boxShadow: `0 0 6px ${color}50`,
+          transition: "width 0.5s ease",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─── ECG waveform ────────────────────────────────────────────────────────────
+function EcgStrip({ phase }: { phase: number }) {
+  // Encode one ECG beat cycle as relative deltas; repeat it to fill the strip
+  const beat = [
+    [0, 0], [8, 0], [10, -2], [12, 0],   // P wave
+    [14, 0], [15, 5], [16, -14], [17, 8], // QRS
+    [19, 0], [22, 0], [25, -4], [28, 0],  // T wave
+    [37, 0],                               // next beat start
+  ] as [number, number][];
+
+  const W = 240;
+  const MID = 16;
+  const pts: string[] = [];
+
+  for (let rep = -1; rep <= 2; rep++) {
+    for (const [dx, dy] of beat) {
+      const x = (rep * 37 + dx + phase * 4) % (W + 40) - 20;
+      pts.push(`${x.toFixed(1)},${(MID + dy).toFixed(1)}`);
+    }
+  }
+
+  return (
+    <div style={{ borderTop: "1px solid rgba(248,250,252,0.05)", paddingTop: 10, overflow: "hidden" }}>
+      <div style={{
+        fontSize: 9, color: "rgba(248,250,252,0.25)", marginBottom: 4,
+        fontFamily: "'SF Mono', 'Fira Code', monospace", letterSpacing: "0.12em",
+      }}>ECG · REAL-TIME</div>
+      <svg width="100%" height="32" viewBox="0 0 240 32" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
+        <polyline
+          points={pts.join(" ")}
+          fill="none"
+          stroke={C.cyan}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 4px ${C.cyan}aa)` }}
+        />
+      </svg>
+    </div>
+  );
+}
+
+// ─── Live telemetry panel ────────────────────────────────────────────────────
+function TelemetryPanel() {
+  const [power, setPower]     = useState(215);
+  const [hr, setHr]           = useState(148);
+  const [cadence, setCadence] = useState(88);
+  const [speed, setSpeed]     = useState(31.4);
+  const [ecgPhase, setPhase]  = useState(0);
+
   useEffect(() => {
     const id = setInterval(() => {
-      setPower((p) => Math.round(clamp(p + (Math.random() * 22 - 10), 175, 275)));
-      setCadence((c) => Math.round(clamp(c + (Math.random() * 5 - 2.5), 80, 98)));
-      setSpeed((s) => Math.round(clamp(s + (Math.random() * 1.8 - 0.8), 26, 36) * 10) / 10);
-      setHr((h) => Math.round(clamp(h + (Math.random() * 6 - 3), 136, 164)));
+      setPower(p   => Math.round(clamp(p + (Math.random() * 22 - 10), 175, 275)));
+      setHr(h      => Math.round(clamp(h + (Math.random() * 6 - 3), 136, 164)));
+      setCadence(c => Math.round(clamp(c + (Math.random() * 5 - 2.5), 80, 98)));
+      setSpeed(s   => +clamp(s + (Math.random() * 1.8 - 0.8), 26, 36).toFixed(1));
+      setPhase(p   => (p + 1) % 37);
     }, 900);
     return () => clearInterval(id);
   }, []);
 
-  const stat = (icon: React.ReactNode, value: string, unit: string, label: string) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-      <div style={{
-        width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-        background: accent, display: "flex", alignItems: "center", justifyContent: "center",
-        color: "#fff", boxShadow: `0 3px 10px ${accent}55`,
-      }}>
-        {icon}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-          <span style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</span>
-          <span style={{ fontSize: 11.5, color: "#64748b", fontWeight: 700 }}>{unit}</span>
-        </div>
-        <div style={{ fontSize: 10.5, color: "#94a3b8", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>{label}</div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{
-      width: "100%", borderRadius: 8,
-      background: "#fff",
-      border: `1px solid rgba(15,23,42,0.06)`,
-      padding: "18px 22px", position: "relative", overflow: "hidden",
-      boxShadow: `0 14px 36px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.4)`,
+      background: "rgba(4, 9, 26, 0.72)",
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
+      border: `1px solid ${C.cyan}28`,
+      borderRadius: 16,
+      padding: "18px 20px 16px",
+      position: "relative",
+      overflow: "hidden",
+      boxShadow: `0 0 0 1px rgba(0,212,255,0.06), 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.12)`,
     }}>
-      {/* Live badge */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, position: "relative" }}>
-        <div style={{
-          width: 7, height: 7, borderRadius: "50%", background: accent,
-          boxShadow: `0 0 8px ${accent}`, animation: "heroLivePulse 1s ease-in-out infinite",
-        }} />
-        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.14em", color: accent }}>LIVE SESSION</span>
+      {/* Corner glow */}
+      <div style={{
+        position: "absolute", top: 0, right: 0, width: 120, height: 120,
+        background: `radial-gradient(circle at 100% 0%, ${C.purple}20, transparent 70%)`,
+        pointerEvents: "none",
+      }} />
+
+      {/* Panel header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%", background: C.cyan,
+            boxShadow: `0 0 10px ${C.cyan}`,
+            animation: "hbLivePulse 1.4s ease-in-out infinite",
+          }} />
+          <span style={{
+            fontSize: 9.5, fontWeight: 800, letterSpacing: "0.18em",
+            color: C.cyan, fontFamily: "'SF Mono', 'Fira Code', monospace",
+          }}>LIVE · NEURAL ANALYSIS</span>
+        </div>
+        <span style={{
+          fontSize: 8.5, color: "rgba(248,250,252,0.25)",
+          fontFamily: "'SF Mono', 'Fira Code', monospace",
+        }}>AI v3.1</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, position: "relative" }}>
-        {stat(
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
-          String(power), "W", "Power",
-        )}
-        {stat(
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>,
-          String(cadence), "rpm", "Cadence",
-        )}
-        {stat(
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-3"/><path d="M9 3h6"/></svg>,
-          speed.toFixed(1), "km/h", "Speed",
-        )}
-        {stat(
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.7-10-9.3C.4 8.2 2.3 5 5.6 5c1.9 0 3.4 1 4.4 2.4C11 6 12.5 5 14.4 5c3.3 0 5.2 3.2 3.6 6.7C19.5 16.3 12 21 12 21z"/></svg>,
-          String(hr), "bpm", "Heart rate",
-        )}
+      {/* Circular gauges */}
+      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 16 }}>
+        <ArcGauge value={power} max={350} label="Power" unit="W"   color={C.cyan} />
+        <ArcGauge value={hr}    max={200} label="Heart Rate" unit="bpm" color={C.pink} />
       </div>
 
-      <style>{`
-        @keyframes heroLivePulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.4; transform: scale(0.8); }
-        }
-      `}</style>
+      {/* Stat bars */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 14 }}>
+        <StatBar label="Cadence" value={cadence} display={`${cadence} rpm`} max={120} color={C.purple} />
+        <StatBar label="Speed"   value={speed}   display={`${speed} km/h`} max={45}  color={C.gold} />
+      </div>
+
+      <EcgStrip phase={ecgPhase} />
     </div>
   );
 }
 
-/**
- * HeroBanner — the site's persistent header (rendered once from
- * app/dashboard/layout.tsx, shared by Coach + Stats). Full-bleed width
- * (edge-to-edge). Blue always shows first on load - no auto-advance timer
- * and no randomness, since a message that keeps changing while it's being
- * read was more distracting than useful. The dots below still let the
- * rider switch to the emerald/red messages manually at any time.
- */
+// ─── Hero Banner ─────────────────────────────────────────────────────────────
 export default function HeroBanner({ firstName }: { firstName?: string | null }) {
-  // Blue (index 0) always shows first on load - no auto-advance timer and
-  // no random pick. The dots below still let the rider switch manually.
   const [idx, setIdx] = useState(0);
   const s = SLIDES[idx];
 
-  const headlineColor = s.dark ? "white" : "var(--text)";
-  const subColor = s.dark ? "rgba(255,255,255,0.65)" : "var(--muted)";
-
   return (
-    <div className="hero-banner-fullbleed" style={{
-      background: s.bg,
-      overflow: "hidden",
-      position: "relative",
-      display: "flex",
-      flexDirection: "column",
-      minHeight: 290,
-      marginBottom: 32,
-      borderBottom: `1px solid ${s.accent}30`,
-      boxShadow: `0 16px 40px rgba(0,0,0,0.18)`,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
-      transition: "background 0.5s ease, border-color 0.4s ease",
-    }}>
-      {/* Grid - white lines, like the original banners. Instead of one flat
-          opacity everywhere, the intensity is masked so it visibly brightens
-          near the glow (top-right) and fades elsewhere - a single flat
-          value read as static/cheap; this gives it depth and a sense of
-          light actually falling across the panel. */}
+    <div
+      className="hero-banner-fullbleed"
+      style={{
+        background: `linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)`,
+        overflow: "hidden",
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 308,
+        marginBottom: 32,
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Inter', sans-serif",
+      }}
+    >
+      {/* ── Aurora blobs ────────────────────────────────────────────────── */}
+      <div style={{
+        position: "absolute", top: -100, right: "8%",
+        width: 480, height: 480, borderRadius: "50%",
+        background: `radial-gradient(circle, ${C.purple}28 0%, transparent 62%)`,
+        filter: "blur(50px)", pointerEvents: "none",
+        animation: "hbAurora 9s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute", bottom: -80, left: "2%",
+        width: 360, height: 360, borderRadius: "50%",
+        background: `radial-gradient(circle, ${C.cyan}14 0%, transparent 60%)`,
+        filter: "blur(40px)", pointerEvents: "none",
+        animation: "hbAurora 12s ease-in-out infinite reverse",
+      }} />
+      <div style={{
+        position: "absolute", top: "30%", left: "38%",
+        width: 220, height: 220, borderRadius: "50%",
+        background: `radial-gradient(circle, ${C.gold}0e 0%, transparent 70%)`,
+        filter: "blur(30px)", pointerEvents: "none",
+        animation: "hbAurora 15s ease-in-out infinite 2s",
+      }} />
+
+      {/* ── Neural grid ─────────────────────────────────────────────────── */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: `linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)`,
-        backgroundSize: "40px 40px",
-        opacity: 0.22,
-        WebkitMaskImage: `radial-gradient(ellipse 750px 520px at 80% 10%, black 0%, rgba(0,0,0,0.4) 45%, transparent 88%)`,
-        maskImage: `radial-gradient(ellipse 750px 520px at 80% 10%, black 0%, rgba(0,0,0,0.4) 45%, transparent 88%)`,
-        transition: "opacity 0.4s ease",
+        backgroundImage: `
+          linear-gradient(rgba(0,212,255,0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.055) 1px, transparent 1px)
+        `,
+        backgroundSize: "42px 42px",
+        WebkitMaskImage: `radial-gradient(ellipse 95% 85% at 68% 25%, black 0%, transparent 78%)`,
+        maskImage: `radial-gradient(ellipse 95% 85% at 68% 25%, black 0%, transparent 78%)`,
       }} />
-      {/* Glow - same focal point as the grid brightening above, so the two
-          read as one light source rather than two unrelated effects. */}
-      <div style={{position:"absolute",top:-60,right:"20%",width:340,height:340,borderRadius:"50%",
-        background:`radial-gradient(circle,${s.accent}2e 0%,transparent 70%)`,pointerEvents:"none",transition:"background 0.4s ease"}} />
 
-      {/* ── Nav row: brand + persistent nav actions ─────────────────────── */}
+      {/* ── Scan line ───────────────────────────────────────────────────── */}
+      <div style={{
+        position: "absolute", left: 0, right: 0, height: 1, pointerEvents: "none",
+        background: `linear-gradient(90deg, transparent 0%, ${C.cyan}55 35%, ${C.purple}40 65%, transparent 100%)`,
+        animation: "hbScan 5s linear infinite",
+      }} />
+
+      {/* ── Bottom glow edge ────────────────────────────────────────────── */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
+        background: `linear-gradient(90deg, transparent, ${C.cyan}35, ${C.purple}35, transparent)`,
+        pointerEvents: "none",
+      }} />
+
+      {/* ── Nav row ─────────────────────────────────────────────────────── */}
       <div className="banner-nav" style={{
-        position: "relative", zIndex: 2, display: "flex", alignItems: "center",
-        justifyContent: "space-between", gap: 16, flexWrap: "wrap",
-        margin: "18px 0 0",
+        position: "relative", zIndex: 3,
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16, flexWrap: "wrap",
+        margin: "16px 0 0",
       }}>
+        {/* Brand chip */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
-            width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-            background: s.accent, display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 2px 10px ${s.accent}55`, transition: "background 0.4s ease",
+            display: "inline-flex", alignItems: "center", gap: 9,
+            background: `linear-gradient(135deg, ${C.purple}30, ${C.cyan}18)`,
+            border: `1px solid ${C.cyan}38`,
+            borderRadius: 10, padding: "6px 14px",
+            boxShadow: `0 0 22px ${C.cyan}12, inset 0 1px 0 rgba(255,255,255,0.05)`,
           }}>
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="#0b1f4d">
-              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
-            </svg>
+            <div style={{
+              width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+              background: `linear-gradient(135deg, ${C.purple}, ${C.cyan})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: `0 0 14px ${C.cyan}40`,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="white">
+                <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+              </svg>
+            </div>
+            <span style={{
+              fontSize: 11.5, fontWeight: 800, letterSpacing: "0.15em",
+              color: "rgba(248,250,252,0.92)", whiteSpace: "nowrap",
+            }}>AI TRAINING COACH</span>
           </div>
-          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: "0.12em", color: "rgba(255,255,255,0.9)" }}>
-            AI TRAINING COACH
-          </span>
           {firstName && (
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginLeft: 4 }}>
-              · Hi, {firstName}
+            <span style={{ fontSize: 12.5, color: "rgba(248,250,252,0.42)", letterSpacing: "0.02em" }}>
+              Hi, {firstName}
             </span>
           )}
         </div>
@@ -225,49 +355,130 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         </div>
       </div>
 
-      {/* ── Message + live metrics panel ─────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap", maxWidth: 1100, width: "100%", margin: "0 auto" }}>
-        {/* Left: text */}
-        <div style={{flex:"1 1 320px",padding:"24px 0 28px",position:"relative",zIndex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}}>
+      {/* ── Main content row ────────────────────────────────────────────── */}
+      <div style={{
+        flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap",
+        maxWidth: 1100, width: "100%", margin: "0 auto", gap: 28,
+      }}>
+        {/* Left — copy block */}
+        <div style={{
+          flex: "1 1 300px", padding: "26px 0 28px",
+          position: "relative", zIndex: 1,
+          display: "flex", flexDirection: "column", justifyContent: "space-between",
+        }}>
           <div>
-            <div style={{display:"inline-flex",alignItems:"center",gap:8,
-              background:`${s.accent}22`,border:`1.5px solid ${s.accent}60`,
-              borderRadius:20,padding:"5px 16px",marginBottom:22,
-              boxShadow:`0 0 16px ${s.accent}30`,
-              transition:"background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease"}}>
-              <div style={{width:7,height:7,borderRadius:"50%",background:s.accent,
-                boxShadow:`0 0 10px ${s.accent}, 0 0 4px #fff`}} />
-              <span style={{fontSize:12,fontWeight:800,letterSpacing:"2.8px",color:s.accent,textTransform:"uppercase"}}>{s.tag}</span>
+            {/* Tag pill */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: `linear-gradient(90deg, ${C.cyan}16, ${C.purple}16)`,
+              border: `1px solid ${C.cyan}48`,
+              borderRadius: 20, padding: "5px 16px", marginBottom: 20,
+              boxShadow: `0 0 24px ${C.cyan}18`,
+            }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: C.cyan, boxShadow: `0 0 10px ${C.cyan}`,
+                animation: "hbLivePulse 1.6s ease-in-out infinite",
+              }} />
+              <span style={{
+                fontSize: 11, fontWeight: 800, letterSpacing: "0.24em",
+                color: C.cyan, textTransform: "uppercase",
+              }}>{s.tag}</span>
             </div>
-            {s.lines.map((line, i) => (
-              <div key={i} style={{
-                fontSize: i === s.lines.length - 1 ? 52 : 44,
-                fontWeight: 900, lineHeight: 1.0,
-                letterSpacing: "-1.5px",
-                color: i === s.lines.length - 1 ? s.accent : headlineColor,
-                textShadow: i === s.lines.length - 1 && s.dark
-                  ? `0 0 40px ${s.accent}90, 0 2px 10px rgba(0,0,0,0.35)`
-                  : s.dark ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
-                transition: "color 0.3s ease",
-              }}>{line}</div>
-            ))}
-            <p style={{fontSize:16,color:subColor,lineHeight:1.7,margin:"18px 0 0",fontWeight:400,maxWidth:440}}>{s.sub}</p>
+
+            {/* Headline lines */}
+            {s.lines.map((line, i) => {
+              const isLast = i === s.lines.length - 1;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: isLast ? 56 : 44,
+                    fontWeight: 900,
+                    lineHeight: 1.0,
+                    letterSpacing: isLast ? "-2px" : "-1.5px",
+                    // Last line: gradient text (cyan → ice blue)
+                    ...(isLast
+                      ? {
+                          background: `linear-gradient(100deg, ${C.cyan} 0%, #B8F0FF 60%, ${C.cyan} 100%)`,
+                          WebkitBackgroundClip: "text",
+                          WebkitTextFillColor: "transparent",
+                          backgroundClip: "text",
+                          filter: `drop-shadow(0 0 28px ${C.cyan}55)`,
+                          backgroundSize: "200% 100%",
+                          animation: "hbGradShift 4s ease-in-out infinite",
+                        }
+                      : {
+                          color: "#F8FAFC",
+                          textShadow: "0 2px 14px rgba(0,0,0,0.5)",
+                        }),
+                    transition: "color 0.3s",
+                  }}
+                >{line}</div>
+              );
+            })}
+
+            <p style={{
+              fontSize: 15.5, color: "rgba(248,250,252,0.58)",
+              lineHeight: 1.65, margin: "20px 0 0",
+              fontWeight: 400, maxWidth: 420,
+            }}>{s.sub}</p>
           </div>
-          <div style={{display:"flex",gap:10,marginTop:24}}>
-            {SLIDES.map((_,i)=>(
-              <button key={i} type="button" aria-label={`Show message ${i + 1}`} onClick={()=>setIdx(i)} style={{border:"none",cursor:"pointer",padding:0,background:"transparent"}}>
-                <div style={{width:i===idx?40:8,height:7,borderRadius:4,
-                  background:i===idx?s.accent:(s.dark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.15)"),transition:"width .3s, background .3s"}} />
+
+          {/* Slide navigation */}
+          <div style={{ display: "flex", gap: 8, marginTop: 26 }}>
+            {SLIDES.map((_, i) => (
+              <button
+                key={i} type="button" aria-label={`Show message ${i + 1}`}
+                onClick={() => setIdx(i)}
+                style={{ border: "none", cursor: "pointer", padding: 0, background: "transparent" }}
+              >
+                <div style={{
+                  width: i === idx ? 38 : 7, height: 7, borderRadius: 4,
+                  background: i === idx
+                    ? `linear-gradient(90deg, ${C.cyan}, ${C.purple})`
+                    : "rgba(248,250,252,0.18)",
+                  transition: "width 0.35s ease, background 0.35s ease",
+                  boxShadow: i === idx ? `0 0 12px ${C.cyan}55` : undefined,
+                }} />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Right: live metrics panel */}
-        <div style={{width:300,padding:"20px 0",display:"flex",alignItems:"center",position:"relative",zIndex:1,flex:"0 1 300px"}}>
-          <LiveMetricsHUD accent={s.accent} />
+        {/* Right — telemetry card */}
+        <div style={{
+          width: 296, padding: "20px 0",
+          display: "flex", alignItems: "center",
+          position: "relative", zIndex: 1, flex: "0 1 296px",
+        }}>
+          <div style={{ width: "100%" }}>
+            <TelemetryPanel />
+          </div>
         </div>
       </div>
+
+      {/* ── Keyframes ───────────────────────────────────────────────────── */}
+      <style>{`
+        @keyframes hbLivePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.25; transform: scale(0.7); }
+        }
+        @keyframes hbAurora {
+          0%, 100% { transform: scale(1) rotate(0deg);   opacity: 0.7; }
+          50%       { transform: scale(1.18) rotate(9deg); opacity: 1; }
+        }
+        @keyframes hbScan {
+          0%   { top: -2px;  opacity: 0; }
+          5%   { opacity: 1; }
+          92%  { opacity: 0.35; }
+          100% { top: 102%; opacity: 0; }
+        }
+        @keyframes hbGradShift {
+          0%, 100% { background-position: 0% 50%; }
+          50%       { background-position: 100% 50%; }
+        }
+      `}</style>
     </div>
   );
 }
