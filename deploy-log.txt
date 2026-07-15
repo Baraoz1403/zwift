@@ -7740,3 +7740,9 @@ Wed 07/15/2026  0:28:05.99
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'lib/workout-selector.ts', LF will be replaced by CRLF the next time Git touches it
+[main e15ffaf] Auto deploy Wed 07/15/2026  0:28:06.38
+ 4 files changed, 142 insertions(+), 51 deletions(-)
+To https://github.com/Baraoz1403/zwift.git
+   1e28e68..e15ffaf  main -> main
+Wed 07/15/2026  0:28:08.43 - SUCCESS: pushed. Vercel rebuilding. 
