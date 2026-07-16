@@ -7773,3 +7773,8 @@ Wed 07/15/2026 12:29:48.71
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+[main af982b5] Auto deploy Wed 07/15/2026 12:29:50.19
+ 2 files changed, 33 insertions(+)
+To https://github.com/Baraoz1403/zwift.git
+   c14b031..af982b5  main -> main
+Wed 07/15/2026 12:29:52.35 - SUCCESS: pushed. Vercel rebuilding. 
