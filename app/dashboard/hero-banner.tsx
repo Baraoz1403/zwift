@@ -10,8 +10,8 @@ const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E"
 const SLIDES = [
   {
     tag: "THE AI READS YOUR LEGS",
-    lines: ["Every ride.", "Every watt.", "One coach that never forgets."],
-    sub: "CTL, ATL, TSB — your fitness fingerprint rebuilt from every session. By the time you open the app, the AI already knows what your body needs this week.",
+    lines: ["Every Ride", "Sharpens the Next."],
+    sub: "AI coaching that learns from every Zwift ride and adapts what comes next.",
   },
   {
     tag: "INTERVALS BUILT FOR ONE RIDER",
@@ -118,24 +118,26 @@ function MetricRow({ label, display, color }: {
   );
 }
 
-// ─── ECG waveform ────────────────────────────────────────────────────────────
-function EcgStrip({ phase }: { phase: number }) {
-  // Encode one ECG beat cycle as relative deltas; repeat it to fill the strip
-  const beat = [
-    [0, 0], [8, 0], [10, -2], [12, 0],   // P wave
-    [14, 0], [15, 5], [16, -14], [17, 8], // QRS
+// ─── ECG waveform (CSS-animated, seamless scroll) ────────────────────────────
+function EcgStrip() {
+  // PQRST beat pattern — one cycle = 37 px wide
+  const beat: [number, number][] = [
+    [0, 0], [8, 0], [10, -2], [12, 0],    // P wave
+    [14, 0], [15, 5], [16, -14], [17, 8], // QRS complex
     [19, 0], [22, 0], [25, -4], [28, 0],  // T wave
-    [37, 0],                               // next beat start
-  ] as [number, number][];
+    [37, 0],                               // isoelectric to next beat
+  ];
 
-  const W = 240;
   const MID = 16;
+  // 12 beats × 37 px = 444 px per copy, duplicated → 888 px total.
+  // CSS animation scrolls left by 444 px; the duplicate snaps back invisibly.
   const pts: string[] = [];
-
-  for (let rep = -1; rep <= 2; rep++) {
-    for (const [dx, dy] of beat) {
-      const x = (rep * 37 + dx + phase * 4) % (W + 40) - 20;
-      pts.push(`${x.toFixed(1)},${(MID + dy).toFixed(1)}`);
+  for (let copy = 0; copy < 2; copy++) {
+    for (let r = 0; r < 12; r++) {
+      for (const [dx, dy] of beat) {
+        const x = copy * 444 + r * 37 + dx;
+        pts.push(`${x.toFixed(1)},${(MID + dy).toFixed(1)}`);
+      }
     }
   }
 
@@ -145,17 +147,22 @@ function EcgStrip({ phase }: { phase: number }) {
         fontSize: 11, color: "rgba(248,250,252,0.32)", marginBottom: 4,
         fontFamily: "'SF Mono', 'Fira Code', monospace", letterSpacing: "0.12em",
       }}>ECG · REAL-TIME</div>
-      <svg width="100%" height="32" viewBox="0 0 240 32" preserveAspectRatio="none" style={{ overflow: "hidden" }}>
-        <polyline
-          points={pts.join(" ")}
-          fill="none"
-          stroke={C.cyan}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ filter: `drop-shadow(0 0 4px ${C.cyan}aa)` }}
-        />
-      </svg>
+      <div style={{ overflow: "hidden", height: 32, position: "relative" }}>
+        <svg
+          width="888" height="32" viewBox="0 0 888 32"
+          style={{ animation: "ecgScroll 4.8s linear infinite", willChange: "transform" }}
+        >
+          <polyline
+            points={pts.join(" ")}
+            fill="none"
+            stroke={C.cyan}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ filter: `drop-shadow(0 0 4px ${C.cyan}aa)` }}
+          />
+        </svg>
+      </div>
     </div>
   );
 }
@@ -166,18 +173,15 @@ function TelemetryPanel() {
   const [hr, setHr]           = useState(148);
   const [cadence, setCadence] = useState(88);
   const [speed, setSpeed]     = useState(31.4);
-  const [ecgPhase, setPhase]  = useState(0);
 
   useEffect(() => {
-    // Fast tick: ECG phase and small wander on every tick (150ms)
-    // Occasional larger jumps happen naturally when small steps accumulate
+    // Numbers update every 600ms — realistic telemetry feel, not flickering
     const id = setInterval(() => {
-      setPower(p   => Math.round(clamp(p + (Math.random() * 8 - 3.5), 175, 275)));
-      setHr(h      => Math.round(clamp(h + (Math.random() * 3 - 1.2), 136, 164)));
-      setCadence(c => Math.round(clamp(c + (Math.random() * 2 - 0.9), 80, 98)));
-      setSpeed(s   => +clamp(s + (Math.random() * 0.6 - 0.25), 26, 36).toFixed(1));
-      setPhase(p   => (p + 1) % 37);
-    }, 150);
+      setPower(p   => Math.round(clamp(p + (Math.random() * 6 - 2.5), 185, 265)));
+      setHr(h      => Math.round(clamp(h + (Math.random() * 2 - 0.8), 140, 160)));
+      setCadence(c => Math.round(clamp(c + (Math.random() * 2 - 0.9), 82, 96)));
+      setSpeed(s   => +clamp(s + (Math.random() * 0.4 - 0.18), 28, 34).toFixed(1));
+    }, 600);
     return () => clearInterval(id);
   }, []);
 
@@ -231,7 +235,7 @@ function TelemetryPanel() {
         <MetricRow label="Speed"   display={`${speed} km/h`} color={C.gold} />
       </div>
 
-      <EcgStrip phase={ecgPhase} />
+      <EcgStrip />
     </div>
   );
 }
@@ -518,6 +522,10 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         @keyframes hbTicker {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
+        }
+        @keyframes ecgScroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-444px); }
         }
       `}</style>
     </div>
