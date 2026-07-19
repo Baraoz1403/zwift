@@ -497,9 +497,15 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   // A 235W FTP rider should not begin with "Surge Ride" (endurance rung 0).
   const startRung = coldStartRung(wPerKg, effectiveFtp);
 
-  // Always include at least one endurance option (endurance is allowed in all phases)
+  // Intermediate+ riders (effectiveWPerKg ≥ 3.0) get 3 families instead of 2.
+  // In Base phase, the scoring order is always: endurance → tempo → sweetSpot.
+  // With only 2 families selected, sweetSpot is always squeezed out even though
+  // it's allowed and physiologically appropriate for an experienced rider.
+  // Adding the 3rd family gives the AI: Z2 + Tempo + Sweet Spot as options,
+  // which is exactly right for a 235W FTP athlete in a Base week.
+  const familySlot = (effectiveWPerKg != null && effectiveWPerKg >= 3.0) ? 3 : 2;
   const familiesForSelection = maxIntensitySessions > 0
-    ? ranked.slice(0, Math.min(2, ranked.length))
+    ? ranked.slice(0, Math.min(familySlot, ranked.length))
     : [];
 
   const alwaysIncludeEndurance = !familiesForSelection.includes("endurance");
