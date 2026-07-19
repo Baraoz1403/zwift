@@ -86,26 +86,64 @@ function getAllowedFamilies(phase: string): StimulusFamily[] {
 // ── Rider-level → allowed families ───────────────────────────────────────────
 
 /**
+ * When a Zwift profile has no weight on file, we can't compute W/kg.
+ * Rather than defaulting to Beginner (which permanently caps an experienced
+ * rider at endurance+tempo forever), infer a rough level from FTP alone.
+ * These thresholds are deliberately conservative — the goal is to avoid the
+ * "235W rider treated as untrained" failure mode, not to be a precise
+ * classifier. Real W/kg classification takes over the moment weight is set.
+ */
+function impliedLevelFromFtp(ftp: number | null | undefined): number | null {
+  if (!ftp || ftp <= 0) return null;
+  if (ftp >= 300) return 3.8; // Advanced
+  if (ftp >= 250) return 3.3; // Intermediate (accesses threshold + VO2max)
+  if (ftp >= 200) return 2.9; // Novice (accesses sweetSpot)
+  if (ftp >= 150) return 2.6; // Low Novice
+  return 2.2; // Beginner
+}
+
+/**
  * W/kg classification gates which families are available.
  * Neuromuscular / anaerobic are high-intensity but rely on fast-twitch
  * recruitment rather than aerobic capacity, so they're available at all
  * levels (just at shorter durations / lower volumes).
+ *
+ * When weight is missing from the Zwift profile, wPerKg will be null.
+ * Rather than defaulting to Beginner permanently, we fall back to
+ * `impliedLevelFromFtp()` so an experienced rider with a tested FTP gets
+ * the appropriate workout families even before they fill in their weight.
  */
-function getAllowedFamiliesByLevel(wPerKg: number | null): StimulusFamily[] {
-  if (wPerKg == null || wPerKg < 2.5) {
+function getAllowedFamiliesByLevel(wPerKg: number | null, ftpFallback?: number | null): StimulusFamily[] {
+  const level = wPerKg ?? impliedLevelFromFtp(ftpFallback);
+  if (level == null || level < 2.5) {
     // Beginner — endurance + tempo only (sweetSpot needs a minimum aerobic base)
     return ["endurance", "tempo", "neuromuscular"];
   }
-  if (wPerKg < 3.0) {
+  if (level < 3.0) {
     // Novice — add sweetSpot and short anaerobic bursts
     return ["endurance", "tempo", "sweetSpot", "neuromuscular", "anaerobic"];
   }
-  if (wPerKg < 3.5) {
+  if (level < 3.5) {
     // Intermediate — add threshold, VO2max entry-level sessions
     return ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular", "anaerobic"];
   }
   // Trained / Advanced — full library
   return ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular", "anaerobic"];
+}
+
+/**
+ * For a cold-start (no coaching history), determine which ladder rung to
+ * start from based on rider ability. A 235W rider should not start at
+ * "Surge Ride" (rung 0) — that's the most basic session in the library.
+ * We place them at an appropriate starting position so their first week
+ * is challenging and progressive, not remedial.
+ */
+function coldStartRung(wPerKg: number | null, ftpFallback?: number | null): number {
+  const level = wPerKg ?? impliedLevelFromFtp(ftpFallback);
+  if (level == null || level < 2.5) return 0;   // Beginner → rung 0
+  if (level < 3.0) return 1;                    // Novice → rung 1
+  if (level < 3.5) return 2;                    // Intermediate → rung 2
+  return 3;                                      // Advanced → rung 3
 }
 
 // ── TSB signal ────────────────────────────────────────────────────────────────
@@ -151,7 +189,8 @@ type ProgressionAction = "REPEAT" | "PROGRESS" | "REGRESS" | "INTRO";
  * that family appeared in the last 21 days, determine the next action.
  *
  * Rules:
- *  - INTRO: No history for this family at all → start at index 0.
+ *  - INTRO: No history for this family at all → start at coldStart rung
+ *    (derived from rider W/kg so an experienced rider skips remedial sessions).
  *  - PROGRESS: Completed the current rung ≥ 1 time → move one rung up.
  *  - REPEAT: Last workout was skipped or result is "unknown" (not yet ridden)
  *    → keep the same rung to give the rider another chance.
@@ -162,13 +201,17 @@ function determineProgression(
   family: StimulusFamily,
   lastCompleted: string | undefined,
   exposureCount: number,
+  initialRung: number = 0,
 ): { action: ProgressionAction; targetIndex: number } {
   const ladder = FAMILY_PROGRESSION[family];
   if (!ladder || ladder.length === 0) return { action: "INTRO", targetIndex: 0 };
 
-  // No history — start at the beginning
+  // No history — start at the ability-appropriate rung, not always 0.
+  // initialRung is computed from wPerKg/FTP by the caller; it ensures a
+  // 235W rider doesn't start at "Surge Ride" (the most basic endurance entry).
   if (!lastCompleted || !(lastCompleted in WORKOUT_TO_FAMILY)) {
-    return { action: "INTRO", targetIndex: 0 };
+    const startRung = Math.min(initialRung, ladder.length - 1);
+    return { action: "INTRO", targetIndex: startRung };
   }
 
   const currentIdx = ladder.indexOf(lastCompleted);
@@ -199,11 +242,12 @@ function workoutsForFamily(
   family: StimulusFamily,
   lastCompleted: string | undefined,
   exposureCount: number,
+  initialRung: number = 0,
 ): EligibleWorkout[] {
   const ladder = FAMILY_PROGRESSION[family];
   if (!ladder || ladder.length === 0) return [];
 
-  const { action, targetIndex } = determineProgression(family, lastCompleted, exposureCount);
+  const { action, targetIndex } = determineProgression(family, lastCompleted, exposureCount, initialRung);
 
   const results: EligibleWorkout[] = [];
 
@@ -352,12 +396,18 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   const tsbSignal = describeTsb(tsb);
 
   // ── 3. Intensity session cap ────────────────────────────────────────────────
-  const baseCap = baseIntensityCap(cyclingLevel, wPerKg);
+  // Use the implied level when wPerKg is null (no weight in profile) so a
+  // 235W rider doesn't get capped at 1 intensity session/week.
+  const effectiveWPerKg = wPerKg ?? (effectiveFtp ? impliedLevelFromFtp(effectiveFtp) : null);
+  const baseCap = baseIntensityCap(cyclingLevel, effectiveWPerKg);
   const maxIntensitySessions = intensityCapFromTsb(tsb, baseCap);
 
   // ── 4. Allowed families (phase + level intersection) ────────────────────────
   const phaseAllowed = getAllowedFamilies(phase);
-  const levelAllowed = getAllowedFamiliesByLevel(wPerKg);
+  // Pass effectiveFtp as fallback so a rider with no weight on their Zwift
+  // profile still gets appropriate families (e.g. 235W FTP → Intermediate,
+  // not Beginner). See getAllowedFamiliesByLevel() and impliedLevelFromFtp().
+  const levelAllowed = getAllowedFamiliesByLevel(wPerKg, effectiveFtp);
   const allowed = phaseAllowed.filter(f => levelAllowed.includes(f));
 
   // ── 5. Exposure and history from coaching state ─────────────────────────────
@@ -409,6 +459,11 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   const eligibleWorkouts: EligibleWorkout[] = [];
   const ineligibleWorkouts: IneligibleWorkout[] = [];
 
+  // Cold-start rung: when a family has NO history at all, place the rider
+  // at an ability-appropriate position rather than rung 0 (most basic).
+  // A 235W FTP rider should not begin with "Surge Ride" (endurance rung 0).
+  const startRung = coldStartRung(wPerKg, effectiveFtp);
+
   // Always include at least one endurance option (endurance is allowed in all phases)
   const familiesForSelection = maxIntensitySessions > 0
     ? ranked.slice(0, Math.min(2, ranked.length))
@@ -421,7 +476,7 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   }
 
   for (const fam of familiesForSelection) {
-    const workouts = workoutsForFamily(fam, lastCompleted[fam], exposure[fam] ?? 0);
+    const workouts = workoutsForFamily(fam, lastCompleted[fam], exposure[fam] ?? 0, startRung);
     eligibleWorkouts.push(...workouts);
   }
 

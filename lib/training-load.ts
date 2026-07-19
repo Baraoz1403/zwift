@@ -62,13 +62,39 @@ function round1(n: number): number {
  * couldn't be computed for that ride (no power meter that day, or too short
  * for a 30s window) - still useful as a relative trend signal, just less
  * precise, exactly as the old always-avgWatts version was for every ride.
+ *
+ * For non-cycling activities (running, walking, etc.) that have no power
+ * data, we fall back to an HR-based TSS proxy when avgHeartRate is available.
+ * Formula: (durationHours × hrIF² × 100) where hrIF = avgHR / estimatedMaxHR.
+ * estimatedMaxHR defaults to 180 bpm (conservative midpoint for adult athletes)
+ * when not explicitly provided. This is a deliberate underestimate — real
+ * HRmax is higher, making the IF lower and the TSS estimate conservative —
+ * which is appropriate for a model that previously assigned ZERO stress to
+ * all runs, making multi-sport athletes look completely untrained when they
+ * were actually accumulating significant aerobic load through running.
+ *
+ * If neither power nor HR is available, return 0 (same as before).
  */
 function tssProxy(ride: RideSummary, referenceWatts: number): number {
   const effortWatts = ride.normalizedPower ?? ride.avgWatts;
-  if (!ride.durationMin || ride.durationMin <= 0 || !effortWatts || referenceWatts <= 0) return 0;
-  const intensityFactor = effortWatts / referenceWatts;
-  const durationHours = ride.durationMin / 60;
-  return durationHours * intensityFactor * intensityFactor * 100;
+
+  // Power-based TSS (cycling with power meter, or Zwift virtual power)
+  if (effortWatts && effortWatts > 0 && referenceWatts > 0 && ride.durationMin > 0) {
+    const intensityFactor = effortWatts / referenceWatts;
+    const durationHours = ride.durationMin / 60;
+    return durationHours * intensityFactor * intensityFactor * 100;
+  }
+
+  // HR-based TSS fallback — for runs, walks, and any activity without power data.
+  // Only used when avgWatts is zero/missing, so this never overrides real power data.
+  if (ride.avgHeartRate && ride.avgHeartRate > 0 && ride.durationMin > 0) {
+    const estimatedMaxHR = 180; // conservative adult midpoint — see doc comment above
+    const hrIF = Math.min(1.0, ride.avgHeartRate / estimatedMaxHR);
+    const durationHours = ride.durationMin / 60;
+    return durationHours * hrIF * hrIF * 100;
+  }
+
+  return 0;
 }
 
 /**
