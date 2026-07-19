@@ -35,7 +35,7 @@
  * exactly that class of stale-duplicate-in-another-week bug comes back.
  */
 import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "./intervals";
-import { generateZwoXml, isRestDay, isRunWorkout } from "./zwo";
+import { generateZwoXml, isRestDay } from "./zwo";
 import { workoutDateLabel, ensureWorkoutDates, normalizeToSix } from "./plan-shape";
 import { getIntervalsCredentials, markIntervalsSynced } from "./kv-plan-state";
 import type { WeeklyPlan, WeeklyWorkout } from "./ai";
@@ -132,15 +132,14 @@ export async function syncPlanToIntervalsHeadless(
 ): Promise<HeadlessSyncResult> {
   const errors: string[] = [];
 
-  // 1. Push fresh copies first for every non-rest, non-running day that
-  // hasn't actually been ridden yet (same rule as the client: an
-  // already-ridden day's own completed-ride data is the source of truth,
-  // not the plan). Running sessions are excluded - see isRunWorkout's doc
-  // comment: this sync target is cycling-only (Intervals.icu -> Zwift), and
-  // generateZwoXml always emits a bike ZWO regardless of the workout's real
-  // sport, so pushing a run here would create a nonsensical fake ride.
+  // 1. Push fresh copies first for every non-rest day that hasn't actually
+  // been completed yet (same rule as the client: an already-ridden day's own
+  // completed-ride data is the source of truth, not the plan).
+  // Run workouts are now included: generateZwoXml emits <sportType>run</sportType>
+  // for run workouts, and pushWorkoutToIntervals maps the type to "Run" via
+  // toIntervalsSportType(), so ICU receives and syncs them to Zwift RUN mode correctly.
   const daysToPush = plan.workouts.filter(
-    (w) => !isRestDay(w.type) && !isRunWorkout(w.type) && !(w.date && riddenDates.has(w.date))
+    (w) => !isRestDay(w.type) && !(w.date && riddenDates.has(w.date))
   );
 
   const pushOne = async (w: WeeklyWorkout) => {
