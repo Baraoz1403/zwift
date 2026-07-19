@@ -37,6 +37,7 @@ import {
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
+import { fetchIcuActivities } from "@/lib/intervals";
 
 export { AiInsightsError };
 
@@ -222,7 +223,20 @@ export async function runWeeklyPlanGeneration(
     }).catch(() => {});
   }
 
-  const trainingLoad = computeTrainingLoad(rides, effectiveFtp ?? profile.ftp);
+  // Use ICU-computed TSS when available — covers ALL sports (running, gym, outdoor
+  // rides) with proper rTSS / hrTSS, not just Zwift power rides. Falls back to
+  // the Zwift FIT proxy automatically when ICU isn't connected or returns nothing.
+  const icuCreds = await getIntervalsCredentials(athleteId);
+  const icuActivities =
+    icuCreds?.icuId && icuCreds?.icuKey
+      ? await fetchIcuActivities(
+          icuCreds.icuKey,
+          icuCreds.icuId,
+          new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          new Date().toISOString().slice(0, 10),
+        )
+      : [];
+  const trainingLoad = computeTrainingLoadFromIcu(icuActivities, rides, effectiveFtp ?? profile.ftp);
 
   const weekOf = opts.targetWeekOf ?? mondayOfCurrentWeek();
   const macroCycle = advanceMacroCycle(opts.incomingCycle ?? null, weekOf);
