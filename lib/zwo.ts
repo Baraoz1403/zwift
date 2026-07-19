@@ -549,7 +549,54 @@ function suggestedOnCadence(onPowerFtp: number): number {
   return 85;
 }
 
-function blockToXml(b: ZwoBlock): string {
+/**
+ * Maps a power fraction (0–1+ of FTP) to a Zwift run pace zone integer.
+ * Zwift running workouts use pace="0|1|2|3" instead of power percentages:
+ *   0 = WALK (recovery), 1 = JOG (easy), 2 = RUN (tempo), 3 = GO! (hard)
+ * Source: zwift-workout-file-reference corpus analysis (dominant values 0–3).
+ */
+function powerToPaceZone(frac: number): 0 | 1 | 2 | 3 {
+  if (frac <= 0.60) return 0;
+  if (frac <= 0.75) return 1;
+  if (frac <= 0.88) return 2;
+  return 3;
+}
+
+const RUN_PRESCRIPTION: Record<0 | 1 | 2 | 3, string> = {
+  0: "WALK",
+  1: "JOG",
+  2: "RUN",
+  3: "GO!",
+};
+
+/**
+ * Serialise one block as run-mode .zwo XML.
+ * Run workouts use pace zones (0–3) not power fractions, and show
+ * replacement_prescription text (WALK/JOG/RUN/GO!) instead of watt targets.
+ * IntervalsT uses OnPace/OffPace; Warmup/Cooldown/SteadyState use pace.
+ */
+function blockToRunXml(b: ZwoBlock): string {
+  switch (b.kind) {
+    case "Warmup":
+    case "Cooldown": {
+      // Use the low end of the ramp as the displayed pace — warmup starts easy.
+      const pace = powerToPaceZone(b.powerLow);
+      return `<${b.kind} Duration="${Math.round(b.durationSec)}" pace="${pace}" replacement_prescription="${RUN_PRESCRIPTION[pace]}"/>`;
+    }
+    case "SteadyState": {
+      const pace = powerToPaceZone(b.power);
+      return `<SteadyState Duration="${Math.round(b.durationSec)}" pace="${pace}" replacement_prescription="${RUN_PRESCRIPTION[pace]}"/>`;
+    }
+    case "IntervalsT": {
+      const onPace = powerToPaceZone(b.onPower);
+      const offPace = powerToPaceZone(b.offPower);
+      return `<IntervalsT Repeat="${Math.round(b.repeat)}" OnDuration="${Math.round(b.onDuration)}" OffDuration="${Math.round(b.offDuration)}" OnPace="${onPace}" OffPace="${offPace}"/>`;
+    }
+  }
+}
+
+function blockToXml(b: ZwoBlock, isRun = false): string {
+  if (isRun) return blockToRunXml(b);
   const fmt = (n: number) => n.toFixed(2);
   switch (b.kind) {
     case "Warmup":
@@ -583,8 +630,9 @@ export function generateZwoXml(
   blocks?: ZwoBlock[],
   authorName = "Zwift Dashboard AI"
 ): string {
-  const steps = (blocks ?? generateDefaultBlocks(w)).map(blockToXml);
-  const sportType = isRunWorkout(w.type) ? "run" : "bike";
+  const isRun = isRunWorkout(w.type);
+  const steps = (blocks ?? generateDefaultBlocks(w)).map((b) => blockToXml(b, isRun));
+  const sportType = isRun ? "run" : "bike";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <workout_file>
     <author>${escapeXml(authorName)}</author>
