@@ -20,7 +20,7 @@ import { fetchActivities, fetchActivityFit, fetchOwnProfile } from "@/lib/zwift"
 import { parseFitRecords } from "@/lib/fit-parser";
 import { selectChartActivities, mapWithConcurrency, flagHeartRateAnomalies, computeNormalizedPower } from "@/lib/stats";
 import { generateWeeklyPlan, AiInsightsError, RideSummary, WeeklyWorkout } from "@/lib/ai";
-import { computeTrainingLoad } from "@/lib/training-load";
+import { computeTrainingLoad, computeTrainingLoadFromIcu } from "@/lib/training-load";
 import { advanceMacroCycle, getPhaseForWeekIndex, resolvePhase, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
 import { computeAdherence } from "@/lib/adherence";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";

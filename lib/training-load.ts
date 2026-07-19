@@ -21,6 +21,7 @@
  * signal, which is all this is used for.
  */
 import type { RideSummary } from "./ai";
+import type { IcuActivity } from "./intervals";
 
 export interface TrainingLoadSummary {
   /** Chronic Training Load - ~42-day exponentially weighted average daily
@@ -158,6 +159,95 @@ export function computeTrainingLoad(
   // Thresholds are heuristic, tuned to this proxy's own scale rather than
   // literal TrainingPeaks calibration - they only drive a convenience label;
   // the raw ctl/atl/tsb numbers (sent to the AI as-is) are the real signal.
+  const freshness: TrainingLoadSummary["freshness"] = tsb > 5 ? "fresh" : tsb < -5 ? "fatigued" : "neutral";
+
+  return {
+    ctl: round1(ctl),
+    atl: round1(atl),
+    tsb: round1(tsb),
+    freshness,
+    ridesLast7Days,
+    ridesPrior7Days,
+  };
+}
+
+/**
+ * Computes training load directly from ICU completed activities.
+ *
+ * This is the authoritative path for multi-sport athletes. ICU computes TSS
+ * correctly for every activity type — power-based TSS for cycling, rTSS for
+ * running (using pace zones), hrTSS for everything else. No proxy formulas
+ * needed: we use `icu_training_load` as-is.
+ *
+ * Falls back to `computeTrainingLoad` (Zwift FIT proxy) if ICU returns no
+ * activities — this happens when ICU isn't connected or the date range
+ * returns empty results.
+ *
+ * Why this matters: the Zwift FIT proxy assigns TSS = 0 to all activities
+ * without power (runs, walks, outdoor rides without a power meter). A rider
+ * who trains 5 days/week but only 2 on Zwift with power will show CTL near
+ * zero, causing the system to treat them as an untrained beginner. ICU-based
+ * training load reflects the full athlete, not just the Zwift subset.
+ */
+export function computeTrainingLoadFromIcu(
+  activities: IcuActivity[],
+  fallbackRides?: RideSummary[],
+  fallbackFtp?: number,
+  asOf: Date = new Date(),
+): TrainingLoadSummary {
+  if (!activities || activities.length === 0) {
+    if (fallbackRides && fallbackRides.length > 0) {
+      return computeTrainingLoad(fallbackRides, fallbackFtp, asOf);
+    }
+    return { ctl: 0, atl: 0, tsb: 0, freshness: "neutral", ridesLast7Days: 0, ridesPrior7Days: 0 };
+  }
+
+  // Build daily stress map from ICU TSS values.
+  const dailyStressByDate: Record<string, number> = {};
+  for (const a of activities) {
+    const tss = a.icu_training_load ?? 0;
+    if (tss <= 0) continue;
+    const dateStr = (a.start_date_local ?? "").slice(0, 10);
+    if (!dateStr || dateStr.length < 10) continue;
+    dailyStressByDate[dateStr] = (dailyStressByDate[dateStr] ?? 0) + tss;
+  }
+
+  if (Object.keys(dailyStressByDate).length === 0) {
+    if (fallbackRides && fallbackRides.length > 0) {
+      return computeTrainingLoad(fallbackRides, fallbackFtp, asOf);
+    }
+    return { ctl: 0, atl: 0, tsb: 0, freshness: "neutral", ridesLast7Days: 0, ridesPrior7Days: 0 };
+  }
+
+  const allDates = Object.keys(dailyStressByDate).sort();
+  const earliestKey = allDates[0];
+  const lookbackStart = new Date(asOf.getTime() - CTL_DAYS * 86400000);
+  const earliestDate = new Date(earliestKey);
+  const startDate = earliestDate.getTime() < lookbackStart.getTime() ? lookbackStart : earliestDate;
+
+  let atl = 0;
+  let ctl = 0;
+  const atlDecay = Math.exp(-1 / ATL_DAYS);
+  const ctlDecay = Math.exp(-1 / CTL_DAYS);
+  for (const d = new Date(startDate); d.getTime() <= asOf.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+    const key = d.toISOString().slice(0, 10);
+    const stress = dailyStressByDate[key] ?? 0;
+    atl = atl * atlDecay + stress * (1 - atlDecay);
+    ctl = ctl * ctlDecay + stress * (1 - ctlDecay);
+  }
+
+  const daysAgo = (dateStr: string) => (asOf.getTime() - new Date(dateStr).getTime()) / 86400000;
+  const activitiesWithDate = activities.filter(a => (a.start_date_local ?? "").length >= 10);
+  const ridesLast7Days = activitiesWithDate.filter(a => {
+    const d = daysAgo(a.start_date_local!.slice(0, 10));
+    return d >= 0 && d < 7;
+  }).length;
+  const ridesPrior7Days = activitiesWithDate.filter(a => {
+    const d = daysAgo(a.start_date_local!.slice(0, 10));
+    return d >= 7 && d < 14;
+  }).length;
+
+  const tsb = ctl - atl;
   const freshness: TrainingLoadSummary["freshness"] = tsb > 5 ? "fresh" : tsb < -5 ? "fatigued" : "neutral";
 
   return {
