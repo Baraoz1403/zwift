@@ -65,7 +65,12 @@ export interface SelectionContext {
 // ── Phase → allowed stimulus families ────────────────────────────────────────
 
 const PHASE_ALLOWED_FAMILIES: Record<string, StimulusFamily[]> = {
-  Base:       ["endurance", "tempo", "neuromuscular"],
+  // Sweet Spot is included in Base: it sits at the aerobic/anaerobic boundary
+  // (88-93% FTP) and builds large aerobic base without the recovery debt of
+  // threshold work. Excluding it from Base produces plans that are stuck at
+  // pure Z2/tempo for an entire 4-week block — too conservative for a rider
+  // with a tested FTP who wants to progress.
+  Base:       ["endurance", "tempo", "sweetSpot", "neuromuscular"],
   Build:      ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
   Build1:     ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
   Build2:     ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
@@ -96,10 +101,13 @@ function getAllowedFamilies(phase: string): StimulusFamily[] {
 function impliedLevelFromFtp(ftp: number | null | undefined): number | null {
   if (!ftp || ftp <= 0) return null;
   if (ftp >= 300) return 3.8; // Advanced
-  if (ftp >= 250) return 3.3; // Intermediate (accesses threshold + VO2max)
-  if (ftp >= 200) return 2.9; // Novice (accesses sweetSpot)
-  if (ftp >= 150) return 2.6; // Low Novice
+  if (ftp >= 220) return 3.2; // Intermediate → threshold + VO2max unlocked
+  if (ftp >= 175) return 2.9; // Novice → sweetSpot unlocked
+  if (ftp >= 140) return 2.6; // Low Novice
   return 2.2; // Beginner
+  // Rationale: 235W @ ~75kg = 3.13 W/kg → Intermediate.
+  // The previous thresholds (250 cutoff) placed 235W in Novice, blocking
+  // threshold and VO2max work for a demonstrably non-beginner athlete.
 }
 
 /**
@@ -140,10 +148,13 @@ function getAllowedFamiliesByLevel(wPerKg: number | null, ftpFallback?: number |
  */
 function coldStartRung(wPerKg: number | null, ftpFallback?: number | null): number {
   const level = wPerKg ?? impliedLevelFromFtp(ftpFallback);
-  if (level == null || level < 2.5) return 0;   // Beginner → rung 0
+  if (level == null || level < 2.5) return 0;   // Beginner → rung 0 (most basic)
   if (level < 3.0) return 1;                    // Novice → rung 1
-  if (level < 3.5) return 2;                    // Intermediate → rung 2
-  return 3;                                      // Advanced → rung 3
+  if (level < 3.5) return 1;                    // Intermediate → rung 1 (not 2 — first exposure needs one dose before advancing)
+  return 2;                                      // Advanced → rung 2
+  // Rung 1 for Intermediate: e.g. sweetSpot = "Sweet Spot Classic",
+  // threshold = "Threshold Development". Rung 2 would jump straight to
+  // "3×15 Sweet Spot" with no prior session — too aggressive for a cold start.
 }
 
 // ── TSB signal ────────────────────────────────────────────────────────────────
