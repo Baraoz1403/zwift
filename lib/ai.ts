@@ -363,13 +363,7 @@ WEEK SHAPE:
 • Rest days: type='Rest' when no training benefit justifies activity
 • Never schedule two hard sessions on consecutive days.
 
-⚡ ERG MODE INSTRUCTIONS (include in every cycling workout description):
-GEAR SELECTION: Select middle gear (4-6 on cassette, roughly 53×15 equivalent) before starting and keep it there for the entire session.
-WHY THIS MATTERS: In ERG mode the trainer — not the gear — controls resistance. Shifting to an easier gear during a hard interval does NOT make it easier; the trainer immediately compensates to maintain the target watts. What changes is flywheel speed: easier gear = slower flywheel = trainer must apply more torque = sluggish, less accurate power delivery. For threshold and VO2max intervals, a moderate gear gives the flywheel enough speed for the trainer to respond smoothly.
-EXCEPTION: intentional low-cadence strength blocks (e.g. Big Gear Force work, cadence < 65 rpm) or sprint sessions (Neuromuscular/Sprint Builder) are designed to be ridden outside ERG or with gear manipulation — note this explicitly when the session calls for it.
 Target cadence by type: Zone2=85-95 RPM, SweetSpot=88-92, Threshold=88-93, VO2max=90-100, Sprint=100-110.
-CADENCE FAILURE PROTOCOL: if cadence drops below 80 RPM during a steady-state or interval block: (1) ease off pressure for 5-10 seconds to let cadence rise, then re-engage — do NOT shift to an easier gear (see above). If cadence consistently fails to reach target across multiple intervals despite correct gear and technique, note this in the workout description and suggest a technique-focus session before retrying. Cadence failure alone does not diagnose FTP — other factors (fatigue, technique, trainer calibration) may be responsible.
-A cadence spiral (drop cadence → trainer increases resistance → cadence drops further) is the #1 ERG failure mode. Breaking it requires backing off, not gear changes.
 Every workout structure block must include explicit cadenceTarget.
 
 ` +

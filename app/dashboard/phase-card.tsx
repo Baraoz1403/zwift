@@ -401,7 +401,6 @@ export default function PhaseCard({
           }}>
             {[
               { icon: "⚡", color: "#f59e0b", text: "After an FTP test, update your FTP in your Zwift personal profile — workouts auto-adjust." },
-              { icon: "🎛️", color: "#3b82f6", text: "At the start of each structured workout in Zwift, select ERG mode for automatic power control." },
             ].map((tip, i) => (
               <div key={i} style={{
                 display: "flex", alignItems: "flex-start", gap: 10,

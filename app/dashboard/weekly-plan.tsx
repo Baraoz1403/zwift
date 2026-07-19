@@ -1983,75 +1983,7 @@ export default function WeeklyPlan() {
 
             <div style={{ padding: "22px 26px 20px" }}>
 
-              {/* ── Section 1: Rate completed sessions (if any) ── */}
-              {pastCompleted.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
-                      Rate this week&apos;s sessions
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
-                      {ratedCount}/{pastCompleted.length} rated
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {pastCompleted.map((w) => {
-                      const saved = w.date ? feelingScores[w.date] : undefined;
-                      const submitting = w.date ? feelingSubmitting.has(w.date) : false;
-                      const savedScore = saved ? COACH_SCORES[saved - 1] : null;
-                      return (
-                        <div key={w.date} style={{
-                          display: "flex", alignItems: "center", gap: 12,
-                          padding: "10px 14px",
-                          background: savedScore ? "rgba(34,197,94,0.04)" : "rgba(47,143,224,0.03)",
-                          border: `1px solid ${savedScore ? "rgba(34,197,94,0.2)" : "var(--border)"}`,
-                          borderRadius: 12,
-                        }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.title}</div>
-                            <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{w.day} · {w.durationMin} min</div>
-                          </div>
-                          {savedScore ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
-                              <span style={{ fontSize: 22 }}>{savedScore.emoji}</span>
-                              <div>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{savedScore.label}</div>
-                                <div style={{ fontSize: 11, color: "var(--muted)" }}>✓ Logged</div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                              {COACH_SCORES.map((s, idx) => (
-                                <button
-                                  key={idx + 1}
-                                  type="button"
-                                  title={s.label}
-                                  onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, idx + 1)}
-                                  style={{
-                                    width: 36, height: 34,
-                                    border: "1.5px solid var(--border)", borderRadius: 9,
-                                    background: "#fff",
-                                    cursor: submitting ? "default" : "pointer",
-                                    fontSize: 17, lineHeight: 1,
-                                    opacity: submitting ? 0.4 : 1,
-                                    transition: "transform 0.1s, box-shadow 0.1s",
-                                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                                  }}
-                                  onMouseEnter={e => { if (!submitting) { e.currentTarget.style.transform = "scale(1.18)"; e.currentTarget.style.boxShadow = "0 3px 8px rgba(0,0,0,0.12)"; }}}
-                                  onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
-                                >{s.emoji}</button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ height: 1, background: "rgba(47,143,224,0.1)", margin: "20px 0 0" }} />
-                </div>
-              )}
-
-              {/* ── Section 2: Today's feeling + free-text note ── */}
+              {/* ── Section 1: Today's feeling ── */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 14, letterSpacing: "-0.01em" }}>
                   How did today&apos;s ride feel?
@@ -2165,6 +2097,73 @@ export default function WeeklyPlan() {
                   </button>
                 </div>
               </form>
+
+              {/* ── Section 2: Rate completed sessions (if any) ── */}
+              {pastCompleted.length > 0 && (
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid rgba(47,143,224,0.1)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", letterSpacing: "-0.01em" }}>
+                      Rate this week&apos;s sessions
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
+                      {ratedCount}/{pastCompleted.length} rated
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {pastCompleted.map((w) => {
+                      const saved = w.date ? feelingScores[w.date] : undefined;
+                      const submitting = w.date ? feelingSubmitting.has(w.date) : false;
+                      const savedScore = saved ? COACH_SCORES[saved - 1] : null;
+                      return (
+                        <div key={w.date} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "10px 14px",
+                          background: savedScore ? "rgba(34,197,94,0.04)" : "rgba(47,143,224,0.03)",
+                          border: `1px solid ${savedScore ? "rgba(34,197,94,0.2)" : "var(--border)"}`,
+                          borderRadius: 12,
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.title}</div>
+                            <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{w.day} · {w.durationMin} min</div>
+                          </div>
+                          {savedScore ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+                              <span style={{ fontSize: 22 }}>{savedScore.emoji}</span>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{savedScore.label}</div>
+                                <div style={{ fontSize: 11, color: "var(--muted)" }}>✓ Logged</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                              {COACH_SCORES.map((s, idx) => (
+                                <button
+                                  key={idx + 1}
+                                  type="button"
+                                  title={s.label}
+                                  onClick={() => !submitting && w.date && submitFeelingScore(w.date, w.title || "", w.type, idx + 1)}
+                                  style={{
+                                    width: 36, height: 34,
+                                    border: "1.5px solid var(--border)", borderRadius: 9,
+                                    background: "#fff",
+                                    cursor: submitting ? "default" : "pointer",
+                                    fontSize: 17, lineHeight: 1,
+                                    opacity: submitting ? 0.4 : 1,
+                                    transition: "transform 0.1s, box-shadow 0.1s",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                                  }}
+                                  onMouseEnter={e => { if (!submitting) { e.currentTarget.style.transform = "scale(1.18)"; e.currentTarget.style.boxShadow = "0 3px 8px rgba(0,0,0,0.12)"; }}}
+                                  onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+                                >{s.emoji}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Footer */}
               <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(47,143,224,0.12)", textAlign: "center", fontSize: 14, color: "var(--muted)" }}>
