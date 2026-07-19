@@ -284,6 +284,7 @@ export async function runWeeklyPlanGeneration(
     cyclingLevel,
     ftp: effectiveFtp,
     weightKg,
+    previousWeekTitles,
   });
   const selectionContextPrompt = selectionContextToPrompt(selectionCtx);
 

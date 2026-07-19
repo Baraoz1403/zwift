@@ -371,6 +371,20 @@ function rankFamilies(
   const enduranceEntry = scored.find(s => s.fam === "endurance");
   if (enduranceEntry) enduranceEntry.score = Math.max(enduranceEntry.score, 2);
 
+  // Neuromuscular and anaerobic are SUPPLEMENTARY — they support aerobic
+  // development, never replace it as the primary stimulus. Cap their score
+  // so they can never rank #1. A rider should always get their aerobic
+  // training block first (sweetSpot / threshold / tempo), with neuromuscular
+  // as a secondary session. Without this cap, a rider with no neuromuscular
+  // history always gets Sprint Builder as priority, crowding out the more
+  // important aerobic work.
+  const nmCap = 7; // below the 10-point max, ensuring aerobic families rank higher when fresh
+  for (const s of scored) {
+    if (s.fam === "neuromuscular" || s.fam === "anaerobic") {
+      s.score = Math.min(s.score, nmCap);
+    }
+  }
+
   return scored
     .sort((a, b) => b.score - a.score)
     .map(s => s.fam);
@@ -388,10 +402,18 @@ export interface SelectionEngineInput {
   cyclingLevel?: number;
   ftp?: number;
   weightKg?: number;
+  /**
+   * Workout titles from the PREVIOUS week's plan. Eligible workouts that
+   * match any of these titles are demoted to alternatives so the same
+   * session is never prescribed two weeks in a row. The AI may still choose
+   * a demoted title if no better alternative exists, but it won't be the
+   * primary recommendation.
+   */
+  previousWeekTitles?: string[];
 }
 
 export function runSelectionEngine(input: SelectionEngineInput): SelectionContext {
-  const { coachingState, trainingLoad, phase, cyclingLevel, ftp, weightKg, riderProfile } = input;
+  const { coachingState, trainingLoad, phase, cyclingLevel, ftp, weightKg, riderProfile, previousWeekTitles } = input;
 
   // ── 1. Compute W/kg ─────────────────────────────────────────────────────────
   // ftp and weightKg come from the Zwift profile (plan-runner.ts), not from
@@ -523,10 +545,34 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
     return true;
   });
 
+  // Mark previous-week titles as ineligible so the AI knows not to repeat them.
+  // A title that appeared last week should not be the primary recommendation
+  // this week — the rider deserves a different stimulus even if the progression
+  // ladder would normally suggest the same rung.
+  const prevTitleSet = new Set(previousWeekTitles ?? []);
+  const finalEligible = deduped.map(w => {
+    if (!prevTitleSet.has(w.title)) return w;
+    // Don't remove — just flag it so the AI deprioritizes it.
+    return {
+      ...w,
+      reason: `${w.reason} ⚠ Prescribed last week — prefer an alternative if one is available.`,
+    };
+  });
+
+  // Add previously-used titles to ineligible list so the engine's constraint
+  // block is explicit in the AI prompt.
+  for (const title of prevTitleSet) {
+    if (!deduped.some(w => w.title === title)) continue; // only if it was eligible
+    ineligibleWorkouts.push({
+      title,
+      reason: "Prescribed last week. Prescribe a different session to provide stimulus variety.",
+    });
+  }
+
   return {
     priorityFamily,
     priorityReason,
-    eligibleWorkouts: deduped,
+    eligibleWorkouts: finalEligible,
     ineligibleWorkouts,
     maxIntensitySessions,
     exposureSummary,

@@ -332,6 +332,23 @@ export function buildUpdatedCoachingState(
     });
   }
 
+  // Time-based auto-advance: sessions planned 7+ days ago that are still
+  // "unknown" (no FIT file match ever confirmed them) are promoted to
+  // "partial". This prevents the progression ladder from freezing indefinitely
+  // when a rider cross-trains, runs, or uses a different device that doesn't
+  // produce a Zwift FIT file. Without this, the system stays at the same rung
+  // forever and prescribes the same workout every week.
+  // "partial" counts toward exposure and lastCompleted, so the ladder advances
+  // — but it's distinguishable from a genuine "completed" confirmation.
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
+  sessions = sessions.map(s => {
+    if (s.result !== "unknown") return s;
+    if (s.date < sevenDaysAgoStr) return { ...s, result: "partial" as const };
+    return s;
+  });
+
   // Add sessions from the newly generated plan.
   const today = new Date().toISOString().slice(0, 10);
   for (const w of generatedWorkouts) {
