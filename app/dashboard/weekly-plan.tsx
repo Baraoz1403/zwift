@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { IconBolt } from "./icons";
-import { generateZwoXml, zwoFileName, isRestDay, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
+import { generateZwoXml, zwoFileName, isRestDay, isRunWorkout, structureToBlocks, computeIfTss, type WorkoutStructureBlock } from "@/lib/zwo";
 import { getPhaseForWeekIndex } from "@/lib/periodization";
 import { WEEK_DAYS, ensureWorkoutDates, normalizeToSix, workoutDateLabel } from "@/lib/plan-shape";
 import WorkoutThumbnail from "./workout-thumbnail";
@@ -893,6 +893,16 @@ export default function WeeklyPlan() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    if (isRunWorkout(w.type)) {
+      setTimeout(() => {
+        alert(
+          "Running workout downloaded.\n\n" +
+          "Save this file to:\n" +
+          "Documents\\Zwift\\Workouts\\{your-id}\\running\\\n\n" +
+          "(Not the regular Workouts folder — Zwift RUN mode reads from the \"running\" subfolder.)"
+        );
+      }, 300);
+    }
   }
 
 

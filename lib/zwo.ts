@@ -424,11 +424,11 @@ export function isRestDay(type: string): boolean {
  * Matches the AI's running-type conventions (see WEEKLY_PLAN_SYSTEM_PROMPT's
  * "Running plan structure" section in lib/ai.ts: 'Easy Run', 'Long Run',
  * 'Tempo Run'). Used to exclude running sessions from the Intervals.icu/Zwift
- * bike-ZWO push - generateZwoXml always emits <sportType>bike</sportType>,
- * so pushing a run under that structure produces a nonsensical fake cycling
- * workout on a platform (Zwift) that doesn't support structured running
- * workouts via ZWO anyway. Running sessions still appear in the dashboard
- * plan itself; they just don't get pushed to the cycling-only ICU/Zwift sync.
+ * bike-ZWO push - generateZwoXml emits <sportType>run</sportType> for run
+ * workouts and <sportType>bike</sportType> for cycling. Run .zwo files must
+ * be saved to Documents/Zwift/Workouts/{id}/running/ (not the main folder).
+ * Running sessions are excluded from Intervals.icu/TP cycling sync but the
+ * download button still works and now produces a correct run-typed file.
  */
 export function isRunWorkout(type: string): boolean {
   return type.toLowerCase().includes("run");
@@ -584,12 +584,13 @@ export function generateZwoXml(
   authorName = "Zwift Dashboard AI"
 ): string {
   const steps = (blocks ?? generateDefaultBlocks(w)).map(blockToXml);
+  const sportType = isRunWorkout(w.type) ? "run" : "bike";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <workout_file>
     <author>${escapeXml(authorName)}</author>
     <name>${escapeXml(w.title)}</name>
     <description>${escapeXml(w.description ?? "")}</description>
-    <sportType>bike</sportType>
+    <sportType>${sportType}</sportType>
     <tags>
         <tag name="${escapeXml(w.type)}"/>
     </tags>
