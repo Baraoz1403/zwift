@@ -8479,3 +8479,13 @@ Sun 07/19/2026 20:39:22.65
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'lib/intervals.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'lib/training-load.ts', LF will be replaced by CRLF the next time Git touches it
+[main 646bde2] Auto deploy Sun 07/19/2026 20:39:23.22
+ 4 files changed, 203 insertions(+), 1 deletion(-)
+To https://github.com/Baraoz1403/zwift.git
+   0a2fe61..646bde2  main -> main
+error: update_ref failed for ref 'refs/remotes/origin/main': cannot lock ref 'refs/remotes/origin/main': Unable to create 'C:/Users/barak/Zwift Project/.git/refs/remotes/origin/main.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+Sun 07/19/2026 20:39:25.30 - SUCCESS: pushed. Vercel rebuilding. 
