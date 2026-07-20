@@ -72,6 +72,17 @@ export interface SelectorInput {
   wPerKg: number | null;
   /** Training Stress Balance. Null if unknown - the TSB gate no-ops. */
   tsb: number | null;
+  /**
+   * Season plan prescribed workout title for Tuesday.
+   * When present, overrides the template's tuesdaySession() lookup.
+   * The TSB and W/kg gates still apply on top.
+   */
+  seasonTuesdayTitle?: string | null;
+  /**
+   * Season plan prescribed workout title for Thursday.
+   * When present, overrides thursdaySession().
+   */
+  seasonThursdayTitle?: string | null;
 }
 
 export interface SelectedWorkout {
@@ -466,6 +477,31 @@ function thursdaySession(
   return threshold2x12();
 }
 
+// ─── Title-based lookup ──────────────────────────────────────────────────
+// Maps a season plan workout title to a concrete SelectedWorkout structure.
+// Used when the season plan prescribes a specific session by name.
+
+export function buildWorkoutByTitle(title: string): SelectedWorkout | null {
+  switch (title) {
+    case "Sweet Spot 2×8":   return sweetSpot2x8();
+    case "Sweet Spot 2×10":  return sweetSpot2x10();
+    case "Sweet Spot 3×8":   return sweetSpot3x8();
+    case "Sweet Spot Classic": return sweetSpotClassic();
+    case "Tempo 2×15":       return tempo2x15();
+    case "Tempo 2×18":       return tempo2x18();
+    case "Tempo 2×20":       return tempo2x20();
+    case "Sprint Builder":   return sprintBuilder();
+    case "Threshold 3×6":    return threshold3x6();
+    case "Threshold 3×8":    return threshold3x8();
+    case "Threshold 2×12":   return threshold2x12();
+    case "Z2 with Cadence Drills": return zone2CadenceDrills();
+    case "Surge Ride":       return surgeRide();
+    // Fall back to coaching-knowledge.ts canonical structures for
+    // workouts not defined as local builders (Over-Under, VO2max, etc.)
+    default:                 return buildFromLibrary(title);
+  }
+}
+
 // ─── Public entry point ──────────────────────────────────────────────────
 
 export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
@@ -508,8 +544,17 @@ export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
   }
 
   const weekInMesocycle = (input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle) as 1 | 2 | 3;
-  const tuesday = applyGates(tuesdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
-  const thursday = applyGates(thursdaySession(input.phase, weekInMesocycle, input.wPerKg), input.wPerKg, input.tsb);
+
+  // Use season plan's prescribed session if available; fall back to template.
+  const rawTuesday = input.seasonTuesdayTitle
+    ? (buildWorkoutByTitle(input.seasonTuesdayTitle) ?? tuesdaySession(input.phase, weekInMesocycle))
+    : tuesdaySession(input.phase, weekInMesocycle);
+  const rawThursday = input.seasonThursdayTitle
+    ? (buildWorkoutByTitle(input.seasonThursdayTitle) ?? thursdaySession(input.phase, weekInMesocycle, input.wPerKg))
+    : thursdaySession(input.phase, weekInMesocycle, input.wPerKg);
+
+  const tuesday = applyGates(rawTuesday, input.wPerKg, input.tsb);
+  const thursday = applyGates(rawThursday, input.wPerKg, input.tsb);
   // Saturday duration: Build = 80 min (was 90 - but Endurance with Muscle Tension
   // at 90 min would mean very long recovery bridges; 80 min is appropriate),
   // Base = 70 min. These are structured interval sessions now, not flat rides.

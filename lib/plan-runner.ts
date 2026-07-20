@@ -38,6 +38,7 @@ import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
 import { fetchIcuActivities } from "@/lib/intervals";
+import { getSeasonPlan, findSeasonWeek, seasonContextToPrompt } from "@/lib/season-plan";
 
 export { AiInsightsError };
 
@@ -302,6 +303,19 @@ export async function runWeeklyPlanGeneration(
   });
   const selectionContextPrompt = selectionContextToPrompt(selectionCtx);
 
+  // ── Season plan context ───────────────────────────────────────────────────
+  // Load the stored season plan and find the current week within it.
+  // This provides the "coaching brain" — the multi-week arc that transforms
+  // isolated weekly generation into execution of a long-term plan.
+  const seasonPlan = await getSeasonPlan(athleteId);
+  const currentSeasonWeek = seasonPlan ? findSeasonWeek(seasonPlan, weekOf) : null;
+  const previousSeasonWeek = seasonPlan && currentSeasonWeek && currentSeasonWeek.weekIndex > 1
+    ? (seasonPlan.weeks[currentSeasonWeek.weekIndex - 2] ?? null)
+    : null;
+  const seasonContext = currentSeasonWeek && seasonPlan
+    ? seasonContextToPrompt(seasonPlan, currentSeasonWeek, previousSeasonWeek)
+    : null;
+
   const plan = await generateWeeklyPlan({
     firstName: profile.firstName,
     ftp: effectiveFtp,
@@ -321,6 +335,9 @@ export async function runWeeklyPlanGeneration(
     previousWeekTitles,
     riderFingerprint,
     selectionContext: selectionContextPrompt,
+    seasonContext: seasonContext ?? undefined,
+    seasonTuesdayTitle: currentSeasonWeek?.tuesdayTitle ?? null,
+    seasonThursdayTitle: currentSeasonWeek?.thursdayTitle ?? null,
   });
 
   // ── Save updated coaching state ───────────────────────────────────────────

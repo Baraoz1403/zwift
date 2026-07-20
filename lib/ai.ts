@@ -933,6 +933,18 @@ export async function generateWeeklyPlan(params: {
    * choices. Absent = engine wasn't run — AI falls back to the full library.
    */
   selectionContext?: string | null;
+  /**
+   * Pre-formatted season plan context from lib/season-plan.ts.
+   * When present, prepended to the system prompt BEFORE everything else —
+   * it is the coaching brain that tells the AI where the rider is in their
+   * multi-week arc. Without this, every week is generated in isolation.
+   * With this, every description can reference the season narrative.
+   */
+  seasonContext?: string | null;
+  /** Season plan's prescribed workout for Tuesday (exact library title). */
+  seasonTuesdayTitle?: string | null;
+  /** Season plan's prescribed workout for Thursday (exact library title). */
+  seasonThursdayTitle?: string | null;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -998,6 +1010,8 @@ export async function generateWeeklyPlan(params: {
         weekInMesocycle: params.cycle!.weekInMesocycle as 1 | 2 | 3 | 4,
         wPerKg,
         tsb: params.trainingLoad?.tsb ?? null,
+        seasonTuesdayTitle: params.seasonTuesdayTitle ?? null,
+        seasonThursdayTitle: params.seasonThursdayTitle ?? null,
       })
     : null;
 
@@ -1100,17 +1114,16 @@ export async function generateWeeklyPlan(params: {
       "chosen differently.\n\n"
     : "";
 
-  // Build system prompt — append accumulated rider fingerprint and selection
-  // engine output when available. Both are coach context rather than
-  // per-request input data, so they belong in the system prompt.
+  // Build system prompt.
+  // Order: seasonContext (coaching brain, first word) → selectorOverride →
+  //        WEEKLY_PLAN_SYSTEM_PROMPT → selectionContext → riderFingerprint
   //
-  // Order: selectorOverride (if deterministic path) → WEEKLY_PLAN_SYSTEM_PROMPT
-  //        → selectionContext (engine constraints) → riderFingerprint (memory)
-  //
-  // The selectionContext block is injected AFTER the main prompt so it reads
-  // as the final word on workout selection — the engine overrides any
-  // open-ended selection the main prompt might otherwise allow.
+  // The season context goes FIRST because it establishes the arc within which
+  // everything else is interpreted. The selectorOverride enforces the specific
+  // workout assignments. The main prompt fills in the details. The selection
+  // context constrains session-level choices. The fingerprint personalises tone.
   const systemPrompt =
+    (params.seasonContext ? params.seasonContext + "\n\n" : "") +
     selectorOverride +
     WEEKLY_PLAN_SYSTEM_PROMPT +
     (params.selectionContext ? "\n\n" + params.selectionContext : "") +
