@@ -1903,19 +1903,6 @@ export default function WeeklyPlan() {
                       </div>
                     )}
 
-                    {!isRestDay(w.type) && w.description && (
-                      <div style={{
-                        marginTop: 14,
-                        fontSize: 13,
-                        lineHeight: 1.55,
-                        color: "var(--muted)",
-                        padding: "12px 0 0",
-                        borderTop: "1px solid var(--border)",
-                      }}>
-                        {w.description}
-                      </div>
-                    )}
-
                     {!isRestDay(w.type) && (() => {
                       return (
                         <div style={{ marginTop: "auto", paddingTop: 18 }}>
