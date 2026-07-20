@@ -11,15 +11,15 @@
  *   Monday:    Z2 with Cadence Drills       (65-73% FTP, 60 min) — intervals
  *   Tuesday:   Sweet Spot / Threshold       (88-97% FTP, ~50-60 min) - PRIMARY
  *   Wednesday: Rest
- *   Thursday:  Sprint Builder or Threshold  (50-56 min) — secondary intensity
+ *   Thursday:  Tempo or Sprint Builder      (50-58 min) — secondary aerobic/NM
  *   Friday:    Surge Ride                   (65-73% + 110% surges, 50 min) — intervals
  *   Saturday:  Endurance with Muscle Tension (65-73% Z2, 70-80 min) — intervals
  *   Sunday:    Rest
  *
  * Progression (weekInMesocycle 1-4, 4 is always Recovery):
- *   Base week 1: Tuesday Sweet Spot 2x8  + Thursday Sprint Builder
- *   Base week 2: Tuesday Sweet Spot 2x10 + Thursday Sprint Builder
- *   Base week 3: Tuesday Sweet Spot 3x8  + Thursday Sprint Builder
+ *   Base week 1: Tuesday Sweet Spot 2x8  + Thursday Tempo 2×15 (intermediate+) / Sprint Builder (beginner)
+ *   Base week 2: Tuesday Sweet Spot 2x10 + Thursday Tempo 2×18 (intermediate+) / Sprint Builder (beginner)
+ *   Base week 3: Tuesday Sweet Spot 3x8  + Thursday Tempo 2×20 (intermediate+) / Sprint Builder (beginner)
  *   Recovery:    All Rest Days (no flat Spin & Recover — intervals-only rule)
  *   Build week 1: Tuesday Sweet Spot Classic + Thursday Threshold 3x6
  *   Build week 2: Tuesday Sweet Spot Classic + Thursday Threshold 3x8
@@ -277,6 +277,56 @@ function threshold2x12(): SelectedWorkout {
   };
 }
 
+// ─── Base-phase Thursday Tempo progression (intermediate+ riders ≥ 2.5 W/kg) ─
+// Two sustained blocks at 76-86% FTP — aerobic quality without the lactate
+// demand of Sweet Spot. Progressive overload across the 3-week mesocycle:
+// 2×15 → 2×18 → 2×20 min. Complements Tuesday's Sweet Spot work.
+
+function tempo2x15(): SelectedWorkout {
+  return {
+    category: "Tempo",
+    title: "Tempo 2×15",
+    durationMin: 50,
+    targetPowerPctFtp: "76-84%",
+    structure: [
+      { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
+      { type: "intervals",   durationMin: 32, powerFtp: 0.80, recoveryPowerFtp: 0.55,
+        repeats: 2, onSec: 900, offSec: 120, label: "2×15 min @ 80% FTP — steady aerobic effort, nose-breathing pace" },
+      { type: "cooldown",    durationMin: 6,  powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
+function tempo2x18(): SelectedWorkout {
+  return {
+    category: "Tempo",
+    title: "Tempo 2×18",
+    durationMin: 55,
+    targetPowerPctFtp: "78-86%",
+    structure: [
+      { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
+      { type: "intervals",   durationMin: 38, powerFtp: 0.82, recoveryPowerFtp: 0.55,
+        repeats: 2, onSec: 1080, offSec: 120, label: "2×18 min @ 82% FTP — push 2 min longer than last week" },
+      { type: "cooldown",    durationMin: 5,  powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
+function tempo2x20(): SelectedWorkout {
+  return {
+    category: "Tempo",
+    title: "Tempo 2×20",
+    durationMin: 58,
+    targetPowerPctFtp: "80-86%",
+    structure: [
+      { type: "warmup",      durationMin: 12, powerFtp: 0.70, label: "Easy warm-up" },
+      { type: "intervals",   durationMin: 42, powerFtp: 0.83, recoveryPowerFtp: 0.55,
+        repeats: 2, onSec: 1200, offSec: 120, label: "2×20 min @ 83% FTP — 40 min total sub-threshold work" },
+      { type: "cooldown",    durationMin: 4,  powerFtp: 0.55, label: "Easy cool-down" },
+    ],
+  };
+}
+
 /** Base phase Thursday - matches CANONICAL_WORKOUT_STRUCTURES["Sprint
  *  Builder"] exactly. */
 function sprintBuilder(): SelectedWorkout {
@@ -394,8 +444,23 @@ function tuesdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): Se
   return sweetSpotClassic();
 }
 
-function thursdaySession(phase: "Base" | "Build", weekInMesocycle: 1 | 2 | 3): SelectedWorkout {
-  if (phase === "Base") return sprintBuilder();
+function thursdaySession(
+  phase: "Base" | "Build",
+  weekInMesocycle: 1 | 2 | 3,
+  wPerKg: number | null,
+): SelectedWorkout {
+  if (phase === "Base") {
+    // Intermediate+ riders (≥ 2.5 W/kg) get a Tempo progression on Thursday.
+    // Sprint Builder is reserved for beginners who need neuromuscular development
+    // more than aerobic sub-threshold work at this stage.
+    const isIntermediate = wPerKg != null && wPerKg >= 2.5;
+    if (isIntermediate) {
+      if (weekInMesocycle === 1) return tempo2x15();
+      if (weekInMesocycle === 2) return tempo2x18();
+      return tempo2x20();
+    }
+    return sprintBuilder();
+  }
   if (weekInMesocycle === 1) return threshold3x6();
   if (weekInMesocycle === 2) return threshold3x8();
   return threshold2x12();
@@ -444,7 +509,7 @@ export function selectWeeklyWorkouts(input: SelectorInput): SelectedDay[] {
 
   const weekInMesocycle = (input.weekInMesocycle === 4 ? 3 : input.weekInMesocycle) as 1 | 2 | 3;
   const tuesday = applyGates(tuesdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
-  const thursday = applyGates(thursdaySession(input.phase, weekInMesocycle), input.wPerKg, input.tsb);
+  const thursday = applyGates(thursdaySession(input.phase, weekInMesocycle, input.wPerKg), input.wPerKg, input.tsb);
   // Saturday duration: Build = 80 min (was 90 - but Endurance with Muscle Tension
   // at 90 min would mean very long recovery bridges; 80 min is appropriate),
   // Base = 70 min. These are structured interval sessions now, not flat rides.
