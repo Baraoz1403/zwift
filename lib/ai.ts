@@ -744,19 +744,26 @@ Every workout structure block must include explicit cadenceTarget.
   'omit/empty for rest days), ' +
 
   // ── Description: the most important field for plan quality ──
-  '"description": string — THIS IS THE MOST IMPORTANT FIELD. ' +
-  'Write 2-3 sentences that feel like a personal message from a coach who actually studied this rider\'s data. ' +
-  'SENTENCE 1 — WHY NOW: reference one specific data point (e.g. their exact TSB value, the number of rides last ' +
-  'week, their training phase/week number, their age, their W/kg level, a recent HR flag, or an adherence note from last week). ' +
-  'SENTENCE 2 — HOW: one sharp, precise execution cue for the hardest part of this workout — exact % FTP target, ' +
-  'cadence, pacing strategy, or what to do if power fades (draw from the workout\'s own execution cue in the library). ' +
-  'SENTENCE 3 (optional but strongly encouraged) — FEEL: what success looks like, or a heads-up about what will be hard ' +
-  'and what to do if it is (draw from the workout\'s successFeel in the library). ' +
-  'NEVER write generic statements like "Build aerobic base at easy pace," "Improve fitness with intervals," or ' +
-  '"This session targets your aerobic system." These are content-free and destroy plan quality. ' +
-  'EASY SESSIONS REQUIRE THE SAME COACHING INTELLIGENCE AS HARD ONES. A rider can ride easy alone — ' +
-  'the coach\'s job is to make them understand WHY this easy session is here TODAY, between these specific ' +
-  'hard sessions, and what physiological work is actually happening. ' +
+  '"description": string — MANDATORY COACHING FORMAT. Every description MUST follow this exact 3-part structure: ' +
+  '(1) WHY TODAY — one sentence naming a SPECIFIC number from this rider\'s actual data: their exact TSB value (e.g. "TSB is -9.8"), ' +
+  'their exact FTP (e.g. "235W FTP"), the number of rides they did last week, their phase week number, or their W/kg. ' +
+  'If you write a description without a specific number, it is a FAILED description. ' +
+  '(2) HOW TO EXECUTE — one sentence with an exact watt target (calculated from their FTP, e.g. "207-216W" not "88-92% FTP") ' +
+  'and one mechanical cue (cadence, breathing, pacing). ' +
+  '(3) WHAT SUCCESS FEELS LIKE — one sentence describing exactly what a correctly executed session feels like at the end. ' +
+  'PROHIBITED PHRASES — these phrases are banned and signal a FAILED description: ' +
+  '"build aerobic base", "improve fitness", "targets your aerobic system", "this session will", ' +
+  '"designed to", "helps you", "great workout", "this is a". ' +
+  'EASY SESSIONS ARE NOT EXEMPT. A Z2 ride description must explain EXACTLY what aerobic adaptation ' +
+  'is happening and WHY it cannot be skipped. ' +
+  'EXAMPLE (Sweet Spot, TSB -9.8, FTP 235W, Base wk 1): ' +
+  '"TSB at -9.8 — you\'re in productive training fatigue, not the edge of overreaching. ' +
+  'Target 207-216W for both 8-minute blocks; cadence 88-92rpm; if you fade below 200W in minute 7, end the block early — quality beats duration. ' +
+  'You should finish breathing hard but controlled, like you could do one more block but won\'t." ' +
+  'EXAMPLE (Z2, TSB -9.8, FTP 235W, before Thursday Tempo): ' +
+  '"TSB -9.8 means your legs have training stress from last week — today\'s 60 minutes at 153-172W (65-73% FTP) is active recovery, not bonus fitness. ' +
+  'Hold cadence above 88rpm; if you can\'t complete a sentence while riding, you\'re above Z2 — back off immediately. ' +
+  'You should finish feeling genuinely fresh, not depleted — that\'s how Thursday\'s Tempo blocks hit hard." ' +
   'For Foundation/Recovery/Endurance sessions: SENTENCE 1 must name the specific hard sessions this ride ' +
   'sits between and explain its role (e.g. "You put in 3×15 Sweet Spot yesterday — today\'s Z2 ride ' +
   'accelerates lactate clearance and glycogen replenishment, so Thursday\'s Threshold blocks land on fresh legs." ' +
