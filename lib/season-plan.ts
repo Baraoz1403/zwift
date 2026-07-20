@@ -154,10 +154,13 @@ export function seasonContextToPrompt(
     `Weeks remaining in season: ${weeksRemaining}`,
     plan.eventDate ? `Target event date: ${plan.eventDate}` : "",
     "",
-    "INSTRUCTIONS: Your description for each session MUST reference this season context.",
-    "Tell the rider WHY this week matters in the arc of their season.",
-    "Connect today's session to what came before and what comes next.",
-    "The rider should feel a coach is tracking their progress — not reading a generic plan.",
+    "INSTRUCTIONS:",
+    `The season plan suggests Tuesday = "${currentWeek.tuesdayTitle}" and Thursday = "${currentWeek.thursdayTitle}".`,
+    "These are SUGGESTIONS from the season arc — use them as guidance for session type and intensity zone.",
+    "You are NOT required to use these exact titles. Build each workout from scratch using the rider's current",
+    "TSB, FTP, and phase. The session TYPE should match the suggestion; the exact structure is yours to design.",
+    "Every workout must have a complete structure[] with warmup, intervals/blocks, and cooldown.",
+    "Power targets must be in exact watts derived from the rider's FTP (e.g., 207W not '88%').",
     "══════════════════════════════════════════════════════════════════════════════",
   );
 

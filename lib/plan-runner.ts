@@ -336,8 +336,6 @@ export async function runWeeklyPlanGeneration(
     riderFingerprint,
     selectionContext: selectionContextPrompt,
     seasonContext: seasonContext ?? undefined,
-    seasonTuesdayTitle: currentSeasonWeek?.tuesdayTitle ?? null,
-    seasonThursdayTitle: currentSeasonWeek?.thursdayTitle ?? null,
   });
 
   // ── Save updated coaching state ───────────────────────────────────────────
