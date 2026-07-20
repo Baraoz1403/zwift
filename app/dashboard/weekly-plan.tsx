@@ -1876,26 +1876,30 @@ export default function WeeklyPlan() {
 
                     {!rest && (
                       <div style={{
-                        display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
-                        marginTop: 14, paddingTop: 14, paddingBottom: 14,
+                        display: "flex", justifyContent: "center", alignItems: "center",
+                        gap: 12, flexWrap: "wrap",
+                        marginTop: 12, paddingTop: 12, paddingBottom: 12,
                         borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)",
-                        fontSize: 14, fontWeight: 700, color: "var(--muted)",
+                        fontSize: 13, fontWeight: 600, color: "var(--muted)",
                       }}>
                         <span>{w.durationMin} min</span>
-                        {ifTss && <span>TSS {Math.round(ifTss.tss)}</span>}
-                        {ifTss && <span>IF {ifTss.intensityFactor.toFixed(2)}</span>}
-                        {w.targetPowerPctFtp && <span style={{ fontWeight: 600, color: "var(--accent)" }}>{w.targetPowerPctFtp} FTP</span>}
-                      </div>
-                    )}
-
-                    {!rest && w.description && (
-                      <div style={{
-                        marginTop: 14, fontSize: 13, color: "var(--muted)",
-                        lineHeight: 1.6, display: "-webkit-box",
-                        WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as const,
-                        overflow: "hidden",
-                      }}>
-                        {w.description}
+                        {ifTss && <span style={{ color: "var(--text)" }}>TSS {Math.round(ifTss.tss)}</span>}
+                        {ifTss && (() => {
+                          const ef = ifTss.intensityFactor;
+                          const dots = ef < 0.65 ? 1 : ef < 0.73 ? 2 : ef < 0.80 ? 3 : ef < 0.88 ? 4 : 5;
+                          return (
+                            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                              {[1,2,3,4,5].map(d => (
+                                <span key={d} style={{
+                                  width: 7, height: 7, borderRadius: "50%",
+                                  background: d <= dots ? accentColor : "var(--border)",
+                                  display: "inline-block",
+                                }} />
+                              ))}
+                            </span>
+                          );
+                        })()}
+                        {w.targetPowerPctFtp && <span style={{ fontWeight: 700, color: accentColor }}>{w.targetPowerPctFtp}</span>}
                       </div>
                     )}
 
