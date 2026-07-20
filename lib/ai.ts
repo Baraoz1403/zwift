@@ -346,6 +346,45 @@ function isRestDayType(type: string | undefined): boolean {
   return typeof type === "string" && type.toLowerCase().includes("rest");
 }
 
+/**
+ * Quality gate: counts sessions that contain at least one defined interval
+ * block (type="intervals") in their structure. A session with only warmup +
+ * steadystate + cooldown is counted as unstructured and does NOT pass.
+ *
+ * Used to enforce that every week contains a minimum number of real interval
+ * sessions — independent of what the AI says in text. Code-level, not prompt-level.
+ */
+function countIntervalSessions(workouts: WeeklyWorkout[]): number {
+  return workouts.filter(w => {
+    if (w.type === "Rest" || isRestDayType(w.type)) return false;
+    return Array.isArray(w.structure) && w.structure.some(b => b.type === "intervals");
+  }).length;
+}
+
+// Titles that are legitimately non-interval (recovery/rest adjacent sessions).
+// These are allowed even when the interval count is low.
+const LEGIT_NO_INTERVAL_TITLES = new Set([
+  "spin & recover", "active recovery", "race day opener", "easy flush",
+  "short active recovery", "rest day",
+]);
+
+/**
+ * Returns true if a workout is a structurally boring "steady-state" session
+ * (Foundation Ride, Long Endurance, etc.) with no interval blocks, on a day
+ * that is NOT immediately after a hard session.
+ * Used to detect plans that the AI generated as a template rather than
+ * structured coaching output.
+ */
+function isBoringSteadyState(w: WeeklyWorkout): boolean {
+  if (w.type === "Rest" || isRestDayType(w.type)) return false;
+  if (LEGIT_NO_INTERVAL_TITLES.has(w.title.toLowerCase())) return false;
+  const hasIntervals = Array.isArray(w.structure) && w.structure.some(b => b.type === "intervals");
+  if (hasIntervals) return false;
+  // Foundation Ride and Long Endurance by name are the main offenders
+  const t = w.title.toLowerCase();
+  return t.includes("foundation") || t.includes("long endurance") || t === "two-hour foundation";
+}
+
 const WEEKLY_PLAN_SYSTEM_PROMPT =
   `⛔ IRON LAW — COACHING PHILOSOPHY:
 1. EVERY TRAINING DAY = STRUCTURED INTERVALS. This is non-negotiable. Every scheduled workout must contain defined on/off interval blocks with specific power targets, not continuous steady-state riding. A beginner gets 5×3min blocks. An intermediate gets 3×10min Sweet Spot. An advanced rider gets Norwegian 4×4. "Foundation Ride" (unstructured steady-state) is ONLY valid as active recovery the day immediately after a hard session — never as a primary training session. A plan where any non-recovery day is a continuous ride with no interval structure is a FAILED plan.
@@ -359,7 +398,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 
 WEEK SHAPE:
 • Hard days (1-3/week per INTENSITY SESSION GUIDELINES): quality session from the library — Sweet Spot / Threshold / VO2max / Neuromuscular
-• Easy/recovery days: Foundation Ride, Long Endurance, Spin & Recover, Z2 with Cadence Drills, or Surge Ride — chosen for what the day needs physiologically
+• Active-recovery days (day immediately after a hard session): ONLY here is Foundation Ride or Spin & Recover valid as a standalone session — because recovery IS the stimulus.
+• Aerobic support days (all other non-hard, non-rest days): MUST use a session with defined interval structure — Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, Sub-Threshold Blocks, Tempo Cruise. Never just "Foundation Ride" or "Long Endurance" as the primary content on a support day — these are bookend tools used immediately after hard sessions, not default filler.
 • Rest days: type='Rest' when no training benefit justifies activity
 • Never schedule two hard sessions on consecutive days.
 
@@ -1134,11 +1174,90 @@ export async function generateWeeklyPlan(params: {
   }
 
   // AI has full control — use its workouts directly.
-  const finalWorkouts: WeeklyWorkout[] = obj.workouts as WeeklyWorkout[];
+  let finalWorkouts: WeeklyWorkout[] = obj.workouts as WeeklyWorkout[];
+  let planSummary = typeof obj.summary === "string" ? obj.summary : "";
+
+  // ── Quality Gate ────────────────────────────────────────────────────────
+  // Enforce that a non-Recovery week contains at least 2 sessions with defined
+  // interval blocks. If the AI produced a plan dominated by Foundation/Endurance
+  // sessions (no real intervals on most days), retry ONCE with an amplified
+  // corrective message. This is code-level — it cannot be bypassed by prompt drift.
+  const isRecoveryWeek = params.cycle?.phase === "Recovery";
+
+  if (!isRecoveryWeek) {
+    const normalized1 = normalizeWeeklyPlan(finalWorkouts);
+    const intervalCount = countIntervalSessions(normalized1);
+    const boringCount = normalized1.filter(isBoringSteadyState).length;
+
+    // Retry if fewer than 2 interval sessions OR more than 1 Foundation/LongEndurance
+    if (intervalCount < 2 || boringCount > 1) {
+      // Build retry prompt with explicit failure diagnosis
+      const failures: string[] = [];
+      if (intervalCount < 2) failures.push(`only ${intervalCount} session(s) contain defined interval blocks (minimum required: 2)`);
+      if (boringCount > 1) failures.push(`${boringCount} Foundation Ride or Long Endurance sessions appear as non-recovery filler (maximum allowed as non-recovery filler: 1)`);
+
+      const retrySystemPrompt =
+        `⛔ QUALITY GATE FAILURE — PLAN REJECTED ⛔\n` +
+        `The plan you just returned was rejected for the following reason(s):\n` +
+        failures.map(f => `  • ${f}`).join("\n") + "\n\n" +
+        `MANDATORY CORRECTIONS before returning a new plan:\n` +
+        `1. Every non-rest, non-recovery day MUST have a structure[] that includes at least one block with type="intervals".\n` +
+        `2. Foundation Ride and Long Endurance are BANNED as primary sessions except for the single active-recovery day immediately after a hard session.\n` +
+        `3. Replace any Foundation/Endurance day that is NOT immediately post-hard-session with: Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, or Sub-Threshold Blocks.\n` +
+        `4. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
+        systemPrompt;
+
+      let resp2: Response;
+      try {
+        resp2 = await fetch(ANTHROPIC_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 8000,
+            system: retrySystemPrompt,
+            messages: [
+              { role: "user", content: userContent },
+              { role: "assistant", content: cleaned },
+              { role: "user", content: "The plan above was rejected. Return a corrected plan now that passes the quality gate." },
+            ],
+          }),
+        });
+      } catch (e) {
+        // If retry fails at network level, fall back to original (degraded but better than crash)
+        resp2 = { ok: false } as Response;
+      }
+
+      if (resp2.ok) {
+        const data2 = await resp2.json();
+        const text2 = data2?.content?.[0]?.text;
+        if (typeof text2 === "string") {
+          const s2 = text2.indexOf("{");
+          const e2 = text2.lastIndexOf("}");
+          if (s2 !== -1 && e2 > s2) {
+            try {
+              const obj2 = JSON.parse(text2.slice(s2, e2 + 1)) as Partial<WeeklyPlan>;
+              if (Array.isArray(obj2.workouts) && obj2.workouts.length > 0) {
+                finalWorkouts = obj2.workouts as WeeklyWorkout[];
+                planSummary = typeof obj2.summary === "string" ? obj2.summary : planSummary;
+              }
+            } catch {
+              // Retry JSON parse failed — keep original plan
+            }
+          }
+        }
+      }
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   return {
     weekOf: weekOfMonday,
-    summary: typeof obj.summary === "string" ? obj.summary : "",
+    summary: planSummary,
     workouts: normalizeWeeklyPlan(finalWorkouts),
   };
 }
