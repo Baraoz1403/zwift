@@ -8994,3 +8994,17 @@ Mon 07/20/2026  7:28:22.34
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+warning: in the working copy of 'app/today/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/today/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/today/workout-card.tsx', LF will be replaced by CRLF the next time Git touches it
+[main 9cbfb92] Auto deploy Mon 07/20/2026  7:28:23.17
+ 4 files changed, 393 insertions(+)
+ create mode 100644 app/today/layout.tsx
+ create mode 100644 app/today/page.tsx
+ create mode 100644 app/today/workout-card.tsx
+To https://github.com/Baraoz1403/zwift.git
+   6103e99..9cbfb92  main -> main
+error: update_ref failed for ref 'refs/remotes/origin/main': cannot lock ref 'refs/remotes/origin/main': Unable to create 'C:/Users/barak/Zwift Project/.git/refs/remotes/origin/main.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+Mon 07/20/2026  7:28:25.41 - SUCCESS: pushed. Vercel rebuilding. 
