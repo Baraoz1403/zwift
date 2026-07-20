@@ -10013,3 +10013,39 @@ Mon 07/20/2026 13:09:11.72
   All checks passed. Safe to deploy.
 ============================================
 Deploying... 
+[main 7f580a4] Auto deploy Mon 07/20/2026 13:09:13.45
+ 1 file changed, 174 insertions(+)
+To https://github.com/Baraoz1403/zwift.git
+   d2ad965..7f580a4  main -> main
+error: update_ref failed for ref 'refs/remotes/origin/main': cannot lock ref 'refs/remotes/origin/main': Unable to create 'C:/Users/barak/Zwift Project/.git/refs/remotes/origin/main.lock': File exists.
+
+Another git process seems to be running in this repository, or the lock file may be stale
+Mon 07/20/2026 13:09:16.82 - SUCCESS: pushed. Vercel rebuilding. 
+ 
+=============================== 
+Mon 07/20/2026 13:28:05.65 
+=============================== 
+Removing stale HEAD.lock... 
+============================================
+  Pre-deploy checks
+============================================
+
+[1/4] Checking globals.css is complete...
+  OK
+[2/4] Checking CSS design tokens...
+  OK
+[3/4] Checking key component files...
+  OK
+  OK
+  OK
+[4/4] Checking for OneDrive truncation signatures...
+  OK
+[5/5] Checking design consistency...
+  OK
+  OK
+  OK
+
+============================================
+  All checks passed. Safe to deploy.
+============================================
+Deploying... 
