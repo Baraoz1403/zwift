@@ -7,6 +7,24 @@
 export type TrainingGoal = "fitness" | "ftp" | "weight" | "event" | "fun";
 export type SessionLength = "45" | "60" | "90" | "90plus";
 export type Sport = "cycling" | "running" | "both";
+
+export type EventType =
+  | "road-race-1day"   // One-day road race / criterium
+  | "road-race-stage"  // Stage race / multi-day
+  | "gravel-race"      // Gravel race / adventure
+  | "mtb-race"         // Mountain bike race (XC/Enduro)
+  | "time-trial"       // TT / Prologue
+  | "gran-fondo"       // Gran Fondo / Sportive
+  | "run-5k"           // 5K run
+  | "run-10k"          // 10K run
+  | "half-marathon"    // Half marathon
+  | "marathon"         // Marathon
+  | "sprint-tri"       // Sprint triathlon
+  | "olympic-tri"      // Olympic triathlon
+  | "half-ironman"     // 70.3 / Half Ironman
+  | "ironman"          // Full Ironman
+  | "zwift-race"       // Zwift online race / event
+  | "other";           // Other event
 export type DaysRange = "1-2" | "2-3" | "3-4" | "4-5" | "5-6" | "6-7";
 /** Where the rider actually trains: "indoor" = Zwift/trainer only, "outdoor"
  *  = real-world rides only (tracked via Garmin/Strava), "both" = a mix.
@@ -22,7 +40,9 @@ export interface RiderTrainingProfile {
   sports: Sport[];           // one or more disciplines
   environment?: TrainingEnvironment; // indoor / outdoor / both — defaults to "indoor"
   ageYears?: number;
-  eventDate?: string;
+  eventDate?: string;        // ISO date of the event (start date)
+  eventEndDate?: string;     // ISO date — for multi-day events
+  eventType?: EventType;     // What kind of event
   notes?: string;
   // legacy compat
   goal?: TrainingGoal;

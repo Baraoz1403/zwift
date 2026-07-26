@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { RiderTrainingProfile, TrainingGoal, DaysRange, SessionLength, TrainingEnvironment, Sport } from "@/lib/rider-profile";
+import type {
+  RiderTrainingProfile, TrainingGoal, DaysRange,
+  SessionLength, TrainingEnvironment, Sport, EventType,
+} from "@/lib/rider-profile";
 
 interface Props {
   initialProfile: RiderTrainingProfile | null;
@@ -16,32 +19,53 @@ const GOALS: { value: TrainingGoal; label: string; emoji: string }[] = [
 ];
 
 const DAYS: { value: DaysRange; label: string }[] = [
-  { value: "1-2", label: "1–2 days" },
-  { value: "2-3", label: "2–3 days" },
-  { value: "3-4", label: "3–4 days" },
-  { value: "4-5", label: "4–5 days" },
-  { value: "5-6", label: "5–6 days" },
-  { value: "6-7", label: "6–7 days" },
+  { value: "1-2", label: "1–2" },
+  { value: "2-3", label: "2–3" },
+  { value: "3-4", label: "3–4" },
+  { value: "4-5", label: "4–5" },
+  { value: "5-6", label: "5–6" },
+  { value: "6-7", label: "6–7" },
 ];
 
 const SESSIONS: { value: SessionLength; label: string }[] = [
-  { value: "45",     label: "Up to 45 min" },
+  { value: "45",     label: "≤45 min" },
   { value: "60",     label: "45–60 min" },
   { value: "90",     label: "60–90 min" },
   { value: "90plus", label: "90+ min" },
 ];
 
 const ENVS: { value: TrainingEnvironment; label: string; desc: string }[] = [
-  { value: "indoor",  label: "Indoor",   desc: "Zwift / trainer only" },
-  { value: "outdoor", label: "Outdoor",  desc: "Real-world rides" },
-  { value: "both",    label: "Both",     desc: "Mix of indoor & outdoor" },
+  { value: "indoor",  label: "Indoor",   desc: "Zwift / trainer" },
+  { value: "outdoor", label: "Outdoor",  desc: "Real-world only" },
+  { value: "both",    label: "Both",     desc: "Indoor & outdoor" },
 ];
 
-const SPORTS: { value: Sport; label: string }[] = [
-  { value: "cycling", label: "Cycling 🚴" },
-  { value: "running", label: "Running 🏃" },
-  { value: "both",    label: "Both" },
+const SPORTS: { value: Sport; label: string; emoji: string }[] = [
+  { value: "cycling", label: "Cycling",  emoji: "🚴" },
+  { value: "running", label: "Running",  emoji: "🏃" },
+  { value: "both",    label: "Both",     emoji: "🔀" },
 ];
+
+const EVENT_TYPES: { value: EventType; label: string; emoji: string; category: string }[] = [
+  { value: "road-race-1day",  label: "Road race (1-day)",    emoji: "🚴", category: "Cycling" },
+  { value: "road-race-stage", label: "Stage race",           emoji: "📅", category: "Cycling" },
+  { value: "gravel-race",     label: "Gravel race",          emoji: "🪨", category: "Cycling" },
+  { value: "mtb-race",        label: "MTB race",             emoji: "🌲", category: "Cycling" },
+  { value: "time-trial",      label: "Time trial (TT)",      emoji: "⏱️", category: "Cycling" },
+  { value: "gran-fondo",      label: "Gran Fondo",           emoji: "🏔️", category: "Cycling" },
+  { value: "zwift-race",      label: "Zwift race",           emoji: "⚡", category: "Cycling" },
+  { value: "run-5k",          label: "5K run",               emoji: "🏃", category: "Running" },
+  { value: "run-10k",         label: "10K run",              emoji: "🏃", category: "Running" },
+  { value: "half-marathon",   label: "Half marathon",        emoji: "🏃", category: "Running" },
+  { value: "marathon",        label: "Marathon",             emoji: "🏃", category: "Running" },
+  { value: "sprint-tri",      label: "Sprint triathlon",     emoji: "🏊", category: "Triathlon" },
+  { value: "olympic-tri",     label: "Olympic triathlon",    emoji: "🏊", category: "Triathlon" },
+  { value: "half-ironman",    label: "70.3 / Half Ironman",  emoji: "🏊", category: "Triathlon" },
+  { value: "ironman",         label: "Full Ironman",         emoji: "🏊", category: "Triathlon" },
+  { value: "other",           label: "Other event",          emoji: "🏆", category: "Other" },
+];
+
+const MULTI_DAY_TYPES: EventType[] = ["road-race-stage", "half-ironman", "ironman", "other"];
 
 export default function MobileProfileEditor({ initialProfile }: Props) {
   const [goals, setGoals] = useState<TrainingGoal[]>(initialProfile?.goals ?? ["fitness"]);
@@ -51,8 +75,13 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   const [sports, setSports] = useState<Sport[]>(initialProfile?.sports ?? ["cycling"]);
   const [ageYears, setAgeYears] = useState<string>(initialProfile?.ageYears ? String(initialProfile.ageYears) : "");
   const [eventDate, setEventDate] = useState<string>(initialProfile?.eventDate ?? "");
+  const [eventEndDate, setEventEndDate] = useState<string>(initialProfile?.eventEndDate ?? "");
+  const [eventType, setEventType] = useState<EventType | "">(initialProfile?.eventType ?? "");
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "done" | "error">("idle");
+
+  const isEventGoal = goals.includes("event");
+  const isMultiDayEvent = eventType && MULTI_DAY_TYPES.includes(eventType as EventType);
 
   function toggleGoal(g: TrainingGoal) {
     setGoals(prev =>
@@ -71,6 +100,8 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
       sports,
       ageYears: ageYears ? parseInt(ageYears, 10) : undefined,
       eventDate: eventDate || undefined,
+      eventEndDate: eventEndDate || undefined,
+      eventType: (eventType as EventType) || undefined,
     };
     try {
       const res = await fetch("/api/ai/weekly-plan/profile", {
@@ -91,25 +122,27 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
     }
   }
 
+  const eventCategories = ["Cycling", "Running", "Triathlon", "Other"] as const;
+
   return (
     <div style={{ padding: "16px 16px 40px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
         <a href="/m/profile" style={{
-          width: 36, height: 36, borderRadius: 10,
+          width: 40, height: 40, borderRadius: 12,
           background: "#111827", border: "1px solid #1e293b",
           display: "flex", alignItems: "center", justifyContent: "center",
-          textDecoration: "none", color: "#94a3b8", fontSize: 18, flexShrink: 0,
+          textDecoration: "none", color: "#94a3b8", fontSize: 20, flexShrink: 0,
         }}>←</a>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc" }}>Training Profile</div>
-          <div style={{ fontSize: 13, color: "#475569" }}>Tell your coach about yourself</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc" }}>Training Profile</div>
+          <div style={{ fontSize: 15, color: "#475569", marginTop: 2 }}>Tell your coach about yourself</div>
         </div>
       </div>
 
       {/* Goals */}
-      <Section label="Goals" desc="What do you want to achieve?">
+      <Section label="Goals" desc="What do you want to achieve? Pick all that apply.">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           {GOALS.map(g => (
             <ToggleCard
@@ -122,24 +155,116 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
         </div>
       </Section>
 
-      {/* Sports */}
-      <Section label="Sport" desc="What do you train?">
+      {/* Sport */}
+      <Section label="Sport" desc="What disciplines do you train?">
         <div style={{ display: "flex", gap: 8 }}>
           {SPORTS.map(s => (
             <ToggleCard
               key={s.value}
               selected={sports.includes(s.value)}
               onClick={() => setSports([s.value])}
-              label={s.label}
+              label={`${s.emoji} ${s.label}`}
               flex
             />
           ))}
         </div>
       </Section>
 
+      {/* Event details — shown prominently when Event prep is a goal */}
+      {isEventGoal && (
+        <div style={{
+          marginBottom: 22,
+          background: "rgba(245,158,11,0.06)",
+          border: "1px solid rgba(245,158,11,0.2)",
+          borderRadius: 18, padding: "18px 16px",
+        }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>
+            🏆 Event details
+          </div>
+          <div style={{ fontSize: 15, color: "#64748b", marginBottom: 16 }}>
+            Your coach builds the entire periodization backwards from this event.
+            The more detail, the better the plan.
+          </div>
+
+          {/* Event type */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#cbd5e1", marginBottom: 10 }}>
+              What type of event?
+            </div>
+            {eventCategories.map(cat => {
+              const catEvents = EVENT_TYPES.filter(e => e.category === cat);
+              return (
+                <div key={cat} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", letterSpacing: ".4px", textTransform: "uppercase", marginBottom: 6 }}>
+                    {cat}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                    {catEvents.map(e => (
+                      <button
+                        key={e.value}
+                        onClick={() => setEventType(eventType === e.value ? "" : e.value)}
+                        style={{
+                          padding: "10px 12px", textAlign: "left",
+                          background: eventType === e.value ? "rgba(245,158,11,0.15)" : "#111827",
+                          border: `1px solid ${eventType === e.value ? "rgba(245,158,11,0.45)" : "#1e293b"}`,
+                          borderRadius: 12, cursor: "pointer",
+                          fontSize: 14, fontWeight: eventType === e.value ? 700 : 500,
+                          color: eventType === e.value ? "#fbbf24" : "#64748b",
+                          transition: "all .12s",
+                        }}
+                      >
+                        {e.emoji} {e.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Event start date */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#cbd5e1", marginBottom: 8 }}>
+              {isMultiDayEvent ? "Event start date" : "Event date"}
+            </div>
+            <input
+              type="date"
+              value={eventDate}
+              onChange={e => setEventDate(e.target.value)}
+              style={{
+                width: "100%", padding: "14px 16px",
+                background: "#0f172a", border: "1px solid #334155",
+                borderRadius: 12, color: "#f1f5f9", fontSize: 17,
+                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+              }}
+            />
+          </div>
+
+          {/* End date — only for multi-day events */}
+          {isMultiDayEvent && (
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#cbd5e1", marginBottom: 8 }}>
+                Event end date <span style={{ fontWeight: 400, color: "#475569" }}>(optional)</span>
+              </div>
+              <input
+                type="date"
+                value={eventEndDate}
+                onChange={e => setEventEndDate(e.target.value)}
+                style={{
+                  width: "100%", padding: "14px 16px",
+                  background: "#0f172a", border: "1px solid #334155",
+                  borderRadius: 12, color: "#f1f5f9", fontSize: 17,
+                  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Days per week */}
       <Section label="Days per week" desc="How many training sessions?">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
           {DAYS.map(d => (
             <ToggleCard
               key={d.value}
@@ -174,18 +299,18 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               onClick={() => setEnvironment(e.value)}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "13px 16px",
+                padding: "14px 18px",
                 background: environment === e.value ? "rgba(37,99,235,0.12)" : "#111827",
                 border: `1px solid ${environment === e.value ? "#2563eb55" : "#1e293b"}`,
                 borderRadius: 14, cursor: "pointer", textAlign: "left",
               }}
             >
               <div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>{e.label}</div>
-                <div style={{ fontSize: 14, color: "#64748b" }}>{e.desc}</div>
+                <div style={{ fontSize: 17, fontWeight: 600, color: "#f1f5f9" }}>{e.label}</div>
+                <div style={{ fontSize: 14, color: "#64748b", marginTop: 2 }}>{e.desc}</div>
               </div>
               {environment === e.value && (
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />
+                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />
               )}
             </button>
           ))}
@@ -193,35 +318,30 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
       </Section>
 
       {/* Age */}
-      <Section label="Age (optional)" desc="Helps tailor recovery weeks">
-        <input
-          type="number"
-          value={ageYears}
-          onChange={e => setAgeYears(e.target.value)}
-          placeholder="e.g. 42"
-          min={15} max={90}
-          style={{
-            width: "100%", padding: "14px 16px",
-            background: "#0f172a", border: "1px solid #1e293b",
-            borderRadius: 14, color: "#f1f5f9", fontSize: 16,
-            outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-          }}
-        />
-      </Section>
-
-      {/* Event date */}
-      <Section label="Target event (optional)" desc="Race or goal date for periodization">
-        <input
-          type="date"
-          value={eventDate}
-          onChange={e => setEventDate(e.target.value)}
-          style={{
-            width: "100%", padding: "14px 16px",
-            background: "#0f172a", border: "1px solid #1e293b",
-            borderRadius: 14, color: "#f1f5f9", fontSize: 16,
-            outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-          }}
-        />
+      <Section label="Age" desc="Helps calibrate recovery weeks and intensity zones">
+        <div style={{ position: "relative" }}>
+          <input
+            type="number"
+            value={ageYears}
+            onChange={e => setAgeYears(e.target.value)}
+            placeholder="Your age (e.g. 42)"
+            min={15} max={90}
+            style={{
+              width: "100%", padding: "16px 18px",
+              background: "#111827", border: "1px solid #334155",
+              borderRadius: 14, color: "#f8fafc", fontSize: 18, fontWeight: 600,
+              outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+            }}
+          />
+          {ageYears && (
+            <div style={{
+              position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
+              fontSize: 16, color: "#3b82f6", fontWeight: 700,
+            }}>
+              years old
+            </div>
+          )}
+        </div>
       </Section>
 
       {/* Save */}
@@ -229,15 +349,15 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
         onClick={save}
         disabled={saveState === "saving" || saveState === "done"}
         style={{
-          width: "100%", padding: "18px",
+          width: "100%", padding: "20px",
           background:
             saveState === "done"   ? "#166534" :
             saveState === "error"  ? "#7f1d1d" :
             saveState === "saving" ? "#1d4ed8aa" : "#2563eb",
           color: "#fff", border: "none", borderRadius: 18,
-          fontSize: 17, fontWeight: 700,
+          fontSize: 19, fontWeight: 700,
           cursor: saveState === "idle" || saveState === "error" ? "pointer" : "default",
-          boxShadow: saveState === "idle" ? "0 4px 20px #2563eb40" : "none",
+          boxShadow: saveState === "idle" ? "0 4px 24px #2563eb40" : "none",
           marginTop: 8,
         }}
       >
@@ -247,7 +367,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
       </button>
 
       {saveState === "done" && (
-        <div style={{ textAlign: "center", fontSize: 13, color: "#4ade80", marginTop: 10 }}>
+        <div style={{ textAlign: "center", fontSize: 15, color: "#4ade80", marginTop: 12 }}>
           Profile updated. Your next plan will reflect these changes.
         </div>
       )}
@@ -257,9 +377,9 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
 
 function Section({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, color: "#475569", marginBottom: 10 }}>{desc}</div>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 15, color: "#475569", marginBottom: 12 }}>{desc}</div>
       {children}
     </div>
   );
@@ -273,9 +393,9 @@ function ToggleCard({ selected, onClick, label, flex }: {
       onClick={onClick}
       style={{
         flex: flex ? 1 : undefined,
-        padding: "13px 10px", textAlign: "center",
+        padding: "14px 10px", textAlign: "center",
         background: selected ? "rgba(37,99,235,0.15)" : "#111827",
-        border: `1px solid ${selected ? "#2563eb55" : "#1e293b"}`,
+        border: `1px solid ${selected ? "#2563eb66" : "#1e293b"}`,
         borderRadius: 14, cursor: "pointer",
         fontSize: 15, fontWeight: selected ? 700 : 500,
         color: selected ? "#93c5fd" : "#64748b",

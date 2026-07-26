@@ -278,7 +278,33 @@ export default async function MobileProfilePage() {
               <ProfileRow label="Age" value={`${profile.ageYears} years`} />
             )}
             {profile.eventDate && (
-              <ProfileRow label="Target event" value={profile.eventDate} />
+              <ProfileRow
+                label="Event date"
+                value={new Date(profile.eventDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              />
+            )}
+            {profile.eventType && (
+              <ProfileRow
+                label="Event type"
+                value={{
+                  "road-race-1day": "🚴 Road race (1-day)",
+                  "road-race-stage": "📅 Stage race",
+                  "gravel-race": "🪨 Gravel race",
+                  "mtb-race": "🌲 MTB race",
+                  "time-trial": "⏱️ Time trial",
+                  "gran-fondo": "🏔️ Gran Fondo",
+                  "zwift-race": "⚡ Zwift race",
+                  "run-5k": "🏃 5K run",
+                  "run-10k": "🏃 10K run",
+                  "half-marathon": "🏃 Half marathon",
+                  "marathon": "🏃 Marathon",
+                  "sprint-tri": "🏊 Sprint triathlon",
+                  "olympic-tri": "🏊 Olympic triathlon",
+                  "half-ironman": "🏊 70.3 / Half Ironman",
+                  "ironman": "🏊 Full Ironman",
+                  "other": "🏆 Other event",
+                }[profile.eventType] ?? profile.eventType}
+              />
             )}
           </div>
         </div>
