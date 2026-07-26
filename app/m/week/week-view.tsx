@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { WeeklyWorkout } from "@/lib/ai";
+import MobileWorkoutChart from "@/app/m/today/workout-chart";
 
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
@@ -263,6 +264,13 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                   borderRadius: "0 0 18px 18px",
                   padding: "10px 14px 14px",
                 }}>
+                  {/* Power chart */}
+                  {w.structure && w.structure.length > 0 && (
+                    <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 12 }}>
+                      <MobileWorkoutChart blocks={w.structure} durationMin={w.durationMin} />
+                    </div>
+                  )}
+
                   {/* Short description */}
                   {w.description && (
                     <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
