@@ -62,7 +62,7 @@ export default async function MobileWeekPage() {
 
     if (icuKey && icuId) {
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("icu_timeout")), 1500)
+        setTimeout(() => reject(new Error("icu_timeout")), 4000)
       );
       const activities = await Promise.race([
         fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),

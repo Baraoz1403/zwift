@@ -55,10 +55,12 @@ export function computeWeekStatus(
 ): Record<string, DayStatus> {
   const result: Record<string, DayStatus> = {};
 
-  // Index ICU activities by date (one or more per day)
+  // Index ICU activities by date (one or more per day).
+  // ICU returns start_date_local (local time); fall back to start_date if absent.
   const actsByDate = new Map<string, IcuActivity[]>();
   for (const a of activities) {
-    const date = a.start_date_local?.slice(0, 10);
+    const raw = a.start_date_local ?? (a as Record<string, unknown>).start_date as string | undefined;
+    const date = raw?.slice(0, 10);
     if (!date) continue;
     if (!actsByDate.has(date)) actsByDate.set(date, []);
     actsByDate.get(date)!.push(a);

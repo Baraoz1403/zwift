@@ -4,6 +4,7 @@ import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
+import { fetchOwnProfile } from "@/lib/zwift";
 import SignOutButton from "./sign-out-button";
 
 export default async function MobileProfilePage() {
@@ -15,10 +16,11 @@ export default async function MobileProfilePage() {
 
   const athleteId = session.athleteId!;
 
-  const [state, currentPlan, fingerprint] = await Promise.all([
+  const [state, currentPlan, fingerprint, zwiftProfile] = await Promise.all([
     getStoredAthleteState(athleteId),
     getCachedPlan(athleteId, mondayOfCurrentWeek()),
     getFingerprint(athleteId).catch(() => null),
+    fetchOwnProfile(session.accessToken).catch(() => null),
   ]);
 
   // Training load from KV (stored alongside plan after each generation)
@@ -40,11 +42,14 @@ export default async function MobileProfilePage() {
   const profile = state.riderProfile;
   const macro = state.macroCycle;
 
-  // FTP from fingerprint history (most recent entry)
-  const ftpEntry = fingerprint?.ftpHistory?.length
-    ? fingerprint.ftpHistory[fingerprint.ftpHistory.length - 1]
-    : null;
-  const ftpWatts = ftpEntry?.ftp ?? null;
+  // FTP: Zwift profile is the single source of truth (set after a real FTP test).
+  // Fall back to fingerprint history only if Zwift profile fetch failed.
+  const ftpWatts: number | null =
+    zwiftProfile?.ftp != null ? zwiftProfile.ftp :
+    fingerprint?.ftpHistory?.length
+      ? fingerprint.ftpHistory[fingerprint.ftpHistory.length - 1].ftp
+      : null;
+  const ftpSource = zwiftProfile?.ftp != null ? "Zwift profile" : "Estimated";
 
   // Compute training phase from weekIndex (matches periodization.ts logic)
   let currentPhase: string | null = null;
@@ -80,8 +85,11 @@ export default async function MobileProfilePage() {
           Athlete
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
-          Profile &amp; Stats
+          {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Profile & Stats"}
         </div>
+        {zwiftProfile?.firstName && (
+          <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Profile &amp; Stats</div>
+        )}
       </div>
 
       {/* Fitness metrics */}
@@ -93,10 +101,10 @@ export default async function MobileProfilePage() {
               value={`${ftpWatts}W`}
               label="FTP"
               color="#3b82f6"
-              desc={ftpEntry?.source === "measured" ? "Measured" : "Estimated"}
+              desc={ftpSource}
             />
           ) : (
-            <MetricCard value="—" label="FTP" color="#475569" desc="Not yet available" />
+            <MetricCard value="—" label="FTP" color="#475569" desc="Set FTP in Zwift app" />
           )}
           <MetricCard
             value={tsbLabel}
