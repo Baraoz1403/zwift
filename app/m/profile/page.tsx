@@ -311,7 +311,7 @@ export default async function MobileProfilePage() {
       )}
 
       {/* Account */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 16 }}>
         <SectionLabel>Account</SectionLabel>
         <div style={{
           background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
@@ -333,6 +333,24 @@ export default async function MobileProfilePage() {
           </a>
           <SignOutButton />
         </div>
+      </div>
+
+      {/* Legal footer */}
+      <div style={{
+        display: "flex", justifyContent: "center", gap: 20,
+        paddingTop: 4, paddingBottom: 8,
+      }}>
+        <a href="/m/legal/terms" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
+          Terms of Service
+        </a>
+        <span style={{ color: "#1e293b" }}>·</span>
+        <a href="/m/legal/privacy" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
+          Privacy Policy
+        </a>
+        <span style={{ color: "#1e293b" }}>·</span>
+        <a href="/m/legal" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
+          Legal
+        </a>
       </div>
 
     </div>
