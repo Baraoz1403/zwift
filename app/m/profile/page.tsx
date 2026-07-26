@@ -33,6 +33,10 @@ export default async function MobileProfilePage() {
     }
   } catch { /* best-effort */ }
 
+  // ICU connection status (cookie readable server-side)
+  const icuName = cookieStore.get("zwift_intervals_name")?.value ?? null;
+  const icuConnected = !!cookieStore.get("zwift_intervals_key")?.value;
+
   const profile = state.riderProfile;
   const macro = state.macroCycle;
 
@@ -131,6 +135,75 @@ export default async function MobileProfilePage() {
               desc={`Week ${(macro?.weekIndex ?? 0) + 1}`}
             />
           )}
+        </div>
+      </div>
+
+      {/* Connections */}
+      <div style={{ marginBottom: 16 }}>
+        <SectionLabel>Connections</SectionLabel>
+        <div style={{
+          background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
+          padding: "4px 0",
+        }}>
+          {/* Zwift — always connected (they're logged in) */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px", borderBottom: "1px solid #1e293b",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, background: "#0f2a4a",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 500 }}>Zwift</div>
+                <div style={{ fontSize: 11, color: "#22c55e" }}>Connected</div>
+              </div>
+            </div>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+          </div>
+
+          {/* Intervals.icu */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 16px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, background: icuConnected ? "#0f2a1a" : "#1a1a2e",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="18" height="18" rx="3" fill={icuConnected ? "#22c55e" : "#475569"} opacity=".2" />
+                  <path d="M7 12h10M12 7v10" stroke={icuConnected ? "#22c55e" : "#475569"} strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 500 }}>Intervals.icu</div>
+                <div style={{ fontSize: 11, color: icuConnected ? "#22c55e" : "#64748b" }}>
+                  {icuConnected ? (icuName ?? "Connected") : "Not connected"}
+                </div>
+              </div>
+            </div>
+            {icuConnected ? (
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+            ) : (
+              <a
+                href="/api/intervals/oauth-start?from=m"
+                style={{
+                  fontSize: 12, fontWeight: 600, color: "#3b82f6",
+                  textDecoration: "none", padding: "6px 12px",
+                  background: "#1e3a5f", borderRadius: 8,
+                }}
+              >
+                Connect
+              </a>
+            )}
+          </div>
         </div>
       </div>
 

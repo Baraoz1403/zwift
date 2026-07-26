@@ -38,19 +38,28 @@ export async function GET(req: NextRequest) {
   const session = await decryptSession(raw);
   if (!session) return NextResponse.redirect(new URL("/", req.nextUrl.origin));
 
-  // intervals.icu returns ?error=access_denied when user cancels
+  // Parse the state param to determine where to redirect after OAuth.
+  // oauth-start encodes { from: "m" | "dashboard" } in base64url JSON.
   const { searchParams } = req.nextUrl;
+  const rawState = searchParams.get("state") ?? "";
+  let returnTo = "/dashboard"; // default
+  try {
+    const stateData = JSON.parse(Buffer.from(rawState, "base64url").toString("utf-8"));
+    if (stateData?.from === "m") returnTo = "/m";
+  } catch { /* ignore malformed state — fall back to dashboard */ }
+
+  // intervals.icu returns ?error=access_denied when user cancels
   const error = searchParams.get("error");
   if (error) {
     return NextResponse.redirect(
-      new URL(`/dashboard?icu_error=${encodeURIComponent(error)}`, req.nextUrl.origin)
+      new URL(`${returnTo}?icu_error=${encodeURIComponent(error)}`, req.nextUrl.origin)
     );
   }
 
   const code = searchParams.get("code");
   if (!code) {
     return NextResponse.redirect(
-      new URL("/dashboard?icu_error=no_code", req.nextUrl.origin)
+      new URL(`${returnTo}?icu_error=no_code`, req.nextUrl.origin)
     );
   }
 
@@ -134,12 +143,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL("/dashboard?icu_connected=1", req.nextUrl.origin)
+      new URL(`${returnTo}?icu_connected=1`, req.nextUrl.origin)
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "OAuth exchange failed";
     return NextResponse.redirect(
-      new URL(`/dashboard?icu_error=${encodeURIComponent(msg)}`, req.nextUrl.origin)
+      new URL(`${returnTo}?icu_error=${encodeURIComponent(msg)}`, req.nextUrl.origin)
     );
   }
 }

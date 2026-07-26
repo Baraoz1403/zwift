@@ -36,6 +36,11 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin;
   const redirectUri = `${origin}/api/intervals/oauth-callback`;
 
+  // Encode the return destination in the OAuth state param so the callback
+  // can redirect back to the right place (/m vs /dashboard).
+  const from = req.nextUrl.searchParams.get("from") ?? "dashboard";
+  const state = Buffer.from(JSON.stringify({ from })).toString("base64url");
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -43,6 +48,7 @@ export async function GET(req: NextRequest) {
     // ACTIVITY:READ — fetch completed activities for training load analysis
     // CALENDAR:WRITE — push planned workouts to the athlete's calendar
     scope: "ACTIVITY:READ CALENDAR:WRITE",
+    state,
   });
 
   return NextResponse.redirect(`${INTERVALS_AUTH_URL}?${params}`);
