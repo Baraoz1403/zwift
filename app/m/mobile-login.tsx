@@ -34,122 +34,134 @@ export default function MobileLoginScreen() {
   return (
     <div style={{
       minHeight: "100dvh",
-      background: "linear-gradient(160deg, #020817 0%, #0a1628 40%, #0f1e38 100%)",
+      background: "#020817",
       display: "flex",
       flexDirection: "column",
-      padding: "0 22px env(safe-area-inset-bottom, 28px)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       WebkitFontSmoothing: "antialiased",
-      position: "relative",
-      overflow: "hidden",
     }}>
 
-      {/* Background glow */}
+      {/* ── HERO — full dramatic top section ──────────────────────────── */}
       <div style={{
-        position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)",
-        width: 500, height: 500, borderRadius: "50%",
-        background: "radial-gradient(circle, #1d4ed825 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        paddingTop: 56, paddingBottom: 12,
-        textAlign: "center",
+        position: "relative",
+        padding: "64px 24px 40px",
+        background: "linear-gradient(170deg, #0a1628 0%, #0f2040 50%, #1a0a3a 100%)",
+        overflow: "hidden",
+        flexShrink: 0,
       }}>
-        {/* Icon */}
+        {/* Glow orbs */}
         <div style={{
-          width: 88, height: 88, borderRadius: 26,
-          background: "linear-gradient(135deg, #1e3a6e 0%, #2563eb 100%)",
+          position: "absolute", top: -60, left: "30%",
+          width: 340, height: 340, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(37,99,235,0.25) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", top: 20, right: "-10%",
+          width: 200, height: 200, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }} />
+
+        {/* Logo mark */}
+        <div style={{
+          width: 72, height: 72, borderRadius: 22,
+          background: "linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          marginBottom: 22,
-          boxShadow: "0 12px 48px #3b82f635, 0 0 0 1px #3b82f625",
+          marginBottom: 20,
+          boxShadow: "0 0 0 1px rgba(124,58,237,0.4), 0 16px 48px rgba(37,99,235,0.5)",
         }}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#60a5fa" opacity=".9" />
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white" />
           </svg>
         </div>
 
+        {/* Brand */}
         <div style={{
-          fontSize: 14, fontWeight: 700, color: "#3b82f6",
-          letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 10,
+          fontSize: 13, fontWeight: 700, color: "#818cf8",
+          letterSpacing: "3px", textTransform: "uppercase", marginBottom: 10,
         }}>
           AI Training Coach
         </div>
         <div style={{
-          fontSize: 40, fontWeight: 800, color: "#f8fafc",
-          letterSpacing: "-.8px", lineHeight: 1.05, marginBottom: 12,
+          fontSize: 46, fontWeight: 900, color: "#f8fafc",
+          letterSpacing: "-1.5px", lineHeight: 1,  marginBottom: 16,
         }}>
           Zwift AI
         </div>
-        <div style={{ fontSize: 18, color: "#64748b", lineHeight: 1.55, maxWidth: 300 }}>
-          Personalized weekly training plans, synced directly to your Zwift calendar.
+        <div style={{
+          fontSize: 19, color: "#94a3b8", lineHeight: 1.55, maxWidth: 300,
+          marginBottom: 28,
+        }}>
+          Your personal AI coach — structured weekly training plans, synced to Zwift automatically.
         </div>
 
-        {/* Stats row */}
-        <div style={{
-          display: "flex", gap: 32, marginTop: 28,
-          borderTop: "1px solid #1e293b", paddingTop: 22,
-          width: "100%", maxWidth: 340, justifyContent: "center",
-        }}>
+        {/* Stat pills */}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {[
-            { value: "30+", label: "Rides analyzed" },
-            { value: "7-day", label: "Rolling plan" },
-            { value: "ICU", label: "Auto-sync" },
+            { val: "FTP-based", label: "plans" },
+            { val: "Auto-sync", label: "to Zwift" },
+            { val: "Ride + Run", label: "support" },
           ].map(s => (
-            <div key={s.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#3b82f6" }}>{s.value}</div>
-              <div style={{ fontSize: 13, color: "#475569", fontWeight: 600, letterSpacing: ".3px", marginTop: 4 }}>{s.label}</div>
+            <div key={s.val} style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 20, padding: "7px 14px",
+              fontSize: 14, color: "#c4d0e3",
+            }}>
+              <span style={{ fontWeight: 700, color: "#f8fafc" }}>{s.val}</span>{" "}{s.label}
             </div>
           ))}
         </div>
+
+        {/* Bottom separator line */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          height: 1, background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)",
+        }} />
       </div>
 
-      {/* ── Login form ─────────────────────────────────────────────────── */}
-      <form onSubmit={handleSubmit} style={{ paddingBottom: 28 }}>
-
-        {/* Steps indicator */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          gap: 0, marginBottom: 20,
-        }}>
-          {[
-            { n: "1", label: "Sign in to Zwift" },
-            { n: "→", label: "" },
-            { n: "2", label: "Connect Intervals.icu" },
-            { n: "→", label: "" },
-            { n: "3", label: "Start training" },
-          ].map((s, i) => s.n === "→" ? (
-            <div key={i} style={{ fontSize: 16, color: "#334155", margin: "0 8px" }}>→</div>
-          ) : (
-            <div key={i} style={{ textAlign: "center" }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: "50%", margin: "0 auto 5px",
-                background: s.n === "1" ? "#2563eb" : "#1e293b",
-                border: s.n === "1" ? "none" : "1px solid #334155",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 700, color: s.n === "1" ? "#fff" : "#475569",
-              }}>{s.n}</div>
-              <div style={{ fontSize: 11, color: s.n === "1" ? "#93c5fd" : "#334155", fontWeight: 600, whiteSpace: "nowrap" }}>
-                {s.label}
-              </div>
+      {/* ── HOW IT WORKS — 3 clear steps ─────────────────────────────── */}
+      <div style={{
+        display: "flex",
+        background: "#0d1424",
+        borderBottom: "1px solid #1e293b",
+      }}>
+        {[
+          { n: "1", label: "Sign in with Zwift", color: "#3b82f6", active: true },
+          { n: "2", label: "Connect Intervals.icu", color: "#818cf8", active: false },
+          { n: "3", label: "Start training", color: "#22c55e", active: false },
+        ].map((step, i) => (
+          <div key={i} style={{
+            flex: 1, padding: "14px 8px", textAlign: "center",
+            borderRight: i < 2 ? "1px solid #1e293b" : "none",
+            opacity: step.active ? 1 : 0.45,
+          }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: "50%",
+              background: step.active ? step.color : "#1e293b",
+              border: `1px solid ${step.active ? step.color : "#334155"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 8px",
+              fontSize: 15, fontWeight: 800,
+              color: step.active ? "#fff" : "#475569",
+            }}>{step.n}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: step.active ? step.color : "#475569", lineHeight: 1.3 }}>
+              {step.label}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        {/* Form card */}
-        <div style={{
-          background: "rgba(17,24,39,0.9)",
-          backdropFilter: "blur(20px)",
-          borderRadius: 24,
-          border: "1px solid #1e293b",
-          padding: "24px 20px",
-          marginBottom: 14,
-        }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 18 }}>
-            Step 1 — Sign in with Zwift
+      {/* ── FORM ─────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, padding: "24px 20px", background: "#0a0f1a" }}>
+        <form onSubmit={handleSubmit}>
+
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", marginBottom: 6 }}>
+            Step 1: Sign in with Zwift
+          </div>
+          <div style={{ fontSize: 16, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
+            Use your Zwift account. Your password goes directly to Zwift — we never store it.
           </div>
 
           <div style={{ marginBottom: 14 }}>
@@ -161,12 +173,17 @@ export default function MobileLoginScreen() {
               required
               placeholder="Zwift email"
               style={{
-                width: "100%", padding: "16px 18px",
-                background: "#0f172a", border: "1px solid #1e293b",
-                borderRadius: 14, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
-                caretColor: "#60a5fa",
+                width: "100%", padding: "17px 18px",
+                background: "#111827",
+                border: "1px solid #1e293b",
+                borderRadius: 16,
+                color: "#f1f5f9",
+                WebkitTextFillColor: "#f1f5f9",
+                caretColor: "#818cf8",
                 fontSize: 18,
-                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "inherit",
                 WebkitAppearance: "none" as const,
               }}
             />
@@ -181,12 +198,17 @@ export default function MobileLoginScreen() {
               required
               placeholder="Password"
               style={{
-                width: "100%", padding: "16px 18px",
-                background: "#0f172a", border: "1px solid #1e293b",
-                borderRadius: 14, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
-                caretColor: "#60a5fa",
+                width: "100%", padding: "17px 18px",
+                background: "#111827",
+                border: "1px solid #1e293b",
+                borderRadius: 16,
+                color: "#f1f5f9",
+                WebkitTextFillColor: "#f1f5f9",
+                caretColor: "#818cf8",
                 fontSize: 18,
-                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "inherit",
                 WebkitAppearance: "none" as const,
               }}
             />
@@ -195,7 +217,7 @@ export default function MobileLoginScreen() {
           {error && (
             <div style={{
               marginBottom: 16, padding: "14px 16px",
-              background: "#7f1d1d22", border: "1px solid #ef444440",
+              background: "rgba(127,29,29,0.3)", border: "1px solid rgba(239,68,68,0.4)",
               borderRadius: 12, fontSize: 16, color: "#fca5a5", lineHeight: 1.5,
             }}>
               {error}
@@ -206,66 +228,82 @@ export default function MobileLoginScreen() {
             type="submit"
             disabled={loading}
             style={{
-              width: "100%", padding: "18px",
-              background: loading ? "#1d4ed8aa" : "linear-gradient(135deg, #1d4ed8, #2563eb)",
-              border: "none", borderRadius: 16,
-              color: "#fff", fontSize: 20, fontWeight: 700,
+              width: "100%", padding: "19px",
+              background: loading
+                ? "rgba(29,78,216,0.5)"
+                : "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+              border: "none", borderRadius: 18,
+              color: "#fff", fontSize: 20, fontWeight: 800,
               cursor: loading ? "default" : "pointer",
-              letterSpacing: "-.2px", transition: "opacity .15s",
+              letterSpacing: "-.2px",
               fontFamily: "inherit",
-              boxShadow: loading ? "none" : "0 4px 24px #2563eb45",
+              boxShadow: loading ? "none" : "0 4px 32px rgba(37,99,235,0.5), 0 0 0 1px rgba(124,58,237,0.3)",
+              marginBottom: 28,
             }}
           >
-            {loading ? "Signing in…" : "Sign in →"}
+            {loading ? "Signing in…" : "Sign in with Zwift →"}
           </button>
-        </div>
 
-        {/* What's next */}
-        <div style={{
-          background: "rgba(17,24,39,0.75)", borderRadius: 18,
-          border: "1px solid #1e293b", padding: "18px 20px",
-          marginBottom: 14,
-        }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#94a3b8", marginBottom: 14, textTransform: "uppercase", letterSpacing: ".5px" }}>
-            What happens next
-          </div>
-
-          {[
-            { icon: "⚡", title: "Sign in with Zwift", desc: "Your email + password — never stored by us.", active: true },
-            { icon: "📈", title: "Connect Intervals.icu", desc: "Free account. Takes 2 minutes. This is how plans sync to Zwift.", active: false },
-            { icon: "🚴", title: "Start training", desc: "Weekly plan built for your FTP and goals — ready to ride.", active: false },
-          ].map((step, i) => (
-            <div key={i} style={{
-              display: "flex", gap: 14, alignItems: "flex-start",
-              marginBottom: i < 2 ? 14 : 0,
-              opacity: step.active ? 1 : 0.55,
+          {/* What happens next */}
+          <div style={{
+            background: "#0d1424",
+            border: "1px solid #1e2d45",
+            borderRadius: 20, padding: "20px 18px",
+          }}>
+            <div style={{
+              fontSize: 13, fontWeight: 700, color: "#475569",
+              letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 16,
             }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-                background: step.active ? "rgba(37,99,235,0.15)" : "#0f172a",
-                border: step.active ? "1px solid rgba(37,99,235,0.35)" : "1px solid #1e293b",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 18,
-              }}>{step.icon}</div>
-              <div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: step.active ? "#f1f5f9" : "#64748b", marginBottom: 3 }}>
-                  {step.title}
-                </div>
-                <div style={{ fontSize: 15, color: "#475569", lineHeight: 1.5 }}>
-                  {step.desc}
-                </div>
-              </div>
+              What happens after you sign in
             </div>
-          ))}
-        </div>
 
-        <p style={{
-          margin: 0, fontSize: 13, color: "#334155",
-          lineHeight: 1.6, textAlign: "center",
-        }}>
-          Your password goes directly to Zwift&apos;s servers and is never stored here.
-        </p>
-      </form>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <FlowStep
+                num="2"
+                color="#818cf8"
+                title="Connect Intervals.icu"
+                desc="Free account. One-time setup. This is how workouts appear on your Zwift calendar automatically — no manual uploads."
+              />
+              <FlowStep
+                num="3"
+                color="#22c55e"
+                title="Get your first training plan"
+                desc="Tap 'Generate Plan' and your AI coach builds a structured weekly plan based on your FTP, goals, and schedule."
+              />
+              <FlowStep
+                num="4"
+                color="#f59e0b"
+                title="Load workouts in Zwift"
+                desc="Open Zwift → Workouts. Your plan is already there, ready to ride or run — with power targets, intervals, and coaching notes."
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function FlowStep({ num, color, title, desc }: {
+  num: string; color: string; title: string; desc: string;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+      <div style={{
+        width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+        background: `${color}18`,
+        border: `1px solid ${color}40`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 15, fontWeight: 800, color,
+      }}>{num}</div>
+      <div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 15, color: "#475569", lineHeight: 1.6 }}>
+          {desc}
+        </div>
+      </div>
     </div>
   );
 }

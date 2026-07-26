@@ -338,18 +338,14 @@ export default async function MobileProfilePage() {
       {/* Legal footer */}
       <div style={{
         display: "flex", justifyContent: "center", gap: 20,
-        paddingTop: 4, paddingBottom: 8,
+        paddingTop: 8, paddingBottom: 8,
       }}>
-        <a href="/m/legal/terms" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
+        <a href="/m/legal/terms" style={{ fontSize: 14, color: "#64748b", textDecoration: "none" }}>
           Terms of Service
         </a>
-        <span style={{ color: "#1e293b" }}>·</span>
-        <a href="/m/legal/privacy" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
+        <span style={{ color: "#334155" }}>·</span>
+        <a href="/m/legal/privacy" style={{ fontSize: 14, color: "#64748b", textDecoration: "none" }}>
           Privacy Policy
-        </a>
-        <span style={{ color: "#1e293b" }}>·</span>
-        <a href="/m/legal" style={{ fontSize: 13, color: "#334155", textDecoration: "none" }}>
-          Legal
         </a>
       </div>
 

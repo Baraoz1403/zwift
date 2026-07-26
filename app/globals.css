@@ -8,6 +8,21 @@ html {
    -webkit-text-fill-color. These rules apply to all dark-background inputs
    in the /m mobile app. Without this, typed text is invisible on iPhone.
    ─────────────────────────────────────────────────────────────────────────── */
+/* Mobile input placeholder — dark theme */
+.m-input::placeholder,
+input.m-input::placeholder,
+textarea.m-input::placeholder {
+  color: #4b5563;
+  opacity: 1;
+}
+
+/* All inputs in /m — placeholder color override for dark backgrounds */
+input[style*="0f172a"]::placeholder,
+input[style*="111827"]::placeholder,
+textarea[style*="111827"]::placeholder {
+  color: #4b5563 !important;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
