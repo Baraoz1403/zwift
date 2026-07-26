@@ -332,6 +332,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               width: "100%", padding: "16px 18px",
               background: "#111827", border: "1px solid #334155",
               borderRadius: 14, color: "#f8fafc", WebkitTextFillColor: "#f8fafc",
+              caretColor: "#60a5fa",
               fontSize: 18, fontWeight: 600,
               outline: "none", boxSizing: "border-box", fontFamily: "inherit",
               WebkitAppearance: "none" as const,

@@ -2,6 +2,26 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── iOS Safari autofill fix ─────────────────────────────────────────────────
+   iOS overrides input text/background colors on autofill with !important.
+   The only way to beat it is with -webkit-box-shadow (fake background) and
+   -webkit-text-fill-color. These rules apply to all dark-background inputs
+   in the /m mobile app. Without this, typed text is invisible on iPhone.
+   ─────────────────────────────────────────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f1f5f9 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important;
+  box-shadow: 0 0 0px 1000px #0f172a inset !important;
+  caret-color: #60a5fa;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 :root {
   /* Premium light theme (Apple Fitness+ / Whoop style): near-white page
      background, pure white cards separated by shadow alone (not borders),

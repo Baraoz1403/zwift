@@ -211,6 +211,7 @@ export default function CoachChat() {
             borderRadius: 20,
             color: "#f1f5f9",
             WebkitTextFillColor: "#f1f5f9",
+            caretColor: "#60a5fa",
             fontSize: 16,
             outline: "none",
             resize: "none",
