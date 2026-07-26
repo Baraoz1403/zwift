@@ -26,14 +26,6 @@ function detectZone(w: WeeklyWorkout): string {
   return "endurance";
 }
 
-function formatWeekRange(weekOf: string): string {
-  const start = new Date(weekOf + "T00:00:00Z");
-  const end = new Date(start);
-  end.setUTCDate(start.getUTCDate() + 6);
-  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return `${fmt(start)} – ${fmt(end)}`;
-}
-
 function formatDayLabel(dateStr?: string, dayName?: string): { short: string; dateNum: string } {
   if (dateStr) {
     const d = new Date(dateStr + "T12:00:00");
@@ -73,12 +65,16 @@ const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Satur
 interface Props {
   workouts: (WeeklyWorkout & { date?: string })[];
   weekOf: string;
+  weekRange: string;
   today: string;
   summary: string | null;
   weekStatus?: Record<string, string>;
+  prevWeekHref: string | null;
+  nextWeekHref: string | null;
+  isCurrentWeek: boolean;
 }
 
-export default function WeekView({ workouts, weekOf, today, summary, weekStatus = {} }: Props) {
+export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, prevWeekHref, nextWeekHref, isCurrentWeek }: Props) {
   // Auto-expand today by default, or the first completed workout if today has no plan
   const todayWorkout = workouts.find(w => w.date === today);
   const firstCompleted = Object.entries(weekStatus).find(([, s]) => s === "completed")?.[0];
@@ -91,13 +87,20 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
 
   if (workouts.length === 0) {
     return (
-      <div style={{ padding: "48px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 }}>No plan yet</div>
-        <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 28 }}>
-          Your weekly training plan hasn&apos;t been generated yet.
+      <div style={{ padding: "0 0 24px" }}>
+        <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />
+        <div style={{ padding: "40px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 }}>
+            {isCurrentWeek ? "No plan yet" : "No plan for this week"}
+          </div>
+          <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 28 }}>
+            {isCurrentWeek
+              ? "Your weekly training plan hasn't been generated yet."
+              : "No training plan has been generated for this week yet."}
+          </div>
+          <GeneratePlanButton weekOf={isCurrentWeek ? undefined : weekOf} />
         </div>
-        <GeneratePlanButton />
       </div>
     );
   }
@@ -105,15 +108,16 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
   const bullets = summary ? summaryBullets(summary) : [];
 
   return (
-    <div style={{ padding: "16px 16px 0" }}>
+    <div style={{ padding: "0 0 0" }}>
+
+      <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />
+
+      <div style={{ padding: "0 16px" }}>
 
       {/* Header */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 16, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
-          {formatWeekRange(weekOf)}
-        </div>
-        <div style={{ fontSize: 30, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
-          Weekly Plan
+        <div style={{ fontSize: 30, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 0 }}>
+          {isCurrentWeek ? "This Week" : "Next Week"}
         </div>
 
         {/* Coach summary — max 2 ultra-short bullets */}
@@ -135,7 +139,7 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
       </div>
 
       {/* Day cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8, paddingBottom: 8 }}>
         {ALL_DAYS.map(dayName => {
           const w = workouts.find(x => x.day === dayName);
           const isToday = w?.date === today;
@@ -353,11 +357,71 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
           );
         })}
       </div>
+      </div> {/* end padding wrapper */}
     </div>
   );
 }
 
-function GeneratePlanButton() {
+function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
+  weekRange: string;
+  prevWeekHref: string | null;
+  nextWeekHref: string | null;
+  isCurrentWeek: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "12px 16px 10px",
+      borderBottom: "1px solid #1e293b",
+      background: "#0a0f1a",
+      position: "sticky", top: 0, zIndex: 10,
+    }}>
+      {/* Prev week button */}
+      {prevWeekHref ? (
+        <a href={prevWeekHref} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          fontSize: 15, fontWeight: 700, color: "#818cf8",
+          textDecoration: "none", padding: "8px 12px",
+          background: "rgba(129,140,248,0.08)", borderRadius: 10,
+          border: "1px solid rgba(129,140,248,0.2)",
+          WebkitTapHighlightColor: "transparent",
+        }}>
+          ← Now
+        </a>
+      ) : (
+        <div style={{ width: 80 }} />
+      )}
+
+      {/* Week label */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+          {isCurrentWeek ? "Current Week" : "Next Week"}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8", marginTop: 1 }}>
+          {weekRange}
+        </div>
+      </div>
+
+      {/* Next week button */}
+      {nextWeekHref ? (
+        <a href={nextWeekHref} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          fontSize: 15, fontWeight: 700, color: "#818cf8",
+          textDecoration: "none", padding: "8px 12px",
+          background: "rgba(129,140,248,0.08)", borderRadius: 10,
+          border: "1px solid rgba(129,140,248,0.2)",
+          WebkitTapHighlightColor: "transparent",
+        }}>
+          Next →
+        </a>
+      ) : (
+        <div style={{ width: 80 }} />
+      )}
+    </div>
+  );
+}
+
+function GeneratePlanButton({ weekOf }: { weekOf?: string }) {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [msg, setMsg] = useState("");
 
@@ -368,7 +432,7 @@ function GeneratePlanButton() {
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(weekOf ? { weekOf } : {}),
         credentials: "include",
       });
       const data = await res.json();
