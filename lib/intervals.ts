@@ -23,10 +23,105 @@
  */
 
 const INTERVALS_API = "https://intervals.icu/api/v1";
+const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/oauth/token";
 
-function basicAuthHeader(apiKey: string): string {
-  const encoded = Buffer.from(`API_KEY:${apiKey}`).toString("base64");
+/**
+ * Build the Authorization header for an ICU API call.
+ *
+ * Accepts two credential forms:
+ *  - API key (ic0_xxx…)  → HTTP Basic with username "API_KEY"
+ *  - OAuth access token   → stored as "Bearer <token>"; returned as-is
+ *
+ * Callers simply pass whatever is stored in the zwift_intervals_key cookie.
+ * The cookie holds either the raw API key (legacy) or "Bearer <token>" (OAuth).
+ */
+export function buildAuthHeader(cred: string): string {
+  if (cred.startsWith("Bearer ")) return cred;
+  const encoded = Buffer.from(`API_KEY:${cred}`).toString("base64");
   return `Basic ${encoded}`;
+}
+
+/** @deprecated Use buildAuthHeader() */
+function basicAuthHeader(apiKey: string): string {
+  return buildAuthHeader(apiKey);
+}
+
+// ── OAuth ─────────────────────────────────────────────────────────────────────
+
+export interface IntervalsOAuthTokens {
+  access_token: string;
+  refresh_token?: string;
+  token_type: string;
+  expires_in: number; // seconds
+}
+
+/**
+ * Exchange an authorization code (from the OAuth callback) for access + refresh
+ * tokens. Requires INTERVALS_CLIENT_ID and INTERVALS_CLIENT_SECRET env vars.
+ */
+export async function exchangeIntervalsCode(
+  code: string,
+  redirectUri: string,
+): Promise<IntervalsOAuthTokens> {
+  const clientId = process.env.INTERVALS_CLIENT_ID;
+  const clientSecret = process.env.INTERVALS_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("INTERVALS_CLIENT_ID / INTERVALS_CLIENT_SECRET not configured.");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+
+  const res = await fetch(INTERVALS_OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: body.toString(),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Token exchange failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+
+  return await res.json() as IntervalsOAuthTokens;
+}
+
+/**
+ * Refresh an expired OAuth access token using the stored refresh token.
+ */
+export async function refreshIntervalsToken(refreshToken: string): Promise<IntervalsOAuthTokens> {
+  const clientId = process.env.INTERVALS_CLIENT_ID;
+  const clientSecret = process.env.INTERVALS_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("INTERVALS_CLIENT_ID / INTERVALS_CLIENT_SECRET not configured.");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+
+  const res = await fetch(INTERVALS_OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: body.toString(),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Token refresh failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+
+  return await res.json() as IntervalsOAuthTokens;
 }
 
 export interface IntervalsAthlete {

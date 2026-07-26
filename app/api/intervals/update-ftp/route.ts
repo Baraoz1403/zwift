@@ -12,13 +12,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
+import { buildAuthHeader } from "@/lib/intervals";
 
 const INTERVALS_API = "https://intervals.icu/api/v1";
-
-function basicAuthHeader(apiKey: string): string {
-  const encoded = Buffer.from(`API_KEY:${apiKey}`).toString("base64");
-  return `Basic ${encoded}`;
-}
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
@@ -45,7 +41,7 @@ export async function POST(req: NextRequest) {
     const res = await fetch(`${INTERVALS_API}/athlete/${athleteId}`, {
       method: "PUT",
       headers: {
-        Authorization: basicAuthHeader(apiKey),
+        Authorization: buildAuthHeader(apiKey),
         "Content-Type": "application/json",
         Accept: "application/json",
       },
