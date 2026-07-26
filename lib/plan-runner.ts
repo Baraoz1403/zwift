@@ -24,7 +24,7 @@ import { computeTrainingLoad, computeTrainingLoadFromIcu } from "@/lib/training-
 import { advanceMacroCycle, getPhaseForWeekIndex, resolvePhase, mondayOfCurrentWeek, MacroCycleState } from "@/lib/periodization";
 import { computeAdherence } from "@/lib/adherence";
 import type { RiderTrainingProfile } from "@/lib/rider-profile";
-import { getFingerprint, fingerprintToPromptSummary } from "@/lib/rider-fingerprint";
+import { getFingerprint, fingerprintToPromptSummary, recordFtpDataPoint } from "@/lib/rider-fingerprint";
 import {
   registerAthlete,
   getCachedPlan,
@@ -210,9 +210,10 @@ export async function runWeeklyPlanGeneration(
   // the FTP Test Protocol before any intensity work is prescribed.
   const effectiveFtp = profile.ftp ?? undefined;
 
-  // Auto-sync computed FTP to Intervals.icu — fire-and-forget.
-  // Ensures every ZWO file pushed to Intervals uses the same FTP as the plan.
-  // Never blocks plan generation; a failure here is non-critical.
+  // Auto-sync Zwift FTP to Intervals.icu — fire-and-forget.
+  // Ensures every ZWO file pushed to ICU uses the same FTP reference as the plan.
+  // Also mirror to the rider fingerprint so the mobile profile always shows
+  // the Zwift value — single source of truth, no divergence possible.
   if (effectiveFtp && effectiveFtp >= 100) {
     const appUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -222,6 +223,10 @@ export async function runWeeklyPlanGeneration(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ftp: effectiveFtp }),
     }).catch(() => {});
+    // Mirror to fingerprint — ensures mobile profile reads the Zwift FTP,
+    // not a stale estimate. Source = "measured" because Zwift sets ftp only
+    // after a real FTP test or a manual entry by the rider.
+    await recordFtpDataPoint(athleteId, effectiveFtp, "measured");
   }
 
   // Use ICU-computed TSS when available — covers ALL sports (running, gym, outdoor
