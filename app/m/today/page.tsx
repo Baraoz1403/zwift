@@ -221,9 +221,13 @@ function TodayHero({
     localHour < 17 ? "Good afternoon," :
     localHour < 21 ? "Good evening," : "Good night,";
 
+  // Zwift brand colors
+  const ZO = "#F2541B"; // Zwift Orange — primary brand
+  const ZB = "#009CDF"; // Zwift Electric Blue — secondary
+
   // Status pill
   const statusLabel = statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus ride" : "Planned";
-  const statusColor = statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : "#3b82f6";
+  const statusColor = statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : ZB;
 
   // Today's date label
   const dateLabel = new Date().toLocaleDateString("en-US", {
@@ -234,14 +238,14 @@ function TodayHero({
 
   // Ticker items — personal metrics woven in with brand messages
   const tickerItems = [
-    { dot: "#00D4FF", text: "AI TRAINING COACH" },
-    { dot: "#7C3AED", text: ftp ? `FTP · ${ftp} W` : "FTP ANALYSIS ACTIVE" },
-    { dot: "#00D4FF", text: "REAL-TIME POWER ANALYSIS" },
-    { dot: "#F59E0B", text: phase ? `${phase.toUpperCase()} PHASE` : "ADAPTIVE TRAINING ENGINE" },
-    { dot: "#7C3AED", text: "TSB · CTL · ATL TRACKING" },
-    { dot: "#00D4FF", text: "INTERVALS.ICU SYNC ACTIVE" },
-    { dot: "#F43F5E", text: "PHYSIOLOGICAL LOAD MONITOR" },
-    { dot: "#7C3AED", text: "PROGRESSIVE OVERLOAD ALGORITHM" },
+    { dot: ZO,       text: "ZWIFT AI TRAINING COACH" },
+    { dot: ZB,       text: ftp ? `FTP · ${ftp} W` : "FTP ANALYSIS ACTIVE" },
+    { dot: ZO,       text: "REAL-TIME POWER ANALYSIS" },
+    { dot: ZB,       text: phase ? `${phase.toUpperCase()} PHASE` : "ADAPTIVE TRAINING ENGINE" },
+    { dot: ZO,       text: "TSB · CTL · ATL TRACKING" },
+    { dot: ZB,       text: "INTERVALS.ICU SYNC ACTIVE" },
+    { dot: ZO,       text: "PHYSIOLOGICAL LOAD MONITOR" },
+    { dot: ZB,       text: "PROGRESSIVE OVERLOAD ALGORITHM" },
   ];
 
   return (
@@ -272,32 +276,32 @@ function TodayHero({
         }
       `}</style>
 
-      {/* ── Neural grid ── */}
+      {/* ── Neural grid — Zwift Blue tint ── */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         backgroundImage: `
-          linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px)
+          linear-gradient(rgba(0,156,223,0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,156,223,0.06) 1px, transparent 1px)
         `,
         backgroundSize: "36px 36px",
         WebkitMaskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
         maskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
       }} />
 
-      {/* ── Purple aurora top-right ── */}
+      {/* ── Zwift Orange aurora top-right ── */}
       <div style={{
         position: "absolute", top: -90, right: -70, width: 320, height: 320,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(124,58,237,0.32) 0%, transparent 65%)",
-        filter: "blur(45px)", pointerEvents: "none",
+        background: "radial-gradient(circle, rgba(242,84,27,0.28) 0%, transparent 65%)",
+        filter: "blur(50px)", pointerEvents: "none",
         animation: "mHeroAurora 9s ease-in-out infinite",
       }} />
 
-      {/* ── Cyan glow bottom-left ── */}
+      {/* ── Zwift Blue glow bottom-left ── */}
       <div style={{
         position: "absolute", bottom: -30, left: -30, width: 200, height: 200,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(0,212,255,0.16) 0%, transparent 65%)",
+        background: "radial-gradient(circle, rgba(0,156,223,0.18) 0%, transparent 65%)",
         filter: "blur(35px)", pointerEvents: "none",
         animation: "mHeroAurora 12s ease-in-out infinite reverse",
       }} />
@@ -312,24 +316,24 @@ function TodayHero({
         }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: "linear-gradient(135deg, rgba(124,58,237,0.28), rgba(0,212,255,0.16))",
-            border: "1px solid rgba(0,212,255,0.35)",
+            background: "linear-gradient(135deg, rgba(242,84,27,0.22), rgba(0,156,223,0.14))",
+            border: "1px solid rgba(0,156,223,0.32)",
             borderRadius: 10, padding: "6px 13px 6px 8px",
-            boxShadow: "0 0 20px rgba(0,212,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+            boxShadow: "0 0 20px rgba(0,156,223,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}>
             {/* Pulsing live dot */}
             <div style={{
               width: 6, height: 6, borderRadius: "50%",
-              background: "#00D4FF",
-              boxShadow: "0 0 8px #00D4FF",
+              background: ZO,
+              boxShadow: `0 0 8px ${ZO}`,
               animation: "mHeroPulse 1.8s ease-in-out infinite",
               flexShrink: 0,
             }} />
             <div style={{
               width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-              background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
+              background: `linear-gradient(135deg, ${ZO} 0%, ${ZB} 100%)`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 10px rgba(0,212,255,0.5)",
+              boxShadow: `0 0 10px rgba(0,156,223,0.5)`,
             }}>
               <svg width="12" height="12" viewBox="0 0 20 20" fill="white">
                 <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
@@ -352,7 +356,7 @@ function TodayHero({
         <div style={{ marginBottom: workout ? 16 : 18 }}>
           <div style={{
             fontSize: 13.5, fontWeight: 500,
-            color: "rgba(0,212,255,0.75)",
+            color: "rgba(0,156,223,0.85)",
             marginBottom: 1, letterSpacing: "0.02em",
           }}>
             {timeGreeting}
@@ -368,8 +372,8 @@ function TodayHero({
         {/* Workout preview */}
         {workout && (
           <div style={{
-            background: statusDone ? "rgba(34,197,94,0.08)" : "rgba(0,212,255,0.06)",
-            border: `1px solid ${statusDone ? "rgba(34,197,94,0.28)" : "rgba(0,212,255,0.2)"}`,
+            background: statusDone ? "rgba(34,197,94,0.08)" : "rgba(0,156,223,0.06)",
+            border: `1px solid ${statusDone ? "rgba(34,197,94,0.28)" : "rgba(0,156,223,0.2)"}`,
             borderRadius: 16, padding: "13px 15px", marginBottom: 14,
             backdropFilter: "blur(10px)",
           }}>
@@ -380,7 +384,7 @@ function TodayHero({
               <div style={{
                 fontSize: 10, fontWeight: 800, letterSpacing: "0.22em",
                 textTransform: "uppercase",
-                color: statusDone ? "#22c55e" : "rgba(0,212,255,0.65)",
+                color: statusDone ? "#22c55e" : "rgba(0,156,223,0.8)",
               }}>
                 {statusDone ? "Completed" : "Today's Session"}
               </div>
@@ -409,8 +413,8 @@ function TodayHero({
               )}
               <span style={{
                 fontSize: 12, fontWeight: 600,
-                color: isRun ? "#f97316" : "rgba(0,212,255,0.75)",
-                background: isRun ? "rgba(249,115,22,0.1)" : "rgba(0,212,255,0.08)",
+                color: isRun ? "#f97316" : "rgba(0,156,223,0.85)",
+                background: isRun ? "rgba(249,115,22,0.1)" : "rgba(0,156,223,0.09)",
                 padding: "3px 10px", borderRadius: 8,
               }}>
                 {isRun ? "🏃 Run" : "🚴 Ride"}
@@ -421,15 +425,15 @@ function TodayHero({
 
         {/* Metric cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" accent filled={!!ftp} />
-          <HeroCard label="Phase" value={phase ?? "—"} color="#A78BFA" filled={!!phase} />
+          <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color={ZB} accent filled={!!ftp} />
+          <HeroCard label="Phase" value={phase ?? "—"} color={ZO} filled={!!phase} />
         </div>
       </div>
 
       {/* ── Animated ticker bar (same as desktop HeroBanner) ── */}
       <div style={{
-        borderTop: "1px solid rgba(0,212,255,0.15)",
-        background: "linear-gradient(90deg, rgba(0,212,255,0.04), rgba(124,58,237,0.04))",
+        borderTop: "1px solid rgba(242,84,27,0.2)",
+        background: "linear-gradient(90deg, rgba(0,156,223,0.05), rgba(242,84,27,0.04))",
         overflow: "hidden",
         flexShrink: 0,
         position: "relative",
@@ -481,7 +485,7 @@ function HeroCard({ label, value, color, filled, accent }: {
       background: filled
         ? `${color}0d`
         : "rgba(9,22,46,0.6)",
-      border: `1px solid ${filled ? color + "30" : "rgba(0,212,255,0.08)"}`,
+      border: `1px solid ${filled ? color + "30" : "rgba(0,156,223,0.08)"}`,
       borderRadius: 14,
       padding: "13px 14px",
       position: "relative",

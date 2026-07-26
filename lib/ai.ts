@@ -652,9 +652,11 @@ Every workout structure block must include explicit cadenceTarget.
 "ready for more, or repeat the same session with a small bump when consolidation is the right call - " +
 "either is valid coaching, and either beats swapping categories just to look varied. " +
 "(2) Foundation/Recovery/Endurance sessions may repeat freely (Foundation Ride twice in a row is fine). " +
-"(3) If previousWeekTitles shows several consecutive weeks of the same category with no progression at all " +
-"(same session, same numbers, no change), that's a sign to progress - either a bigger dose of the same session " +
-"or a step up the ladder. " +
+"(3) If previousWeekTitles shows the same session title appearing 2+ consecutive weeks, the DEFAULT is to step up — " +
+"either increase reps/duration by one unit (e.g. 4×8 → 5×8 or 4×8 → 4×10) OR move to the next rung of the ladder. " +
+"Consolidation (holding the same load) is valid ONLY when TSB is negative or adherence was below 80% — otherwise, step up and say so in the summary. " +
+"Stepping down from last week should only happen when TSB, hrTrend, or adherence clearly demand it. " +
+"Staying flat week over week with no stated reason is a coaching failure, not a conservative choice. " +
   "Absent/null previousWeekTitles means this is the first plan — proceed " +
   "normally using only phase/TSB guidance. " +
   "For any day at or before the today field that already has a matching " +
@@ -750,9 +752,19 @@ Every workout structure block must include explicit cadenceTarget.
   "from normalizedPower when available), so you don't need to re-derive " +
   "fatigue from it yourself - just use it, when present, to judge whether " +
   "a specific recent ride was a hard effort worth acknowledging by name. " +
-  "If ageYears is provided and is 40 or above, lean toward an extra " +
-  "recovery day between hard sessions, since recovery generally slows with " +
-  "age. Some rides may include an hrFlag field: 'low' means that ride's " +
+  "TSB SESSION GATES — enforce these as hard rules, not hints: " +
+  "VO2max sessions require TSB ≥ -5 (substitute Sweet Spot Classic if below). " +
+  "Threshold sessions require TSB ≥ -12 (substitute Sweet Spot Classic if below). " +
+  "Sweet Spot sessions require TSB ≥ -20 (substitute Tempo Cruise if below). " +
+  "Neuromuscular sessions require TSB ≥ -15 (substitute Sprint Builder if below). " +
+  "Intermittent/Over-Under sessions require TSB ≥ -8 (substitute Tempo Cruise if below). " +
+  "Tempo and Endurance sessions have no TSB floor. Recovery/Rest have no floor. " +
+  "When a substitution fires, note it briefly in the description: 'Scheduled as [original], downgraded to [actual] because TSB is [value].' " +
+  "If ageYears is provided, use it as physiological context, not as a hard constraint on ambition. " +
+  "A fit 56-year-old who regularly completes threshold and VO2max sessions at high completion rates is NOT a 'masters rider who needs extra recovery' — they are a trained athlete who happens to be 56. " +
+  "Let TSB, hrTrend, hrFlag, adherence, and the rider's own note drive fatigue decisions. Age informs interpretation (e.g. a TSB of -10 may feel heavier at 56 than at 30), but it never overrides the actual signals. " +
+  "Do not automatically add rest days or soften sessions because of age alone. " +
+  "Some rides may include an hrFlag field: 'low' means that ride's " +
   "heart rate was unusually low for the power produced compared to the " +
   "rider's own recent rides (possible fatigue, illness, or a sensor " +
   "issue); 'high' means the opposite. Treat one or more recent hrFlag " +
