@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
@@ -20,9 +19,9 @@ function buildDateMap(weekOf: string): Record<string, string> {
 export default async function MobileWeekPage() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!raw) redirect("/login?next=/m");
+  if (!raw) return null;
   const session = await decryptSession(raw);
-  if (!session?.athleteId) redirect("/login?next=/m");
+  if (!session?.athleteId) return null;
 
   const weekOf = mondayOfCurrentWeek();
   const plan = await getCachedPlan(String(session.athleteId), weekOf);

@@ -1,17 +1,17 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
+import SignOutButton from "./sign-out-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!raw) redirect("/login?next=/m");
+  if (!raw) return null; // layout handles unauthenticated state
   const session = await decryptSession(raw);
-  if (!session?.athleteId) redirect("/login?next=/m");
+  if (!session?.athleteId) return null;
 
   const athleteId = session.athleteId!;
 
@@ -195,16 +195,7 @@ export default async function MobileProfilePage() {
             <span style={{ fontSize: 14, color: "#c4d0e3" }}>Full dashboard</span>
             <ChevronRight />
           </a>
-          <a
-            href="/api/auth/logout"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", textDecoration: "none",
-            }}
-          >
-            <span style={{ fontSize: 14, color: "#ef4444" }}>Sign out</span>
-            <ChevronRight color="#ef4444" />
-          </a>
+          <SignOutButton />
         </div>
       </div>
 

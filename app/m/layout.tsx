@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import MobileNav from "./mobile-nav";
+import MobileLoginScreen from "./mobile-login";
 
 export const metadata: Metadata = {
   title: "Zwift AI Coach",
@@ -21,10 +21,14 @@ export const viewport: Viewport = {
 export default async function MobileLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!raw) redirect("/login?next=/m");
-  const session = await decryptSession(raw);
-  if (!session?.athleteId) redirect("/login?next=/m");
+  const session = raw ? await decryptSession(raw) : null;
 
+  // Not authenticated — show the mobile login screen (no nav, no children)
+  if (!session?.athleteId) {
+    return <MobileLoginScreen />;
+  }
+
+  // Authenticated — show normal app shell with bottom navigation
   return (
     <div style={{
       minHeight: "100dvh",
