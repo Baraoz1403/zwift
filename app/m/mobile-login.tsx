@@ -185,6 +185,37 @@ export default function MobileLoginScreen() {
           </button>
         </div>
 
+        {/* ICU explanation */}
+        <div style={{
+          background: "rgba(17,24,39,0.7)", borderRadius: 16,
+          border: "1px solid #1e293b", padding: "16px 18px",
+          marginBottom: 14,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9" }}>
+              You&apos;ll also need Intervals.icu
+            </div>
+          </div>
+          <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
+            After signing in, you&apos;ll connect a free{" "}
+            <span style={{ color: "#22c55e", fontWeight: 600 }}>intervals.icu</span>{" "}
+            account. This is how your training plans sync automatically to Zwift — no manual uploads needed.
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: "#475569" }}>
+            Don&apos;t have one? Create a free account at{" "}
+            <span style={{ color: "#3b82f6" }}>intervals.icu</span> — takes 2 minutes.
+          </div>
+        </div>
+
         <p style={{
           margin: 0, fontSize: 11, color: "#334155",
           lineHeight: 1.5, textAlign: "center",

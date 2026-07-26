@@ -85,13 +85,9 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
         <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
         <div style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 8 }}>No plan yet</div>
         <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 28 }}>
-          Open the dashboard to generate your weekly training plan.
+          Your weekly training plan hasn&apos;t been generated yet.
         </div>
-        <a href="/dashboard" style={{
-          display: "inline-block", padding: "14px 28px",
-          background: "#2563eb", color: "#fff", borderRadius: 14,
-          fontSize: 15, fontWeight: 700, textDecoration: "none",
-        }}>Open Dashboard</a>
+        <GeneratePlanButton />
       </div>
     );
   }
@@ -330,6 +326,61 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function GeneratePlanButton() {
+  const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  async function generate() {
+    if (state === "loading") return;
+    setState("loading");
+    try {
+      const res = await fetch("/api/ai/weekly-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setState("done");
+        setMsg("Plan generated! Refreshing…");
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        setState("error");
+        setMsg(data.error ?? "Something went wrong");
+      }
+    } catch {
+      setState("error");
+      setMsg("Network error — try again");
+    }
+  }
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <button
+        onClick={generate}
+        disabled={state === "loading" || state === "done"}
+        style={{
+          padding: "15px 32px",
+          background: state === "done" ? "#166534" : state === "error" ? "#7f1d1d" : "#2563eb",
+          color: "#fff", borderRadius: 16, border: "none",
+          fontSize: 16, fontWeight: 700, cursor: state === "loading" ? "default" : "pointer",
+          width: "100%", maxWidth: 280,
+        }}
+      >
+        {state === "idle"    ? "Generate my plan" :
+         state === "loading" ? "Generating…" :
+         state === "done"    ? "✓ Done!" : "Try again"}
+      </button>
+      {msg && (
+        <div style={{ fontSize: 13, color: state === "error" ? "#f87171" : "#4ade80", marginTop: 10 }}>
+          {msg}
+        </div>
+      )}
     </div>
   );
 }

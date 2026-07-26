@@ -266,7 +266,7 @@ export default async function MobileProfilePage() {
           padding: "4px 0",
         }}>
           <a
-            href="/dashboard#training-profile"
+            href="/m/profile/edit"
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "14px 16px", textDecoration: "none",
@@ -277,17 +277,6 @@ export default async function MobileProfilePage() {
               <div style={{ fontSize: 15, color: "#f1f5f9", fontWeight: 500 }}>Edit training profile</div>
               <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Goals, schedule, session length</div>
             </div>
-            <ChevronRight />
-          </a>
-          <a
-            href="/dashboard"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "14px 16px", textDecoration: "none",
-              borderBottom: "1px solid #1e293b",
-            }}
-          >
-            <span style={{ fontSize: 15, color: "#c4d0e3" }}>Full dashboard</span>
             <ChevronRight />
           </a>
           <SignOutButton />

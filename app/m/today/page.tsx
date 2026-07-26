@@ -5,6 +5,7 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { computeWeekStatus, statusLabel } from "@/lib/activity-sync";
 import MobileWorkoutCard from "./workout-card";
+import NoPlanScreen from "./no-plan-screen";
 import type { DayStatus } from "@/lib/activity-sync";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -88,24 +89,7 @@ export default async function MobileTodayPage() {
     null;
 
   if (!plan || workouts.length === 0) {
-    return (
-      <div style={{ padding: "48px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "#f1f5f9", marginBottom: 10 }}>
-          Plan not ready yet
-        </div>
-        <div style={{ fontSize: 15, color: "#64748b", lineHeight: 1.65, marginBottom: 28 }}>
-          Your weekly plan hasn&apos;t been generated yet. Open the dashboard to trigger it.
-        </div>
-        <a href="/dashboard" style={{
-          display: "inline-block", padding: "15px 30px",
-          background: "#2563eb", color: "#fff", borderRadius: 14,
-          fontSize: 16, fontWeight: 700, textDecoration: "none",
-        }}>
-          Open Dashboard
-        </a>
-      </div>
-    );
+    return <NoPlanScreen />;
   }
 
   // ── Rest day but athlete rode anyway → Bonus ride screen ─────────────────
