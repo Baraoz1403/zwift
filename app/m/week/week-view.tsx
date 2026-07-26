@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { WeeklyWorkout } from "@/lib/ai";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
+import { isRunWorkout } from "@/lib/zwo";
 
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
@@ -232,7 +233,17 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                     </div>
 
                     {!isRest && w && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+                        {/* RIDE / RUN mode badge */}
+                        <span style={{
+                          fontSize: 12, fontWeight: 800,
+                          color: isRunWorkout(w.type) ? "#f97316" : "#3b82f6",
+                          background: isRunWorkout(w.type) ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
+                          border: `1px solid ${isRunWorkout(w.type) ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
+                          borderRadius: 6, padding: "2px 8px", flexShrink: 0,
+                        }}>
+                          {isRunWorkout(w.type) ? "RUN" : "RIDE"}
+                        </span>
                         {w.durationMin > 0 && (
                           <span style={{ fontSize: 16, color: "#64748b" }}>{w.durationMin} min</span>
                         )}

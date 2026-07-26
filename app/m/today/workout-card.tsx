@@ -4,7 +4,7 @@ import { useState } from "react";
 import WorkoutThumbnail from "@/app/dashboard/workout-thumbnail";
 import MobileWorkoutChart from "./workout-chart";
 import type { WeeklyWorkout } from "@/lib/ai";
-import { structureToBlocks, computeIfTss } from "@/lib/zwo";
+import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
@@ -105,10 +105,20 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         <div style={{ fontSize: 17, color: "#64748b", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>
           {formatDay(today)}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
           <div style={{ fontSize: 30, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px" }}>
             Today&apos;s Workout
           </div>
+          {/* Mode badge: RUN or RIDE — critical for knowing which Zwift mode to enter */}
+          <span style={{
+            fontSize: 15, fontWeight: 800,
+            color: isRunWorkout(workout.type) ? "#f97316" : "#3b82f6",
+            background: isRunWorkout(workout.type) ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
+            border: `1px solid ${isRunWorkout(workout.type) ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
+            borderRadius: 8, padding: "5px 12px", flexShrink: 0,
+          }}>
+            {isRunWorkout(workout.type) ? "🏃 RUN" : "🚴 RIDE"}
+          </span>
           {todayStatus === "completed" && (
             <span style={{
               fontSize: 15, fontWeight: 700, color: "#22c55e",
