@@ -6,6 +6,7 @@ import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import SignOutButton from "./sign-out-button";
+import { ThemeToggleButton } from "../theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -81,14 +82,14 @@ export default async function MobileProfilePage() {
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 15, color: "#475569", fontWeight: 600, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 15, color: "var(--m-muted-2)", fontWeight: 600, letterSpacing: ".4px", textTransform: "uppercase" }}>
           Athlete
         </div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
+        <div style={{ fontSize: 32, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-.4px", marginTop: 2 }}>
           {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Profile & Stats"}
         </div>
         {zwiftProfile?.firstName && (
-          <div style={{ fontSize: 17, color: "#475569", marginTop: 4 }}>Profile &amp; Stats</div>
+          <div style={{ fontSize: 17, color: "var(--m-muted-2)", marginTop: 4 }}>Profile &amp; Stats</div>
         )}
       </div>
 
@@ -121,8 +122,8 @@ export default async function MobileProfilePage() {
             <div style={{
               gridColumn: "1/-1",
               padding: "16px 18px",
-              background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
-              fontSize: 16, color: "#475569", lineHeight: 1.6,
+              background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
+              fontSize: 16, color: "var(--m-muted)", lineHeight: 1.6,
             }}>
               CTL / ATL / TSB will appear here once your rides are processed.
             </div>
@@ -170,23 +171,23 @@ export default async function MobileProfilePage() {
             </div>
             <div>
               <div style={{ fontSize: 17, fontWeight: 700, color: "#22c55e" }}>All systems synced</div>
-              <div style={{ fontSize: 15, color: "#475569", marginTop: 3 }}>Zwift + Intervals.icu connected</div>
+              <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 3 }}>Zwift + Intervals.icu connected</div>
             </div>
           </div>
         )}
 
         <div style={{
-          background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
+          background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
           padding: "4px 0",
         }}>
           {/* Zwift — always connected (they're logged in) */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", borderBottom: "1px solid #1e293b",
+            padding: "14px 16px", borderBottom: "1px solid var(--m-border)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: "#0f2a4a",
+                width: 36, height: 36, borderRadius: 9, background: "var(--m-icon-primary)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -194,7 +195,7 @@ export default async function MobileProfilePage() {
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 18, color: "#f1f5f9", fontWeight: 700 }}>Zwift</div>
+                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Zwift</div>
                 <div style={{ fontSize: 15, color: "#22c55e", marginTop: 2 }}>Connected</div>
               </div>
             </div>
@@ -208,17 +209,17 @@ export default async function MobileProfilePage() {
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                width: 36, height: 36, borderRadius: 9, background: icuConnected ? "#0f2a1a" : "#1a1a2e",
+                width: 36, height: 36, borderRadius: 9, background: icuConnected ? "var(--m-icon-success)" : "var(--m-icon-muted)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "#475569"}
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "var(--m-muted)"}
                     strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 18, color: "#f1f5f9", fontWeight: 700 }}>Intervals.icu</div>
-                <div style={{ fontSize: 15, color: icuConnected ? "#22c55e" : "#64748b", marginTop: 2 }}>
+                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
+                <div style={{ fontSize: 15, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2 }}>
                   {icuConnected ? (icuName ?? "Connected") : "Not connected"}
                 </div>
               </div>
@@ -229,9 +230,9 @@ export default async function MobileProfilePage() {
               <a
                 href="/api/intervals/oauth-start?from=m"
                 style={{
-                  fontSize: 14, fontWeight: 600, color: "#3b82f6",
+                  fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)",
                   textDecoration: "none", padding: "7px 14px",
-                  background: "#1e3a5f", borderRadius: 9,
+                  background: "var(--m-btn-muted)", borderRadius: 9,
                 }}
               >
                 Connect
@@ -246,7 +247,7 @@ export default async function MobileProfilePage() {
         <div style={{ marginBottom: 16 }}>
           <SectionLabel>Training profile</SectionLabel>
           <div style={{
-            background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
+            background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
             padding: "14px 16px",
           }}>
             {profile.goals && profile.goals.length > 0 && (
@@ -314,7 +315,7 @@ export default async function MobileProfilePage() {
       <div style={{ marginBottom: 16 }}>
         <SectionLabel>Account</SectionLabel>
         <div style={{
-          background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
+          background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
           padding: "4px 0",
         }}>
           <a
@@ -322,15 +323,18 @@ export default async function MobileProfilePage() {
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "16px 18px", textDecoration: "none",
-              borderBottom: "1px solid #1e293b",
+              borderBottom: "1px solid var(--m-border)",
             }}
           >
             <div>
-              <div style={{ fontSize: 18, color: "#f1f5f9", fontWeight: 700 }}>Edit training profile</div>
-              <div style={{ fontSize: 15, color: "#475569", marginTop: 3 }}>Goals, schedule, session length</div>
+              <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
+              <div style={{ fontSize: 15, color: "var(--m-muted-2)", marginTop: 3 }}>Goals, schedule, session length</div>
             </div>
             <ChevronRight />
           </a>
+          <div style={{ borderBottom: "1px solid var(--m-border)" }}>
+            <ThemeToggleButton />
+          </div>
           <SignOutButton />
         </div>
       </div>
@@ -340,11 +344,11 @@ export default async function MobileProfilePage() {
         display: "flex", justifyContent: "center", gap: 20,
         paddingTop: 8, paddingBottom: 8,
       }}>
-        <a href="/m/legal/terms" style={{ fontSize: 14, color: "#64748b", textDecoration: "none" }}>
+        <a href="/m/legal/terms" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>
           Terms of Service
         </a>
-        <span style={{ color: "#334155" }}>·</span>
-        <a href="/m/legal/privacy" style={{ fontSize: 14, color: "#64748b", textDecoration: "none" }}>
+        <span style={{ color: "var(--m-border)" }}>·</span>
+        <a href="/m/legal/privacy" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>
           Privacy Policy
         </a>
       </div>
@@ -356,7 +360,7 @@ export default async function MobileProfilePage() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 16, fontWeight: 700, color: "#475569",
+      fontSize: 16, fontWeight: 700, color: "var(--m-muted-2)",
       letterSpacing: ".4px", textTransform: "uppercase",
       marginBottom: 12,
     }}>
@@ -370,17 +374,17 @@ function MetricCard({ value, label, color, desc }: {
 }) {
   return (
     <div style={{
-      background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
+      background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
       padding: "16px 18px",
     }}>
       <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
         {value}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "#94a3b8", marginBottom: 4 }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-label)", marginBottom: 4 }}>
         {label}
       </div>
       {desc && (
-        <div style={{ fontSize: 14, color: "#475569" }}>{desc}</div>
+        <div style={{ fontSize: 14, color: "var(--m-muted)" }}>{desc}</div>
       )}
     </div>
   );
@@ -391,18 +395,18 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "flex-start",
       gap: 12, padding: "11px 0",
-      borderBottom: "1px solid #1e293b",
+      borderBottom: "1px solid var(--m-border)",
     }}>
-      <span style={{ fontSize: 16, color: "#64748b", flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 16, color: "#c4d0e3", textAlign: "right", fontWeight: 500 }}>{value}</span>
+      <span style={{ fontSize: 16, color: "var(--m-muted)", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 16, color: "var(--m-text-2)", textAlign: "right", fontWeight: 500 }}>{value}</span>
     </div>
   );
 }
 
-function ChevronRight({ color = "#475569" }: { color?: string }) {
+function ChevronRight() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-      <path d="M9 18l6-6-6-6" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 18l6-6-6-6" stroke="var(--m-muted-2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -31,9 +31,6 @@ export default async function MobileLayout({ children }: { children: React.React
   }
 
   // ── Intervals.icu gate ───────────────────────────────────────────────────
-  // Mirrors the desktop mandatory gate: no ICU = no app.
-  // Fast path: check cookie (set by oauth-callback). If absent, hit KV so
-  // a desktop-connected athlete isn't re-prompted on their phone.
   const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
   const icuConnected = icuFromCookie
     ? true
@@ -43,22 +40,29 @@ export default async function MobileLayout({ children }: { children: React.React
     return <MobileIcuConnect />;
   }
 
+  // Read persisted theme preference (cookie set by ThemeToggleButton client component)
+  const theme = cookieStore.get("mobileTheme")?.value === "light" ? "light" : "dark";
+  const bodyBg = theme === "light" ? "#f0f4f8" : "#0a0f1a";
+
   // Authenticated + ICU connected — show normal app shell with bottom navigation
   return (
     <>
-      {/* Force dark background on html/body so iOS overscroll doesn't reveal
-          the light desktop theme color underneath the dark mobile shell */}
-      <style>{`html, body { background-color: #0a0f1a !important; }`}</style>
+      {/* Sync body background with current theme to avoid iOS overscroll colour mismatch */}
+      <style>{`html, body { background-color: ${bodyBg} !important; }`}</style>
 
-      <div style={{
-        minHeight: "100dvh",
-        background: "#0a0f1a",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-        WebkitFontSmoothing: "antialiased",
-        overscrollBehavior: "none",
-      }}>
+      <div
+        data-mobile-shell
+        data-mobile-theme={theme}
+        style={{
+          minHeight: "100dvh",
+          background: "var(--m-bg)",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+          WebkitFontSmoothing: "antialiased",
+          overscrollBehavior: "none",
+        }}
+      >
         {/* Safe area top spacer */}
         <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
 
@@ -77,15 +81,15 @@ export default async function MobileLayout({ children }: { children: React.React
             alignItems: "center",
             gap: 16,
             padding: "20px 16px 8px",
-            borderTop: "1px solid #1e293b",
+            borderTop: "1px solid var(--m-border)",
             marginTop: 12,
           }}>
             <a href="/m/legal/terms" style={{
-              fontSize: 13, color: "#475569", textDecoration: "none", fontWeight: 500,
+              fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
             }}>Terms of Service</a>
-            <span style={{ color: "#1e293b", fontSize: 14 }}>·</span>
+            <span style={{ color: "var(--m-border)", fontSize: 14 }}>·</span>
             <a href="/m/legal/privacy" style={{
-              fontSize: 13, color: "#475569", textDecoration: "none", fontWeight: 500,
+              fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
             }}>Privacy Policy</a>
           </div>
         </div>

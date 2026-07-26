@@ -132,10 +132,10 @@ export default async function MobileTodayPage() {
                 }}>✓</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>Extra ride logged</div>
-                  <div style={{ fontSize: 15, color: "#475569", marginTop: 2 }}>Today was a rest day — nice bonus work</div>
+                  <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 2 }}>Today was a rest day — nice bonus work</div>
                 </div>
               </div>
-              <div style={{ fontSize: 15, color: "#475569", lineHeight: 1.65 }}>
+              <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65 }}>
                 Your training load has been updated. The AI will factor this extra session into next week.
               </div>
               <a href="/m/week" style={{
@@ -150,19 +150,19 @@ export default async function MobileTodayPage() {
           ) : (
             /* Pure rest day — calm, no drama */
             <div style={{
-              background: "#111827",
-              border: "1px solid #1e293b",
+              background: "var(--m-card)",
+              border: "1px solid var(--m-border)",
               borderRadius: 20, padding: "22px 20px",
             }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#f1f5f9", marginBottom: 8 }}>Rest day</div>
-              <div style={{ fontSize: 16, color: "#475569", lineHeight: 1.65, marginBottom: 18 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
+              <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
                 No workout scheduled today. Quality rest is as important as the training itself.
               </div>
               <a href="/m/week" style={{
                 display: "block", textAlign: "center",
                 padding: "14px", borderRadius: 14,
-                background: "#0f172a", border: "1px solid #1e293b",
-                color: "#64748b", fontSize: 17, fontWeight: 600, textDecoration: "none",
+                background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+                color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none",
               }}>
                 See this week&apos;s plan →
               </a>

@@ -19,8 +19,8 @@ export default function MobileNav() {
       bottom: 0,
       left: 0,
       right: 0,
-      background: "#0d1424",
-      borderTop: "1px solid #1e293b",
+      background: "var(--m-nav-bg)",
+      borderTop: "1px solid var(--m-border)",
       display: "flex",
       alignItems: "stretch",
       zIndex: 100,
@@ -28,7 +28,7 @@ export default function MobileNav() {
     }}>
       {TABS.map(({ href, label, Icon }) => {
         const active = pathname === href || (href === "/m/today" && pathname === "/m");
-        const color = active ? "#3b82f6" : "#4b5563";
+        const color = active ? "#F2541B" : "var(--m-nav-inactive)";
         return (
           <Link
             key={href}
