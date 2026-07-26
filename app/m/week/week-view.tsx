@@ -65,9 +65,10 @@ interface Props {
   weekOf: string;
   today: string;
   summary: string | null;
+  weekStatus?: Record<string, string>;
 }
 
-export default function WeekView({ workouts, weekOf, today, summary }: Props) {
+export default function WeekView({ workouts, weekOf, today, summary, weekStatus = {} }: Props) {
   if (workouts.length === 0) {
     return (
       <div style={{ padding: "48px 24px", textAlign: "center" }}>
@@ -133,15 +134,28 @@ export default function WeekView({ workouts, weekOf, today, summary }: Props) {
           const isRest = zone === "rest" || !w;
           const label = formatDayLabel(w?.date, dayName);
 
+          const dayStatus = w?.date ? weekStatus[w.date] : undefined;
+          const statusMeta =
+            dayStatus === "completed" ? { text: "Done",   color: "#22c55e", bg: "rgba(34,197,94,0.12)" } :
+            dayStatus === "missed"    ? { text: "Missed", color: "#ef4444", bg: "rgba(239,68,68,0.10)" } :
+            dayStatus === "bonus"     ? { text: "Bonus",  color: "#f59e0b", bg: "rgba(245,158,11,0.12)" } :
+            null;
+
           return (
             <div
               key={dayName}
               style={{
-                background: isToday ? `${colors.accent}0d` : "#111827",
+                background:
+                  dayStatus === "completed" ? "rgba(34,197,94,0.05)" :
+                  dayStatus === "missed"    ? "rgba(239,68,68,0.05)" :
+                  dayStatus === "bonus"     ? "rgba(245,158,11,0.06)" :
+                  isToday ? `${colors.accent}0d` : "#111827",
                 borderRadius: 18,
-                border: isToday
-                  ? `1.5px solid ${colors.accent}55`
-                  : "1px solid #1e293b",
+                border:
+                  dayStatus === "completed" ? "1px solid rgba(34,197,94,0.25)" :
+                  dayStatus === "missed"    ? "1px solid rgba(239,68,68,0.20)" :
+                  dayStatus === "bonus"     ? "1px solid rgba(245,158,11,0.25)" :
+                  isToday ? `1.5px solid ${colors.accent}55` : "1px solid #1e293b",
                 padding: "14px 16px",
                 position: "relative",
                 overflow: "hidden",
@@ -185,10 +199,11 @@ export default function WeekView({ workouts, weekOf, today, summary }: Props) {
                       fontSize: 15, fontWeight: 700,
                       color: isRest ? "#475569" : "#f1f5f9",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      flex: 1, minWidth: 0,
                     }}>
-                      {isRest ? "Rest" : w!.title}
+                      {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
                     </span>
-                    {isToday && (
+                    {isToday && !statusMeta && (
                       <span style={{
                         fontSize: 10, fontWeight: 700, color: colors.accent,
                         background: `${colors.accent}22`,
@@ -198,21 +213,31 @@ export default function WeekView({ workouts, weekOf, today, summary }: Props) {
                         Today
                       </span>
                     )}
+                    {statusMeta && (
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, color: statusMeta.color,
+                        background: statusMeta.bg,
+                        padding: "2px 8px", borderRadius: 6, flexShrink: 0,
+                        letterSpacing: ".3px",
+                      }}>
+                        {statusMeta.text}
+                      </span>
+                    )}
                   </div>
                   {!isRest && w && (
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                       {w.durationMin > 0 && (
-                        <span style={{ fontSize: 12, color: "#64748b" }}>
+                        <span style={{ fontSize: 13, color: "#64748b" }}>
                           {w.durationMin} min
                         </span>
                       )}
                       {w.targetPowerPctFtp && (
-                        <span style={{ fontSize: 12, color: colors.accent }}>
+                        <span style={{ fontSize: 13, color: colors.accent }}>
                           {w.targetPowerPctFtp} FTP
                         </span>
                       )}
                       <span style={{
-                        fontSize: 11, fontWeight: 600, color: colors.accent,
+                        fontSize: 12, fontWeight: 600, color: colors.accent,
                         letterSpacing: ".3px", textTransform: "uppercase",
                       }}>
                         {colors.label}
@@ -245,13 +270,13 @@ export default function WeekView({ workouts, weekOf, today, summary }: Props) {
               {/* Description snippet */}
               {!isRest && w?.description && (
                 <div style={{
-                  fontSize: 12, color: "#64748b", marginTop: 10,
-                  lineHeight: 1.5,
+                  fontSize: 13, color: "#64748b", marginTop: 10,
+                  lineHeight: 1.55,
                   paddingLeft: isToday ? 8 : 0,
                   overflow: "hidden",
-                  maxHeight: "3em",
+                  maxHeight: "3.3em",
                 }}>
-                  {w.description.slice(0, 140)}{w.description.length > 140 ? "…" : ""}
+                  {w.description.slice(0, 150)}{w.description.length > 150 ? "…" : ""}
                 </div>
               )}
             </div>

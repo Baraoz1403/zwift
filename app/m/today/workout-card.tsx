@@ -5,6 +5,7 @@ import WorkoutThumbnail from "@/app/dashboard/workout-thumbnail";
 import MobileWorkoutChart from "./workout-chart";
 import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss } from "@/lib/zwo";
+import type { DayStatus } from "@/lib/activity-sync";
 
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
@@ -36,9 +37,11 @@ interface Props {
   workout: WeeklyWorkout;
   weekWorkouts: WeeklyWorkout[];
   today: string;
+  todayStatus?: DayStatus;
+  weekStatus?: Record<string, DayStatus>;
 }
 
-export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Props) {
+export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayStatus = "planned", weekStatus = {} }: Props) {
   const [pushState, setPushState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [noteState, setNoteState] = useState<"idle" | "sending" | "done">("idle");
 
@@ -99,11 +102,27 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Prop
 
       {/* ── Date header ─────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>
           {formatDay(today)}
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
-          Today&apos;s Workout
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 3 }}>
+          <div style={{ fontSize: 25, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px" }}>
+            Today&apos;s Workout
+          </div>
+          {todayStatus === "completed" && (
+            <span style={{
+              fontSize: 13, fontWeight: 700, color: "#22c55e",
+              background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
+              borderRadius: 8, padding: "3px 10px",
+            }}>✓ Done</span>
+          )}
+          {todayStatus === "missed" && (
+            <span style={{
+              fontSize: 13, fontWeight: 700, color: "#ef4444",
+              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
+              borderRadius: 8, padding: "3px 10px",
+            }}>✗ Missed</span>
+          )}
         </div>
       </div>
 

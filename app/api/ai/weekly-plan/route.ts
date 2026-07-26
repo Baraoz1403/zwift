@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
           } catch {
             // best-effort — worst case a already-ridden day gets a redundant planned event
           }
-          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates);
+          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates, undefined);
         }
       } catch {
         // best-effort — a self-heal failure must never break the cached-plan response
@@ -223,7 +223,8 @@ export async function POST(req: NextRequest) {
         result.athleteId,
         result.weekOf,
         { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
-        riddenDates
+        riddenDates,
+        result.firstName,
       );
     } catch {
       // best-effort — never fail plan generation because ICU sync hiccuped

@@ -619,19 +619,121 @@ function blockToXml(b: ZwoBlock, isRun = false): string {
 }
 
 /**
+ * Generates personal TextEvent messages that appear on-screen during the ride.
+ * Placed at strategic moments: start, before each main interval set, halfway,
+ * final push, and cooldown. Personalised with the rider's first name.
+ */
+function generateTextEvents(
+  resolvedBlocks: ZwoBlock[],
+  riderName: string,
+): string {
+  const events: { offset: number; msg: string }[] = [];
+  const name = riderName || "athlete";
+
+  // Calculate block start times
+  let cursor = 0;
+  const blockStarts: number[] = [];
+  for (const b of resolvedBlocks) {
+    blockStarts.push(cursor);
+    switch (b.kind) {
+      case "Warmup":
+      case "Cooldown":
+      case "SteadyState":
+        cursor += b.durationSec;
+        break;
+      case "IntervalsT":
+        cursor += b.repeat * (b.onDuration + b.offDuration);
+        break;
+    }
+  }
+  const totalSec = cursor || 1;
+
+  // Workout start
+  events.push({ offset: 5, msg: `Let's go, ${name}! 💪 Stay focused and pace yourself.` });
+
+  // Pre-warmup end (warmup about to finish)
+  if (resolvedBlocks[0]?.kind === "Warmup") {
+    const warmupEnd = blockStarts[0] + resolvedBlocks[0].durationSec;
+    events.push({ offset: warmupEnd - 60, msg: `Almost there, ${name} — main set coming up in 1 minute!` });
+  }
+
+  // Before each interval block
+  resolvedBlocks.forEach((b, i) => {
+    if (b.kind !== "IntervalsT") return;
+    const start = blockStarts[i];
+    const pct = Math.round(b.onPower * 100);
+    events.push({
+      offset: Math.max(start - 30, start),
+      msg: `${name} — ${b.repeat} intervals at ${pct}% FTP starting NOW. You've got this!`,
+    });
+    // Midpoint of the interval block
+    const totalBlock = b.repeat * (b.onDuration + b.offDuration);
+    events.push({
+      offset: start + Math.floor(totalBlock / 2),
+      msg: `Halfway through, ${name}! Keep the power consistent — every rep counts.`,
+    });
+    // Last rep warning
+    const lastRepStart = start + (b.repeat - 1) * (b.onDuration + b.offDuration);
+    events.push({
+      offset: lastRepStart,
+      msg: `Last rep, ${name}! Give it everything — then it's done.`,
+    });
+  });
+
+  // Halfway through total workout
+  events.push({
+    offset: Math.floor(totalSec / 2),
+    msg: `Halfway there, ${name}! You're doing great — keep going!`,
+  });
+
+  // 5 min before end
+  if (totalSec > 600) {
+    events.push({ offset: totalSec - 300, msg: `Last 5 minutes, ${name}. Finish strong!` });
+  }
+
+  // Cooldown start
+  const lastBlock = resolvedBlocks[resolvedBlocks.length - 1];
+  if (lastBlock?.kind === "Cooldown") {
+    const coolStart = blockStarts[resolvedBlocks.length - 1];
+    events.push({ offset: coolStart + 10, msg: `Cooldown time, ${name}. Spin easy and recover — great session! 🎉` });
+  }
+
+  // Deduplicate and sort by offset
+  const seen = new Set<number>();
+  const unique = events
+    .filter(e => {
+      if (e.offset < 0) return false;
+      if (seen.has(e.offset)) return false;
+      seen.add(e.offset);
+      return true;
+    })
+    .sort((a, b) => a.offset - b.offset);
+
+  return unique
+    .map(e => `<TextEvent timeOffset="${Math.round(e.offset)}" message="${escapeXml(e.msg)}"/>`)
+    .join("\n        ");
+}
+
+/**
  * Builds the actual .zwo XML. If `blocks` is omitted, falls back to
  * generateDefaultBlocks(w) - so existing callers that just want "the AI's
  * suggestion as a file" keep working unchanged. Pass the workout editor's
  * (possibly rider-edited) block list to export what the rider actually
  * tweaked instead.
+ *
+ * Pass `riderName` to inject personal TextEvent messages that appear on-screen
+ * during the ride — rider's name, interval countdowns, encouragement, etc.
  */
 export function generateZwoXml(
   w: ZwoWorkoutInput,
   blocks?: ZwoBlock[],
-  authorName = "Zwift Dashboard AI"
+  authorName = "Zwift Dashboard AI",
+  riderName?: string,
 ): string {
   const isRun = isRunWorkout(w.type);
-  const steps = (blocks ?? generateDefaultBlocks(w)).map((b) => blockToXml(b, isRun));
+  const resolvedBlocks = blocks ?? generateDefaultBlocks(w);
+  const steps = resolvedBlocks.map((b) => blockToXml(b, isRun));
+  const textEvents = riderName ? generateTextEvents(resolvedBlocks, riderName) : "";
   const sportType = isRun ? "run" : "bike";
   return `<?xml version="1.0" encoding="UTF-8"?>
 <workout_file>
@@ -643,7 +745,7 @@ export function generateZwoXml(
         <tag name="${escapeXml(w.type)}"/>
     </tags>
     <workout>
-        ${steps.join("\n        ")}
+        ${textEvents ? textEvents + "\n        " : ""}${steps.join("\n        ")}
     </workout>
 </workout_file>
 `;

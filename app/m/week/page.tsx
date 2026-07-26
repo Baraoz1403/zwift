@@ -1,19 +1,29 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
+import { fetchIcuActivities } from "@/lib/intervals";
+import { computeWeekStatus } from "@/lib/activity-sync";
 import WeekView from "./week-view";
 
 function buildDateMap(weekOf: string): Record<string, string> {
   const monday = new Date(weekOf + "T00:00:00Z");
   const dayMap: Record<string, string> = {};
-  const planDayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  planDayOrder.forEach((name, i) => {
+  ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].forEach((name, i) => {
     const d = new Date(monday);
     d.setUTCDate(monday.getUTCDate() + i);
     dayMap[name] = d.toISOString().slice(0, 10);
   });
   return dayMap;
+}
+
+function weekDatesFrom(weekOf: string): string[] {
+  const monday = new Date(weekOf + "T00:00:00Z");
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setUTCDate(monday.getUTCDate() + i);
+    return d.toISOString().slice(0, 10);
+  });
 }
 
 export default async function MobileWeekPage() {
@@ -23,16 +33,34 @@ export default async function MobileWeekPage() {
   const session = await decryptSession(raw);
   if (!session?.athleteId) return null;
 
+  const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
-  const plan = await getCachedPlan(String(session.athleteId), weekOf);
+  const plan = await getCachedPlan(athleteId, weekOf);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const dateMap = buildDateMap(weekOf);
+  const weekDates = weekDatesFrom(weekOf);
 
   const workouts = (plan?.workouts ?? []).map(w => ({
     ...w,
     date: w.date ?? dateMap[w.day] ?? undefined,
   }));
+
+  // Fetch ICU activities and compute week status (same logic as Today page)
+  let weekStatus: Record<string, string> = {};
+  try {
+    const icuKey =
+      cookieStore.get("zwift_intervals_key")?.value ??
+      (await getIntervalsCredentials(athleteId))?.icuKey;
+    const icuId =
+      cookieStore.get("zwift_intervals_id")?.value ??
+      (await getIntervalsCredentials(athleteId))?.icuId;
+
+    if (icuKey && icuId) {
+      const activities = await fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]);
+      weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+    }
+  } catch { /* best-effort */ }
 
   return (
     <WeekView
@@ -40,6 +68,7 @@ export default async function MobileWeekPage() {
       weekOf={weekOf}
       today={todayStr}
       summary={plan?.summary ?? null}
+      weekStatus={weekStatus}
     />
   );
 }

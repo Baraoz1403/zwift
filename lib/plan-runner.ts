@@ -142,6 +142,7 @@ export interface RunWeeklyPlanOptions {
 
 export interface RunWeeklyPlanResult {
   athleteId: string;
+  firstName?: string;
   plan: Awaited<ReturnType<typeof generateWeeklyPlan>>;
   macroCycle: MacroCycleState;
   cycle: ReturnType<typeof getPhaseForWeekIndex>;
@@ -362,7 +363,7 @@ export async function runWeeklyPlanGeneration(
     // never propagate coaching-state errors — the plan is already generated
   }
 
-  return { athleteId, plan, macroCycle, cycle, weekOf, rides };
+  return { athleteId, firstName: profile.firstName ?? undefined, plan, macroCycle, cycle, weekOf, rides };
 }
 
 /**
@@ -438,7 +439,7 @@ export async function ensurePlanProvisioned(athleteId: string, accessToken: stri
         const riddenDates = new Set(
           result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
         );
-        await syncPlanToIcuAndMark(athleteId, result.weekOf, cached, riddenDates);
+        await syncPlanToIcuAndMark(athleteId, result.weekOf, cached, riddenDates, result.firstName);
       }
       return;
     }
@@ -449,6 +450,9 @@ export async function ensurePlanProvisioned(athleteId: string, accessToken: stri
     if (!(await wasIntervalsSynced(athleteId, currentWeek))) {
       const creds = await getIntervalsCredentials(athleteId);
       if (creds) {
+        // riderName not available here (no fresh profile fetch) — ZWO messages
+        // will still appear but without the personalized name. The nightly cron
+        // path (which goes through runWeeklyPlanGeneration) always has firstName.
         await syncPlanToIcuAndMark(athleteId, currentWeek, cached, new Set());
       }
     }

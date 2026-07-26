@@ -128,7 +128,8 @@ export async function syncPlanToIntervalsHeadless(
   apiKey: string,
   athleteId: string | undefined,
   plan: WeeklyPlan,
-  riddenDates: Set<string>
+  riddenDates: Set<string>,
+  riderName?: string,
 ): Promise<HeadlessSyncResult> {
   const errors: string[] = [];
 
@@ -146,7 +147,7 @@ export async function syncPlanToIntervalsHeadless(
     if (!w.date) return { ok: false as const };
     const dateLabel = workoutDateLabel(w.date);
     const titledWorkout = dateLabel ? `${dateLabel} · ${w.title}` : w.title;
-    const zwoXml = generateZwoXml(w);
+    const zwoXml = generateZwoXml(w, undefined, "Zwift Dashboard AI", riderName);
     const r = await pushWorkoutToIntervals({
       apiKey,
       athleteId,
@@ -260,13 +261,14 @@ export async function syncPlanToIcuAndMark(
   athleteId: string,
   weekOf: string,
   plan: { weekOf: string; summary: string; workouts: WeeklyWorkout[] },
-  riddenDates: Set<string>
+  riddenDates: Set<string>,
+  riderName?: string,
 ): Promise<IntervalsSyncResult | null> {
   const creds = await getIntervalsCredentials(athleteId);
   if (!creds) return null;
 
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
-  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates);
+  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates, riderName);
 
   const { oldest, newest } = wideCleanupRange();
   const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);

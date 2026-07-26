@@ -258,14 +258,28 @@ export default async function MobileProfilePage() {
           padding: "4px 0",
         }}>
           <a
-            href="/dashboard"
+            href="/dashboard#training-profile"
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", textDecoration: "none",
+              padding: "14px 16px", textDecoration: "none",
               borderBottom: "1px solid #1e293b",
             }}
           >
-            <span style={{ fontSize: 14, color: "#c4d0e3" }}>Full dashboard</span>
+            <div>
+              <div style={{ fontSize: 15, color: "#f1f5f9", fontWeight: 500 }}>Edit training profile</div>
+              <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Goals, schedule, session length</div>
+            </div>
+            <ChevronRight />
+          </a>
+          <a
+            href="/dashboard"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "14px 16px", textDecoration: "none",
+              borderBottom: "1px solid #1e293b",
+            }}
+          >
+            <span style={{ fontSize: 15, color: "#c4d0e3" }}>Full dashboard</span>
             <ChevronRight />
           </a>
           <SignOutButton />
@@ -279,9 +293,9 @@ export default async function MobileProfilePage() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 11, fontWeight: 600, color: "#475569",
-      letterSpacing: ".5px", textTransform: "uppercase",
-      marginBottom: 8,
+      fontSize: 13, fontWeight: 600, color: "#475569",
+      letterSpacing: ".4px", textTransform: "uppercase",
+      marginBottom: 10,
     }}>
       {children}
     </div>
@@ -294,16 +308,16 @@ function MetricCard({ value, label, color, desc }: {
   return (
     <div style={{
       background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
-      padding: "14px 16px",
+      padding: "16px 18px",
     }}>
-      <div style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1, marginBottom: 5 }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 2 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 3 }}>
         {label}
       </div>
       {desc && (
-        <div style={{ fontSize: 11, color: "#475569" }}>{desc}</div>
+        <div style={{ fontSize: 12, color: "#475569" }}>{desc}</div>
       )}
     </div>
   );
@@ -313,11 +327,11 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-      gap: 12, padding: "8px 0",
+      gap: 12, padding: "10px 0",
       borderBottom: "1px solid #1e293b",
     }}>
-      <span style={{ fontSize: 13, color: "#64748b", flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#c4d0e3", textAlign: "right" }}>{value}</span>
+      <span style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 14, color: "#c4d0e3", textAlign: "right" }}>{value}</span>
     </div>
   );
 }
