@@ -231,10 +231,12 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               type="date"
               value={eventDate}
               onChange={e => setEventDate(e.target.value)}
+              className="m-input"
               style={{
                 width: "100%", padding: "14px 16px",
                 background: "#0f172a", border: "1px solid #334155",
                 borderRadius: 12, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
+                WebkitBoxShadow: "0 0 0px 1000px #0f172a inset",
                 fontSize: 17,
                 outline: "none", boxSizing: "border-box", fontFamily: "inherit",
                 WebkitAppearance: "none" as const,
@@ -252,10 +254,12 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
                 type="date"
                 value={eventEndDate}
                 onChange={e => setEventEndDate(e.target.value)}
+                className="m-input"
                 style={{
                   width: "100%", padding: "14px 16px",
                   background: "#0f172a", border: "1px solid #334155",
                   borderRadius: 12, color: "#f1f5f9", fontSize: 17,
+                  WebkitBoxShadow: "0 0 0px 1000px #0f172a inset",
                   outline: "none", boxSizing: "border-box", fontFamily: "inherit",
                 }}
               />
@@ -328,10 +332,12 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
             onChange={e => setAgeYears(e.target.value)}
             placeholder="Your age (e.g. 42)"
             min={15} max={90}
+            className="m-input"
             style={{
               width: "100%", padding: "16px 18px",
               background: "#111827", border: "1px solid #334155",
               borderRadius: 14, color: "#f8fafc", WebkitTextFillColor: "#f8fafc",
+              WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
               caretColor: "#60a5fa",
               fontSize: 18, fontWeight: 600,
               outline: "none", boxSizing: "border-box", fontFamily: "inherit",

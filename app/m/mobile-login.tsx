@@ -172,6 +172,7 @@ export default function MobileLoginScreen() {
               onChange={e => setEmail(e.target.value)}
               required
               placeholder="Zwift email"
+              className="m-input"
               style={{
                 width: "100%", padding: "17px 18px",
                 background: "#111827",
@@ -179,6 +180,7 @@ export default function MobileLoginScreen() {
                 borderRadius: 16,
                 color: "#f1f5f9",
                 WebkitTextFillColor: "#f1f5f9",
+                WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
                 caretColor: "#818cf8",
                 fontSize: 18,
                 outline: "none",
@@ -197,6 +199,7 @@ export default function MobileLoginScreen() {
               onChange={e => setPassword(e.target.value)}
               required
               placeholder="Password"
+              className="m-input"
               style={{
                 width: "100%", padding: "17px 18px",
                 background: "#111827",
@@ -204,6 +207,7 @@ export default function MobileLoginScreen() {
                 borderRadius: 16,
                 color: "#f1f5f9",
                 WebkitTextFillColor: "#f1f5f9",
+                WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
                 caretColor: "#818cf8",
                 fontSize: 18,
                 outline: "none",

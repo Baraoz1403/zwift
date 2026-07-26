@@ -8,6 +8,19 @@ html {
    -webkit-text-fill-color. These rules apply to all dark-background inputs
    in the /m mobile app. Without this, typed text is invisible on iPhone.
    ─────────────────────────────────────────────────────────────────────────── */
+/* ── iOS input dark background fix ──────────────────────────────────────────
+   iOS Safari ignores inline `background` on inputs and renders white.
+   -webkit-box-shadow inset is the ONLY way to force a dark background on iOS.
+   Applied via .m-input class to all mobile app inputs/textareas.
+   ─────────────────────────────────────────────────────────────────────────── */
+.m-input {
+  -webkit-box-shadow: 0 0 0px 1000px #111827 inset !important;
+  box-shadow: 0 0 0px 1000px #111827 inset;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  color: #f1f5f9 !important;
+  caret-color: #818cf8;
+}
+
 /* Mobile input placeholder — dark theme */
 .m-input::placeholder,
 input.m-input::placeholder,

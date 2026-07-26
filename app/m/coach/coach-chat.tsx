@@ -203,6 +203,7 @@ export default function CoachChat() {
           onKeyDown={handleKeyDown}
           placeholder="Ask your coach anything…"
           rows={1}
+          className="m-input"
           style={{
             flex: 1,
             padding: "12px 16px",
@@ -211,6 +212,7 @@ export default function CoachChat() {
             borderRadius: 20,
             color: "#f1f5f9",
             WebkitTextFillColor: "#f1f5f9",
+            WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
             caretColor: "#60a5fa",
             fontSize: 16,
             outline: "none",
