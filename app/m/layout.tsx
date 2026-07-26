@@ -45,29 +45,54 @@ export default async function MobileLayout({ children }: { children: React.React
 
   // Authenticated + ICU connected — show normal app shell with bottom navigation
   return (
-    <div style={{
-      minHeight: "100dvh",
-      background: "#0a0f1a",
-      display: "flex",
-      flexDirection: "column",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-      WebkitFontSmoothing: "antialiased",
-      overscrollBehavior: "none",
-    }}>
-      {/* Safe area top spacer */}
-      <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
+    <>
+      {/* Force dark background on html/body so iOS overscroll doesn't reveal
+          the light desktop theme color underneath the dark mobile shell */}
+      <style>{`html, body { background-color: #0a0f1a !important; }`}</style>
 
-      {/* Scrollable content; pad bottom so content clears the fixed nav */}
       <div style={{
-        flex: 1,
-        overflowY: "auto",
-        paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+        minHeight: "100dvh",
+        background: "#0a0f1a",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+        WebkitFontSmoothing: "antialiased",
+        overscrollBehavior: "none",
       }}>
-        {children}
-      </div>
+        {/* Safe area top spacer */}
+        <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
 
-      {/* Fixed bottom navigation */}
-      <MobileNav />
-    </div>
+        {/* Scrollable content; pad bottom so content clears the fixed nav */}
+        <div style={{
+          flex: 1,
+          overflowY: "auto",
+          paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+        }}>
+          {children}
+
+          {/* Legal footer — visible from every page, sits above bottom nav */}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 16,
+            padding: "20px 16px 8px",
+            borderTop: "1px solid #1e293b",
+            marginTop: 12,
+          }}>
+            <a href="/m/legal/terms" style={{
+              fontSize: 13, color: "#475569", textDecoration: "none", fontWeight: 500,
+            }}>Terms of Service</a>
+            <span style={{ color: "#1e293b", fontSize: 14 }}>·</span>
+            <a href="/m/legal/privacy" style={{
+              fontSize: 13, color: "#475569", textDecoration: "none", fontWeight: 500,
+            }}>Privacy Policy</a>
+          </div>
+        </div>
+
+        {/* Fixed bottom navigation */}
+        <MobileNav />
+      </div>
+    </>
   );
 }

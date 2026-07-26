@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Zwift Personal AI Dashboard",
-  description: "Personal analytics dashboard for your Zwift rides.",
+  title: "Zwift AI Coach",
+  description: "Personal AI training coach for your Zwift rides.",
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Train" },
 };
 
 export default function RootLayout({

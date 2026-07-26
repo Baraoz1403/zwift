@@ -2,7 +2,7 @@
   "name": "Zwift AI Coach",
   "short_name": "Train",
   "description": "Your daily AI training workout",
-  "start_url": "/today",
+  "start_url": "/m/today",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",

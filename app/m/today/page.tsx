@@ -196,6 +196,8 @@ export default async function MobileTodayPage() {
 }
 
 // ── Hero header (server-rendered) ─────────────────────────────────────────────
+// Design language matches the desktop HeroBanner: purple→cyan gradient icon,
+// "AI TRAINING COACH" label in cyan, weight-900 greeting, subtle grid overlay.
 
 function TodayHero({
   firstName, ftp, phase, todayStatus,
@@ -205,78 +207,101 @@ function TodayHero({
   phase: string | null;
   todayStatus: DayStatus | "bonus";
 }) {
-  const statusDone    = todayStatus === "completed";
-  const statusMissed  = todayStatus === "missed";
-  const statusBonus   = todayStatus === "bonus";
+  const statusDone   = todayStatus === "completed";
+  const statusMissed = todayStatus === "missed";
+  const statusBonus  = todayStatus === "bonus";
+
+  const statusValue = statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus" : "Planned";
+  const statusColor = statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : "#64748b";
 
   return (
     <div style={{
       position: "relative",
-      padding: "32px 22px 26px",
-      background: "linear-gradient(160deg, #020817 0%, #0a1628 50%, #0f1e38 100%)",
+      padding: "22px 20px 20px",
+      background: "linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)",
       overflow: "hidden",
       flexShrink: 0,
     }}>
-      {/* Layered glows for depth */}
+      {/* Neural grid — same as desktop HeroBanner */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(37,99,235,0.22) 0%, transparent 65%)",
+        backgroundImage: `
+          linear-gradient(rgba(0,212,255,0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.045) 1px, transparent 1px)
+        `,
+        backgroundSize: "38px 38px",
+        WebkitMaskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 85%)",
+        maskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 85%)",
       }} />
+      {/* Purple aurora blob — top right, matches desktop */}
       <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        height: 1, background: "linear-gradient(90deg, transparent, rgba(37,99,235,0.3), transparent)",
+        position: "absolute", top: -60, right: -40, width: 220, height: 220,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 65%)",
+        filter: "blur(32px)", pointerEvents: "none",
+      }} />
+      {/* Bottom separator line */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.28), rgba(124,58,237,0.28), transparent)",
         pointerEvents: "none",
       }} />
 
-      {/* Top row: icon + greeting */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, position: "relative" }}>
+      {/* Brand chip row — same layout as desktop banner-nav */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        marginBottom: 18, position: "relative",
+      }}>
+        {/* Icon — purple→cyan gradient, identical to desktop */}
         <div style={{
-          width: 52, height: 52, borderRadius: 15, flexShrink: 0,
-          background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+          width: 46, height: 46, borderRadius: 13, flexShrink: 0,
+          background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 8px 24px rgba(37,99,235,0.45), 0 0 0 1px rgba(37,99,235,0.3)",
+          boxShadow: "0 0 20px rgba(0,212,255,0.35), 0 4px 12px rgba(124,58,237,0.3)",
         }}>
-          <svg width="24" height="24" viewBox="0 0 20 20" fill="white">
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="white">
             <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
           </svg>
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Label — same style as desktop "AI TRAINING COACH" */}
           <div style={{
-            fontSize: 12, fontWeight: 700, letterSpacing: ".2em",
-            textTransform: "uppercase", color: "#3b82f6", marginBottom: 4,
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.2em",
+            textTransform: "uppercase", color: "#00D4FF", marginBottom: 3,
           }}>
             AI Training Coach
           </div>
+          {/* Greeting — weight 900, same as desktop */}
           <div style={{
-            fontSize: 30, fontWeight: 900, color: "#f8fafc",
-            letterSpacing: "-.6px", lineHeight: 1.05,
+            fontSize: 28, fontWeight: 900, color: "#f8fafc",
+            letterSpacing: "-0.6px", lineHeight: 1.05,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {firstName ? `Hey, ${firstName}` : "Today's Workout"}
           </div>
         </div>
+
+        {/* Today status badge — top right */}
+        <div style={{
+          flexShrink: 0,
+          padding: "5px 12px",
+          borderRadius: 20,
+          background: `${statusColor}18`,
+          border: `1px solid ${statusColor}40`,
+          fontSize: 13, fontWeight: 700, color: statusColor,
+          whiteSpace: "nowrap",
+        }}>
+          {statusValue}
+        </div>
       </div>
 
-      {/* Metric cards row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, position: "relative" }}>
-        <HeroCard
-          label="FTP"
-          value={ftp ? `${ftp}W` : "—"}
-          color="#3b82f6"
-          filled={!!ftp}
-        />
-        <HeroCard
-          label="Phase"
-          value={phase ?? "—"}
-          color="#818cf8"
-          filled={!!phase}
-        />
-        <HeroCard
-          label="Today"
-          value={statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus" : "Planned"}
-          color={statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : "#475569"}
-          filled={statusDone || statusMissed}
-        />
+      {/* Metric cards — FTP + Phase */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
+      }}>
+        <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" filled={!!ftp} />
+        <HeroCard label="Training phase" value={phase ?? "—"} color="#7C3AED" filled={!!phase} />
       </div>
     </div>
   );
@@ -287,16 +312,15 @@ function HeroCard({ label, value, color, filled }: {
 }) {
   return (
     <div style={{
-      background: filled ? `${color}12` : "rgba(15,23,42,0.6)",
-      border: `1px solid ${filled ? color + "30" : "rgba(30,41,59,0.8)"}`,
+      background: filled ? `${color}10` : "rgba(9,22,46,0.7)",
+      border: `1px solid ${filled ? color + "35" : "rgba(0,212,255,0.1)"}`,
       borderRadius: 14,
-      padding: "10px 12px",
-      textAlign: "center",
+      padding: "12px 14px",
     }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1, marginBottom: 5 }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, color: "#475569", fontWeight: 500, textTransform: "uppercase", letterSpacing: ".08em" }}>
+      <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".1em" }}>
         {label}
       </div>
     </div>
