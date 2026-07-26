@@ -61,7 +61,7 @@ export default async function MobileLayout({ children }: { children: React.React
       <div style={{
         flex: 1,
         overflowY: "auto",
-        paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+        paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
       }}>
         {children}
       </div>

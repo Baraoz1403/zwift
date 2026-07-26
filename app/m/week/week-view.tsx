@@ -78,7 +78,15 @@ interface Props {
 }
 
 export default function WeekView({ workouts, weekOf, today, summary, weekStatus = {} }: Props) {
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // Auto-expand today by default, or the first completed workout if today has no plan
+  const todayWorkout = workouts.find(w => w.date === today);
+  const firstCompleted = Object.entries(weekStatus).find(([, s]) => s === "completed")?.[0];
+  const autoExpand = todayWorkout ? (todayWorkout.day ?? null) : (
+    firstCompleted
+      ? (workouts.find(w => w.date === firstCompleted)?.day ?? null)
+      : null
+  );
+  const [expanded, setExpanded] = useState<string | null>(autoExpand);
 
   if (workouts.length === 0) {
     return (
@@ -100,10 +108,10 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
 
       {/* Header */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 14, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 16, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
           {formatWeekRange(weekOf)}
         </div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
+        <div style={{ fontSize: 30, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
           Weekly Plan
         </div>
 
@@ -188,11 +196,11 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                     display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: 1,
                   }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isRest ? "#475569" : colors.accent, letterSpacing: ".3px" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isRest ? "#475569" : colors.accent, letterSpacing: ".3px" }}>
                       {label.short.toUpperCase()}
                     </span>
                     {label.dateNum && (
-                      <span style={{ fontSize: 16, fontWeight: 800, color: isRest ? "#475569" : colors.accent }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: isRest ? "#475569" : colors.accent }}>
                         {label.dateNum}
                       </span>
                     )}
@@ -202,7 +210,7 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{
-                        fontSize: 17, fontWeight: 700,
+                        fontSize: 19, fontWeight: 700,
                         color: isRest ? "#475569" : "#f1f5f9",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         flex: 1, minWidth: 0,
@@ -226,9 +234,9 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                     {!isRest && w && (
                       <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
                         {w.durationMin > 0 && (
-                          <span style={{ fontSize: 14, color: "#64748b" }}>{w.durationMin} min</span>
+                          <span style={{ fontSize: 16, color: "#64748b" }}>{w.durationMin} min</span>
                         )}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
                           {colors.label}
                         </span>
                         {/* Dot indicators for structure */}

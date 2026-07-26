@@ -39,7 +39,7 @@ export default function MobileNav() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              height: 56,
+              height: 64,
               textDecoration: "none",
               gap: 3,
               WebkitTapHighlightColor: "transparent",
@@ -47,7 +47,7 @@ export default function MobileNav() {
           >
             <Icon color={color} />
             <span style={{
-              fontSize: 10,
+              fontSize: 13,
               fontWeight: active ? 700 : 500,
               color,
               letterSpacing: ".2px",
@@ -63,7 +63,7 @@ export default function MobileNav() {
 
 function TodayIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8" />
       <path d="M12 7v5l3 2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -72,7 +72,7 @@ function TodayIcon({ color }: { color: string }) {
 
 function WeekIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="3" y="5" width="18" height="16" rx="2" stroke={color} strokeWidth="1.8" />
       <path d="M3 10h18M8 3v4M16 3v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
@@ -81,7 +81,7 @@ function WeekIcon({ color }: { color: string }) {
 
 function CoachIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M20 2H4a2 2 0 00-2 2v12a2 2 0 002 2h4l4 4 4-4h4a2 2 0 002-2V4a2 2 0 00-2-2z"
         stroke={color} strokeWidth="1.8" strokeLinejoin="round"
@@ -93,7 +93,7 @@ function CoachIcon({ color }: { color: string }) {
 
 function ProfileIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="1.8" />
       <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
