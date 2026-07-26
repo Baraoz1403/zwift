@@ -210,13 +210,15 @@ export default function CoachChat() {
             border: "1px solid #1e293b",
             borderRadius: 20,
             color: "#f1f5f9",
-            fontSize: 15,
+            WebkitTextFillColor: "#f1f5f9",
+            fontSize: 16,
             outline: "none",
             resize: "none",
             lineHeight: 1.5,
             maxHeight: 120,
             overflowY: "auto",
             fontFamily: "inherit",
+            WebkitAppearance: "none" as const,
           }}
         />
         <button

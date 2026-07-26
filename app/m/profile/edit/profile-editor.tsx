@@ -234,8 +234,10 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               style={{
                 width: "100%", padding: "14px 16px",
                 background: "#0f172a", border: "1px solid #334155",
-                borderRadius: 12, color: "#f1f5f9", fontSize: 17,
+                borderRadius: 12, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
+                fontSize: 17,
                 outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                WebkitAppearance: "none" as const,
               }}
             />
           </div>
@@ -329,8 +331,10 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
             style={{
               width: "100%", padding: "16px 18px",
               background: "#111827", border: "1px solid #334155",
-              borderRadius: 14, color: "#f8fafc", fontSize: 18, fontWeight: 600,
+              borderRadius: 14, color: "#f8fafc", WebkitTextFillColor: "#f8fafc",
+              fontSize: 18, fontWeight: 600,
               outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+              WebkitAppearance: "none" as const,
             }}
           />
           {ageYears && (

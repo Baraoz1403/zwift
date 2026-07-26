@@ -163,8 +163,10 @@ export default function MobileLoginScreen() {
               style={{
                 width: "100%", padding: "16px 18px",
                 background: "#0f172a", border: "1px solid #1e293b",
-                borderRadius: 14, color: "#f1f5f9", fontSize: 18,
+                borderRadius: 14, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
+                fontSize: 18,
                 outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                WebkitAppearance: "none" as const,
               }}
             />
           </div>
@@ -180,8 +182,10 @@ export default function MobileLoginScreen() {
               style={{
                 width: "100%", padding: "16px 18px",
                 background: "#0f172a", border: "1px solid #1e293b",
-                borderRadius: 14, color: "#f1f5f9", fontSize: 18,
+                borderRadius: 14, color: "#f1f5f9", WebkitTextFillColor: "#f1f5f9",
+                fontSize: 18,
                 outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+                WebkitAppearance: "none" as const,
               }}
             />
           </div>
