@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +37,7 @@ export default function LoginPage() {
       // the new session, no cache left over from whoever was signed in
       // before. Same pattern already used at connect-tp and after
       // Intervals.icu onboarding.
-      window.location.href = "/dashboard";
+      window.location.href = next;
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -82,5 +86,13 @@ export default function LoginPage() {
         </p>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

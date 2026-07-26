@@ -24,10 +24,10 @@ function buildDateMap(weekOf: string): Record<string, string> {
 export default async function TodayPage() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!raw) redirect("/login");
+  if (!raw) redirect("/login?next=/today");
 
   const session = await decryptSession(raw);
-  if (!session?.athleteId) redirect("/login");
+  if (!session?.athleteId) redirect("/login?next=/today");
 
   const weekOf = mondayOfCurrentWeek();
   const plan = await getCachedPlan(String(session.athleteId), weekOf);
