@@ -35,7 +35,13 @@ export default async function MobileWeekPage() {
 
   const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
-  const plan = await getCachedPlan(athleteId, weekOf);
+
+  // Parallel: plan + credentials — avoid sequential KV round-trips
+  const cookieKeyEarly = cookieStore.get("zwift_intervals_key")?.value;
+  const [plan, earlyKvCreds] = await Promise.all([
+    getCachedPlan(athleteId, weekOf),
+    cookieKeyEarly ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
+  ]);
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const dateMap = buildDateMap(weekOf);
@@ -46,18 +52,22 @@ export default async function MobileWeekPage() {
     date: w.date ?? dateMap[w.day] ?? undefined,
   }));
 
-  // Fetch ICU activities and compute week status (same logic as Today page)
+  // Fetch ICU activities with 1.5 s timeout — must not block the page render
   let weekStatus: Record<string, string> = {};
   try {
-    const icuKey =
-      cookieStore.get("zwift_intervals_key")?.value ??
-      (await getIntervalsCredentials(athleteId))?.icuKey;
-    const icuId =
-      cookieStore.get("zwift_intervals_id")?.value ??
-      (await getIntervalsCredentials(athleteId))?.icuId;
+    const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
+    const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
+    const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
+    const icuId  = cookieId  ?? earlyKvCreds?.icuId;
 
     if (icuKey && icuId) {
-      const activities = await fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("icu_timeout")), 1500)
+      );
+      const activities = await Promise.race([
+        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+        timeout,
+      ]);
       weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
     }
   } catch { /* best-effort */ }

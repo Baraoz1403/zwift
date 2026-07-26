@@ -38,7 +38,13 @@ export default async function MobileTodayPage() {
 
   const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
-  const plan = await getCachedPlan(athleteId, weekOf);
+
+  // Parallel: plan fetch + ICU credentials (avoid sequential KV round-trips)
+  const cookieKeyEarly = cookieStore.get("zwift_intervals_key")?.value;
+  const [plan, earlyKvCreds] = await Promise.all([
+    getCachedPlan(athleteId, weekOf),
+    cookieKeyEarly ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
+  ]);
 
   const todayDate = new Date();
   const todayStr = todayDate.toISOString().slice(0, 10);
@@ -52,23 +58,28 @@ export default async function MobileTodayPage() {
   }));
 
   // ── Fetch ICU activities for this week ──────────────────────────────────
-  // Fast path: use cookie; fall back to KV for cross-device (e.g. opened on phone
-  // after connecting ICU on desktop). Failure is non-blocking — status degrades
-  // gracefully to "planned" (unknown) rather than crashing the page.
+  // Fast path: cookies (already present if ICU connected in same browser).
+  // Fall back once to KV for cross-device (phone after connecting on desktop).
+  // Hard timeout: 1.5 s max — a slow ICU response must never block the page.
   let weekStatus: Record<string, DayStatus> = {};
   try {
-    const icuKey =
-      cookieStore.get("zwift_intervals_key")?.value ??
-      (await getIntervalsCredentials(athleteId))?.icuKey;
-    const icuId =
-      cookieStore.get("zwift_intervals_id")?.value ??
-      (await getIntervalsCredentials(athleteId))?.icuId;
+    const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
+    const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
+    // Use credentials already fetched in parallel above — no extra KV call
+    const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
+    const icuId  = cookieId  ?? earlyKvCreds?.icuId;
 
     if (icuKey && icuId) {
-      const activities = await fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("icu_timeout")), 1500)
+      );
+      const activities = await Promise.race([
+        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+        timeout,
+      ]);
       weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
     }
-  } catch { /* best-effort — status stays empty */ }
+  } catch { /* best-effort — status stays "planned" if ICU slow/unavailable */ }
 
   const todayStatus: DayStatus = weekStatus[todayStr] ?? "planned";
   const todayWorkout =
