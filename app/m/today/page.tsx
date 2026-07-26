@@ -103,7 +103,7 @@ export default async function MobileTodayPage() {
   if (!plan || workouts.length === 0) {
     return (
       <>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={null} />
         <NoPlanScreen />
       </>
     );
@@ -114,7 +114,7 @@ export default async function MobileTodayPage() {
     const isBonus = todayStatus === "bonus";
     return (
       <>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={isBonus ? "bonus" : "planned"} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={isBonus ? "bonus" : "planned"} workout={null} />
         <div style={{ padding: "24px 16px" }}>
           {isBonus ? (
             /* Bonus ride — athlete rode on their rest day. Keep it short + positive. */
@@ -176,7 +176,7 @@ export default async function MobileTodayPage() {
   return (
     <>
       {/* Hero header */}
-      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} />
+      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
 
       {/* Post-ride feedback banner */}
       {todayStatus === "completed" && (
@@ -196,131 +196,250 @@ export default async function MobileTodayPage() {
 }
 
 // ── Hero header (server-rendered) ─────────────────────────────────────────────
-// Design language matches the desktop HeroBanner: purple→cyan gradient icon,
-// "AI TRAINING COACH" label in cyan, weight-900 greeting, subtle grid overlay.
+
+type HeroWorkout = { title: string; durationMin?: number; type?: string } | null;
 
 function TodayHero({
-  firstName, ftp, phase, todayStatus,
+  firstName, ftp, phase, todayStatus, workout,
 }: {
   firstName: string | null;
   ftp: number | null;
   phase: string | null;
   todayStatus: DayStatus | "bonus";
+  workout: HeroWorkout;
 }) {
   const statusDone   = todayStatus === "completed";
   const statusMissed = todayStatus === "missed";
   const statusBonus  = todayStatus === "bonus";
 
-  const statusValue = statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus" : "Planned";
-  const statusColor = statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : "#64748b";
+  // Time-of-day greeting (Israel is UTC+3 in summer)
+  const utcHour = new Date().getUTCHours();
+  const localHour = (utcHour + 3) % 24;
+  const timeGreeting =
+    localHour < 5  ? "Late night," :
+    localHour < 12 ? "Good morning," :
+    localHour < 17 ? "Good afternoon," :
+    localHour < 21 ? "Good evening," : "Good night,";
+
+  // Status pill
+  const statusLabel = statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus ride" : "Planned";
+  const statusColor = statusDone ? "#22c55e" : statusMissed ? "#ef4444" : statusBonus ? "#f59e0b" : "#3b82f6";
+
+  // Today's date label
+  const dateLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "short", day: "numeric", timeZone: "Asia/Jerusalem",
+  });
+
+  const isRun = /run|jog|treadmill/i.test(workout?.type ?? "");
 
   return (
     <div style={{
       position: "relative",
-      padding: "22px 20px 20px",
+      padding: "20px 20px 22px",
       background: "linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)",
       overflow: "hidden",
       flexShrink: 0,
     }}>
-      {/* Neural grid — same as desktop HeroBanner */}
+
+      {/* ── Neural grid overlay ── */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         backgroundImage: `
-          linear-gradient(rgba(0,212,255,0.045) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,212,255,0.045) 1px, transparent 1px)
+          linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px)
         `,
-        backgroundSize: "38px 38px",
-        WebkitMaskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 85%)",
-        maskImage: "radial-gradient(ellipse 100% 100% at 50% 0%, black 0%, transparent 85%)",
+        backgroundSize: "36px 36px",
+        WebkitMaskImage: "radial-gradient(ellipse 110% 90% at 60% 0%, black 0%, transparent 80%)",
+        maskImage: "radial-gradient(ellipse 110% 90% at 60% 0%, black 0%, transparent 80%)",
       }} />
-      {/* Purple aurora blob — top right, matches desktop */}
+
+      {/* ── Purple aurora top-right ── */}
       <div style={{
-        position: "absolute", top: -60, right: -40, width: 220, height: 220,
+        position: "absolute", top: -80, right: -60, width: 280, height: 280,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 65%)",
-        filter: "blur(32px)", pointerEvents: "none",
+        background: "radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 65%)",
+        filter: "blur(40px)", pointerEvents: "none",
       }} />
-      {/* Bottom separator line */}
+
+      {/* ── Cyan glow bottom-left ── */}
+      <div style={{
+        position: "absolute", bottom: -40, left: -20, width: 180, height: 180,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 65%)",
+        filter: "blur(30px)", pointerEvents: "none",
+      }} />
+
+      {/* ── Bottom separator ── */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
-        background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.28), rgba(124,58,237,0.28), transparent)",
+        background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.3), rgba(124,58,237,0.3), transparent)",
         pointerEvents: "none",
       }} />
 
-      {/* Brand chip row — same layout as desktop banner-nav */}
+      {/* ── Top row: brand chip + date ── */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        marginBottom: 18, position: "relative",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 20, position: "relative",
       }}>
-        {/* Icon — purple→cyan gradient, identical to desktop */}
+        {/* Brand chip */}
         <div style={{
-          width: 46, height: 46, borderRadius: 13, flexShrink: 0,
-          background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 20px rgba(0,212,255,0.35), 0 4px 12px rgba(124,58,237,0.3)",
+          display: "inline-flex", alignItems: "center", gap: 8,
+          background: "linear-gradient(135deg, rgba(124,58,237,0.25), rgba(0,212,255,0.15))",
+          border: "1px solid rgba(0,212,255,0.3)",
+          borderRadius: 10, padding: "6px 12px 6px 8px",
+          boxShadow: "0 0 16px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
         }}>
-          <svg width="22" height="22" viewBox="0 0 20 20" fill="white">
-            <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
-          </svg>
+          <div style={{
+            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+            background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 0 12px rgba(0,212,255,0.4)",
+          }}>
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="white">
+              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
+            </svg>
+          </div>
+          <span style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.18em",
+            color: "rgba(248,250,252,0.9)", textTransform: "uppercase",
+          }}>AI Coach</span>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Label — same style as desktop "AI TRAINING COACH" */}
-          <div style={{
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.2em",
-            textTransform: "uppercase", color: "#00D4FF", marginBottom: 3,
-          }}>
-            AI Training Coach
-          </div>
-          {/* Greeting — weight 900, same as desktop */}
-          <div style={{
-            fontSize: 28, fontWeight: 900, color: "#f8fafc",
-            letterSpacing: "-0.6px", lineHeight: 1.05,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {firstName ? `Hey, ${firstName}` : "Today's Workout"}
-          </div>
-        </div>
-
-        {/* Today status badge — top right */}
+        {/* Date */}
         <div style={{
-          flexShrink: 0,
-          padding: "5px 12px",
-          borderRadius: 20,
-          background: `${statusColor}18`,
-          border: `1px solid ${statusColor}40`,
-          fontSize: 13, fontWeight: 700, color: statusColor,
-          whiteSpace: "nowrap",
+          fontSize: 12, fontWeight: 600, color: "rgba(248,250,252,0.35)",
+          letterSpacing: "0.02em",
         }}>
-          {statusValue}
+          {dateLabel}
         </div>
       </div>
 
-      {/* Metric cards — FTP + Phase */}
+      {/* ── Personal greeting ── */}
+      <div style={{ position: "relative", marginBottom: workout ? 18 : 20 }}>
+        <div style={{
+          fontSize: 14, fontWeight: 500, color: "rgba(0,212,255,0.7)",
+          marginBottom: 2, letterSpacing: "0.01em",
+        }}>
+          {timeGreeting}
+        </div>
+        <div style={{
+          fontSize: 38, fontWeight: 900, color: "#f8fafc",
+          letterSpacing: "-1.2px", lineHeight: 1.0,
+        }}>
+          {firstName ?? "Athlete"}
+        </div>
+      </div>
+
+      {/* ── Today's workout preview (if exists) ── */}
+      {workout && (
+        <div style={{
+          position: "relative",
+          background: statusDone
+            ? "rgba(34,197,94,0.08)"
+            : "rgba(0,212,255,0.06)",
+          border: `1px solid ${statusDone ? "rgba(34,197,94,0.25)" : "rgba(0,212,255,0.18)"}`,
+          borderRadius: 16,
+          padding: "14px 16px",
+          marginBottom: 16,
+          backdropFilter: "blur(8px)",
+        }}>
+          {/* Label row */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 8,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: statusDone ? "#22c55e" : "rgba(0,212,255,0.6)",
+            }}>
+              {statusDone ? "Completed" : "Today's Session"}
+            </div>
+            {/* Status pill */}
+            <div style={{
+              padding: "3px 10px", borderRadius: 20,
+              background: `${statusColor}1a`,
+              border: `1px solid ${statusColor}40`,
+              fontSize: 11, fontWeight: 700, color: statusColor,
+            }}>
+              {statusLabel}
+            </div>
+          </div>
+
+          {/* Workout title */}
+          <div style={{
+            fontSize: 18, fontWeight: 800, color: "#f1f5f9",
+            letterSpacing: "-0.3px", lineHeight: 1.2, marginBottom: 6,
+          }}>
+            {workout.title}
+          </div>
+
+          {/* Duration + type chips */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {workout.durationMin && (
+              <span style={{
+                fontSize: 12, fontWeight: 600, color: "rgba(248,250,252,0.5)",
+                background: "rgba(248,250,252,0.06)",
+                padding: "3px 10px", borderRadius: 8,
+              }}>
+                {workout.durationMin} min
+              </span>
+            )}
+            <span style={{
+              fontSize: 12, fontWeight: 600,
+              color: isRun ? "#f97316" : "rgba(0,212,255,0.7)",
+              background: isRun ? "rgba(249,115,22,0.1)" : "rgba(0,212,255,0.08)",
+              padding: "3px 10px", borderRadius: 8,
+            }}>
+              {isRun ? "🏃 Run" : "🚴 Ride"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Metric cards: FTP + Phase ── */}
       <div style={{
         display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
       }}>
-        <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" filled={!!ftp} />
-        <HeroCard label="Training phase" value={phase ?? "—"} color="#7C3AED" filled={!!phase} />
+        <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" accent filled={!!ftp} />
+        <HeroCard label="Phase" value={phase ?? "—"} color="#A78BFA" filled={!!phase} />
       </div>
     </div>
   );
 }
 
-function HeroCard({ label, value, color, filled }: {
-  label: string; value: string; color: string; filled?: boolean;
+function HeroCard({ label, value, color, filled, accent }: {
+  label: string; value: string; color: string; filled?: boolean; accent?: boolean;
 }) {
   return (
     <div style={{
-      background: filled ? `${color}10` : "rgba(9,22,46,0.7)",
-      border: `1px solid ${filled ? color + "35" : "rgba(0,212,255,0.1)"}`,
+      background: filled
+        ? `${color}0d`
+        : "rgba(9,22,46,0.6)",
+      border: `1px solid ${filled ? color + "30" : "rgba(0,212,255,0.08)"}`,
       borderRadius: 14,
-      padding: "12px 14px",
+      padding: "13px 14px",
+      position: "relative",
+      overflow: "hidden",
     }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1, marginBottom: 5 }}>
+      {accent && filled && (
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          background: `linear-gradient(90deg, transparent, ${color}80, transparent)`,
+        }} />
+      )}
+      <div style={{
+        fontSize: 24, fontWeight: 900, color,
+        lineHeight: 1, marginBottom: 5,
+        fontVariantNumeric: "tabular-nums",
+        textShadow: filled ? `0 0 20px ${color}50` : "none",
+      }}>
         {value}
       </div>
-      <div style={{ fontSize: 12, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".1em" }}>
+      <div style={{
+        fontSize: 11, color: "rgba(248,250,252,0.35)",
+        fontWeight: 700, textTransform: "uppercase", letterSpacing: ".12em",
+      }}>
         {label}
       </div>
     </div>
