@@ -102,11 +102,11 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 
       {/* ── Date header ─────────────────────────────────────────────────── */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 15, color: "#64748b", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>
           {formatDay(today)}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 3 }}>
-          <div style={{ fontSize: 25, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px" }}>
+          <div style={{ fontSize: 27, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px" }}>
             Today&apos;s Workout
           </div>
           {todayStatus === "completed" && (
@@ -144,8 +144,8 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
               background: "rgba(5,12,24,0.75)",
               border: `1px solid ${colors.accent}55`,
               borderRadius: 8,
-              padding: "4px 10px",
-              fontSize: 11, fontWeight: 700,
+              padding: "5px 11px",
+              fontSize: 13, fontWeight: 700,
               color: colors.accent,
               letterSpacing: ".5px",
               textTransform: "uppercase",
@@ -179,7 +179,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 
         <div style={{ padding: "16px 20px 20px" }}>
           <div style={{
-            fontSize: 22, fontWeight: 800, color: "#f8fafc",
+            fontSize: 24, fontWeight: 800, color: "#f8fafc",
             lineHeight: 1.15, letterSpacing: "-.3px",
             marginBottom: isRest ? 0 : 12,
           }}>
@@ -203,12 +203,12 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
       {!isRest && workout.structure && workout.structure.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{
-            fontSize: 11, fontWeight: 600, color: "#475569",
+            fontSize: 13, fontWeight: 600, color: "#475569",
             letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 8,
           }}>
             Blocks
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {workout.structure.map((block, i) => {
               const pct = Math.round((block.powerFtp ?? 0) * 100);
               // Pick color from power level
@@ -228,25 +228,25 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
               return (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  background: "#0f172a", borderRadius: 12, padding: "9px 14px",
+                  background: "#0f172a", borderRadius: 12, padding: "11px 14px",
                   border: "1px solid #1e293b",
                 }}>
-                  <div style={{ width: 3, height: 24, borderRadius: 2, background: barColor, flexShrink: 0 }} />
+                  <div style={{ width: 3, height: 26, borderRadius: 2, background: barColor, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.2 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.2 }}>
                       {reps}{label}{repDetail}
                     </div>
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>
+                    <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>
                       {dur} min{pct > 0 ? ` · ${pct}% FTP` : ""}
                       {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp * 100)}% rec` : ""}
                     </div>
                   </div>
                   <div style={{
-                    width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+                    width: 38, height: 38, borderRadius: 9, flexShrink: 0,
                     background: `${barColor}18`,
                     border: `1px solid ${barColor}33`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 700, color: barColor,
+                    fontSize: 13, fontWeight: 700, color: barColor,
                   }}>
                     {pct}%
                   </div>
@@ -310,7 +310,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         border: "1px solid #1e293b", marginBottom: 8,
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 600, color: "#475569",
+          fontSize: 13, fontWeight: 600, color: "#475569",
           letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 10,
         }}>
           This week
@@ -335,14 +335,14 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <span style={{
-                    fontSize: 11, fontWeight: isToday ? 800 : 500,
+                    fontSize: 13, fontWeight: isToday ? 800 : 500,
                     color: isToday ? "#0a0f1a" : isRestDay ? "#475569" : col.accent,
                   }}>
                     {abbr}
                   </span>
                 </div>
                 <span style={{
-                  fontSize: 9, fontWeight: 600,
+                  fontSize: 11, fontWeight: 600,
                   color: isToday ? col.accent : "#334155",
                   textTransform: "uppercase", letterSpacing: ".3px",
                 }}>
@@ -361,13 +361,13 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 function StatPill({ value, unit, accent }: { value: string; unit: string; accent?: string }) {
   return (
     <div style={{
-      background: "#1e293b", borderRadius: 12, padding: "8px 14px",
+      background: "#1e293b", borderRadius: 12, padding: "9px 14px",
       textAlign: "center", border: "1px solid #334155",
     }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: accent ?? "#f1f5f9", lineHeight: 1 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: accent ?? "#f1f5f9", lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, fontWeight: 500 }}>
+      <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, fontWeight: 500 }}>
         {unit}
       </div>
     </div>

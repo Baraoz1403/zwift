@@ -99,10 +99,10 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
 
       {/* Header */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 14, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
           {formatWeekRange(weekOf)}
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
+        <div style={{ fontSize: 26, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
           Weekly Plan
         </div>
 
@@ -110,14 +110,14 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
         {bullets.length > 0 && (
           <div style={{
             marginTop: 8,
-            background: "#0f172a", borderRadius: 12, padding: "9px 14px",
+            background: "#0f172a", borderRadius: 12, padding: "10px 14px",
             border: "1px solid #1e293b",
-            display: "flex", flexDirection: "column", gap: 5,
+            display: "flex", flexDirection: "column", gap: 6,
           }}>
             {bullets.map((line, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#3b82f6", flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: "#64748b", lineHeight: 1.4 }}>{line}</span>
+                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#3b82f6", flexShrink: 0 }} />
+                <span style={{ fontSize: 14, color: "#64748b", lineHeight: 1.4 }}>{line}</span>
               </div>
             ))}
           </div>
@@ -187,11 +187,11 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                     display: "flex", flexDirection: "column",
                     alignItems: "center", justifyContent: "center", gap: 1,
                   }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: isRest ? "#475569" : colors.accent, letterSpacing: ".3px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: isRest ? "#475569" : colors.accent, letterSpacing: ".3px" }}>
                       {label.short.toUpperCase()}
                     </span>
                     {label.dateNum && (
-                      <span style={{ fontSize: 14, fontWeight: 800, color: isRest ? "#475569" : colors.accent }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: isRest ? "#475569" : colors.accent }}>
                         {label.dateNum}
                       </span>
                     )}
@@ -201,7 +201,7 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{
-                        fontSize: 15, fontWeight: 700,
+                        fontSize: 17, fontWeight: 700,
                         color: isRest ? "#475569" : "#f1f5f9",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         flex: 1, minWidth: 0,
@@ -210,24 +210,24 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                       </span>
                       {isToday && !statusMeta && (
                         <span style={{
-                          fontSize: 10, fontWeight: 700, color: colors.accent,
-                          background: `${colors.accent}22`, padding: "2px 7px", borderRadius: 6, flexShrink: 0,
+                          fontSize: 12, fontWeight: 700, color: colors.accent,
+                          background: `${colors.accent}22`, padding: "3px 8px", borderRadius: 6, flexShrink: 0,
                         }}>TODAY</span>
                       )}
                       {statusMeta && (
                         <span style={{
-                          fontSize: 11, fontWeight: 700, color: statusMeta.color,
-                          background: statusMeta.bg, padding: "2px 8px", borderRadius: 6, flexShrink: 0,
+                          fontSize: 13, fontWeight: 700, color: statusMeta.color,
+                          background: statusMeta.bg, padding: "3px 9px", borderRadius: 6, flexShrink: 0,
                         }}>{statusMeta.text}</span>
                       )}
                     </div>
 
                     {!isRest && w && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 3, alignItems: "center" }}>
+                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
                         {w.durationMin > 0 && (
-                          <span style={{ fontSize: 12, color: "#64748b" }}>{w.durationMin} min</span>
+                          <span style={{ fontSize: 14, color: "#64748b" }}>{w.durationMin} min</span>
                         )}
-                        <span style={{ fontSize: 11, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
                           {colors.label}
                         </span>
                         {/* Dot indicators for structure */}
@@ -265,14 +265,14 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                 }}>
                   {/* Short description */}
                   {w.description && (
-                    <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
+                    <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.5, marginBottom: 10 }}>
                       {w.description.slice(0, 110)}{w.description.length > 110 ? "…" : ""}
                     </div>
                   )}
 
                   {/* Interval blocks */}
                   {w.structure && w.structure.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {w.structure.map((block, i) => {
                         const pct = Math.round((block.powerFtp ?? 0) * 100);
                         const barColor = blockBarColor(pct);
@@ -283,22 +283,22 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                         return (
                           <div key={i} style={{
                             display: "flex", alignItems: "center", gap: 10,
-                            background: "#111827", borderRadius: 10, padding: "8px 12px",
+                            background: "#111827", borderRadius: 10, padding: "10px 12px",
                             border: "1px solid #1e293b",
                           }}>
-                            <div style={{ width: 3, height: 20, borderRadius: 2, background: barColor, flexShrink: 0 }} />
-                            <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>
+                            <div style={{ width: 3, height: 22, borderRadius: 2, background: barColor, flexShrink: 0 }} />
+                            <div style={{ flex: 1, fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>
                               {reps}{block.label || block.type}{repDetail}
                             </div>
-                            <span style={{ fontSize: 11, color: "#64748b" }}>
+                            <span style={{ fontSize: 13, color: "#64748b" }}>
                               {block.durationMin ?? 0} min
                             </span>
                             {pct > 0 && (
                               <div style={{
-                                width: 38, height: 26, borderRadius: 7,
+                                width: 42, height: 28, borderRadius: 7,
                                 background: `${barColor}18`, border: `1px solid ${barColor}33`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 11, fontWeight: 700, color: barColor, flexShrink: 0,
+                                fontSize: 13, fontWeight: 700, color: barColor, flexShrink: 0,
                               }}>
                                 {pct}%
                               </div>
@@ -308,16 +308,16 @@ export default function WeekView({ workouts, weekOf, today, summary, weekStatus 
                       })}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 12, color: "#475569" }}>No detailed structure.</div>
+                    <div style={{ fontSize: 14, color: "#475569" }}>No detailed structure.</div>
                   )}
 
                   {/* CTA for today */}
                   {isToday && (
                     <a href="/m" style={{
                       display: "block", marginTop: 12, textAlign: "center",
-                      padding: "10px", borderRadius: 12,
+                      padding: "12px", borderRadius: 12,
                       background: colors.accent, color: "#fff",
-                      fontSize: 13, fontWeight: 700, textDecoration: "none",
+                      fontSize: 15, fontWeight: 700, textDecoration: "none",
                     }}>View full workout →</a>
                   )}
                 </div>

@@ -81,14 +81,14 @@ export default async function MobileProfilePage() {
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 13, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
           Athlete
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
+        <div style={{ fontSize: 27, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
           {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Profile & Stats"}
         </div>
         {zwiftProfile?.firstName && (
-          <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Profile &amp; Stats</div>
+          <div style={{ fontSize: 14, color: "#475569", marginTop: 2 }}>Profile &amp; Stats</div>
         )}
       </div>
 
@@ -149,6 +149,32 @@ export default async function MobileProfilePage() {
       {/* Connections */}
       <div style={{ marginBottom: 16 }}>
         <SectionLabel>Connections</SectionLabel>
+
+        {/* All-synced banner */}
+        {icuConnected && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "rgba(34,197,94,0.08)",
+            border: "1px solid rgba(34,197,94,0.25)",
+            borderRadius: 12, padding: "10px 14px", marginBottom: 10,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+              background: "rgba(34,197,94,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#22c55e" }}>All systems synced</div>
+              <div style={{ fontSize: 13, color: "#475569", marginTop: 1 }}>Zwift + Intervals.icu connected</div>
+            </div>
+          </div>
+        )}
+
         <div style={{
           background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
           padding: "4px 0",
@@ -156,56 +182,56 @@ export default async function MobileProfilePage() {
           {/* Zwift — always connected (they're logged in) */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "12px 16px", borderBottom: "1px solid #1e293b",
+            padding: "14px 16px", borderBottom: "1px solid #1e293b",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: 8, background: "#0f2a4a",
+                width: 36, height: 36, borderRadius: 9, background: "#0f2a4a",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 500 }}>Zwift</div>
-                <div style={{ fontSize: 11, color: "#22c55e" }}>Connected</div>
+                <div style={{ fontSize: 16, color: "#f1f5f9", fontWeight: 600 }}>Zwift</div>
+                <div style={{ fontSize: 13, color: "#22c55e" }}>Connected</div>
               </div>
             </div>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+            <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e" }} />
           </div>
 
           {/* Intervals.icu */}
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "12px 16px",
+            padding: "14px 16px",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                width: 32, height: 32, borderRadius: 8, background: icuConnected ? "#0f2a1a" : "#1a1a2e",
+                width: 36, height: 36, borderRadius: 9, background: icuConnected ? "#0f2a1a" : "#1a1a2e",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="18" height="18" rx="3" fill={icuConnected ? "#22c55e" : "#475569"} opacity=".2" />
-                  <path d="M7 12h10M12 7v10" stroke={icuConnected ? "#22c55e" : "#475569"} strokeWidth="2" strokeLinecap="round" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "#475569"}
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 500 }}>Intervals.icu</div>
-                <div style={{ fontSize: 11, color: icuConnected ? "#22c55e" : "#64748b" }}>
+                <div style={{ fontSize: 16, color: "#f1f5f9", fontWeight: 600 }}>Intervals.icu</div>
+                <div style={{ fontSize: 13, color: icuConnected ? "#22c55e" : "#64748b" }}>
                   {icuConnected ? (icuName ?? "Connected") : "Not connected"}
                 </div>
               </div>
             </div>
             {icuConnected ? (
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e" }} />
+              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e" }} />
             ) : (
               <a
                 href="/api/intervals/oauth-start?from=m"
                 style={{
-                  fontSize: 12, fontWeight: 600, color: "#3b82f6",
-                  textDecoration: "none", padding: "6px 12px",
-                  background: "#1e3a5f", borderRadius: 8,
+                  fontSize: 14, fontWeight: 600, color: "#3b82f6",
+                  textDecoration: "none", padding: "7px 14px",
+                  background: "#1e3a5f", borderRadius: 9,
                 }}
               >
                 Connect
@@ -274,8 +300,8 @@ export default async function MobileProfilePage() {
             }}
           >
             <div>
-              <div style={{ fontSize: 15, color: "#f1f5f9", fontWeight: 500 }}>Edit training profile</div>
-              <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>Goals, schedule, session length</div>
+              <div style={{ fontSize: 16, color: "#f1f5f9", fontWeight: 600 }}>Edit training profile</div>
+              <div style={{ fontSize: 14, color: "#475569", marginTop: 2 }}>Goals, schedule, session length</div>
             </div>
             <ChevronRight />
           </a>
@@ -290,7 +316,7 @@ export default async function MobileProfilePage() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 13, fontWeight: 600, color: "#475569",
+      fontSize: 14, fontWeight: 600, color: "#475569",
       letterSpacing: ".4px", textTransform: "uppercase",
       marginBottom: 10,
     }}>
@@ -307,14 +333,14 @@ function MetricCard({ value, label, color, desc }: {
       background: "#111827", borderRadius: 14, border: "1px solid #1e293b",
       padding: "16px 18px",
     }}>
-      <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1, marginBottom: 5 }}>
+      <div style={{ fontSize: 30, fontWeight: 800, color, lineHeight: 1, marginBottom: 5 }}>
         {value}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 3 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8", marginBottom: 3 }}>
         {label}
       </div>
       {desc && (
-        <div style={{ fontSize: 12, color: "#475569" }}>{desc}</div>
+        <div style={{ fontSize: 13, color: "#475569" }}>{desc}</div>
       )}
     </div>
   );
@@ -324,11 +350,11 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-      gap: 12, padding: "10px 0",
+      gap: 12, padding: "11px 0",
       borderBottom: "1px solid #1e293b",
     }}>
-      <span style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 14, color: "#c4d0e3", textAlign: "right" }}>{value}</span>
+      <span style={{ fontSize: 15, color: "#64748b", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 15, color: "#c4d0e3", textAlign: "right" }}>{value}</span>
     </div>
   );
 }

@@ -181,8 +181,8 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               }}
             >
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9" }}>{e.label}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>{e.desc}</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>{e.label}</div>
+                <div style={{ fontSize: 14, color: "#64748b" }}>{e.desc}</div>
               </div>
               {environment === e.value && (
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />
@@ -258,8 +258,8 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
 function Section({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 12, color: "#475569", marginBottom: 10 }}>{desc}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, color: "#475569", marginBottom: 10 }}>{desc}</div>
       {children}
     </div>
   );
@@ -273,11 +273,11 @@ function ToggleCard({ selected, onClick, label, flex }: {
       onClick={onClick}
       style={{
         flex: flex ? 1 : undefined,
-        padding: "12px 10px", textAlign: "center",
+        padding: "13px 10px", textAlign: "center",
         background: selected ? "rgba(37,99,235,0.15)" : "#111827",
         border: `1px solid ${selected ? "#2563eb55" : "#1e293b"}`,
         borderRadius: 14, cursor: "pointer",
-        fontSize: 13, fontWeight: selected ? 700 : 500,
+        fontSize: 15, fontWeight: selected ? 700 : 500,
         color: selected ? "#93c5fd" : "#64748b",
         transition: "all .15s",
       }}
