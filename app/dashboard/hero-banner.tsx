@@ -295,7 +295,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       }} />
 
       {/* ── Inner content constrained to match .dashboard width below */}
-      <div style={{
+      <div className="hb-inner" style={{
         flex: 1, display: "flex", flexDirection: "column",
         maxWidth: 1100, margin: "0 auto", width: "100%", padding: "0 24px",
         position: "relative", zIndex: 3,
@@ -346,11 +346,11 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
       </div>
 
       {/* ── Main content row ────────────────────────────────────────────── */}
-      <div style={{
+      <div className="hb-content-row" style={{
         flex: 1, display: "flex", alignItems: "stretch", flexWrap: "wrap", gap: 28,
       }}>
         {/* Left — copy block */}
-        <div style={{
+        <div className="hb-copy" style={{
           flex: "0 0 58%", padding: "26px 0 28px",
           position: "relative", zIndex: 1,
           display: "flex", flexDirection: "column", justifyContent: "space-between",
@@ -381,6 +381,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
               return (
                 <div
                   key={i}
+                  className={isLast ? "hb-hl-last" : "hb-hl"}
                   style={{
                     fontSize: isLast ? 56 : 44,
                     fontWeight: 900,
@@ -436,7 +437,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
         </div>
 
         {/* Right — telemetry card */}
-        <div style={{
+        <div className="hb-telemetry" style={{
           flex: "0 0 calc(42% - 28px)", padding: "20px 0",
           display: "flex", alignItems: "center",
           position: "relative", zIndex: 1,
