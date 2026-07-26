@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
+import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import MobileNav from "./mobile-nav";
 import MobileLoginScreen from "./mobile-login";
+import MobileIcuConnect from "./mobile-icu-connect";
 
 export const metadata: Metadata = {
   title: "Zwift AI Coach",
@@ -28,7 +30,20 @@ export default async function MobileLayout({ children }: { children: React.React
     return <MobileLoginScreen />;
   }
 
-  // Authenticated — show normal app shell with bottom navigation
+  // ── Intervals.icu gate ───────────────────────────────────────────────────
+  // Mirrors the desktop mandatory gate: no ICU = no app.
+  // Fast path: check cookie (set by oauth-callback). If absent, hit KV so
+  // a desktop-connected athlete isn't re-prompted on their phone.
+  const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
+  const icuConnected = icuFromCookie
+    ? true
+    : !!(await getIntervalsCredentials(String(session.athleteId)));
+
+  if (!icuConnected) {
+    return <MobileIcuConnect />;
+  }
+
+  // Authenticated + ICU connected — show normal app shell with bottom navigation
   return (
     <div style={{
       minHeight: "100dvh",

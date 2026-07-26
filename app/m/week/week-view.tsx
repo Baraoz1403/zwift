@@ -49,6 +49,17 @@ function formatDayLabel(dateStr?: string, dayName?: string): { short: string; fu
 
 const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+/** Break a coach summary into ≤4 short bullets for mobile readability. */
+function parseSummaryBullets(summary: string): string[] {
+  // Split on sentence boundaries, strip leading/trailing whitespace
+  const sentences = summary
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 12);
+  // Take first 4, but prefer natural stopping at 3 if they're long
+  return sentences.slice(0, 4);
+}
+
 interface Props {
   workouts: (WeeklyWorkout & { date?: string })[];
   weekOf: string;
@@ -94,11 +105,20 @@ export default function WeekView({ workouts, weekOf, today, summary }: Props) {
         </div>
         {summary && (
           <div style={{
-            fontSize: 13, color: "#64748b", lineHeight: 1.55, marginTop: 8,
-            background: "#111827", borderRadius: 12, padding: "12px 14px",
+            marginTop: 10,
+            background: "#111827", borderRadius: 14, padding: "12px 14px",
             border: "1px solid #1e293b",
+            display: "flex", flexDirection: "column", gap: 7,
           }}>
-            {summary}
+            {parseSummaryBullets(summary).map((line, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <div style={{
+                  width: 5, height: 5, borderRadius: "50%", background: "#3b82f6",
+                  flexShrink: 0, marginTop: 6,
+                }} />
+                <span style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>{line}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
