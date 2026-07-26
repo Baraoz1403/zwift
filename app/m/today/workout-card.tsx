@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import WorkoutThumbnail from "@/app/dashboard/workout-thumbnail";
+import MobileWorkoutChart from "./workout-chart";
 import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss } from "@/lib/zwo";
 
@@ -110,17 +111,18 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Prop
       <div style={{
         borderRadius: 24,
         overflow: "hidden",
-        background: "#111827",
+        background: "#050c18",
         border: `1px solid ${colors.accent}33`,
-        boxShadow: `0 0 40px ${colors.accent}15`,
+        boxShadow: `0 4px 40px ${colors.accent}18, 0 0 0 1px ${colors.accent}15`,
         marginBottom: 12,
       }}>
+        {/* Zone badge */}
         {!isRest && (
-          <div style={{ height: 150, position: "relative", overflow: "hidden" }}>
-            <WorkoutThumbnail workout={workout} flush height={150} hideFooter />
+          <div style={{ position: "relative" }}>
             <div style={{
-              position: "absolute", top: 12, left: 14,
-              background: `${colors.accent}22`,
+              position: "absolute", zIndex: 10,
+              top: 12, left: 14,
+              background: "rgba(5,12,24,0.75)",
               border: `1px solid ${colors.accent}55`,
               borderRadius: 8,
               padding: "4px 10px",
@@ -128,17 +130,29 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Prop
               color: colors.accent,
               letterSpacing: ".5px",
               textTransform: "uppercase",
-              backdropFilter: "blur(8px)",
+              backdropFilter: "blur(10px)",
             }}>
               {colors.label}
             </div>
+
+            {/* Rich power chart if structure available, else thumbnail fallback */}
+            {workout.structure && workout.structure.length > 0 ? (
+              <MobileWorkoutChart
+                blocks={workout.structure}
+                durationMin={workout.durationMin}
+              />
+            ) : (
+              <div style={{ height: 160, position: "relative", overflow: "hidden" }}>
+                <WorkoutThumbnail workout={workout} flush height={160} hideFooter />
+              </div>
+            )}
           </div>
         )}
 
         {isRest && (
           <div style={{
             height: 100, display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 52,
+            fontSize: 52, background: "#0a0f1a",
           }}>
             🛌
           </div>
@@ -157,6 +171,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Prop
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {workout.durationMin > 0 && <StatPill value={`${workout.durationMin}`} unit="min" />}
               {ifTss && <StatPill value={`${Math.round(ifTss.tss)}`} unit="TSS" />}
+              {ifTss && <StatPill value={ifTss.intensityFactor.toFixed(2)} unit="IF" accent={colors.accent} />}
               {workout.targetPowerPctFtp && (
                 <StatPill value={workout.targetPowerPctFtp} unit="FTP" accent={colors.accent} />
               )}
@@ -165,40 +180,56 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today }: Prop
         </div>
       </div>
 
-      {/* ── Structure ───────────────────────────────────────────────────── */}
+      {/* ── Structure blocks (compact) ──────────────────────────────────── */}
       {!isRest && workout.structure && workout.structure.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{
             fontSize: 11, fontWeight: 600, color: "#475569",
             letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 8,
           }}>
-            Structure
+            Blocks
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {workout.structure.map((block, i) => {
               const pct = Math.round((block.powerFtp ?? 0) * 100);
+              // Pick color from power level
               const barColor =
-                pct >= 106 ? "#22c55e" :
-                pct >= 97  ? "#ef4444" :
-                pct >= 88  ? "#3b82f6" :
-                pct >= 76  ? "#f59e0b" : "#6b7280";
+                pct >= 120 ? "#ef4444" :
+                pct >= 106 ? "#f97316" :
+                pct >= 95  ? "#f59e0b" :
+                pct >= 88  ? "#10b981" :
+                pct >= 76  ? "#22d3ee" :
+                pct >= 56  ? "#3b82f6" : "#64748b";
               const dur = block.durationMin ?? 0;
-              const label = block.label ?? block.type ?? "";
+              const label = block.label || block.type;
               const reps = block.type === "intervals" && block.repeats ? `${block.repeats}×` : "";
+              const repDetail = block.type === "intervals" && block.onSec
+                ? ` (${Math.round(block.onSec / 60)}/${Math.round((block.offSec ?? 0) / 60)}min)`
+                : "";
               return (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  background: "#0f172a", borderRadius: 12, padding: "10px 14px",
+                  background: "#0f172a", borderRadius: 12, padding: "9px 14px",
                   border: "1px solid #1e293b",
                 }}>
-                  <div style={{ width: 4, height: 28, borderRadius: 2, background: barColor, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
+                  <div style={{ width: 3, height: 24, borderRadius: 2, background: barColor, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.2 }}>
-                      {reps}{label}
+                      {reps}{label}{repDetail}
                     </div>
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 1 }}>
                       {dur} min{pct > 0 ? ` · ${pct}% FTP` : ""}
+                      {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp * 100)}% rec` : ""}
                     </div>
+                  </div>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 8, flexShrink: 0,
+                    background: `${barColor}18`,
+                    border: `1px solid ${barColor}33`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, color: barColor,
+                  }}>
+                    {pct}%
                   </div>
                 </div>
               );
