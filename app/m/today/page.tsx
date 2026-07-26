@@ -232,177 +232,242 @@ function TodayHero({
 
   const isRun = /run|jog|treadmill/i.test(workout?.type ?? "");
 
+  // Ticker items — personal metrics woven in with brand messages
+  const tickerItems = [
+    { dot: "#00D4FF", text: "AI TRAINING COACH" },
+    { dot: "#7C3AED", text: ftp ? `FTP · ${ftp} W` : "FTP ANALYSIS ACTIVE" },
+    { dot: "#00D4FF", text: "REAL-TIME POWER ANALYSIS" },
+    { dot: "#F59E0B", text: phase ? `${phase.toUpperCase()} PHASE` : "ADAPTIVE TRAINING ENGINE" },
+    { dot: "#7C3AED", text: "TSB · CTL · ATL TRACKING" },
+    { dot: "#00D4FF", text: "INTERVALS.ICU SYNC ACTIVE" },
+    { dot: "#F43F5E", text: "PHYSIOLOGICAL LOAD MONITOR" },
+    { dot: "#7C3AED", text: "PROGRESSIVE OVERLOAD ALGORITHM" },
+  ];
+
   return (
     <div style={{
       position: "relative",
-      padding: "20px 20px 22px",
       background: "linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)",
       overflow: "hidden",
       flexShrink: 0,
+      display: "flex",
+      flexDirection: "column",
     }}>
+      <style>{`
+        @keyframes mHeroPulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.2; transform: scale(0.65); }
+        }
+        @keyframes mHeroTicker {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes mHeroAurora {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.15); }
+        }
+        @keyframes mHeroShimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+      `}</style>
 
-      {/* ── Neural grid overlay ── */}
+      {/* ── Neural grid ── */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         backgroundImage: `
-          linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px)
+          linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px)
         `,
         backgroundSize: "36px 36px",
-        WebkitMaskImage: "radial-gradient(ellipse 110% 90% at 60% 0%, black 0%, transparent 80%)",
-        maskImage: "radial-gradient(ellipse 110% 90% at 60% 0%, black 0%, transparent 80%)",
+        WebkitMaskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
+        maskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
       }} />
 
       {/* ── Purple aurora top-right ── */}
       <div style={{
-        position: "absolute", top: -80, right: -60, width: 280, height: 280,
+        position: "absolute", top: -90, right: -70, width: 320, height: 320,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 65%)",
-        filter: "blur(40px)", pointerEvents: "none",
+        background: "radial-gradient(circle, rgba(124,58,237,0.32) 0%, transparent 65%)",
+        filter: "blur(45px)", pointerEvents: "none",
+        animation: "mHeroAurora 9s ease-in-out infinite",
       }} />
 
       {/* ── Cyan glow bottom-left ── */}
       <div style={{
-        position: "absolute", bottom: -40, left: -20, width: 180, height: 180,
+        position: "absolute", bottom: -30, left: -30, width: 200, height: 200,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 65%)",
-        filter: "blur(30px)", pointerEvents: "none",
+        background: "radial-gradient(circle, rgba(0,212,255,0.16) 0%, transparent 65%)",
+        filter: "blur(35px)", pointerEvents: "none",
+        animation: "mHeroAurora 12s ease-in-out infinite reverse",
       }} />
 
-      {/* ── Bottom separator ── */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 1,
-        background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.3), rgba(124,58,237,0.3), transparent)",
-        pointerEvents: "none",
-      }} />
+      {/* ── Content area ── */}
+      <div style={{ padding: "20px 20px 20px", position: "relative", zIndex: 1 }}>
 
-      {/* ── Top row: brand chip + date ── */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 20, position: "relative",
-      }}>
-        {/* Brand chip */}
+        {/* Top row: brand chip + date */}
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          background: "linear-gradient(135deg, rgba(124,58,237,0.25), rgba(0,212,255,0.15))",
-          border: "1px solid rgba(0,212,255,0.3)",
-          borderRadius: 10, padding: "6px 12px 6px 8px",
-          boxShadow: "0 0 16px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 20,
         }}>
           <div style={{
-            width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-            background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 12px rgba(0,212,255,0.4)",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "linear-gradient(135deg, rgba(124,58,237,0.28), rgba(0,212,255,0.16))",
+            border: "1px solid rgba(0,212,255,0.35)",
+            borderRadius: 10, padding: "6px 13px 6px 8px",
+            boxShadow: "0 0 20px rgba(0,212,255,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
           }}>
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="white">
-              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
-            </svg>
+            {/* Pulsing live dot */}
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "#00D4FF",
+              boxShadow: "0 0 8px #00D4FF",
+              animation: "mHeroPulse 1.8s ease-in-out infinite",
+              flexShrink: 0,
+            }} />
+            <div style={{
+              width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+              background: "linear-gradient(135deg, #7C3AED 0%, #00D4FF 100%)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 10px rgba(0,212,255,0.5)",
+            }}>
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="white">
+                <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
+              </svg>
+            </div>
+            <span style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: "0.18em",
+              color: "rgba(248,250,252,0.92)", textTransform: "uppercase",
+            }}>AI Coach</span>
           </div>
-          <span style={{
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.18em",
-            color: "rgba(248,250,252,0.9)", textTransform: "uppercase",
-          }}>AI Coach</span>
-        </div>
-
-        {/* Date */}
-        <div style={{
-          fontSize: 12, fontWeight: 600, color: "rgba(248,250,252,0.35)",
-          letterSpacing: "0.02em",
-        }}>
-          {dateLabel}
-        </div>
-      </div>
-
-      {/* ── Personal greeting ── */}
-      <div style={{ position: "relative", marginBottom: workout ? 18 : 20 }}>
-        <div style={{
-          fontSize: 14, fontWeight: 500, color: "rgba(0,212,255,0.7)",
-          marginBottom: 2, letterSpacing: "0.01em",
-        }}>
-          {timeGreeting}
-        </div>
-        <div style={{
-          fontSize: 38, fontWeight: 900, color: "#f8fafc",
-          letterSpacing: "-1.2px", lineHeight: 1.0,
-        }}>
-          {firstName ?? "Athlete"}
-        </div>
-      </div>
-
-      {/* ── Today's workout preview (if exists) ── */}
-      {workout && (
-        <div style={{
-          position: "relative",
-          background: statusDone
-            ? "rgba(34,197,94,0.08)"
-            : "rgba(0,212,255,0.06)",
-          border: `1px solid ${statusDone ? "rgba(34,197,94,0.25)" : "rgba(0,212,255,0.18)"}`,
-          borderRadius: 16,
-          padding: "14px 16px",
-          marginBottom: 16,
-          backdropFilter: "blur(8px)",
-        }}>
-          {/* Label row */}
           <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 8,
+            fontSize: 12, fontWeight: 600,
+            color: "rgba(248,250,252,0.38)", letterSpacing: "0.01em",
+          }}>
+            {dateLabel}
+          </div>
+        </div>
+
+        {/* Personal greeting */}
+        <div style={{ marginBottom: workout ? 16 : 18 }}>
+          <div style={{
+            fontSize: 13.5, fontWeight: 500,
+            color: "rgba(0,212,255,0.75)",
+            marginBottom: 1, letterSpacing: "0.02em",
+          }}>
+            {timeGreeting}
+          </div>
+          <div style={{
+            fontSize: 40, fontWeight: 900, color: "#f8fafc",
+            letterSpacing: "-1.4px", lineHeight: 1.0,
+          }}>
+            {firstName ?? "Athlete"}
+          </div>
+        </div>
+
+        {/* Workout preview */}
+        {workout && (
+          <div style={{
+            background: statusDone ? "rgba(34,197,94,0.08)" : "rgba(0,212,255,0.06)",
+            border: `1px solid ${statusDone ? "rgba(34,197,94,0.28)" : "rgba(0,212,255,0.2)"}`,
+            borderRadius: 16, padding: "13px 15px", marginBottom: 14,
+            backdropFilter: "blur(10px)",
           }}>
             <div style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: statusDone ? "#22c55e" : "rgba(0,212,255,0.6)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: 7,
             }}>
-              {statusDone ? "Completed" : "Today's Session"}
+              <div style={{
+                fontSize: 10, fontWeight: 800, letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: statusDone ? "#22c55e" : "rgba(0,212,255,0.65)",
+              }}>
+                {statusDone ? "Completed" : "Today's Session"}
+              </div>
+              <div style={{
+                padding: "3px 10px", borderRadius: 20,
+                background: `${statusColor}1a`, border: `1px solid ${statusColor}40`,
+                fontSize: 11, fontWeight: 700, color: statusColor,
+              }}>
+                {statusLabel}
+              </div>
             </div>
-            {/* Status pill */}
             <div style={{
-              padding: "3px 10px", borderRadius: 20,
-              background: `${statusColor}1a`,
-              border: `1px solid ${statusColor}40`,
-              fontSize: 11, fontWeight: 700, color: statusColor,
+              fontSize: 17, fontWeight: 800, color: "#f1f5f9",
+              letterSpacing: "-0.3px", lineHeight: 1.2, marginBottom: 7,
             }}>
-              {statusLabel}
+              {workout.title}
             </div>
-          </div>
-
-          {/* Workout title */}
-          <div style={{
-            fontSize: 18, fontWeight: 800, color: "#f1f5f9",
-            letterSpacing: "-0.3px", lineHeight: 1.2, marginBottom: 6,
-          }}>
-            {workout.title}
-          </div>
-
-          {/* Duration + type chips */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {workout.durationMin && (
+            <div style={{ display: "flex", gap: 7 }}>
+              {workout.durationMin && (
+                <span style={{
+                  fontSize: 12, fontWeight: 600, color: "rgba(248,250,252,0.45)",
+                  background: "rgba(248,250,252,0.06)", padding: "3px 10px", borderRadius: 8,
+                }}>
+                  {workout.durationMin} min
+                </span>
+              )}
               <span style={{
-                fontSize: 12, fontWeight: 600, color: "rgba(248,250,252,0.5)",
-                background: "rgba(248,250,252,0.06)",
+                fontSize: 12, fontWeight: 600,
+                color: isRun ? "#f97316" : "rgba(0,212,255,0.75)",
+                background: isRun ? "rgba(249,115,22,0.1)" : "rgba(0,212,255,0.08)",
                 padding: "3px 10px", borderRadius: 8,
               }}>
-                {workout.durationMin} min
+                {isRun ? "🏃 Run" : "🚴 Ride"}
               </span>
-            )}
-            <span style={{
-              fontSize: 12, fontWeight: 600,
-              color: isRun ? "#f97316" : "rgba(0,212,255,0.7)",
-              background: isRun ? "rgba(249,115,22,0.1)" : "rgba(0,212,255,0.08)",
-              padding: "3px 10px", borderRadius: 8,
-            }}>
-              {isRun ? "🏃 Run" : "🚴 Ride"}
-            </span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Metric cards: FTP + Phase ── */}
+        {/* Metric cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" accent filled={!!ftp} />
+          <HeroCard label="Phase" value={phase ?? "—"} color="#A78BFA" filled={!!phase} />
+        </div>
+      </div>
+
+      {/* ── Animated ticker bar (same as desktop HeroBanner) ── */}
       <div style={{
-        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
+        borderTop: "1px solid rgba(0,212,255,0.15)",
+        background: "linear-gradient(90deg, rgba(0,212,255,0.04), rgba(124,58,237,0.04))",
+        overflow: "hidden",
+        flexShrink: 0,
+        position: "relative",
+        zIndex: 1,
       }}>
-        <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color="#00D4FF" accent filled={!!ftp} />
-        <HeroCard label="Phase" value={phase ?? "—"} color="#A78BFA" filled={!!phase} />
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          animation: "mHeroTicker 32s linear infinite",
+          whiteSpace: "nowrap",
+          padding: "9px 0",
+        }}>
+          {/* Doubled for seamless loop */}
+          {[0, 1].map(rep => (
+            <span key={rep} style={{ display: "inline-flex", alignItems: "center" }}>
+              {tickerItems.map((item, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                    padding: "0 28px",
+                    fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
+                    color: "rgba(248,250,252,0.45)",
+                    fontFamily: "'SF Mono', 'Fira Code', monospace",
+                    textTransform: "uppercase",
+                  }}>
+                    <span style={{
+                      width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                      background: item.dot,
+                      boxShadow: `0 0 6px ${item.dot}`,
+                    }} />
+                    {item.text}
+                  </span>
+                  <span style={{ color: "rgba(248,250,252,0.12)", fontSize: 12 }}>·</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
