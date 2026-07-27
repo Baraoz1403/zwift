@@ -3,42 +3,33 @@
 /**
  * FeedbackBanner
  *
- * Shown when today's planned workout is detected as completed (ICU activity sync).
- * The rider rates their session on an RPE 1–10 scale (Borg CR10 adapted):
- *   1–2  = very easy / easy
- *   3–4  = moderate
- *   5–6  = somewhat hard / hard
- *   7–8  = very hard
- *   9–10 = maximal
+ * Shown when today's planned workout is detected as completed (ICU sync).
+ * Two inputs:
+ *   1. RPE 1–5 (effort score) — stored in rider fingerprint via /api/ai/session-feedback
+ *   2. Free-text message to the coach — stored via /api/ai/coaching-note
  *
- * The score is stored via /api/ai/session-feedback → rider fingerprint in KV.
- * Future plans are personalised based on this accumulated history.
+ * Both are submitted together. The AI reads both when generating next week's plan.
  *
- * FIX (was sending to /api/ai/coaching-note as raw text — fingerprint never updated):
- * Now calls /api/ai/session-feedback with { date, workoutTitle, category, feelingScore }
- * where feelingScore maps RPE 1–10 → internal 1–5 scale.
+ * The RPE 1–5 scale used here:
+ *   1 = Very easy (could go much harder)
+ *   2 = Easy / comfortable
+ *   3 = Moderate — challenging but controlled
+ *   4 = Hard — pushed to complete
+ *   5 = Max / couldn't do more
  */
 
 import { useState } from "react";
 
 const ZO = "#F2541B";
-const ZB = "#009CDF";
 
-// RPE 1–10 (Borg CR10): label + mapped 1–5 feeling score for fingerprint
 const RPE_ITEMS = [
-  { rpe: 1,  label: "Very easy",    feel: 5, color: "#10b981" },
-  { rpe: 2,  label: "Easy",         feel: 5, color: "#22c55e" },
-  { rpe: 3,  label: "Moderate",     feel: 4, color: "#84cc16" },
-  { rpe: 4,  label: "Moderate+",    feel: 4, color: "#a3e635" },
-  { rpe: 5,  label: "Somewhat hard",feel: 3, color: "#eab308" },
-  { rpe: 6,  label: "Hard",         feel: 3, color: "#f59e0b" },
-  { rpe: 7,  label: "Very hard",    feel: 2, color: "#f97316" },
-  { rpe: 8,  label: "Very hard+",   feel: 2, color: "#ef4444" },
-  { rpe: 9,  label: "Extreme",      feel: 1, color: "#dc2626" },
-  { rpe: 10, label: "Max effort",   feel: 1, color: "#991b1b" },
+  { score: 1, label: "Very easy",  sub: "Could go much harder",   color: "#10b981", emoji: "😌" },
+  { score: 2, label: "Easy",       sub: "Comfortable effort",      color: "#22c55e", emoji: "🙂" },
+  { score: 3, label: "Moderate",   sub: "Challenging, controlled", color: "#eab308", emoji: "😤" },
+  { score: 4, label: "Hard",       sub: "Pushed to complete",      color: "#f97316", emoji: "😓" },
+  { score: 5, label: "Max effort", sub: "Nothing left",            color: "#ef4444", emoji: "🔥" },
 ];
 
-// Map workout type to canonical category (matches fingerprint categories)
 function toCategory(type: string): string {
   const t = type.toLowerCase();
   if (t.includes("sweet") || t.includes("sweetspot")) return "Sweet Spot";
@@ -59,63 +50,71 @@ interface Props {
 }
 
 export default function FeedbackBanner({ workoutTitle, workoutCategory, date, avgHr }: Props) {
-  const [state, setState]   = useState<"idle" | "sending" | "done">("idle");
-  const [chosen, setChosen] = useState<number | null>(null);   // chosen RPE
+  const [rpe, setRpe]           = useState<number | null>(null);
+  const [note, setNote]         = useState("");
+  const [state, setState]       = useState<"idle" | "sending" | "done">("idle");
 
-  async function submit(rpe: number) {
-    if (state !== "idle") return;
-    setChosen(rpe);
+  async function submit() {
+    if (state !== "idle" || (!rpe && !note.trim())) return;
     setState("sending");
 
-    const item = RPE_ITEMS.find(r => r.rpe === rpe)!;
     const category = toCategory(workoutCategory);
 
     try {
-      const res = await fetch("/api/ai/session-feedback", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date,
-          workoutTitle,
-          category,
-          feelingScore: item.feel,   // 1–5 internal scale
-          note: `RPE ${rpe}/10 — ${item.label}`,
-        }),
-      });
+      // Always save RPE to fingerprint if provided
+      if (rpe !== null) {
+        await fetch("/api/ai/session-feedback", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date,
+            workoutTitle,
+            category,
+            feelingScore: rpe,
+            note: note.trim() || undefined,
+          }),
+        });
+      }
 
-      if (!res.ok) throw new Error("save failed");
+      // Save free-text coaching note if provided
+      if (note.trim()) {
+        await fetch("/api/ai/coaching-note", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            note: `[${date} — ${workoutTitle}] ${note.trim()}`,
+            date,
+          }),
+        });
+      }
+
       setState("done");
     } catch {
       setState("idle");
-      setChosen(null);
     }
   }
 
-  const chosenItem = RPE_ITEMS.find(r => r.rpe === chosen);
+  const chosenItem = RPE_ITEMS.find(r => r.score === rpe);
 
   if (state === "done") {
     return (
       <div style={{
-        margin: "0 16px 14px",
-        padding: "18px 20px",
-        background: `${chosenItem?.color ?? "#22c55e"}12`,
-        border: `1px solid ${chosenItem?.color ?? "#22c55e"}30`,
+        margin: "0 16px 16px",
+        padding: "20px 20px",
+        background: `${chosenItem?.color ?? "#22c55e"}10`,
+        border: `1px solid ${chosenItem?.color ?? "#22c55e"}28`,
         borderRadius: 20,
         display: "flex", alignItems: "center", gap: 16,
       }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-          background: `${chosenItem?.color ?? "#22c55e"}20`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 22, fontWeight: 900, color: chosenItem?.color ?? "#22c55e",
-        }}>{chosen}</div>
+        <div style={{ fontSize: 36 }}>{chosenItem?.emoji ?? "✓"}</div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: chosenItem?.color ?? "#22c55e" }}>
-            RPE {chosen}/10 — {chosenItem?.label}
+          <div style={{ fontSize: 17, fontWeight: 800, color: chosenItem?.color ?? "#22c55e" }}>
+            {rpe ? `RPE ${rpe}/5 — ${chosenItem?.label}` : "Feedback saved"}
           </div>
-          <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3 }}>
-            Logged. Your coach will factor this in for next week.
+          <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3, lineHeight: 1.5 }}>
+            Your coach will use this when building next week&apos;s plan.
           </div>
         </div>
       </div>
@@ -125,95 +124,139 @@ export default function FeedbackBanner({ workoutTitle, workoutCategory, date, av
   return (
     <div style={{
       margin: "0 16px 16px",
-      padding: "20px 18px 18px",
+      padding: "22px 20px 20px",
       background: "var(--m-card)",
       border: "1px solid var(--m-border)",
-      borderRadius: 20,
+      borderRadius: 22,
     }}>
-      {/* Header row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", marginBottom: 3 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", marginBottom: 4, letterSpacing: "-0.3px" }}>
             ✓ Workout complete!
           </div>
-          <div style={{ fontSize: 13, color: "var(--m-muted)" }}>
-            {workoutTitle.length > 32 ? workoutTitle.slice(0, 30) + "…" : workoutTitle}
+          <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.4 }}>
+            {workoutTitle.length > 34 ? workoutTitle.slice(0, 32) + "…" : workoutTitle}
           </div>
         </div>
         {avgHr && avgHr > 0 && (
           <div style={{
-            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.22)",
-            borderRadius: 10, padding: "6px 12px", textAlign: "center", flexShrink: 0,
+            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.20)",
+            borderRadius: 12, padding: "8px 14px", textAlign: "center", flexShrink: 0, marginLeft: 12,
           }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>
               {Math.round(avgHr)}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(239,68,68,0.55)", textTransform: "uppercase", letterSpacing: ".12em", marginTop: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(239,68,68,0.5)", textTransform: "uppercase", letterSpacing: ".12em", marginTop: 2 }}>
               avg bpm
             </div>
           </div>
         )}
       </div>
 
-      {/* RPE label */}
-      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
-        How hard was it? (RPE 1–10)
+      {/* RPE scale */}
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
+        How hard was it?
       </div>
-
-      {/* RPE grid — 2 rows × 5 */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {RPE_ITEMS.map(item => {
-          const isChosen = chosen === item.rpe;
+          const active = rpe === item.score;
           return (
             <button
-              key={item.rpe}
-              onClick={() => submit(item.rpe)}
+              key={item.score}
+              onClick={() => setRpe(rpe === item.score ? null : item.score)}
               disabled={state !== "idle"}
-              title={item.label}
               style={{
-                padding: "10px 4px",
-                background: isChosen ? `${item.color}20` : "var(--m-card-inner)",
-                border: `1.5px solid ${isChosen ? item.color : "var(--m-border)"}`,
-                borderRadius: 12,
-                cursor: state === "idle" ? "pointer" : "default",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                transition: "all .12s",
+                flex: 1,
+                padding: "14px 6px 12px",
+                background: active ? `${item.color}18` : "var(--m-card-inner)",
+                border: `2px solid ${active ? item.color : "var(--m-border)"}`,
+                borderRadius: 16,
+                cursor: "pointer",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                transition: "all .14s",
                 WebkitTapHighlightColor: "transparent",
               }}
             >
+              <span style={{ fontSize: 26, lineHeight: 1 }}>{item.emoji}</span>
               <span style={{
                 fontSize: 18, fontWeight: 900,
-                color: isChosen ? item.color : "var(--m-text)",
+                color: active ? item.color : "var(--m-text)",
                 lineHeight: 1,
-              }}>
-                {item.rpe}
-              </span>
+              }}>{item.score}</span>
               <span style={{
-                fontSize: 9, fontWeight: 700,
-                color: isChosen ? item.color : "var(--m-muted)",
+                fontSize: 10, fontWeight: 700,
+                color: active ? item.color : "var(--m-muted)",
                 textAlign: "center", lineHeight: 1.2,
                 textTransform: "uppercase", letterSpacing: ".04em",
               }}>
-                {item.label.split(" ").slice(0, 2).join(" ")}
+                {item.label.split(" ")[0]}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Zone legend */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--m-border)" }}>
-        {[
-          { label: "Easy", color: "#22c55e" },
-          { label: "Moderate", color: "#eab308" },
-          { label: "Hard", color: "#f97316" },
-          { label: "Max", color: "#991b1b" },
-        ].map(z => (
-          <div key={z.label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: z.color }} />
-            <span style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500 }}>{z.label}</span>
-          </div>
-        ))}
+      {/* Expanded label */}
+      {rpe && chosenItem && (
+        <div style={{
+          fontSize: 13, color: chosenItem.color, fontWeight: 600,
+          background: `${chosenItem.color}10`, border: `1px solid ${chosenItem.color}22`,
+          borderRadius: 10, padding: "8px 14px", marginBottom: 16,
+          textAlign: "center",
+        }}>
+          {chosenItem.sub}
+        </div>
+      )}
+
+      {/* Free-text to coach */}
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
+        Message to your coach (optional)
+      </div>
+      <textarea
+        rows={3}
+        placeholder='e.g. "Legs were heavy from yesterday. Planning a vacation July 20–Aug 3. Knee was bothering me on the last interval."'
+        value={note}
+        onChange={e => setNote(e.target.value)}
+        disabled={state !== "idle"}
+        style={{
+          width: "100%", boxSizing: "border-box",
+          padding: "12px 14px",
+          background: "var(--m-card-inner)",
+          border: "1px solid var(--m-border)",
+          borderRadius: 12,
+          color: "var(--m-text)",
+          fontSize: 14, fontFamily: "inherit", lineHeight: 1.55,
+          resize: "none", outline: "none",
+        }}
+      />
+
+      {/* Submit */}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={state !== "idle" || (rpe === null && !note.trim())}
+        style={{
+          width: "100%", marginTop: 14,
+          padding: "16px",
+          background: (rpe || note.trim()) && state === "idle"
+            ? `linear-gradient(135deg, ${ZO} 0%, #d94a14 100%)`
+            : "var(--m-card-inner)",
+          border: "none",
+          borderRadius: 14,
+          color: (rpe || note.trim()) && state === "idle" ? "#fff" : "var(--m-muted)",
+          fontSize: 16, fontWeight: 800, cursor: (rpe || note.trim()) ? "pointer" : "default",
+          fontFamily: "inherit",
+          transition: "all .15s",
+          letterSpacing: "-0.2px",
+        }}
+      >
+        {state === "sending" ? "Saving…" : "Send to coach"}
+      </button>
+
+      <div style={{ fontSize: 12, color: "var(--m-muted)", textAlign: "center", marginTop: 10, lineHeight: 1.4 }}>
+        Your coach reads this before building next week&apos;s plan
       </div>
     </div>
   );

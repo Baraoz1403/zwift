@@ -331,15 +331,38 @@ function normalizeWeeklyPlan(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
     return { ...w, structure: cleanBlocks, durationMin };
   });
 
+  // ── Deduplicate by day ─────────────────────────────────────────────────────
+  // If the AI returned multiple entries for the same day (a recurring bug
+  // where e.g. Monday appears twice), keep only the non-rest one. If both are
+  // rest days, keep the first. If both are non-rest, keep the one with a
+  // richer structure (more blocks = more intentional output).
+  const seen = new Map<string, WeeklyWorkout>();
+  for (const w of normalized) {
+    const existing = seen.get(w.day);
+    if (!existing) {
+      seen.set(w.day, w);
+      continue;
+    }
+    const wIsRest = w.type === "Rest" || isRestDayType(w.type);
+    const exIsRest = existing.type === "Rest" || isRestDayType(existing.type);
+    if (wIsRest && !exIsRest) continue;          // keep existing (non-rest)
+    if (!wIsRest && exIsRest) { seen.set(w.day, w); continue; } // keep new (non-rest)
+    // Both non-rest: prefer the one with more structure blocks
+    const wBlocks  = Array.isArray(w.structure) ? w.structure.length : 0;
+    const exBlocks = Array.isArray(existing.structure) ? existing.structure.length : 0;
+    if (wBlocks > exBlocks) seen.set(w.day, w);
+  }
+  const deduped = DAY_ORDER.map(d => seen.get(d)).filter(Boolean) as WeeklyWorkout[];
+
   // Guarantee exactly 7 entries (Mon-Sun) — the display layer
   // (computeForwardWindow in weekly-plan.tsx) decides how many to show at
   // once; cutting here to 6 silently drops Sunday, which is exactly the
   // bug that caused "add Sunday workout" requests to never stick.
-  while (normalized.length < 7) {
-    const day = DAY_ORDER[normalized.length] ?? `Day ${normalized.length + 1}`;
-    normalized.push({ day, type: "Rest", title: "Rest Day", durationMin: 0, description: "", structure: undefined });
+  while (deduped.length < 7) {
+    const day = DAY_ORDER[deduped.length] ?? `Day ${deduped.length + 1}`;
+    deduped.push({ day, type: "Rest", title: "Rest Day", durationMin: 0, description: "", structure: undefined });
   }
-  return normalized.slice(0, 7);
+  return deduped.slice(0, 7);
 }
 
 function isRestDayType(type: string | undefined): boolean {
