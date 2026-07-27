@@ -17,7 +17,7 @@ const TABS = [
 export default function TabletSidebar({ firstName }: { firstName?: string | null }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [theme, setTheme]   = useState<"dark" | "light">("dark");
+  const [theme, setTheme]   = useState<"dark" | "light">("light");
   const [signing, setSigning] = useState(false);
 
   // Sync with persisted cookie on first render
@@ -41,12 +41,16 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
     router.push("/login");
   }
 
-  const bg      = theme === "dark" ? "#0d1424" : "#1e293b";
-  const border  = theme === "dark" ? "#1e293b" : "#2d3f55";
-  const mutedTx = theme === "dark" ? "#4b5563" : "#94a3b8";
+  const bg      = theme === "dark" ? "#0d1424" : "#ffffff";
+  const border  = theme === "dark" ? "#1e3050" : "#e4e9f0";
+  const mutedTx = theme === "dark" ? "#5a7498" : "#94a3b8";
+  const activeLabel = theme === "dark" ? "#f8fafc" : "#0d1626";
+  const nameTx  = theme === "dark" ? "rgba(248,250,252,0.6)" : "#64748b";
 
   return (
-    <div style={{
+    <>
+    {/* ── Landscape: vertical sidebar ─────────────────────────────────────── */}
+    <div className="tablet-sidebar" style={{
       width: 220,
       minHeight: "100dvh",
       background: bg,
@@ -88,7 +92,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
               AI Coach
             </div>
             {firstName && (
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(248,250,252,0.6)", marginTop: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: nameTx, marginTop: 1 }}>
                 {firstName}
               </div>
             )}
@@ -118,7 +122,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
               <Icon color={active ? ZO : mutedTx} />
               <span style={{
                 fontSize: 15, fontWeight: active ? 700 : 500,
-                color: active ? "#f8fafc" : mutedTx,
+                color: active ? activeLabel : mutedTx,
                 letterSpacing: active ? "-0.2px" : "0",
               }}>
                 {label}
@@ -185,6 +189,50 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
         </button>
       </div>
     </div>
+
+    {/* ── Portrait: horizontal bottom nav bar ─────────────────────────────── */}
+    <nav
+      className="tablet-bottom-nav"
+      style={{
+        background: bg,
+        borderTopColor: border,
+        borderTopWidth: 1,
+        borderTopStyle: "solid",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      }}
+    >
+      {TABS.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
+        return (
+          <Link
+            key={href}
+            href={href}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              textDecoration: "none",
+              paddingTop: 8,
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Icon color={active ? ZO : mutedTx} />
+            <span style={{
+              fontSize: 10,
+              fontWeight: active ? 700 : 500,
+              color: active ? ZO : mutedTx,
+              letterSpacing: "0.02em",
+            }}>
+              {label}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
+    </>
   );
 }
 

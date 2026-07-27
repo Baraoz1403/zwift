@@ -1617,3 +1617,42 @@ tbody tr:hover {
 }
 
 /* Ride stats row: already has flex-wrap at 640px */
+
+/* ── iPad/Tablet orientation support ────────────────────────────────────────
+   Landscape: sidebar visible, content offset by 220px, bottom nav hidden.
+   Portrait:  sidebar hidden, content full-width, bottom nav visible.
+   The threshold (min-width: 600px) ensures phones never trigger the tablet
+   bottom-nav (phones already have their own /m bottom nav). */
+
+.tablet-sidebar {
+  /* visible by default — landscape mode */
+}
+
+.tablet-bottom-nav {
+  display: none; /* hidden in landscape */
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 50;
+  align-items: stretch;
+  justify-content: space-around;
+  border-top: 1px solid transparent; /* color set inline from theme */
+}
+
+.tablet-main {
+  /* content area — no changes in landscape */
+}
+
+@media (orientation: portrait) and (min-width: 600px) {
+  .tablet-sidebar {
+    display: none !important;
+  }
+  .tablet-main {
+    margin-left: 0 !important;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .tablet-bottom-nav {
+    display: flex !important;
+  }
+}

@@ -81,8 +81,8 @@ export default async function TabletLayout({ children }: { children: React.React
         {/* Fixed sidebar */}
         <TabletSidebar firstName={firstName} />
 
-        {/* Main content — offset by sidebar width */}
-        <div style={{
+        {/* Main content — offset by sidebar in landscape, full-width in portrait */}
+        <div className="tablet-main" style={{
           flex: 1,
           marginLeft: 220,
           minHeight: "100dvh",

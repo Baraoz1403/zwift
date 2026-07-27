@@ -184,8 +184,9 @@ export default async function MobileTodayPage() {
       {/* Hero header */}
       <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
 
-      {/* Post-ride feedback banner */}
-      {todayStatus === "completed" && (
+      {/* Post-ride feedback banner — shows when any workout completed today,
+          including non-system workouts (Zwift suggestions, free rides, etc.) */}
+      {(todayStatus === "completed" || todayStatus === "bonus") && (
         <FeedbackBanner
           workoutTitle={todayWorkout.title}
           workoutCategory={todayWorkout.type ?? ""}
