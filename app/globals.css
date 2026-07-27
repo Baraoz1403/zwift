@@ -79,30 +79,10 @@ textarea:-webkit-autofill:focus {
 }
 
 /* ── Mobile app theme tokens ─────────────────────────────────────────────────
-   Dark is the default brand experience. [data-mobile-theme="light"] overrides
-   when the rider switches via the Profile toggle. Set on the shell wrapper div
-   (not <html>) so desktop styles are unaffected.                              */
+   Light is the default. [data-mobile-theme="dark"] overrides for dark mode.
+   Set on the shell wrapper div (not <html>) so desktop styles are unaffected. */
 :root {
-  /* dark defaults */
-  --m-bg:            #0a0f1a;
-  --m-card:          #111827;
-  --m-card-inner:    #0d1117;
-  --m-border:        #1e293b;
-  --m-text:          #f8fafc;
-  --m-text-2:        #c4d0e3;
-  --m-label:         #94a3b8;
-  --m-muted:         #64748b;
-  --m-muted-2:       #475569;
-  --m-nav-bg:        #0d1424;
-  --m-nav-inactive:  #4b5563;
-  --m-icon-primary:  #0f2a4a;
-  --m-icon-muted:    #1a1a2e;
-  --m-icon-success:  #0f2a1a;
-  --m-btn-muted:     #1e3a5f;
-  --m-btn-muted-txt: #3b82f6;
-}
-
-[data-mobile-theme="light"] {
+  /* light defaults */
   --m-bg:            #f0f4f8;
   --m-card:          #ffffff;
   --m-card-inner:    #f8fafc;
@@ -119,6 +99,25 @@ textarea:-webkit-autofill:focus {
   --m-icon-success:  #dcfce7;
   --m-btn-muted:     #eff6ff;
   --m-btn-muted-txt: #2563eb;
+}
+
+[data-mobile-theme="dark"] {
+  --m-bg:            #0a0f1a;
+  --m-card:          #111827;
+  --m-card-inner:    #0d1117;
+  --m-border:        #1e293b;
+  --m-text:          #f8fafc;
+  --m-text-2:        #c4d0e3;
+  --m-label:         #94a3b8;
+  --m-muted:         #64748b;
+  --m-muted-2:       #475569;
+  --m-nav-bg:        #0d1424;
+  --m-nav-inactive:  #4b5563;
+  --m-icon-primary:  #0f2a4a;
+  --m-icon-muted:    #1a1a2e;
+  --m-icon-success:  #0f2a1a;
+  --m-btn-muted:     #1e3a5f;
+  --m-btn-muted-txt: #3b82f6;
 }
 
 * {

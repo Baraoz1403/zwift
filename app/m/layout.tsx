@@ -41,7 +41,7 @@ export default async function MobileLayout({ children }: { children: React.React
   }
 
   // Read persisted theme preference (cookie set by ThemeToggleButton client component)
-  const theme = cookieStore.get("mobileTheme")?.value === "light" ? "light" : "dark";
+  const theme = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
   const bodyBg = theme === "light" ? "#f0f4f8" : "#0a0f1a";
 
   // Authenticated + ICU connected — show normal app shell with bottom navigation

@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 
 export function ThemeToggleButton() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     // Read the current theme from the shell wrapper (set server-side from cookie)
     const shell = document.querySelector("[data-mobile-shell]") as HTMLElement | null;
-    const current = (shell?.getAttribute("data-mobile-theme") as "dark" | "light") || "dark";
+    const current = (shell?.getAttribute("data-mobile-theme") as "dark" | "light") || "light";
     setTheme(current);
   }, []);
 
