@@ -159,16 +159,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         </div>
       </div>
 
-      {/* Description */}
-      {!isRest && workout.description && (
-        <div style={{
-          background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-          borderRadius: 4, padding: "13px 16px", marginBottom: 10,
-          fontSize: 14, color: "var(--m-muted)", lineHeight: 1.65,
-        }}>
-          {workout.description}
-        </div>
-      )}
+      {/* Description intentionally hidden — shown in coach chat on demand */}
 
       {/* Structure blocks */}
       {!isRest && workout.structure && workout.structure.length > 0 && (
@@ -225,16 +216,15 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
             {pushState==="idle"?"Send to Zwift":pushState==="sending"?"Sending…":pushState==="done"?"✓ On your Zwift calendar":"Try again"}
           </button>
         )}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-          <button onClick={() => sendNote("Feeling tired today, please adjust intensity")} style={{
-            padding: "12px", background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-            borderRadius: 4, color: noteState==="done"?"#16a34a":"var(--m-muted)", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>{noteState==="done"?"Noted 👍":"😓  Tired today"}</button>
-          <button onClick={() => sendNote("Skipping today's workout")} style={{
-            padding: "12px", background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-            borderRadius: 4, color: "var(--m-muted)", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>⏭  Skip today</button>
-        </div>
+        {/* Post-workout: tired signal (only after activity logged) */}
+        {todayStatus === "completed" && (
+          <button onClick={() => sendNote("Felt tired today — please factor into next week")} style={{
+            width: "100%", padding: "12px",
+            background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+            borderRadius: 4, color: noteState==="done"?"#16a34a":"var(--m-muted)",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>{noteState==="done"?"Noted ✓":"That session was tough — let the coach know"}</button>
+        )}
       </div>
 
       {/* Week strip */}

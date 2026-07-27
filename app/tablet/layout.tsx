@@ -88,8 +88,28 @@ export default async function TabletLayout({ children }: { children: React.React
           minHeight: "100dvh",
           overflowY: "auto",
           paddingTop: "env(safe-area-inset-top, 0px)",
+          display: "flex",
+          flexDirection: "column",
         }}>
-          {children}
+          <div style={{ flex: 1 }}>{children}</div>
+
+          {/* Global footer — full-width, bottom of scroll, can't scroll past */}
+          <footer style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 24,
+            padding: "16px 40px",
+            background: "var(--m-card)",
+            borderTop: "1px solid var(--m-border)",
+          }}>
+            <a href="/m/legal/terms" style={{ fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500 }}>Terms of Service</a>
+            <span style={{ color: "var(--m-border)" }}>·</span>
+            <a href="/m/legal/privacy" style={{ fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500 }}>Privacy Policy</a>
+            <span style={{ color: "var(--m-border)" }}>·</span>
+            <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 400 }}>Volt AI</span>
+          </footer>
         </div>
       </div>
     </>

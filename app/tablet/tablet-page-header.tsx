@@ -23,6 +23,7 @@ export function TabletPageHeader({
 }) {
   return (
     <div style={{
+      position: "sticky", top: 0, zIndex: 20,
       flexShrink: 0,
       display: "flex", alignItems: "flex-start", justifyContent: "space-between",
       padding: "28px 40px 22px",

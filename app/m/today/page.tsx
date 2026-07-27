@@ -247,6 +247,7 @@ function TodayHero({
 
   return (
     <div style={{
+      position: "sticky", top: 0, zIndex: 20,
       background: "var(--m-card)",
       borderBottom: "1px solid var(--m-border)",
       padding: "16px 20px 16px",

@@ -74,24 +74,28 @@ export default async function MobileLayout({ children }: { children: React.React
         }}>
           {children}
 
-          {/* Legal footer — visible from every page, sits above bottom nav */}
-          <div style={{
+          {/* Legal footer — full-width, bottom of scroll area */}
+          <footer style={{
+            width: "100%",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 16,
-            padding: "20px 16px 8px",
+            gap: 20,
+            padding: "18px 16px 14px",
+            background: "var(--m-card)",
             borderTop: "1px solid var(--m-border)",
-            marginTop: 12,
+            marginTop: 24,
           }}>
             <a href="/m/legal/terms" style={{
               fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
             }}>Terms of Service</a>
-            <span style={{ color: "var(--m-border)", fontSize: 14 }}>·</span>
+            <span style={{ color: "var(--m-border)" }}>·</span>
             <a href="/m/legal/privacy" style={{
               fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
             }}>Privacy Policy</a>
-          </div>
+            <span style={{ color: "var(--m-border)" }}>·</span>
+            <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 400 }}>Volt AI</span>
+          </footer>
         </div>
 
         {/* Fixed bottom navigation */}
