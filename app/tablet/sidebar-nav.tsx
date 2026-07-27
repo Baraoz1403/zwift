@@ -19,11 +19,19 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
   const [theme, setTheme]     = useState<"dark" | "light">("light");
   const [signing, setSigning] = useState(false);
 
-  // Read theme for sidebar colors — no toggle here; theme is controlled on Today page only
   useEffect(() => {
     const saved = document.cookie.split(";").find(c => c.trim().startsWith("mobileTheme="));
     setTheme(saved?.includes("dark") ? "dark" : "light");
   }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.cookie = `mobileTheme=${next}; path=/; max-age=31536000`;
+    // Update the shell attribute — all CSS vars cascade immediately across the entire page
+    const shell = document.querySelector("[data-mobile-shell]");
+    if (shell) shell.setAttribute("data-mobile-theme", next);
+  }
 
   async function signOut() {
     setSigning(true);
@@ -91,8 +99,24 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
         })}
       </nav>
 
-      {/* Bottom — sign out only; theme toggle is on the Today page */}
-      <div style={{ padding: "12px 12px calc(16px + env(safe-area-inset-bottom, 0px))", borderTop: `1px solid ${border}` }}>
+      {/* Bottom — theme toggle + sign out */}
+      <div style={{ padding: "12px 12px calc(16px + env(safe-area-inset-bottom, 0px))", borderTop: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* Theme toggle — above Sign Out, toggles the ENTIRE site */}
+        <button type="button" onClick={toggleTheme} style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 14px", borderRadius: 4, width: "100%",
+          border: `1px solid ${border}`, background: "transparent",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={muted} strokeWidth="1.8" strokeLinecap="round">
+            {isDark
+              ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
+              : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>}
+          </svg>
+          <span style={{ fontSize: 14, color: muted, fontWeight: 500 }}>{isDark ? "Light mode" : "Dark mode"}</span>
+        </button>
+
+        {/* Sign out */}
         <button type="button" onClick={signOut} disabled={signing} style={{
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px", borderRadius: 4, width: "100%",
