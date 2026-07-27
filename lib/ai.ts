@@ -419,6 +419,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 
 ⚡ PROFESSIONAL INTERVAL STANDARD: The athlete opens Zwift expecting a structured workout file — warmup blocks, defined interval blocks with exact watts, recovery blocks, cooldown. Every session in the plan must produce a proper structured .zwo file. If a session cannot be described in blocks (type/duration/power), it should not be in the plan.
 
+🚫 NO SAFE DEFAULTS: A plan full of Foundation Rides and Sweet Spot Classic is a FAILED plan for any rider who has trained before. For Intermediate (3.0–3.5 W/kg) in Build phase: the hard sessions MUST be Threshold or above — Sweet Spot is a recovery-week ceiling, not a Build-phase target. For Trained/Advanced (3.5+ W/kg): Norwegian 4×4, Critical Power Development, or Over-Under Intervals are the default hard sessions — justify in the summary if you prescribe anything less. Sweet Spot Classic repeated week after week for a developed rider signals the AI chose safety over coaching — forbidden.
+
 WEEK SHAPE:
 • Hard days (1-3/week per INTENSITY SESSION GUIDELINES): quality session from the library — Sweet Spot / Threshold / VO2max / Neuromuscular
 • Active-recovery days (day immediately after a hard session): ONLY here is Foundation Ride or Spin & Recover valid as a standalone session — because recovery IS the stimulus.
@@ -868,48 +870,26 @@ Every workout structure block must include explicit cadenceTarget.
   '"durationMin": number, "targetPowerPctFtp": string (e.g. "65-75%", ' +
   'omit/empty for rest days), ' +
 
-  // ── Description: the most important field for plan quality ──
-  '"description": string — MANDATORY COACHING FORMAT. Every description MUST follow this exact 3-part structure: ' +
-  '(1) WHY TODAY — one sentence naming a SPECIFIC number from this rider\'s actual data: their exact TSB value (e.g. "TSB is -9.8"), ' +
-  'their exact FTP (e.g. "235W FTP"), the number of rides they did last week, their phase week number, or their W/kg. ' +
-  'If you write a description without a specific number, it is a FAILED description. ' +
-  '(2) HOW TO EXECUTE — one sentence with an exact watt target (calculated from their FTP, e.g. "207-216W" not "88-92% FTP") ' +
-  'and one mechanical cue (cadence, breathing, pacing). ' +
-  '(3) WHAT SUCCESS FEELS LIKE — one sentence describing exactly what a correctly executed session feels like at the end. ' +
-  'PROHIBITED PHRASES — these phrases are banned and signal a FAILED description: ' +
-  '"build aerobic base", "improve fitness", "targets your aerobic system", "this session will", ' +
-  '"designed to", "helps you", "great workout", "this is a". ' +
-  'EASY SESSIONS ARE NOT EXEMPT. A Z2 ride description must explain EXACTLY what aerobic adaptation ' +
-  'is happening and WHY it cannot be skipped. ' +
-  'EXAMPLE (Sweet Spot, TSB -9.8, FTP 235W, Base wk 1): ' +
-  '"TSB at -9.8 — you\'re in productive training fatigue, not the edge of overreaching. ' +
-  'Target 207-216W for both 8-minute blocks; cadence 88-92rpm; if you fade below 200W in minute 7, end the block early — quality beats duration. ' +
-  'You should finish breathing hard but controlled, like you could do one more block but won\'t." ' +
-  'EXAMPLE (Z2, TSB -9.8, FTP 235W, before Thursday Tempo): ' +
-  '"TSB -9.8 means your legs have training stress from last week — today\'s 60 minutes at 153-172W (65-73% FTP) is active recovery, not bonus fitness. ' +
-  'Hold cadence above 88rpm; if you can\'t complete a sentence while riding, you\'re above Z2 — back off immediately. ' +
-  'You should finish feeling genuinely fresh, not depleted — that\'s how Thursday\'s Tempo blocks hit hard." ' +
-  'For Foundation/Recovery/Endurance sessions: SENTENCE 1 must name the specific hard sessions this ride ' +
-  'sits between and explain its role (e.g. "You put in 3×15 Sweet Spot yesterday — today\'s Z2 ride ' +
-  'accelerates lactate clearance and glycogen replenishment, so Thursday\'s Threshold blocks land on fresh legs." ' +
-  'or "TSB is -14 after a 3-week push — this Foundation ride is the recovery stimulus ' +
-  'that lets last week\'s hard sessions convert into adaptation; going too hard today resets that process."). ' +
-  'SENTENCE 2 must give one execution signal that separates a well-ridden easy session from just spinning ' +
-  '(e.g. cadence, breathing test, a specific feel signal). ' +
-  'SENTENCE 3 must tell them what a correctly-executed easy session feels like at the END — ' +
-  'so they can tell the difference between "easy done right" and "just went too slow." ' +
-  'RIGHT example — Foundation ride, TSB +6, Base wk 2: "TSB is at +6 and you\'re in Base week 2 — ' +
-  'your aerobic system is fresh and ready to absorb volume without fatiguing. ' +
-  'Hold 65-73% FTP for the full 40 minutes; cadence 88-95 rpm; if you can\'t speak in full sentences, ' +
-  'you\'re above Z2 — back off. ' +
-  'You should finish feeling like you could ride 30 more minutes — if you do, the pace was exactly right." ' +
-  'RIGHT example — Threshold Development, TSB -8, 3 consecutive hard weeks: "Three hard weeks in a row have ' +
-  'dropped your TSB to -8, so I\'m keeping the blocks short (4×8 min) rather than jumping to 2×20 — ' +
-  'you\'ll get the same threshold stimulus with less recovery debt. ' +
-  'Start block 1 at 97% FTP — your ego will want to push harder immediately, don\'t; ' +
-  'the first block is a calibration, not a sprint. ' +
-  'If power fades more than 5% in the last 2 minutes of any block, end that block early — quality beats duration here." ' +
-  'The description MUST be specific to THIS rider on THIS week — not a Wikipedia entry about the workout type.), ' +
+  // ── Description: coach voice, not textbook ──
+  '"description": string — COACH VOICE. Write like a coach sending a voice note 2 minutes before the session: ' +
+  'direct, personal, specific to THIS rider. Maximum 2–3 tight sentences. ' +
+  'SENTENCE 1 (mandatory): name one hard fact from their data — exact TSB (e.g. "TSB -9"), exact watts from their FTP ' +
+  '(e.g. "207–216W"), last week\'s session title, or their W/kg. No number = FAILED description. ' +
+  'If previousWeekTitles shows they did this same session last week, start with "You hit [X] last week — today..." ' +
+  'SENTENCE 2 (mandatory for hard sessions): the ONE thing that makes or breaks this session — ' +
+  'exact power range in watts (not % FTP), a cadence floor, or a pacing cue. ' +
+  'SENTENCE 3 (hard sessions only): what they\'ll feel when they nail it — physical, specific, not motivational fluff. ' +
+  'TONE: Coach talking directly to athlete. Use "you" and "I". Confident, not apologetic. Never explain what a zone is. ' +
+  'BANNED — these make descriptions fail: "build aerobic base", "improve fitness", "designed to", "helps you", ' +
+  '"great workout", "this session will", "targets your aerobic system", "this is a [type] workout". ' +
+  'BANNED: writing % FTP when you can calculate actual watts. Always compute: 88% × 235W = 207W. ' +
+  'EASY SESSION RULE: name the hard session before or after and explain EXACTLY why easy matters today ' +
+  '("You put in 3×15 SS yesterday — today\'s 45 min at 153–172W keeps blood moving without adding TSS"). ' +
+  'GOOD EXAMPLE (Threshold, TSB -7, FTP 235W): ' +
+  '"TSB is -7 — trained fatigue, not overreach. Hit 228–240W across the 4 blocks; if block 3 starts fading below 225W, cut to 3 reps — I\'d rather you finish 3 clean than drag through 4. You\'ll know you nailed it when block 4 hurts the same as block 1." ' +
+  'GOOD EXAMPLE (Foundation, between two hard days): ' +
+  '"Norwegian 4×4 yesterday, Threshold tomorrow — today is the bridge. Spin 45 min at 140–160W, cadence above 90, literally no harder. Arrive Thursday with legs, not just a checkbox." ' +
+  'BAD EXAMPLE (what NOT to write): "This session targets your aerobic system and helps improve fitness. Ride at sweet spot intensity for the prescribed duration. You should feel moderately challenged." — this is a template, not coaching.), ' +
 
   '"structure": array of workout blocks (REQUIRED for all non-rest sessions, ' +
   "omit only for type='Rest' days). Each element: " +

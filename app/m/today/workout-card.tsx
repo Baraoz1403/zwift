@@ -7,12 +7,13 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
+// Volt AI zone palette — aligned with workout chart zone colors
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
-  sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
-  threshold:     { accent: "#ef4444", label: "Threshold"  },
-  vo2max:        { accent: "#22c55e", label: "VO2 Max"    },
-  tempo:         { accent: "#f59e0b", label: "Tempo"      },
-  endurance:     { accent: "#818cf8", label: "Endurance"  },
+  sweetSpot:     { accent: "#10b981", label: "Sweet Spot" },
+  threshold:     { accent: "#FF5A1F", label: "Threshold"  },
+  vo2max:        { accent: "#ef4444", label: "VO2 Max"    },
+  tempo:         { accent: "#00C2FF", label: "Tempo"      },
+  endurance:     { accent: "#64748b", label: "Endurance"  },
   neuromuscular: { accent: "#a855f7", label: "Neuro"      },
   rest:          { accent: "#475569", label: "Rest"       },
 };
@@ -140,7 +141,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
       <div style={{
         borderRadius: 24,
         overflow: "hidden",
-        background: "#050c18",
+        background: "#0D1117",
         border: `1px solid ${colors.accent}33`,
         boxShadow: `0 4px 40px ${colors.accent}18, 0 0 0 1px ${colors.accent}15`,
         marginBottom: 12,
@@ -151,7 +152,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
             <div style={{
               position: "absolute", zIndex: 10,
               top: 12, left: 14,
-              background: "rgba(5,12,24,0.75)",
+              background: "rgba(13,17,23,0.85)",
               border: `1px solid ${colors.accent}55`,
               borderRadius: 8,
               padding: "6px 13px",
@@ -181,7 +182,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         {isRest && (
           <div style={{
             height: 100, display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 52, background: "#0a0f1a",
+            fontSize: 52, background: "#0D1117",
           }}>
             🛌
           </div>
@@ -238,8 +239,8 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
               return (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  background: "#0f172a", borderRadius: 12, padding: "11px 14px",
-                  border: "1px solid #1e293b",
+                  background: "#111827", borderRadius: 12, padding: "11px 14px",
+                  border: "1px solid #1e2936",
                 }}>
                   <div style={{ width: 3, height: 26, borderRadius: 2, background: barColor, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -317,7 +318,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
       {/* ── Week strip ──────────────────────────────────────────────────── */}
       <div style={{
         background: "#111827", borderRadius: 16, padding: "14px 16px",
-        border: "1px solid #1e293b", marginBottom: 8,
+        border: "1px solid #1e2936", marginBottom: 8,
       }}>
         <div style={{
           fontSize: 15, fontWeight: 600, color: "#475569",

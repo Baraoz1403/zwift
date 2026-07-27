@@ -175,8 +175,8 @@ export default function MobileWorkoutChart({
       {/* dark-to-slightly-lighter background */}
       <defs>
         <linearGradient id="bg-dark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0a1628" />
-          <stop offset="100%" stopColor="#050c18" />
+          <stop offset="0%" stopColor="#0D1117" />
+          <stop offset="100%" stopColor="#090d12" />
         </linearGradient>
       </defs>
 
