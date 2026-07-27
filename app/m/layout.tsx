@@ -87,11 +87,11 @@ export default async function MobileLayout({ children }: { children: React.React
             marginTop: 24,
           }}>
             <a href="/m/legal/terms" style={{
-              fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
+              fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500,
             }}>Terms of Service</a>
             <span style={{ color: "var(--m-border)" }}>·</span>
             <a href="/m/legal/privacy" style={{
-              fontSize: 13, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500,
+              fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500,
             }}>Privacy Policy</a>
             <span style={{ color: "var(--m-border)" }}>·</span>
             <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 400 }}>Volt AI</span>

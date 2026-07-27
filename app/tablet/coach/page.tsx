@@ -24,13 +24,13 @@ export default async function TabletCoachPage() {
   const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
 
   return (
-    <div style={{ minHeight: "100dvh", background: "var(--m-bg)", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
       <TabletPageHeader
         section="AI Coach"
         name={firstName}
         subtitle="Training insights & plan generation"
       />
-      <div style={{ flex: 1, padding: "0 28px 28px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px" }}>
         <CoachChat />
       </div>
     </div>

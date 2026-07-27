@@ -69,13 +69,13 @@ export default async function TabletWeekPage() {
   } catch { /* best-effort */ }
 
   return (
-    <div style={{ minHeight: "100dvh", background: "var(--m-bg)" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
       <TabletPageHeader
         section="This week"
         name={firstName}
         subtitle={formatWeekRange(weekOf)}
       />
-      <div style={{ padding: "28px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
         <WeekView
           workouts={workoutsWithDates}
           weekOf={weekOf}
