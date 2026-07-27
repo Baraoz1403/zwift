@@ -92,22 +92,27 @@ export default function CoachChat() {
 
         {/* Empty state: quick actions */}
         {isEmpty && (
-          <div>
-            <div style={{ fontSize: 13, color: "#475569", marginBottom: 12, fontWeight: 500 }}>
-              Quick questions:
+          <div style={{ padding: "8px 0" }}>
+            <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" }}>
+              Ask your coach
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
               {QUICK_ACTIONS.map(({ label, message }) => (
                 <button
                   key={label}
                   onClick={() => sendMessage(message)}
                   style={{
-                    width: "100%", textAlign: "left",
-                    padding: "13px 16px",
-                    background: "#111827", border: "1px solid #1e293b",
-                    borderRadius: 14, color: "#c4d0e3",
-                    fontSize: 14, fontWeight: 500, cursor: "pointer",
+                    textAlign: "left",
+                    padding: "10px 13px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 12,
+                    color: "#94a3b8",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: "pointer",
                     WebkitTapHighlightColor: "transparent",
+                    lineHeight: 1.35,
                   }}
                 >
                   {label}

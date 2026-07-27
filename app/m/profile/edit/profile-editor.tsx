@@ -387,11 +387,11 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
           background:
             saveState === "done"   ? "#166534" :
             saveState === "error"  ? "#7f1d1d" :
-            saveState === "saving" ? "#1d4ed8aa" : "#2563eb",
+            saveState === "saving" ? "#FF5A1Faa" : "#FF5A1F",
           color: "#fff", border: "none", borderRadius: 18,
           fontSize: 19, fontWeight: 700,
           cursor: saveState === "idle" || saveState === "error" ? "pointer" : "default",
-          boxShadow: saveState === "idle" ? "0 4px 24px #2563eb40" : "none",
+          boxShadow: saveState === "idle" ? "0 4px 24px #FF5A1F50" : "none",
           marginTop: 8,
         }}
       >

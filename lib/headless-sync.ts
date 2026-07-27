@@ -80,10 +80,20 @@ export function wideCleanupRange(): { oldest: string; newest: string } {
 }
 
 /**
- * Dedup-only pass: for each date in [oldest..newest] that already has more than
- * one WORKOUT event on ICU, keep the most-recently-created one and delete the
- * rest. Does NOT push any new events — safe to call mid-week without knowing
- * which days the athlete has already ridden. Returns the count of events deleted.
+ * Dedup + stale-past-event cleanup pass.
+ *
+ * For dates BEFORE this Monday (UTC): delete ALL WORKOUT events — these are
+ * orphaned planned entries from old plan weeks that were never cleaned up.
+ * They sit on Intervals.icu and get re-synced to Zwift on every ICU→Zwift
+ * sync, appearing as "extra" workouts in Zwift's custom workout library even
+ * though the current week's plan is clean. Removing them here is safe: they
+ * are planned (WORKOUT category) events from past weeks, not completed
+ * activity records which live in a different ICU category.
+ *
+ * For dates ON OR AFTER this Monday: keep one per date (the most recently
+ * created one) and delete any duplicates — the normal dedup behaviour.
+ *
+ * Does NOT push any new events — safe to call mid-week.
  */
 export async function cleanupIcuDuplicates(
   apiKey: string,
@@ -93,6 +103,15 @@ export async function cleanupIcuDuplicates(
 ): Promise<{ deleted: number; errors: string[] }> {
   const errors: string[] = [];
   let deleted = 0;
+
+  // Compute this Monday in UTC — everything strictly before this date is stale.
+  const now = new Date();
+  const dow = now.getUTCDay();
+  const diffToMonday = dow === 0 ? -6 : 1 - dow;
+  const thisMonday = new Date(now);
+  thisMonday.setUTCDate(now.getUTCDate() + diffToMonday);
+  const thisMondayStr = thisMonday.toISOString().slice(0, 10);
+
   try {
     const allEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
     // Filter to WORKOUT events only — don't touch races, notes, or other
@@ -105,17 +124,27 @@ export async function cleanupIcuDuplicates(
       if (!byDate.has(day)) byDate.set(day, []);
       byDate.get(day)!.push(e.id);
     }
-    for (const [, ids] of byDate) {
-      if (ids.length <= 1) continue;
-      // Keep the highest ID (most recently created on ICU), delete older duplicates.
-      // Use numeric comparison — string comparison breaks for IDs of different lengths
-      // (e.g. "9" > "10" as strings, but 10 > 9 as numbers).
-      const keep = ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
-      for (const id of ids) {
-        if (id === keep) continue;
-        const r = await deleteEventFromIntervals(apiKey, id, athleteId);
-        if (r.ok) deleted++;
-        else if (r.error) errors.push(`delete ${id}: ${r.error}`);
+    for (const [day, ids] of byDate) {
+      if (day < thisMondayStr) {
+        // Past week: delete ALL workout events — they're orphaned plan entries.
+        for (const id of ids) {
+          const r = await deleteEventFromIntervals(apiKey, id, athleteId);
+          if (r.ok) deleted++;
+          else if (r.error) errors.push(`delete ${id}: ${r.error}`);
+        }
+      } else {
+        // Current or future week: only remove same-day duplicates.
+        if (ids.length <= 1) continue;
+        // Keep the highest ID (most recently created on ICU), delete older duplicates.
+        // Use numeric comparison — string comparison breaks for IDs of different lengths
+        // (e.g. "9" > "10" as strings, but 10 > 9 as numbers).
+        const keep = ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
+        for (const id of ids) {
+          if (id === keep) continue;
+          const r = await deleteEventFromIntervals(apiKey, id, athleteId);
+          if (r.ok) deleted++;
+          else if (r.error) errors.push(`delete ${id}: ${r.error}`);
+        }
       }
     }
   } catch (e) {

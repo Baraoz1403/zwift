@@ -434,10 +434,10 @@ function TodayHero({
         </div>
       </div>
 
-      {/* ── Animated ticker bar (same as desktop HeroBanner) ── */}
+      {/* ── Animated ticker bar ── */}
       <div style={{
-        borderTop: "1px solid rgba(242,84,27,0.2)",
-        background: "linear-gradient(90deg, rgba(0,156,223,0.05), rgba(242,84,27,0.04))",
+        borderTop: `1px solid ${ZO}30`,
+        background: `linear-gradient(90deg, ${ZB}08, ${ZO}06)`,
         overflow: "hidden",
         flexShrink: 0,
         position: "relative",
@@ -448,7 +448,7 @@ function TodayHero({
           alignItems: "center",
           animation: "mHeroTicker 32s linear infinite",
           whiteSpace: "nowrap",
-          padding: "9px 0",
+          padding: "11px 0",
         }}>
           {/* Doubled for seamless loop */}
           {[0, 1].map(rep => (
@@ -456,21 +456,21 @@ function TodayHero({
               {tickerItems.map((item, i) => (
                 <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
                   <span style={{
-                    display: "inline-flex", alignItems: "center", gap: 8,
-                    padding: "0 28px",
-                    fontSize: 11, fontWeight: 700, letterSpacing: "0.16em",
-                    color: "rgba(248,250,252,0.45)",
-                    fontFamily: "'SF Mono', 'Fira Code', monospace",
+                    display: "inline-flex", alignItems: "center", gap: 9,
+                    padding: "0 24px",
+                    fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
+                    color: "rgba(248,250,252,0.72)",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
                     textTransform: "uppercase",
                   }}>
                     <span style={{
-                      width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                       background: item.dot,
-                      boxShadow: `0 0 6px ${item.dot}`,
+                      boxShadow: `0 0 7px ${item.dot}`,
                     }} />
                     {item.text}
                   </span>
-                  <span style={{ color: "rgba(248,250,252,0.12)", fontSize: 12 }}>·</span>
+                  <span style={{ color: "rgba(248,250,252,0.18)", fontSize: 14 }}>·</span>
                 </span>
               ))}
             </span>
