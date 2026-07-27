@@ -156,27 +156,12 @@ export default async function TabletTodayPage() {
           </div>
         </div>
 
-        {/* Metrics pills */}
+        {/* Volt AI logo — no duplicate stats here, they live in the right panel */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {ftp && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              background: `${ZO}12`, border: `1px solid ${ZO}30`,
-              borderRadius: 4, padding: "6px 14px",
-            }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: ZO, letterSpacing: "-.5px" }}>{ftp}W</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: ZO, opacity: 0.7 }}>FTP</span>
-            </div>
-          )}
-          {currentPhase && (
-            <div style={{
-              background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-              borderRadius: 4, padding: "6px 14px",
-              fontSize: 13, fontWeight: 700, color: "var(--m-muted)",
-            }}>
-              {currentPhase}
-            </div>
-          )}
+          <div style={{ width: 24, height: 24, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="11" height="11" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
         </div>
       </div>
 
