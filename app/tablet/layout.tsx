@@ -81,26 +81,35 @@ export default async function TabletLayout({ children }: { children: React.React
         {/* Fixed sidebar */}
         <TabletSidebar firstName={firstName} />
 
-        {/* Main content — offset by sidebar in landscape, full-width in portrait */}
+        {/*
+          Main content — outer shell is fixed-height (100dvh) so the browser
+          never scrolls the window. The inner .tablet-scroll-area does all the
+          scrolling, which makes position:sticky work correctly on TabletPageHeader.
+          The footer lives OUTSIDE the scroll area so it is always visible and
+          cannot be scrolled past.
+        */}
         <div className="tablet-main" style={{
           flex: 1,
           marginLeft: 220,
-          minHeight: "100dvh",
-          overflowY: "auto",
+          height: "100dvh",
+          overflow: "hidden",           /* outer shell never scrolls */
           paddingTop: "env(safe-area-inset-top, 0px)",
           display: "flex",
           flexDirection: "column",
         }}>
-          <div style={{ flex: 1 }}>{children}</div>
+          {/* Scrollable content — header inside here is position:sticky;top:0 */}
+          <div className="tablet-scroll-area" style={{ flex: 1, overflowY: "auto" }}>
+            {children}
+          </div>
 
-          {/* Global footer — full-width, bottom of scroll, can't scroll past */}
-          <footer style={{
-            width: "100%",
+          {/* Footer — outside scroll area, always pinned to bottom, hidden in portrait (bottom nav takes over) */}
+          <footer className="tablet-footer" style={{
+            flexShrink: 0,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             gap: 24,
-            padding: "16px 40px",
+            padding: "13px 40px",
             background: "var(--m-card)",
             borderTop: "1px solid var(--m-border)",
           }}>

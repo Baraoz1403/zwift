@@ -1654,7 +1654,14 @@ tbody tr:hover {
   }
   .tablet-main {
     margin-left: 0 !important;
+  }
+  /* In portrait the bottom nav is fixed — give the scroll area room underneath it */
+  .tablet-scroll-area {
     padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  /* Footer replaced by bottom nav in portrait — hide it */
+  .tablet-footer {
+    display: none !important;
   }
   .tablet-bottom-nav {
     display: flex !important;
