@@ -8,6 +8,7 @@ import { computeWeekStatus } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { TabletThemeToggle } from "../tablet-theme-toggle";
+import { TabletPageHeader } from "../tablet-page-header";
 
 const ZO = "#FF5A1F";
 
@@ -139,38 +140,23 @@ export default async function TabletTodayPage() {
       overflow: "hidden",
     }}>
 
-      {/* ── HEADER BAR ──────────────────────────────────────────────────── */}
-      <div style={{
-        flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "22px 32px 18px",
-        background: "var(--m-card)",
-        borderBottom: "1px solid var(--m-border)",
-      }}>
-        {/* Greeting + athlete name + date */}
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 4 }}>
-            {greeting}
-          </div>
-          <div style={{ fontSize: 48, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-2px", lineHeight: 1 }}>
-            {firstName ?? "Athlete"}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 500, color: "var(--m-muted)", marginTop: 6 }}>
-            {dateLabel}
-          </div>
-        </div>
-
-        {/* Right: Volt AI brand + theme toggle */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
+      {/* ── HEADER ─ matches profile page style exactly ─────────────── */}
+      <TabletPageHeader
+        section={greeting}
+        name={firstName}
+        subtitle={dateLabel}
+        right={
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
             </div>
-            <span style={{ fontSize: 17, fontWeight: 900, color: "var(--m-text)", letterSpacing: ".04em" }}>VOLT AI</span>
+            <TabletThemeToggle />
           </div>
-          <TabletThemeToggle />
-        </div>
-      </div>
+        }
+      />
 
       {/* ── BODY ────────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>

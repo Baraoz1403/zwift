@@ -5,11 +5,13 @@
  */
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
+import { fetchOwnProfile } from "@/lib/zwift";
 import { computeWeekStatus } from "@/lib/activity-sync";
 import WeekView from "@/app/m/week/week-view";
+import { TabletPageHeader } from "../tablet-page-header";
 
 function formatWeekRange(weekOf: string): string {
   const monday = new Date(weekOf + "T00:00:00Z");
@@ -31,10 +33,13 @@ export default async function TabletWeekPage() {
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
   const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
 
-  const [plan, kvCreds] = await Promise.all([
+  const [plan, kvCreds, zwiftProfile, cachedIdentity] = await Promise.all([
     getCachedPlan(athleteId, weekOf),
     cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
+    fetchOwnProfile(session.accessToken).catch(() => null),
+    getRiderIdentity(athleteId).catch(() => null),
   ]);
+  const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
 
   const workouts = plan?.workouts ?? [];
   const today    = new Date().toISOString().slice(0, 10);
@@ -64,18 +69,25 @@ export default async function TabletWeekPage() {
   } catch { /* best-effort */ }
 
   return (
-    <div style={{ padding: "28px", minHeight: "100dvh", background: "var(--m-bg)" }}>
-      <WeekView
-        workouts={workoutsWithDates}
-        weekOf={weekOf}
-        weekRange={formatWeekRange(weekOf)}
-        today={today}
-        summary={plan?.summary ?? null}
-        weekStatus={weekStatus}
-        prevWeekHref={null}
-        nextWeekHref={null}
-        isCurrentWeek={true}
+    <div style={{ minHeight: "100dvh", background: "var(--m-bg)" }}>
+      <TabletPageHeader
+        section="This week"
+        name={firstName}
+        subtitle={formatWeekRange(weekOf)}
       />
+      <div style={{ padding: "28px" }}>
+        <WeekView
+          workouts={workoutsWithDates}
+          weekOf={weekOf}
+          weekRange={formatWeekRange(weekOf)}
+          today={today}
+          summary={plan?.summary ?? null}
+          weekStatus={weekStatus}
+          prevWeekHref={null}
+          nextWeekHref={null}
+          isCurrentWeek={true}
+        />
+      </div>
     </div>
   );
 }
