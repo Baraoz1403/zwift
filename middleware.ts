@@ -50,14 +50,11 @@ export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ── Auth gate for protected routes ────────────────────────────────────────
-  if (
-    (pathname.startsWith("/dashboard") ||
-     pathname.startsWith("/m") ||
-     pathname.startsWith("/tablet")) &&
-    !hasSession
-  ) {
-    // Always redirect to login — let the login page handle the post-auth
-    // redirect back to the correct surface (it reads the referrer/next param).
+  // Only protect /dashboard here — /m and /tablet layouts handle their own
+  // unauthenticated state (they render MobileLoginScreen / redirect to /m).
+  // Intercepting /m here would send the user to a desktop /login page instead
+  // of the mobile login screen, which is the wrong UX.
+  if (pathname.startsWith("/dashboard") && !hasSession) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);

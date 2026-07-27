@@ -79,7 +79,7 @@ export default function MobileIcuConnect() {
           Connect Intervals.icu
         </div>
         <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6 }}>
-          This is how your AI workouts land on your bike calendar automatically — Zwift, Garmin, Wahoo.
+          One tap. Your workouts will appear automatically on your calendar — Zwift, Garmin, Wahoo.
         </div>
       </div>
 
@@ -114,38 +114,16 @@ export default function MobileIcuConnect() {
         ))}
       </div>
 
-      {/* ── HOW TO GET YOUR API KEY ────────────────────────────────────── */}
-      <div style={{ background: "#fff", margin: "12px 16px 0", borderRadius: 4, border: "1px solid #e4e9f0", padding: "14px 16px" }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "#64748b", letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 12 }}>
-          How to get your API key — 30 seconds
-        </div>
-        {[
-          "Go to intervals.icu (free account)",
-          "Click your avatar → Settings → Developer Settings",
-          "Copy your API key — paste it after clicking Connect below",
-        ].map((step, i) => (
-          <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < 2 ? 10 : 0, alignItems: "flex-start" }}>
-            <div style={{
-              width: 20, height: 20, borderRadius: 3, background: "rgba(255,90,31,0.1)",
-              border: "1px solid rgba(255,90,31,0.25)", flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 800, color: "#FF5A1F",
-            }}>{i + 1}</div>
-            <span style={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{step}</span>
-          </div>
-        ))}
-      </div>
-
       {/* ── CTA ────────────────────────────────────────────────────────── */}
       <div style={{ padding: "16px 16px 32px" }}>
         <a
           href="/api/intervals/oauth-start?from=m"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            width: "100%", padding: "16px 24px", boxSizing: "border-box",
+            width: "100%", padding: "18px 24px", boxSizing: "border-box",
             background: "#FF5A1F",
             borderRadius: 4, textDecoration: "none",
-            fontSize: 16, fontWeight: 800, color: "#fff",
+            fontSize: 17, fontWeight: 800, color: "#fff",
           }}
         >
           Connect Intervals.icu
@@ -154,8 +132,9 @@ export default function MobileIcuConnect() {
           </svg>
         </a>
 
-        <div style={{ textAlign: "center", marginTop: 12, fontSize: 13, color: "#94a3b8", lineHeight: 1.5 }}>
-          Free account · intervals.icu · takes 30 seconds
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: "#94a3b8", lineHeight: 1.5 }}>
+          You&apos;ll be taken to intervals.icu to approve the connection.<br/>
+          Free account · takes 30 seconds.
         </div>
       </div>
 
