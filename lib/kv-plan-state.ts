@@ -189,6 +189,32 @@ export async function setCachedPlan(athleteId: string, plan: CachedWeeklyPlan): 
 // itself so the marker never outlives the plan it describes.
 const ICU_SYNC_MARKER_TTL_SECONDS = PLAN_CACHE_TTL_SECONDS;
 
+// ── Rider identity cache (firstName + ftp) ───────────────────────────────────
+// Written at login and on every successful profile fetch so pages have a
+// reliable fallback when the live Zwift API call fails (expired token, rate
+// limit) — instead of showing "Athlete" and no FTP.
+
+export async function storeRiderIdentity(
+  athleteId: string,
+  firstName: string | undefined,
+  ftp: number | undefined,
+): Promise<void> {
+  if (!kvAvailable() || !athleteId) return;
+  try {
+    await kvSet(`zwift:${athleteId}:identity`, JSON.stringify({ firstName, ftp }), 30 * 24 * 3600);
+  } catch { /* best-effort */ }
+}
+
+export async function getRiderIdentity(
+  athleteId: string,
+): Promise<{ firstName?: string; ftp?: number } | null> {
+  if (!kvAvailable() || !athleteId) return null;
+  try {
+    const raw = await kvGet(`zwift:${athleteId}:identity`);
+    return raw ? (JSON.parse(raw) as { firstName?: string; ftp?: number }) : null;
+  } catch { return null; }
+}
+
 export async function wasIntervalsSynced(athleteId: string, weekOf: string): Promise<boolean> {
   if (!kvAvailable() || !athleteId || !weekOf) return false;
   try {

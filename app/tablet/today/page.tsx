@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
@@ -77,11 +77,12 @@ export default async function TabletTodayPage() {
   const weekOf = mondayOfCurrentWeek();
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
 
-  const [plan, earlyKvCreds, zwiftProfile, athleteState] = await Promise.all([
+  const [plan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity] = await Promise.all([
     getCachedPlan(athleteId, weekOf),
     cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
     fetchOwnProfile(session.accessToken).catch(() => null),
     getStoredAthleteState(athleteId).catch(() => null),
+    getRiderIdentity(athleteId).catch(() => null),
   ]);
 
   const todayDate    = new Date();
@@ -113,8 +114,8 @@ export default async function TabletTodayPage() {
     workouts.find(w => w.day === todayDayName) ??
     null;
 
-  const firstName    = zwiftProfile?.firstName ?? null;
-  const ftp          = zwiftProfile?.ftp ?? null;
+  const firstName    = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
+  const ftp          = zwiftProfile?.ftp ?? cachedIdentity?.ftp ?? null;
   const macro        = (athleteState as { macroCycle?: { weekIndex: number } } | null)?.macroCycle ?? null;
   const currentPhase = macro
     ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
@@ -145,7 +146,7 @@ export default async function TabletTodayPage() {
 
         {/* Hero header */}
         <div style={{
-          background: "linear-gradient(140deg, #0D1117 0%, #17100a 55%, #0D1117 100%)",
+          background: "linear-gradient(160deg, #0D1117 0%, #111827 60%, #0D1117 100%)",
           padding: "36px 40px 30px",
           position: "relative",
           overflow: "hidden",

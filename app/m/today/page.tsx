@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
@@ -44,11 +44,12 @@ export default async function MobileTodayPage() {
 
   // Parallel: plan + ICU creds + Zwift profile + athlete state
   const cookieKeyEarly = cookieStore.get("zwift_intervals_key")?.value;
-  const [plan, earlyKvCreds, zwiftProfile, athleteState] = await Promise.all([
+  const [plan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity] = await Promise.all([
     getCachedPlan(athleteId, weekOf),
     cookieKeyEarly ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
     fetchOwnProfile(session.accessToken).catch(() => null),
     getStoredAthleteState(athleteId).catch(() => null),
+    getRiderIdentity(athleteId).catch(() => null),
   ]);
 
   const todayDate = new Date();
@@ -95,8 +96,10 @@ export default async function MobileTodayPage() {
     null;
 
   // ── Hero data ────────────────────────────────────────────────────────────
-  const firstName = zwiftProfile?.firstName ?? null;
-  const ftp = zwiftProfile?.ftp ?? null;
+  // Use live Zwift profile when available; fall back to KV-cached identity
+  // (written at login time) when the token is expired or the API is slow.
+  const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
+  const ftp = zwiftProfile?.ftp ?? cachedIdentity?.ftp ?? null;
 
   const macro = athleteState?.macroCycle ?? null;
   let currentPhase: string | null = null;
@@ -263,7 +266,7 @@ function TodayHero({
   return (
     <div style={{
       position: "relative",
-      background: "linear-gradient(140deg, #0D1117 0%, #17100a 55%, #0D1117 100%)",
+      background: "linear-gradient(160deg, #0D1117 0%, #111827 60%, #0D1117 100%)",
       overflow: "hidden",
       flexShrink: 0,
       display: "flex",
