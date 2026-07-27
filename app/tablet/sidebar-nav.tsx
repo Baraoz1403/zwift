@@ -72,27 +72,25 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
       <div style={{ padding: "24px 20px 20px" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 10,
-          background: `linear-gradient(135deg, ${ZO}28, ${ZB}18)`,
-          border: `1px solid ${ZB}40`,
-          borderRadius: 12, padding: "10px 14px",
+          background: "transparent",
+          borderRadius: 12, padding: "6px 4px",
           width: "100%", boxSizing: "border-box",
         }}>
           <div style={{
-            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-            background: `linear-gradient(135deg, ${ZO}, ${ZB})`,
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+            background: ZO,
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 0 12px ${ZB}50`,
           }}>
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="white">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="white">
               <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", color: ZB, textTransform: "uppercase" }}>
+            <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: "-0.2px", color: theme === "dark" ? "#f8fafc" : "#0f172a" }}>
               Volt AI
             </div>
             {firstName && (
-              <div style={{ fontSize: 13, fontWeight: 600, color: nameTx, marginTop: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: nameTx, marginTop: 1 }}>
                 {firstName}
               </div>
             )}

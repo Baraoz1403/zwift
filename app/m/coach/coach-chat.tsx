@@ -79,10 +79,10 @@ export default function CoachChat() {
 
       {/* Header */}
       <div style={{ padding: "16px 20px 12px", flexShrink: 0 }}>
-        <div style={{ fontSize: 12, color: "#475569", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
           AI Assistant
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px", marginTop: 2 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-.4px", marginTop: 2 }}>
           Coach Chat
         </div>
       </div>
@@ -104,10 +104,10 @@ export default function CoachChat() {
                   style={{
                     textAlign: "left",
                     padding: "15px 18px",
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "var(--m-card)",
+                    border: "1px solid var(--m-border)",
                     borderRadius: 14,
-                    color: "#e2e8f0",
+                    color: "var(--m-text)",
                     fontSize: 15,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -148,10 +148,10 @@ export default function CoachChat() {
               borderRadius: msg.role === "user"
                 ? "20px 20px 6px 20px"
                 : "20px 20px 20px 6px",
-              background: msg.role === "user" ? "#FF5A1F" : "#111827",
-              border: msg.role === "user" ? "none" : "1px solid rgba(255,255,255,0.08)",
+              background: msg.role === "user" ? "#FF5A1F" : "var(--m-card)",
+              border: msg.role === "user" ? "none" : "1px solid var(--m-border)",
               fontSize: 14,
-              color: "#f1f5f9",
+              color: msg.role === "user" ? "#fff" : "var(--m-text)",
               lineHeight: 1.6,
               whiteSpace: "pre-wrap",
             }}>
@@ -172,8 +172,8 @@ export default function CoachChat() {
               ⚡
             </div>
             <div style={{
-              padding: "14px 18px", background: "#111827",
-              border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px 20px 20px 6px",
+              padding: "14px 18px", background: "var(--m-card)",
+              border: "1px solid var(--m-border)", borderRadius: "20px 20px 20px 6px",
             }}>
               <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                 {[0, 1, 2].map(i => (
@@ -195,8 +195,8 @@ export default function CoachChat() {
       <div style={{
         flexShrink: 0,
         padding: "10px 16px 12px",
-        borderTop: "1px solid #1e293b",
-        background: "#0a0f1a",
+        borderTop: "1px solid var(--m-border)",
+        background: "var(--m-bg)",
         display: "flex",
         gap: 10,
         alignItems: "flex-end",
@@ -212,13 +212,11 @@ export default function CoachChat() {
           style={{
             flex: 1,
             padding: "12px 16px",
-            background: "#111827",
-            border: "1px solid #1e293b",
+            background: "var(--m-card-inner)",
+            border: "1px solid var(--m-border)",
             borderRadius: 20,
-            color: "#f1f5f9",
-            WebkitTextFillColor: "#f1f5f9",
-            WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
-            caretColor: "#60a5fa",
+            color: "var(--m-text)",
+            caretColor: "#FF5A1F",
             fontSize: 16,
             outline: "none",
             resize: "none",
@@ -234,8 +232,8 @@ export default function CoachChat() {
           disabled={!input.trim() || loading}
           style={{
             width: 44, height: 44, borderRadius: "50%",
-            background: input.trim() && !loading ? "#2563eb" : "#1e293b",
-            border: "none",
+            background: input.trim() && !loading ? "#FF5A1F" : "var(--m-card-inner)",
+            border: `1px solid ${input.trim() && !loading ? "#FF5A1F" : "var(--m-border)"}`,
             cursor: input.trim() && !loading ? "pointer" : "default",
             display: "flex", alignItems: "center", justifyContent: "center",
             flexShrink: 0,
@@ -244,7 +242,7 @@ export default function CoachChat() {
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"
-              stroke={input.trim() && !loading ? "#fff" : "#4b5563"}
+              stroke={input.trim() && !loading ? "#fff" : "var(--m-muted)"}
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
