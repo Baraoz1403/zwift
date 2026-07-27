@@ -74,7 +74,7 @@ export default function CoachChat() {
   return (
     <div style={{
       display: "flex", flexDirection: "column",
-      height: "calc(100dvh - 64px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px))",
+      height: "100%",
     }}>
 
       {/* Header */}

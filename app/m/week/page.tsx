@@ -109,16 +109,22 @@ export default async function MobileWeekPage({
   } catch { /* best-effort */ }
 
   return (
-    <WeekView
-      workouts={workouts}
-      weekOf={weekOf}
-      weekRange={formatWeekRange(weekOf)}
-      today={todayStr}
-      summary={plan?.summary ?? null}
-      weekStatus={weekStatus}
-      prevWeekHref={prevWeekHref}
-      nextWeekHref={nextWeekHref}
-      isCurrentWeek={isCurrentWeek}
-    />
+    <div style={{
+      height: "100%",
+      overflowY: "auto",
+      paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+    }}>
+      <WeekView
+        workouts={workouts}
+        weekOf={weekOf}
+        weekRange={formatWeekRange(weekOf)}
+        today={todayStr}
+        summary={plan?.summary ?? null}
+        weekStatus={weekStatus}
+        prevWeekHref={prevWeekHref}
+        nextWeekHref={nextWeekHref}
+        isCurrentWeek={isCurrentWeek}
+      />
+    </div>
   );
 }

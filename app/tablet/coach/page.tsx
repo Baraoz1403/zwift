@@ -30,7 +30,7 @@ export default async function TabletCoachPage() {
         name={firstName}
         subtitle="Training insights & plan generation"
       />
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 28px 28px" }}>
+      <div style={{ flex: 1, overflow: "hidden", padding: "0 28px" }}>
         <CoachChat />
       </div>
     </div>

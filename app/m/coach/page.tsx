@@ -9,5 +9,9 @@ export default async function MobileCoachPage() {
   const session = await decryptSession(raw);
   if (!session?.athleteId) return null;
 
-  return <CoachChat />;
+  return (
+    <div style={{ height: "100%", overflow: "hidden" }}>
+      <CoachChat />
+    </div>
+  );
 }

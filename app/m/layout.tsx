@@ -67,36 +67,11 @@ export default async function MobileLayout({ children }: { children: React.React
         {/* Safe area top spacer */}
         <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
 
-        {/* Scrollable content; pad bottom so content clears the fixed nav */}
-        <div style={{
-          flex: 1,
-          overflowY: "auto",
-          paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
-        }}>
+        {/* Content area — overflow:hidden so each page manages its own scroll.
+            Pages that need to scroll set overflowY:auto internally and add
+            paddingBottom to clear the fixed bottom nav. */}
+        <div style={{ flex: 1, overflow: "hidden" }}>
           {children}
-
-          {/* Legal footer — full-width, bottom of scroll area */}
-          <footer style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 20,
-            padding: "18px 16px 14px",
-            background: "var(--m-card)",
-            borderTop: "1px solid var(--m-border)",
-            marginTop: 24,
-          }}>
-            <a href="/m/legal/terms" style={{
-              fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500,
-            }}>Terms of Service</a>
-            <span style={{ color: "var(--m-border)" }}>·</span>
-            <a href="/m/legal/privacy" style={{
-              fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500,
-            }}>Privacy Policy</a>
-            <span style={{ color: "var(--m-border)" }}>·</span>
-            <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 400 }}>Volt AI</span>
-          </footer>
         </div>
 
         {/* Fixed bottom navigation */}
