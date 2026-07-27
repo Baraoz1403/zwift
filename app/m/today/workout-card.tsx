@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import WorkoutThumbnail from "@/app/dashboard/workout-thumbnail";
 import MobileWorkoutChart from "./workout-chart";
 import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
-// Volt AI zone palette — aligned with workout chart zone colors
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#10b981", label: "Sweet Spot" },
   threshold:     { accent: "#FF5A1F", label: "Threshold"  },
@@ -15,7 +13,7 @@ const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   tempo:         { accent: "#00C2FF", label: "Tempo"      },
   endurance:     { accent: "#64748b", label: "Endurance"  },
   neuromuscular: { accent: "#a855f7", label: "Neuro"      },
-  rest:          { accent: "#475569", label: "Rest"       },
+  rest:          { accent: "#94a3b8", label: "Rest"       },
 };
 
 function detectZone(w: WeeklyWorkout): string {
@@ -27,11 +25,6 @@ function detectZone(w: WeeklyWorkout): string {
   if (t.includes("sprint") || t.includes("neuromuscular")) return "neuromuscular";
   if (t.includes("rest") || t.includes("recovery") || t.includes("off")) return "rest";
   return "endurance";
-}
-
-function formatDay(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 }
 
 interface Props {
@@ -99,100 +92,92 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
   const DAY_ABBR  = ["M", "T", "W", "T", "F", "S", "S"];
 
   return (
-    <div style={{ padding: "16px 16px 0" }}>
+    <div style={{ padding: "14px 16px 0" }}>
 
-      {/* ── Date header ─────────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 17, color: "#64748b", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase" }}>
-          {formatDay(today)}
+      {/* ── Section label ─────────────────────────────────────────────────── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 800, letterSpacing: "0.14em",
+          color: "#94a3b8", textTransform: "uppercase",
+        }}>
+          Today&apos;s Workout
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <div style={{ fontSize: 30, fontWeight: 800, color: "#f8fafc", letterSpacing: "-.4px" }}>
-            Today&apos;s Workout
-          </div>
-          {/* Mode badge: RUN or RIDE — critical for knowing which Zwift mode to enter */}
+        <span style={{
+          fontSize: 12, fontWeight: 700,
+          color: isRunWorkout(workout.type) ? "#ea580c" : "#FF5A1F",
+          background: isRunWorkout(workout.type) ? "#fff3ee" : "#fff3ee",
+          border: "1px solid #ffd5c2",
+          borderRadius: 20, padding: "2px 9px",
+        }}>
+          {isRunWorkout(workout.type) ? "🏃 Run" : "🚴 Ride"}
+        </span>
+        {todayStatus === "completed" && (
           <span style={{
-            fontSize: 15, fontWeight: 800,
-            color: isRunWorkout(workout.type) ? "#f97316" : "#3b82f6",
-            background: isRunWorkout(workout.type) ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
-            border: `1px solid ${isRunWorkout(workout.type) ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
-            borderRadius: 8, padding: "5px 12px", flexShrink: 0,
-          }}>
-            {isRunWorkout(workout.type) ? "🏃 RUN" : "🚴 RIDE"}
-          </span>
-          {todayStatus === "completed" && (
-            <span style={{
-              fontSize: 15, fontWeight: 700, color: "#22c55e",
-              background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)",
-              borderRadius: 8, padding: "4px 12px",
-            }}>✓ Done</span>
-          )}
-          {todayStatus === "missed" && (
-            <span style={{
-              fontSize: 15, fontWeight: 700, color: "#ef4444",
-              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)",
-              borderRadius: 8, padding: "4px 12px",
-            }}>✗ Missed</span>
-          )}
-        </div>
+            fontSize: 12, fontWeight: 700, color: "#16a34a",
+            background: "#dcfce7", border: "1px solid #bbf7d0",
+            borderRadius: 20, padding: "2px 9px",
+          }}>Done ✓</span>
+        )}
+        {todayStatus === "missed" && (
+          <span style={{
+            fontSize: 12, fontWeight: 700, color: "#dc2626",
+            background: "#fee2e2", border: "1px solid #fca5a5",
+            borderRadius: 20, padding: "2px 9px",
+          }}>Missed</span>
+        )}
       </div>
 
       {/* ── Main workout card ────────────────────────────────────────────── */}
       <div style={{
-        borderRadius: 24,
+        borderRadius: 20,
         overflow: "hidden",
-        background: "#0D1117",
-        border: `1px solid ${colors.accent}33`,
-        boxShadow: `0 4px 40px ${colors.accent}18, 0 0 0 1px ${colors.accent}15`,
+        background: "#fff",
+        border: "1px solid #e4e9f0",
+        borderTop: `3px solid ${colors.accent}`,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
         marginBottom: 12,
       }}>
-        {/* Zone badge */}
+        {/* Zone badge + chart */}
         {!isRest && (
           <div style={{ position: "relative" }}>
             <div style={{
               position: "absolute", zIndex: 10,
-              top: 12, left: 14,
-              background: "rgba(13,17,23,0.85)",
-              border: `1px solid ${colors.accent}55`,
-              borderRadius: 8,
-              padding: "6px 13px",
-              fontSize: 15, fontWeight: 700,
+              top: 10, left: 12,
+              background: "rgba(255,255,255,0.92)",
+              border: `1px solid ${colors.accent}40`,
+              borderRadius: 7,
+              padding: "4px 10px",
+              fontSize: 12, fontWeight: 700,
               color: colors.accent,
-              letterSpacing: ".5px",
+              letterSpacing: ".4px",
               textTransform: "uppercase",
-              backdropFilter: "blur(10px)",
             }}>
               {colors.label}
             </div>
-
-            {/* Rich power chart if structure available, else thumbnail fallback */}
             {workout.structure && workout.structure.length > 0 ? (
               <MobileWorkoutChart
                 blocks={workout.structure}
                 durationMin={workout.durationMin}
               />
             ) : (
-              <div style={{ height: 160, position: "relative", overflow: "hidden" }}>
-                <WorkoutThumbnail workout={workout} flush height={160} hideFooter />
+              <div style={{ height: 120, background: `${colors.accent}08`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 40 }}>🚴</span>
               </div>
             )}
           </div>
         )}
 
         {isRest && (
-          <div style={{
-            height: 100, display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 52, background: "#0D1117",
-          }}>
+          <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", fontSize: 40 }}>
             🛌
           </div>
         )}
 
-        <div style={{ padding: "16px 20px 20px" }}>
+        <div style={{ padding: "14px 18px 18px" }}>
           <div style={{
-            fontSize: 26, fontWeight: 800, color: "#f8fafc",
-            lineHeight: 1.15, letterSpacing: "-.3px",
-            marginBottom: isRest ? 0 : 14,
+            fontSize: 22, fontWeight: 800, color: "#0f172a",
+            lineHeight: 1.2, letterSpacing: "-0.3px",
+            marginBottom: isRest ? 0 : 12,
           }}>
             {workout.title}
           </div>
@@ -210,26 +195,36 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         </div>
       </div>
 
-      {/* ── Structure blocks (compact) ──────────────────────────────────── */}
+      {/* ── Description ─────────────────────────────────────────────────── */}
+      {!isRest && workout.description && (
+        <div style={{
+          background: "#f8fafc", border: "1px solid #e4e9f0",
+          borderRadius: 14, padding: "13px 16px", marginBottom: 12,
+          fontSize: 15, color: "#475569", lineHeight: 1.65,
+        }}>
+          {workout.description}
+        </div>
+      )}
+
+      {/* ── Structure blocks ─────────────────────────────────────────────── */}
       {!isRest && workout.structure && workout.structure.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{
-            fontSize: 15, fontWeight: 600, color: "#475569",
-            letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 10,
+            fontSize: 11, fontWeight: 800, color: "#94a3b8",
+            letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 8,
           }}>
-            Blocks
+            Session structure
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {workout.structure.map((block, i) => {
               const pct = Math.round((block.powerFtp ?? 0) * 100);
-              // Pick color from power level
               const barColor =
                 pct >= 120 ? "#ef4444" :
                 pct >= 106 ? "#f97316" :
                 pct >= 95  ? "#f59e0b" :
                 pct >= 88  ? "#10b981" :
                 pct >= 76  ? "#22d3ee" :
-                pct >= 56  ? "#3b82f6" : "#64748b";
+                pct >= 56  ? "#3b82f6" : "#94a3b8";
               const dur = block.durationMin ?? 0;
               const label = block.label || block.type;
               const reps = block.type === "intervals" && block.repeats ? `${block.repeats}×` : "";
@@ -239,28 +234,29 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
               return (
                 <div key={i} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  background: "#111827", borderRadius: 12, padding: "11px 14px",
-                  border: "1px solid #1e2936",
+                  background: "#fff", borderRadius: 12, padding: "11px 14px",
+                  border: "1px solid #e4e9f0",
+                  borderLeft: `3px solid ${barColor}`,
                 }}>
-                  <div style={{ width: 3, height: 26, borderRadius: 2, background: barColor, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.2 }}>
-                      {reps}{label}{repDetail}
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#0f172a", lineHeight: 1.2 }}>
+                      {reps && <span style={{ color: barColor, marginRight: 3 }}>{reps}</span>}
+                      {label}{repDetail}
                     </div>
-                    <div style={{ fontSize: 15, color: "#64748b", marginTop: 3 }}>
+                    <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>
                       {dur} min{pct > 0 ? ` · ${pct}% FTP` : ""}
                       {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp * 100)}% rec` : ""}
                     </div>
                   </div>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                    background: `${barColor}18`,
-                    border: `1px solid ${barColor}33`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 15, fontWeight: 700, color: barColor,
-                  }}>
-                    {pct}%
-                  </div>
+                  {pct > 0 && (
+                    <div style={{
+                      fontSize: 13, fontWeight: 700, color: barColor,
+                      background: `${barColor}14`, border: `1px solid ${barColor}30`,
+                      borderRadius: 7, padding: "3px 8px", flexShrink: 0,
+                    }}>
+                      {pct}%
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -275,14 +271,14 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
             onClick={pushToZwift}
             disabled={pushState !== "idle"}
             style={{
-              width: "100%", padding: "16px", borderRadius: 16, border: "none",
+              width: "100%", padding: "16px", borderRadius: 14, border: "none",
               fontSize: 16, fontWeight: 700, cursor: pushState === "idle" ? "pointer" : "default",
               marginBottom: 10, transition: "all .2s",
               background:
-                pushState === "done"    ? "#166534" :
-                pushState === "error"   ? "#7f1d1d" :
-                pushState === "sending" ? "#1d4ed8" : colors.accent,
-              color: "#fff", letterSpacing: "-.1px",
+                pushState === "done"    ? "#16a34a" :
+                pushState === "error"   ? "#dc2626" :
+                pushState === "sending" ? "#94a3b8" : "#FF5A1F",
+              color: "#fff",
             }}
           >
             {pushState === "idle"    ? "Send to Zwift" :
@@ -295,19 +291,19 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
           <button
             onClick={() => sendNote("Feeling tired today, please adjust intensity")}
             style={{
-              padding: "14px", background: "#111827", border: "1px solid #1e293b",
-              borderRadius: 14, color: noteState === "done" ? "#4ade80" : "#94a3b8",
-              fontSize: 15, fontWeight: 600, cursor: "pointer",
+              padding: "13px", background: "#f1f5f9", border: "1px solid #e4e9f0",
+              borderRadius: 12, color: noteState === "done" ? "#16a34a" : "#475569",
+              fontSize: 14, fontWeight: 600, cursor: "pointer",
             }}
           >
-            {noteState === "done" ? "Noted 👍" : "😓  Tired"}
+            {noteState === "done" ? "Noted 👍" : "😓  Tired today"}
           </button>
           <button
             onClick={() => sendNote("Skipping today's workout")}
             style={{
-              padding: "14px", background: "#111827", border: "1px solid #1e293b",
-              borderRadius: 14, color: "#94a3b8",
-              fontSize: 15, fontWeight: 600, cursor: "pointer",
+              padding: "13px", background: "#f1f5f9", border: "1px solid #e4e9f0",
+              borderRadius: 12, color: "#475569",
+              fontSize: 14, fontWeight: 600, cursor: "pointer",
             }}
           >
             ⏭  Skip today
@@ -317,12 +313,12 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 
       {/* ── Week strip ──────────────────────────────────────────────────── */}
       <div style={{
-        background: "#111827", borderRadius: 16, padding: "14px 16px",
-        border: "1px solid #1e2936", marginBottom: 8,
+        background: "#f8fafc", borderRadius: 16, padding: "14px 14px",
+        border: "1px solid #e4e9f0", marginBottom: 8,
       }}>
         <div style={{
-          fontSize: 15, fontWeight: 600, color: "#475569",
-          letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 10,
+          fontSize: 11, fontWeight: 800, color: "#94a3b8",
+          letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 10,
         }}>
           This week
         </div>
@@ -338,26 +334,24 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
             return (
               <div key={dayName} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: "50%",
-                  background: isToday ? col.accent : isRestDay ? "#1e293b" : `${col.accent}22`,
-                  border: isToday
-                    ? `2px solid ${col.accent}`
-                    : `1px solid ${isRestDay ? "#334155" : col.accent + "44"}`,
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: isToday ? col.accent : isRestDay ? "#e4e9f0" : `${col.accent}18`,
+                  border: isToday ? `2px solid ${col.accent}` : `1px solid ${isRestDay ? "#cbd5e1" : col.accent + "40"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <span style={{
-                    fontSize: 15, fontWeight: isToday ? 800 : 500,
-                    color: isToday ? "#0a0f1a" : isRestDay ? "#475569" : col.accent,
+                    fontSize: 13, fontWeight: isToday ? 800 : 500,
+                    color: isToday ? "#fff" : isRestDay ? "#94a3b8" : col.accent,
                   }}>
                     {abbr}
                   </span>
                 </div>
                 <span style={{
-                  fontSize: 12, fontWeight: 600,
-                  color: isToday ? col.accent : "#334155",
-                  textTransform: "uppercase", letterSpacing: ".3px",
+                  fontSize: 10, fontWeight: 600,
+                  color: isToday ? col.accent : "#94a3b8",
+                  textTransform: "uppercase", letterSpacing: ".2px",
                 }}>
-                  {isRestDay ? "·" : z === "sweetSpot" ? "SS" : z === "threshold" ? "TH" : z === "vo2max" ? "VO2" : z === "tempo" ? "TM" : z === "neuromuscular" ? "NM" : "Z2"}
+                  {isRestDay ? "·" : z === "sweetSpot" ? "SS" : z === "threshold" ? "TH" : z === "vo2max" ? "V2" : z === "tempo" ? "TM" : z === "neuromuscular" ? "NM" : "Z2"}
                 </span>
               </div>
             );
@@ -372,13 +366,13 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 function StatPill({ value, unit, accent }: { value: string; unit: string; accent?: string }) {
   return (
     <div style={{
-      background: "#1e293b", borderRadius: 12, padding: "10px 16px",
-      textAlign: "center", border: "1px solid #334155",
+      background: "#f1f5f9", borderRadius: 10, padding: "8px 14px",
+      textAlign: "center", border: "1px solid #e4e9f0",
     }}>
-      <div style={{ fontSize: 19, fontWeight: 700, color: accent ?? "#f1f5f9", lineHeight: 1 }}>
+      <div style={{ fontSize: 17, fontWeight: 700, color: accent ?? "#0f172a", lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 13, color: "#64748b", marginTop: 4, fontWeight: 500 }}>
+      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 3, fontWeight: 500 }}>
         {unit}
       </div>
     </div>
