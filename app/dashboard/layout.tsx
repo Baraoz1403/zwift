@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { fetchOwnProfile, type ZwiftProfile } from "@/lib/zwift";
+import { fetchOwnProfile, ZwiftApiError, type ZwiftProfile } from "@/lib/zwift";
 import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import LogoutButton from "./logout-button";
 import DashboardFooter from "./footer";
@@ -31,9 +31,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let profile: ZwiftProfile | null = null;
   try {
     profile = await fetchOwnProfile(session.accessToken);
-  } catch {
-    // Best-effort - a failed profile fetch just means a generic greeting;
-    // each page's own data fetch will surface any real problem clearly.
+  } catch (e) {
+    // On a definitive 401 from Zwift (expired access token), go through the
+    // refresh route: it exchanges the stored refresh token for a new access
+    // token, writes a fresh session cookie, and redirects back here. This
+    // closes the gap where a rider with a long-lived session cookie (30 days)
+    // would see a blank name and no FTP because the underlying Zwift token
+    // had silently expired (~1h after login). Any other error (network, 5xx)
+    // is still best-effort — a failed profile just means a generic greeting.
+    if (e instanceof ZwiftApiError && e.status === 401 && session.refreshToken) {
+      redirect("/api/auth/refresh?next=/dashboard");
+    }
+    // Non-401 errors: proceed with profile=null (generic greeting; no crash).
   }
 
   // ── Mandatory Intervals.icu onboarding gate ─────────────────────────────
