@@ -70,8 +70,8 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 900, color: textCol, letterSpacing: "-.3px" }}>Volt AI</div>
-            {firstName && <div style={{ fontSize: 12, color: muted, marginTop: 1 }}>{firstName}</div>}
+            <div style={{ fontSize: 17, fontWeight: 900, color: textCol, letterSpacing: "-.3px" }}>Volt AI</div>
+            {firstName && <div style={{ fontSize: 14, color: muted, marginTop: 1 }}>{firstName}</div>}
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
             }}>
               <Icon color={active ? ZO : muted} />
               <span style={{
-                fontSize: 14, fontWeight: active ? 700 : 500,
+                fontSize: 16, fontWeight: active ? 700 : 500,
                 color: active ? textCol : muted,
               }}>{label}</span>
               {active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: 1, background: ZO }} />}
@@ -112,7 +112,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
               ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></>
               : <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>}
           </svg>
-          <span style={{ fontSize: 12, color: muted, fontWeight: 500 }}>{isDark ? "Light mode" : "Dark mode"}</span>
+          <span style={{ fontSize: 14, color: muted, fontWeight: 500 }}>{isDark ? "Light mode" : "Dark mode"}</span>
         </button>
 
         <button type="button" onClick={signOut} disabled={signing} style={{
@@ -126,7 +126,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          <span style={{ fontSize: 12, color: muted, fontWeight: 500 }}>{signing ? "Signing out…" : "Sign out"}</span>
+          <span style={{ fontSize: 14, color: muted, fontWeight: 500 }}>{signing ? "Signing out…" : "Sign out"}</span>
         </button>
       </div>
     </div>

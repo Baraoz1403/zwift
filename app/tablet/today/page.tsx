@@ -148,10 +148,10 @@ export default async function TabletTodayPage() {
       }}>
         {/* Date + greeting */}
         <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em" }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em" }}>
             {greeting}{firstName ? `, ${firstName}` : ""}
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginTop: 1 }}>
+          <div style={{ fontSize: 19, fontWeight: 700, color: "var(--m-text)", marginTop: 2 }}>
             {dateLabel}
           </div>
         </div>
@@ -161,7 +161,7 @@ export default async function TabletTodayPage() {
           <div style={{ width: 24, height: 24, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="11" height="11" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
+          <span style={{ fontSize: 15, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ export default async function TabletTodayPage() {
           {isRest || !todayWorkout ? (
             /* ── REST DAY ─────────────────────────────────────────────── */
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 20 }}>
                 Today&apos;s session
               </div>
               <div style={{
@@ -191,7 +191,7 @@ export default async function TabletTodayPage() {
                   <div style={{ fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1, marginBottom: 10 }}>
                     Rest Day
                   </div>
-                  <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.6, maxWidth: 420 }}>
+                  <div style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6, maxWidth: 420 }}>
                     Recovery is where adaptation happens. No training today — this is the work.
                   </div>
                 </div>
@@ -202,11 +202,11 @@ export default async function TabletTodayPage() {
             <div>
               {/* Section label + status */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
                   Today&apos;s session
                 </div>
                 <div style={{
-                  fontSize: 12, fontWeight: 700, color: statusColor,
+                  fontSize: 14, fontWeight: 700, color: statusColor,
                   background: `${statusColor}14`, border: `1px solid ${statusColor}30`,
                   borderRadius: 3, padding: "4px 10px",
                 }}>
@@ -228,22 +228,22 @@ export default async function TabletTodayPage() {
                     borderRadius: 3, padding: "3px 10px", marginBottom: 14,
                   }}>
                     <div style={{ width: 5, height: 5, borderRadius: "50%", background: zoneColor }} />
-                    <span style={{ fontSize: 11, fontWeight: 800, color: zoneColor, textTransform: "uppercase", letterSpacing: ".1em" }}>{zoneLabel}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: zoneColor, textTransform: "uppercase", letterSpacing: ".1em" }}>{zoneLabel}</span>
                   </div>
                 )}
 
-                <h1 style={{ margin: "0 0 10px", fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.8px", lineHeight: 1.1 }}>
+                <h1 style={{ margin: "0 0 12px", fontSize: 42, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1.1 }}>
                   {todayWorkout.title}
                 </h1>
 
                 <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
                   {todayWorkout.durationMin > 0 && (
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "var(--m-muted)" }}>
+                    <span style={{ fontSize: 18, fontWeight: 600, color: "var(--m-muted)" }}>
                       {todayWorkout.durationMin} min
                     </span>
                   )}
                   {todayWorkout.targetPowerPctFtp && (
-                    <span style={{ fontSize: 14, fontWeight: 700, color: zoneColor }}>
+                    <span style={{ fontSize: 17, fontWeight: 700, color: zoneColor }}>
                       {todayWorkout.targetPowerPctFtp}
                     </span>
                   )}
@@ -256,7 +256,7 @@ export default async function TabletTodayPage() {
                   background: "var(--m-card)", border: "1px solid var(--m-border)",
                   borderRadius: 4, padding: "20px 24px 16px", marginBottom: 16,
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
                     Power profile
                   </div>
                   <PowerBarChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} />
@@ -269,10 +269,10 @@ export default async function TabletTodayPage() {
                   background: "var(--m-card)", border: "1px solid var(--m-border)",
                   borderRadius: 4, padding: "20px 24px", marginBottom: 16,
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
                     Coach note
                   </div>
-                  <div style={{ fontSize: 15, color: "var(--m-text)", lineHeight: 1.75 }}>
+                  <div style={{ fontSize: 17, color: "var(--m-text)", lineHeight: 1.75 }}>
                     {todayWorkout.description}
                   </div>
                 </div>
@@ -284,7 +284,7 @@ export default async function TabletTodayPage() {
                   background: "var(--m-card)", border: "1px solid var(--m-border)",
                   borderRadius: 4, padding: "20px 24px",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
                     Session structure
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -304,15 +304,15 @@ export default async function TabletTodayPage() {
                           borderLeft: `3px solid ${bc}`,
                           borderRadius: 4,
                         }}>
-                          <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--m-text)" }}>
+                          <div style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "var(--m-text)" }}>
                             {reps && <span style={{ color: bc, marginRight: 5, fontWeight: 800 }}>{reps}</span>}
                             {block.label || block.type}
-                            {timeDet && <span style={{ color: "var(--m-muted)", fontSize: 13, marginLeft: 8 }}>{timeDet}</span>}
+                            {timeDet && <span style={{ color: "var(--m-muted)", fontSize: 15, marginLeft: 8 }}>{timeDet}</span>}
                           </div>
-                          <span style={{ fontSize: 13, color: "var(--m-muted)", flexShrink: 0 }}>{block.durationMin ?? 0} min</span>
+                          <span style={{ fontSize: 15, color: "var(--m-muted)", flexShrink: 0 }}>{block.durationMin ?? 0} min</span>
                           {pct > 0 && (
                             <span style={{
-                              fontSize: 12, fontWeight: 800, color: bc,
+                              fontSize: 13, fontWeight: 800, color: bc,
                               background: `${bc}12`, border: `1px solid ${bc}25`,
                               padding: "2px 8px", borderRadius: 3, flexShrink: 0,
                             }}>
@@ -339,7 +339,7 @@ export default async function TabletTodayPage() {
         }}>
           {/* Metrics */}
           <div style={{ padding: "24px 20px", borderBottom: "1px solid var(--m-border)" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 16 }}>
               Your stats
             </div>
             <div style={{ display: "flex", gap: 16 }}>
@@ -348,8 +348,8 @@ export default async function TabletTodayPage() {
                   flex: 1, background: `${ZO}08`, border: `1px solid ${ZO}20`,
                   borderRadius: 4, padding: "14px 16px",
                 }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: ZO, letterSpacing: "-.5px", lineHeight: 1 }}>{ftp}W</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: ZO, opacity: 0.7, textTransform: "uppercase", letterSpacing: ".1em", marginTop: 5 }}>FTP</div>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: ZO, letterSpacing: "-.5px", lineHeight: 1 }}>{ftp}W</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: ZO, opacity: 0.7, textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>FTP</div>
                 </div>
               )}
               {currentPhase && (
@@ -357,8 +357,8 @@ export default async function TabletTodayPage() {
                   flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
                   borderRadius: 4, padding: "14px 16px",
                 }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.5px", lineHeight: 1 }}>{currentPhase}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 5 }}>Phase</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.5px", lineHeight: 1 }}>{currentPhase}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>Phase</div>
                 </div>
               )}
             </div>
@@ -366,7 +366,7 @@ export default async function TabletTodayPage() {
 
           {/* Week list */}
           <div style={{ padding: "20px 16px", flex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
               This week
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -393,11 +393,11 @@ export default async function TabletTodayPage() {
                       border: `1px solid ${isToday ? (dayIsRest ? "rgba(100,116,139,0.15)" : `${rowColor}25`) : "var(--m-border)"}`,
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                     }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
                         {dayName.slice(0, 3)}
                       </div>
                       {dateNum && (
-                        <div style={{ fontSize: 14, fontWeight: 900, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
                           {dateNum}
                         </div>
                       )}
@@ -406,14 +406,14 @@ export default async function TabletTodayPage() {
                     {/* Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontSize: 13, fontWeight: isToday ? 700 : 500,
+                        fontSize: 15, fontWeight: isToday ? 700 : 500,
                         color: dayIsRest ? "var(--m-muted)" : "var(--m-text)",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                       }}>
                         {dayIsRest ? "Rest" : w!.title}
                       </div>
                       {!dayIsRest && w && (
-                        <div style={{ fontSize: 11, color: rowColor as string, marginTop: 2, fontWeight: 600 }}>
+                        <div style={{ fontSize: 13, color: rowColor as string, marginTop: 2, fontWeight: 600 }}>
                           {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
                         </div>
                       )}
@@ -435,10 +435,10 @@ export default async function TabletTodayPage() {
                 background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
                 borderRadius: 4, padding: "14px 16px",
               }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
                   Week plan
                 </div>
-                <div style={{ fontSize: 13, color: "var(--m-muted)", lineHeight: 1.65 }}>
+                <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65 }}>
                   {plan.summary.slice(0, 140)}{plan.summary.length > 140 ? "…" : ""}
                 </div>
               </div>
