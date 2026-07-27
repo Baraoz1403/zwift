@@ -8,6 +8,7 @@ import { computeWeekStatus } from "@/lib/activity-sync";
 import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
+import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -248,13 +249,19 @@ function TodayHero({
     <div style={{
       background: "var(--m-card)",
       borderBottom: "1px solid var(--m-border)",
-      padding: "22px 20px 18px",
+      padding: "16px 20px 16px",
     }}>
-      <div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, marginBottom: 6, letterSpacing: ".3px" }}>
-        {timeGreeting}
+      {/* Top row: greeting + theme toggle */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px" }}>
+          {timeGreeting}
+        </div>
+        <ThemeToggleButton compact />
       </div>
+
+      {/* Athlete name row */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
+        <div style={{ fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
@@ -270,8 +277,9 @@ function TodayHero({
           )}
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-        <span style={{ fontSize: 12, color: "var(--m-muted)" }}>{dateLabel}</span>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+        <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
         {statusBadge && (
           <span style={{
             fontSize: 11, fontWeight: 700, borderRadius: 3,

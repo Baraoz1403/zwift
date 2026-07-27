@@ -7,6 +7,7 @@ import { fetchOwnProfile } from "@/lib/zwift";
 import { computeWeekStatus } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
+import { TabletThemeToggle } from "../tablet-theme-toggle";
 
 const ZO = "#FF5A1F";
 
@@ -140,28 +141,34 @@ export default async function TabletTodayPage() {
 
       {/* ── HEADER BAR ──────────────────────────────────────────────────── */}
       <div style={{
-        height: 56, flexShrink: 0,
+        flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 32px",
+        padding: "22px 32px 18px",
         background: "var(--m-card)",
         borderBottom: "1px solid var(--m-border)",
       }}>
-        {/* Date + greeting */}
+        {/* Greeting + athlete name + date */}
         <div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em" }}>
-            {greeting}{firstName ? `, ${firstName}` : ""}
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 4 }}>
+            {greeting}
           </div>
-          <div style={{ fontSize: 19, fontWeight: 700, color: "var(--m-text)", marginTop: 2 }}>
+          <div style={{ fontSize: 48, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-2px", lineHeight: 1 }}>
+            {firstName ?? "Athlete"}
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: "var(--m-muted)", marginTop: 6 }}>
             {dateLabel}
           </div>
         </div>
 
-        {/* Volt AI logo — no duplicate stats here, they live in the right panel */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="11" height="11" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
+        {/* Right: Volt AI brand + theme toggle */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
+            </div>
+            <span style={{ fontSize: 17, fontWeight: 900, color: "var(--m-text)", letterSpacing: ".04em" }}>VOLT AI</span>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
+          <TabletThemeToggle />
         </div>
       </div>
 
@@ -171,6 +178,7 @@ export default async function TabletTodayPage() {
         {/* LEFT: Today workout */}
         <div style={{ flex: 1, overflowY: "auto", padding: "32px 40px" }}>
 
+          {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
           {isRest || !todayWorkout ? (
             /* ── REST DAY ─────────────────────────────────────────────── */
             <div>
@@ -327,6 +335,19 @@ export default async function TabletTodayPage() {
               )}
             </div>
           )}
+
+          {/* Legal footer */}
+          <div style={{
+            marginTop: 40, paddingTop: 20,
+            borderTop: "1px solid var(--m-border)",
+            display: "flex", alignItems: "center", gap: 20,
+          }}>
+            <a href="/m/legal/terms" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500 }}>Terms of Service</a>
+            <span style={{ color: "var(--m-border)" }}>·</span>
+            <a href="/m/legal/privacy" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none", fontWeight: 500 }}>Privacy Policy</a>
+            <span style={{ color: "var(--m-border)" }}>·</span>
+            <span style={{ fontSize: 14, color: "var(--m-muted)", fontWeight: 500 }}>© 2025 Volt AI</span>
+          </div>
         </div>
 
         {/* RIGHT: Week panel ─────────────────────────────────────────── */}
