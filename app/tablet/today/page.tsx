@@ -41,8 +41,8 @@ function detectZoneColor(w: WeeklyWorkout): string {
   if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "#ef4444";
   if (t.includes("tempo")) return "#00C2FF";
   if (t.includes("sprint") || t.includes("neuromuscular")) return "#a855f7";
-  if (t.includes("rest") || t.includes("recovery")) return "#475569";
-  return ZB;
+  if (t.includes("rest") || t.includes("recovery")) return "#64748b";
+  return ZO;
 }
 
 function detectZoneLabel(w: WeeklyWorkout): string {
@@ -130,7 +130,7 @@ export default async function TabletTodayPage() {
   const zoneLabel  = todayWorkout && !["Rest","rest"].includes(todayWorkout.type ?? "") ? detectZoneLabel(todayWorkout) : "";
 
   const statusLabel = todayStatus === "completed" ? "Done ✓" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus" : "Planned";
-  const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : ZB;
+  const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : "#64748b";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--m-bg)", color: "var(--m-text)", fontFamily: "system-ui,-apple-system,sans-serif", overflow: "hidden" }}>
@@ -202,14 +202,16 @@ export default async function TabletTodayPage() {
             <div>
               {/* Zone + title */}
               <div style={{ marginBottom: 22 }}>
-                <div style={{
-                  display: "inline-flex", alignItems: "center", gap: 7,
-                  background: `${zoneColor}14`, border: `1px solid ${zoneColor}28`,
-                  borderRadius: 4, padding: "4px 11px", marginBottom: 10,
-                }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: zoneColor }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: zoneColor, textTransform: "uppercase", letterSpacing: ".1em" }}>{zoneLabel}</span>
-                </div>
+                {zoneLabel && (
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    background: `${zoneColor}14`, border: `1px solid ${zoneColor}28`,
+                    borderRadius: 4, padding: "4px 11px", marginBottom: 10,
+                  }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: zoneColor }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: zoneColor, textTransform: "uppercase", letterSpacing: ".1em" }}>{zoneLabel}</span>
+                  </div>
+                )}
                 <h1 style={{ margin: 0, fontSize: 34, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-0.8px", lineHeight: 1.08 }}>
                   {todayWorkout.title}
                 </h1>
