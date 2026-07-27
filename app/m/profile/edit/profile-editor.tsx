@@ -204,16 +204,26 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
                         key={e.value}
                         onClick={() => setEventType(eventType === e.value ? "" : e.value)}
                         style={{
+                          position: "relative",
                           padding: "10px 12px", textAlign: "left",
-                          background: eventType === e.value ? "rgba(245,158,11,0.15)" : "#111827",
-                          border: `1px solid ${eventType === e.value ? "rgba(245,158,11,0.45)" : "#1e293b"}`,
+                          background: eventType === e.value ? "rgba(22,163,74,0.12)" : "#111827",
+                          border: `2px solid ${eventType === e.value ? "#16a34a" : "#1e293b"}`,
                           borderRadius: 12, cursor: "pointer",
                           fontSize: 14, fontWeight: eventType === e.value ? 700 : 500,
-                          color: eventType === e.value ? "#fbbf24" : "#64748b",
+                          color: eventType === e.value ? "#4ade80" : "#64748b",
                           transition: "all .12s",
                         }}
                       >
                         {e.emoji} {e.label}
+                        {eventType === e.value && (
+                          <span style={{
+                            position: "absolute", top: 4, right: 4,
+                            width: 17, height: 17, borderRadius: "50%",
+                            background: "#16a34a",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 10, color: "#fff", fontWeight: 900, lineHeight: 1,
+                          }}>✓</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -306,17 +316,28 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "14px 18px",
-                background: environment === e.value ? "rgba(37,99,235,0.12)" : "#111827",
-                border: `1px solid ${environment === e.value ? "#2563eb55" : "#1e293b"}`,
+                background: environment === e.value ? "rgba(22,163,74,0.12)" : "#111827",
+                border: `2px solid ${environment === e.value ? "#16a34a" : "#1e293b"}`,
                 borderRadius: 14, cursor: "pointer", textAlign: "left",
               }}
             >
               <div>
-                <div style={{ fontSize: 17, fontWeight: 600, color: "#f1f5f9" }}>{e.label}</div>
+                <div style={{ fontSize: 17, fontWeight: 600, color: environment === e.value ? "#4ade80" : "#f1f5f9" }}>{e.label}</div>
                 <div style={{ fontSize: 14, color: "#64748b", marginTop: 2 }}>{e.desc}</div>
               </div>
-              {environment === e.value && (
-                <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />
+              {environment === e.value ? (
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: "#16a34a", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, color: "#fff", fontWeight: 900,
+                  boxShadow: "0 1px 6px rgba(0,0,0,0.3)",
+                }}>✓</div>
+              ) : (
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  border: "2px solid #1e293b", flexShrink: 0,
+                }} />
               )}
             </button>
           ))}
@@ -404,16 +425,28 @@ function ToggleCard({ selected, onClick, label, flex }: {
       onClick={onClick}
       style={{
         flex: flex ? 1 : undefined,
-        padding: "14px 10px", textAlign: "center",
-        background: selected ? "rgba(37,99,235,0.15)" : "#111827",
-        border: `1px solid ${selected ? "#2563eb66" : "#1e293b"}`,
+        position: "relative",
+        padding: "14px 10px 14px 10px", textAlign: "center",
+        background: selected ? "rgba(22,163,74,0.13)" : "#111827",
+        border: `2px solid ${selected ? "#16a34a" : "#1e293b"}`,
         borderRadius: 14, cursor: "pointer",
         fontSize: 15, fontWeight: selected ? 700 : 500,
-        color: selected ? "#93c5fd" : "#64748b",
+        color: selected ? "#4ade80" : "#64748b",
         transition: "all .15s",
       }}
     >
       {label}
+      {selected && (
+        <span style={{
+          position: "absolute", top: 5, right: 5,
+          width: 20, height: 20, borderRadius: "50%",
+          background: "#16a34a",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, color: "#fff", fontWeight: 900, lineHeight: 1,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+          flexShrink: 0,
+        }}>✓</span>
+      )}
     </button>
   );
 }
