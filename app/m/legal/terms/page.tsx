@@ -37,6 +37,19 @@ export default function TermsPage() {
         dangerous or you are unwell, stop and seek medical guidance.
       </LegalSection>
 
+      <LegalSection title="3a. Health responsibility — your sole responsibility">
+        <strong style={{ color: "#e2e8f0" }}>You bear sole and full responsibility for your health and
+        physical safety when using this App.</strong> Before beginning any training program —
+        especially one involving high-intensity intervals — consult a qualified physician or sports
+        medicine professional. This App does not assess your medical fitness, does not monitor
+        your health in real time, and cannot respond to a medical emergency.
+        The App developers, authors, and operators accept no responsibility whatsoever for any
+        injury, illness, cardiac event, overtraining, or any other health consequence arising
+        from following, adapting, or ignoring an AI-generated training plan. By using this App
+        you acknowledge and accept that all decisions about whether to perform, modify, or skip
+        any workout are yours alone.
+      </LegalSection>
+
       <LegalSection title="4. Third-party services">
         The App integrates with Zwift and Intervals.icu. Your use of those platforms is governed
         by their own Terms of Service. We access your data on those platforms only with credentials
@@ -59,9 +72,14 @@ export default function TermsPage() {
       </LegalSection>
 
       <LegalSection title="7. Limitation of liability">
-        To the fullest extent permitted by law, the developers of this App shall not be liable
-        for any injury, loss, or damage arising from use of AI-generated training plans,
-        inaccurate fitness data, or any failure of third-party integrations.
+        To the fullest extent permitted by applicable law, the developers, operators, and
+        contributors of this App shall not be liable — under any legal theory — for any
+        injury, illness, death, loss, or damage of any kind arising from: (a) use of or
+        reliance on AI-generated training plans; (b) inaccurate, incomplete, or delayed
+        fitness data; (c) any failure of third-party integrations; or (d) any decision
+        you make about whether to perform, modify, or skip any training session.
+        You expressly assume all risk associated with physical exercise and structured training.
+        Your use of this App is entirely at your own risk.
       </LegalSection>
 
       <LegalSection title="8. Changes to these terms">

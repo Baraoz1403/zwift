@@ -552,7 +552,7 @@ Every workout structure block must include explicit cadenceTarget.
   "Absent/null lastWeekAdherence just means there's nothing to compare yet " +
   "(first plan, or regenerating the same week) - proceed normally. " +
   "The input may also include a riderProfile object - {sport, goal, daysPerWeek, " +
-  "sessionLengthLabel, sessionLengthMinutes, eventDate, notes} - containing " +
+  "sessionLengthLabel, sessionLengthMinutes, eventDate, gender, ageYears, notes} - containing " +
   "the rider's own stated training intent. When present, use it as a strong " +
   "personalisation signal: (1) daysPerWeek is handled above under SESSION " +
   "COUNT — use it as the target ceiling, respecting the gradual ramp rule above; " +
@@ -836,6 +836,13 @@ Every workout structure block must include explicit cadenceTarget.
   "  name the specific signal that drove this in the summary " +
   "If the fingerprint has no implications (fewer than 2 sessions logged), proceed from TSB/phase defaults. " +
   "If ageYears is provided, use it as physiological context, not as a hard constraint on ambition. " +
+  "If riderProfile.gender is provided: for female riders, apply female-specific W/kg benchmarks " +
+  "(elite female ~4.0–4.5 W/kg vs male ~5.0–5.5, adjust category thresholds proportionally), " +
+  "factor in that female athletes typically benefit from slightly more recovery between high-intensity " +
+  "sessions, and be aware that hormonal fluctuations can affect perceived exertion and recovery — " +
+  "keep this as a soft signal, not a rigid rule. For male riders, apply standard male W/kg benchmarks. " +
+  "If gender is null, use gender-neutral W/kg ranges (mid-point of male/female norms) and do not " +
+  "make gender-specific assumptions. " +
   "A fit 56-year-old who regularly completes threshold and VO2max sessions at high completion rates is NOT a 'masters rider who needs extra recovery' — they are a trained athlete who happens to be 56. " +
   "Let TSB, hrTrend, hrFlag, adherence, and the rider's own note drive fatigue decisions. Age informs interpretation (e.g. a TSB of -10 may feel heavier at 56 than at 30), but it never overrides the actual signals. " +
   "Do not automatically add rest days or soften sessions because of age alone. " +
@@ -1152,6 +1159,7 @@ export async function generateWeeklyPlan(params: {
           sessionLengthMinutes: SESSION_LENGTH_MINUTES[params.riderProfile.sessionLength],
           eventDate: params.riderProfile.eventDate ?? null,
           ageYears: params.riderProfile.ageYears ?? null,
+          gender: params.riderProfile.gender ?? null,
           notes: params.riderProfile.notes ?? null,
         }
       : null,

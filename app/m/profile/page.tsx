@@ -6,7 +6,7 @@ import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import SignOutButton from "./sign-out-button";
-import { ThemeToggleButton } from "./theme-toggle-button";
+import { ThemeToggleButton } from "../theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();

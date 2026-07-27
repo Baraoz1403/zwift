@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type {
   RiderTrainingProfile, TrainingGoal, DaysRange,
-  SessionLength, TrainingEnvironment, Sport, EventType,
+  SessionLength, TrainingEnvironment, Sport, EventType, Gender,
 } from "@/lib/rider-profile";
 
 interface Props {
@@ -73,6 +73,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   const [sessionLength, setSessionLength] = useState<SessionLength>(initialProfile?.sessionLength ?? "60");
   const [environment, setEnvironment]   = useState<TrainingEnvironment>(initialProfile?.environment ?? "indoor");
   const [sports, setSports]             = useState<Sport[]>(initialProfile?.sports ?? ["cycling"]);
+  const [gender, setGender]             = useState<Gender | "">(initialProfile?.gender ?? "");
   const [ageYears, setAgeYears]         = useState<string>(initialProfile?.ageYears ? String(initialProfile.ageYears) : "");
   const [eventDate, setEventDate]       = useState<string>(initialProfile?.eventDate ?? "");
   const [eventEndDate, setEventEndDate] = useState<string>(initialProfile?.eventEndDate ?? "");
@@ -93,6 +94,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
     setSaveState("saving");
     const profile: RiderTrainingProfile = {
       goals, daysRange, sessionLength, environment, sports,
+      gender: (gender as Gender) || undefined,
       ageYears: ageYears ? parseInt(ageYears, 10) : undefined,
       eventDate: eventDate || undefined,
       eventEndDate: eventEndDate || undefined,
@@ -330,6 +332,29 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
                   border: "2px solid var(--m-border)",
                 }} />
               )}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      {/* Gender */}
+      <Section label="Biological sex" desc="Affects W/kg benchmarks and recovery pacing — optional">
+        <div style={{ display: "flex", gap: 10 }}>
+          {(["male", "female"] as Gender[]).map(g => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setGender(prev => prev === g ? "" : g)}
+              style={{
+                flex: 1, padding: "15px 10px", borderRadius: 4,
+                fontSize: 16, fontWeight: gender === g ? 700 : 500,
+                background: gender === g ? "rgba(255,90,31,0.1)" : "transparent",
+                border: `1px solid ${gender === g ? "#FF5A1F" : "var(--m-border)"}`,
+                color: gender === g ? "#FF5A1F" : "var(--m-text)",
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {g === "male" ? "Male" : "Female"}
             </button>
           ))}
         </div>

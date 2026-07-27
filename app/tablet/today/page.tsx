@@ -340,8 +340,12 @@ export default async function TabletTodayPage() {
           overflowY: "auto",
           display: "flex", flexDirection: "column",
         }}>
-          {/* Metrics */}
-          <div style={{ padding: "24px 20px", borderBottom: "1px solid var(--m-border)" }}>
+          {/* Metrics — sticky so the watt box is always visible */}
+          <div style={{
+            padding: "24px 20px", borderBottom: "1px solid var(--m-border)",
+            position: "sticky", top: 0, zIndex: 10,
+            background: "var(--m-card)",
+          }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 16 }}>
               Your stats
             </div>

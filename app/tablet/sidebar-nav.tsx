@@ -49,12 +49,14 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
     <>
     {/* ── Landscape: vertical sidebar ─────────────────────────────── */}
     <div className="tablet-sidebar" style={{
-      width: 220, minHeight: "100dvh",
+      width: 220,
+      height: "100dvh",
       background: bg,
       borderRight: `1px solid ${border}`,
       display: "flex", flexDirection: "column", flexShrink: 0,
       position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      overflow: "hidden",
     }}>
       <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
 
@@ -77,7 +79,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
           return (

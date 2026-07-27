@@ -7,6 +7,7 @@
 export type TrainingGoal = "fitness" | "ftp" | "weight" | "event" | "fun";
 export type SessionLength = "45" | "60" | "90" | "90plus";
 export type Sport = "cycling" | "running" | "both";
+export type Gender = "male" | "female";
 
 export type EventType =
   | "road-race-1day"   // One-day road race / criterium
@@ -39,6 +40,7 @@ export interface RiderTrainingProfile {
   sessionLength: SessionLength;
   sports: Sport[];           // one or more disciplines
   environment?: TrainingEnvironment; // indoor / outdoor / both — defaults to "indoor"
+  gender?: Gender;           // biological sex — affects W/kg norms and recovery
   ageYears?: number;
   eventDate?: string;        // ISO date of the event (start date)
   eventEndDate?: string;     // ISO date — for multi-day events
