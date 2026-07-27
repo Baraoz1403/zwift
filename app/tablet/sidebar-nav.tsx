@@ -23,7 +23,8 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
   // Sync with persisted cookie on first render
   useEffect(() => {
     const saved = document.cookie.split(";").find(c => c.trim().startsWith("mobileTheme="));
-    if (saved?.includes("light")) setTheme("light");
+    if (saved?.includes("dark")) setTheme("dark");
+    else setTheme("light");
   }, []);
 
   function toggleTheme() {
