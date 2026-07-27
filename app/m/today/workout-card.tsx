@@ -38,6 +38,7 @@ interface Props {
 export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayStatus = "planned", weekStatus = {} }: Props) {
   const [pushState, setPushState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [noteState, setNoteState] = useState<"idle" | "sending" | "done">("idle");
+  const [structureOpen, setStructureOpen] = useState(false);
 
   const zone = detectZone(workout);
   const colors = ZONE_COLOR[zone] ?? ZONE_COLOR.endurance;
@@ -161,45 +162,58 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 
       {/* Description intentionally hidden — shown in coach chat on demand */}
 
-      {/* Structure blocks */}
+      {/* Structure blocks — collapsed by default */}
       {!isRest && workout.structure && workout.structure.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "var(--m-muted)", letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 8 }}>
-            Session structure
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {workout.structure.map((block, i) => {
-              const pct = Math.round((block.powerFtp ?? 0) * 100);
-              const barColor = pct>=120?"#ef4444":pct>=106?"#f97316":pct>=95?"#f59e0b":pct>=88?"#10b981":pct>=76?"#22d3ee":pct>=56?"#3b82f6":"#64748b";
-              const dur = block.durationMin ?? 0;
-              const label = block.label || block.type;
-              const reps = block.type==="intervals" && block.repeats ? `${block.repeats}×` : "";
-              const repDetail = block.type==="intervals" && block.onSec ? ` (${Math.round(block.onSec/60)}/${Math.round((block.offSec??0)/60)}min)` : "";
-              return (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  background: "var(--m-card)", borderRadius: 4, padding: "11px 14px",
-                  border: "1px solid var(--m-border)", borderLeft: `3px solid ${barColor}`,
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-text)", lineHeight: 1.2 }}>
-                      {reps && <span style={{ color: barColor, marginRight: 3 }}>{reps}</span>}
-                      {label}{repDetail}
+          <button
+            onClick={() => setStructureOpen(o => !o)}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "10px 14px", marginBottom: structureOpen ? 8 : 0,
+              background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4,
+              color: "var(--m-muted)", fontSize: 12, fontWeight: 700, cursor: "pointer",
+              letterSpacing: ".1em", textTransform: "uppercase",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <span>Session structure</span>
+            <span style={{ fontSize: 16, lineHeight: 1 }}>{structureOpen ? "−" : "+"}</span>
+          </button>
+          {structureOpen && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {workout.structure.map((block, i) => {
+                const pct = Math.round((block.powerFtp ?? 0) * 100);
+                const barColor = pct>=120?"#ef4444":pct>=106?"#f97316":pct>=95?"#f59e0b":pct>=88?"#10b981":pct>=76?"#22d3ee":pct>=56?"#3b82f6":"#64748b";
+                const dur = block.durationMin ?? 0;
+                const label = block.label || block.type;
+                const reps = block.type==="intervals" && block.repeats ? `${block.repeats}×` : "";
+                const repDetail = block.type==="intervals" && block.onSec ? ` (${Math.round(block.onSec/60)}/${Math.round((block.offSec??0)/60)}min)` : "";
+                return (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    background: "var(--m-card)", borderRadius: 4, padding: "11px 14px",
+                    border: "1px solid var(--m-border)", borderLeft: `3px solid ${barColor}`,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-text)", lineHeight: 1.2 }}>
+                        {reps && <span style={{ color: barColor, marginRight: 3 }}>{reps}</span>}
+                        {label}{repDetail}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
+                        {dur} min{pct>0?` · ${pct}% FTP`:""}
+                        {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp*100)}% rec` : ""}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
-                      {dur} min{pct>0?` · ${pct}% FTP`:""}
-                      {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp*100)}% rec` : ""}
-                    </div>
+                    {pct>0 && (
+                      <div style={{ fontSize: 12, fontWeight: 700, color: barColor, background: `${barColor}14`, border: `1px solid ${barColor}30`, borderRadius: 3, padding: "3px 8px", flexShrink: 0 }}>
+                        {pct}%
+                      </div>
+                    )}
                   </div>
-                  {pct>0 && (
-                    <div style={{ fontSize: 12, fontWeight: 700, color: barColor, background: `${barColor}14`, border: `1px solid ${barColor}30`, borderRadius: 3, padding: "3px 8px", flexShrink: 0 }}>
-                      {pct}%
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

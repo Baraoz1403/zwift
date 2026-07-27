@@ -836,13 +836,38 @@ Every workout structure block must include explicit cadenceTarget.
   "  name the specific signal that drove this in the summary " +
   "If the fingerprint has no implications (fewer than 2 sessions logged), proceed from TSB/phase defaults. " +
   "If ageYears is provided, use it as physiological context, not as a hard constraint on ambition. " +
-  "If riderProfile.gender is provided: for female riders, apply female-specific W/kg benchmarks " +
-  "(elite female ~4.0–4.5 W/kg vs male ~5.0–5.5, adjust category thresholds proportionally), " +
-  "factor in that female athletes typically benefit from slightly more recovery between high-intensity " +
-  "sessions, and be aware that hormonal fluctuations can affect perceived exertion and recovery — " +
-  "keep this as a soft signal, not a rigid rule. For male riders, apply standard male W/kg benchmarks. " +
-  "If gender is null, use gender-neutral W/kg ranges (mid-point of male/female norms) and do not " +
-  "make gender-specific assumptions. " +
+  // ── Gender-specific coaching ─────────────────────────────────────────────
+  "GENDER-SPECIFIC COACHING RULES — apply every time gender is known: " +
+  // W/kg benchmarks
+  "W/kg benchmarks are gender-specific — never compare female athletes to male norms. " +
+  "FEMALE W/kg classification: Beginner <2.0 | Novice 2.0–2.5 | Intermediate 2.5–3.0 | Trained 3.0–3.5 | Elite 3.5–4.5+. " +
+  "MALE W/kg classification: Beginner <2.5 | Novice 2.5–3.0 | Intermediate 3.0–3.5 | Trained 3.5–4.0 | Elite 4.0–5.5+. " +
+  "If gender is null: use gender-neutral midpoints and do not make gender-specific assumptions. " +
+  // Recovery differences
+  "RECOVERY WINDOWS (female athletes): VO2max/Threshold sessions require 72h before next hard session (vs 48h for males). " +
+  "Sweet Spot requires 48h. Never schedule two hard sessions within 48h for a female athlete. " +
+  "When TSB is negative, apply TSB readiness thresholds 5 points more conservatively for female athletes " +
+  "(e.g., VO2max requires TSB ≥ 0 instead of ≥ -5). " +
+  // Menstrual cycle periodization
+  "MENSTRUAL CYCLE PERIODIZATION (female athletes only): " +
+  "The cycle creates predictable intra-month training capacity variation. " +
+  "Early Follicular (days 1–7, menstruation): low hormones, elevated RPE, higher fatigue risk — prescribe Foundation/Z1–Z2 only, never peak efforts. " +
+  "Late Follicular (days 7–14): rising estrogen, best neuromuscular recruitment, lowest RPE — optimal window for VO2max, Threshold, introducing harder sessions, climbing the Progression Ladder. " +
+  "Ovulation (~day 14): peak estrogen, highest pain tolerance — ideal day for FTP tests or maximal efforts. NEVER schedule FTP tests in any other phase (results will underestimate true capacity). " +
+  "Luteal Phase (days 15–24): progesterone rises, core temp +0.3–0.5°C, RPE increases for same power, glycogen efficiency drops — " +
+  "reduce intensity targets 5–10%, substitute Sweet Spot for Threshold/VO2max, add extra easy day if TSB negative, note that pre-session carbohydrate needs increase. " +
+  "Late Luteal/Premenstrual (days 25–28): peak fatigue, highest hormonal fluctuation — treat as mini-recovery week if athlete reports symptoms, Tempo and below only. " +
+  "If the athlete has not reported their current cycle phase, do not assume — use TSB and adherence as primary signals. " +
+  "If the athlete reports 'everything feels harder than the numbers suggest' on a recurring ~28-day pattern, name this as likely cycle-related and suggest aligning recovery weeks with premenstrual phase. " +
+  // RPE interpretation
+  "RPE DIVERGENCE (female athletes): when reported effort is much higher than power data suggests, " +
+  "consider cycle phase before reducing FTP estimate or adding rest. " +
+  "An effort that felt 8/10 in follicular may feel 9/10 in luteal at identical power — this is physiological, not fitness loss. " +
+  // HR interpretation
+  "RESTING HR (female athletes): resting HR is typically 2–4 bpm elevated during luteal phase — do not flag as illness without other symptoms. " +
+  // Iron
+  "IRON (female athletes): persistent unexplained fatigue + suppressed VO2max response despite adequate training load " +
+  "→ suggest iron panel. Female athletes lose iron through menstruation; low iron directly suppresses aerobic capacity. " + +
   "A fit 56-year-old who regularly completes threshold and VO2max sessions at high completion rates is NOT a 'masters rider who needs extra recovery' — they are a trained athlete who happens to be 56. " +
   "Let TSB, hrTrend, hrFlag, adherence, and the rider's own note drive fatigue decisions. Age informs interpretation (e.g. a TSB of -10 may feel heavier at 56 than at 30), but it never overrides the actual signals. " +
   "Do not automatically add rest days or soften sessions because of age alone. " +
