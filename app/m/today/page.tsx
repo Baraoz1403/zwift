@@ -117,13 +117,28 @@ export default async function MobileTodayPage() {
     currentPhase = wi === 0 ? "Base" : (wi % 4) === 3 ? "Recovery" : "Build";
   }
 
+  const SCROLL_STYLE: React.CSSProperties = {
+    flex: 1,
+    overflowY: "auto",
+    paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+  };
+
+  const PAGE_SHELL: React.CSSProperties = {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  };
+
   // ── No plan ──────────────────────────────────────────────────────────────
   if (!plan || workouts.length === 0) {
     return (
-      <>
+      <div style={PAGE_SHELL}>
         <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={null} />
-        <NoPlanScreen />
-      </>
+        <div style={SCROLL_STYLE}>
+          <NoPlanScreen />
+        </div>
+      </div>
     );
   }
 
@@ -131,9 +146,9 @@ export default async function MobileTodayPage() {
   if (!todayWorkout || todayStatus === "bonus") {
     const isBonus = todayStatus === "bonus";
     return (
-      <>
+      <div style={PAGE_SHELL}>
         <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={isBonus ? "bonus" : "planned"} workout={null} />
-        <div style={{ padding: "24px 16px" }}>
+        <div style={{ ...SCROLL_STYLE, padding: "24px 16px", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
           {isBonus ? (
             /* Bonus ride — athlete rode on their rest day. Keep it short + positive. */
             <div style={{
@@ -187,38 +202,41 @@ export default async function MobileTodayPage() {
             </div>
           )}
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      {/* Hero header */}
+    <div style={PAGE_SHELL}>
+      {/* Hero header — outside scroll area so it never moves */}
       <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
 
-      {/* Feedback banner — only after workout is confirmed completed or bonus */}
-      {(todayStatus === "completed" || todayStatus === "bonus") && (
-        <FeedbackBanner
-          workoutTitle={todayWorkout.title}
-          workoutCategory={todayWorkout.type ?? ""}
-          date={todayStr}
-          avgHr={todayAvgHr}
-          completed={true}
-          plannedDurationMin={todayWorkout.durationMin}
-          actualActivityName={todayActivityName}
-          actualDurationMin={todayActivityDurationMin}
-        />
-      )}
+      {/* Scrollable content */}
+      <div style={SCROLL_STYLE}>
+        {/* Feedback banner — only after workout is confirmed completed or bonus */}
+        {(todayStatus === "completed" || todayStatus === "bonus") && (
+          <FeedbackBanner
+            workoutTitle={todayWorkout.title}
+            workoutCategory={todayWorkout.type ?? ""}
+            date={todayStr}
+            avgHr={todayAvgHr}
+            completed={true}
+            plannedDurationMin={todayWorkout.durationMin}
+            actualActivityName={todayActivityName}
+            actualDurationMin={todayActivityDurationMin}
+          />
+        )}
 
-      {/* Main workout card */}
-      <MobileWorkoutCard
-        workout={todayWorkout}
-        weekWorkouts={workouts}
-        today={todayStr}
-        todayStatus={todayStatus}
-        weekStatus={weekStatus}
-      />
-    </>
+        {/* Main workout card */}
+        <MobileWorkoutCard
+          workout={todayWorkout}
+          weekWorkouts={workouts}
+          today={todayStr}
+          todayStatus={todayStatus}
+          weekStatus={weekStatus}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -258,7 +276,7 @@ function TodayHero({
 
   return (
     <div style={{
-      position: "sticky", top: 0, zIndex: 20,
+      flexShrink: 0,
       background: "var(--m-card)",
       borderBottom: "1px solid var(--m-border)",
       padding: "16px 20px 16px",
