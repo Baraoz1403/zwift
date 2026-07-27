@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0a0f1a",
+  themeColor: "#f5f7fa",
 };
 
 export default async function TabletLayout({ children }: { children: React.ReactNode }) {
@@ -52,7 +52,7 @@ export default async function TabletLayout({ children }: { children: React.React
     return (
       <div
         data-mobile-shell
-        data-mobile-theme="dark"
+        data-mobile-theme="light"
         style={{ minHeight: "100dvh", background: "var(--m-bg)", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}
       >
         <MobileIcuConnect />
@@ -60,8 +60,8 @@ export default async function TabletLayout({ children }: { children: React.React
     );
   }
 
-  const theme = cookieStore.get("mobileTheme")?.value === "light" ? "light" : "dark";
-  const bodyBg = theme === "light" ? "#f0f4f8" : "#0a0f1a";
+  const theme = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
+  const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
 
   return (
     <>

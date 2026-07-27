@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0a0f1a",
+  themeColor: "#f5f7fa",
 };
 
 export default async function MobileLayout({ children }: { children: React.ReactNode }) {
@@ -42,7 +42,7 @@ export default async function MobileLayout({ children }: { children: React.React
 
   // Read persisted theme preference (cookie set by ThemeToggleButton client component)
   const theme = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
-  const bodyBg = theme === "light" ? "#f0f4f8" : "#0a0f1a";
+  const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
 
   // Authenticated + ICU connected — show normal app shell with bottom navigation
   return (

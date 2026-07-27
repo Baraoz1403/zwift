@@ -13,27 +13,34 @@ html {
    -webkit-box-shadow inset is the ONLY way to force a dark background on iOS.
    Applied via .m-input class to all mobile app inputs/textareas.
    ─────────────────────────────────────────────────────────────────────────── */
+/* .m-input — light theme: white background, dark text.
+   The -webkit-box-shadow trick is needed for iOS autofill override.
+   Dark-theme overrides are handled by [data-mobile-theme="dark"] .m-input below. */
 .m-input {
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  box-shadow: 0 0 0px 1000px #ffffff inset;
+  -webkit-text-fill-color: #0d1626 !important;
+  color: #0d1626 !important;
+  caret-color: #2563eb;
+}
+
+.m-input::placeholder,
+input.m-input::placeholder,
+textarea.m-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Dark theme override for .m-input when dark mode is active */
+[data-mobile-theme="dark"] .m-input {
   -webkit-box-shadow: 0 0 0px 1000px #111827 inset !important;
   box-shadow: 0 0 0px 1000px #111827 inset;
   -webkit-text-fill-color: #f1f5f9 !important;
   color: #f1f5f9 !important;
   caret-color: #818cf8;
 }
-
-/* Mobile input placeholder — dark theme */
-.m-input::placeholder,
-input.m-input::placeholder,
-textarea.m-input::placeholder {
+[data-mobile-theme="dark"] .m-input::placeholder {
   color: #4b5563;
-  opacity: 1;
-}
-
-/* All inputs in /m — placeholder color override for dark backgrounds */
-input[style*="0f172a"]::placeholder,
-input[style*="111827"]::placeholder,
-textarea[style*="111827"]::placeholder {
-  color: #4b5563 !important;
 }
 
 input:-webkit-autofill,
@@ -43,56 +50,67 @@ input:-webkit-autofill:active,
 textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
 textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0d1626 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  caret-color: #2563eb;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-mobile-theme="dark"] input:-webkit-autofill,
+[data-mobile-theme="dark"] input:-webkit-autofill:hover,
+[data-mobile-theme="dark"] input:-webkit-autofill:focus,
+[data-mobile-theme="dark"] input:-webkit-autofill:active {
   -webkit-text-fill-color: #f1f5f9 !important;
   -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important;
   box-shadow: 0 0 0px 1000px #0f172a inset !important;
   caret-color: #60a5fa;
-  transition: background-color 5000s ease-in-out 0s;
 }
 
 :root {
-  /* Premium light theme (Apple Fitness+ / Whoop style): near-white page
-     background, pure white cards separated by shadow alone (not borders),
-     blue accent. Site-wide via these shared vars - most components
-     (.stat-card et al) already reference them rather than hardcoding
-     colors, so this cascades consistently instead of needing a
-     per-component pass. */
-  --bg: #edf2f8;
+  /* Apple Health / Fitness+ light aesthetic: clean off-white page,
+     pure white cards lifted by shadow (no heavy borders), vibrant blue accent.
+     The goal is maximum breathing room and minimal visual noise — every token
+     here cascades into stat cards, record cards, trend cards, sections, etc.
+     through the shared var() references in each component. */
+  --bg: #f5f7fa;
   --bg-glow: none;
   --panel: #ffffff;
   --panel-solid: #ffffff;
   --text: #0d1626;
-  --muted: #5a6a80;
+  --muted: #64748b;
   --accent: #2563eb;
   --accent-2: #0d1626;
   --accent-blue: #2563eb;
-  --good: #0d7a3e;
-  --bad: #c9311f;
-  --border: rgba(15, 23, 42, 0.09);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --danger: #c9311f;
-  --radius: 14px;
+  --good: #16a34a;
+  --bad: #dc2626;
+  --border: rgba(15, 23, 42, 0.07);
+  --border-strong: rgba(15, 23, 42, 0.13);
+  --danger: #dc2626;
+  --radius: 16px;
   --strip-height: 3px;
-  --shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.13), 0 4px 12px rgba(0,0,0,0.07);
+  /* iOS-style elevation: subtle ambient + gentle directional lift */
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 20px rgba(0,0,0,0.07);
+  --shadow-hover: 0 12px 36px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* ── Mobile app theme tokens ─────────────────────────────────────────────────
-   Light is the default. [data-mobile-theme="dark"] overrides for dark mode.
-   Set on the shell wrapper div (not <html>) so desktop styles are unaffected. */
+/* ── Mobile / Tablet app theme tokens ────────────────────────────────────────
+   Light is the default (Apple Health aesthetic).
+   [data-mobile-theme="dark"] overrides when the rider switches to dark.
+   Set on the shell wrapper div — desktop styles are unaffected. */
 :root {
-  /* light defaults */
-  --m-bg:            #f0f4f8;
+  /* Light — primary default, matches desktop --bg / --panel tokens */
+  --m-bg:            #f5f7fa;
   --m-card:          #ffffff;
   --m-card-inner:    #f8fafc;
-  --m-border:        #e2e8f0;
-  --m-text:          #0f172a;
+  --m-border:        #e4e9f0;
+  --m-text:          #0d1626;
   --m-text-2:        #334155;
   --m-label:         #64748b;
   --m-muted:         #64748b;
   --m-muted-2:       #94a3b8;
-  --m-nav-bg:        rgba(248, 250, 252, 0.97);
+  --m-nav-bg:        rgba(255, 255, 255, 0.97);
   --m-nav-inactive:  #94a3b8;
   --m-icon-primary:  #dbeafe;
   --m-icon-muted:    #f1f5f9;
@@ -213,13 +231,12 @@ a:hover {
 
 .card {
   background: var(--panel);
-  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 32px;
+  padding: 36px;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
 }
 
 .card h1 {
@@ -371,22 +388,14 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 21px;
-  font-weight: 900;
+  font-size: 22px;
+  font-weight: 800;
   letter-spacing: -0.5px;
-  margin: 0 0 24px;
-  color: #0f172a;
-  text-shadow: 0 1px 3px rgba(15,23,42,0.08);
-  /* Animated premium chip */
-  background: linear-gradient(to right,
-    rgba(59,130,246,0.14) 0%,
-    rgba(99,102,241,0.07) 45%,
-    transparent 100%);
-  border-radius: 0 12px 12px 0;
-  border-top: 1px solid rgba(59,130,246,0.18);
-  border-bottom: 1px solid rgba(59,130,246,0.08);
-  padding: 11px 22px 11px 20px;
+  margin: 0 0 28px;
+  color: #0d1626;
+  padding: 0 0 0 20px;
   position: relative;
+  /* Clean left border, no background — Apple style */
 }
 
 .card-eyebrow {
@@ -400,30 +409,21 @@ textarea {
   color: var(--accent);
 }
 
-/* Animated glowing left accent bar */
+/* Clean 4px left accent bar — no animation, no glow */
 .section-title::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 5px;
-  bottom: 5px;
-  width: 5px;
-  background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 40%, #1d4ed8 80%, #1e40af 100%);
-  border-radius: 0 4px 4px 0;
-  animation: sectionBarPulse 2.8s ease-in-out infinite;
+  top: 1px;
+  bottom: 1px;
+  width: 4px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
 }
 
-/* Inner glow at the left edge behind the bar */
+/* No ::after glow needed with the cleaner style */
 .section-title::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 60px;
-  background: linear-gradient(to right, rgba(59,130,246,0.12) 0%, transparent 100%);
-  border-radius: 0 0 12px 0;
-  pointer-events: none;
+  display: none;
 }
 
 /* .dot is kept for backward compatibility but no longer used */
@@ -432,7 +432,7 @@ textarea {
 }
 
 .section {
-  margin-top: 64px;
+  margin-top: 72px;
 }
 
 .stat-grid {
@@ -509,11 +509,11 @@ textarea {
 .stat-card {
   position: relative;
   background: var(--panel);
-  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 32px;
+  padding: 28px;
+  box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
 }
@@ -544,16 +544,19 @@ textarea {
 
 .stat-card .label {
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .stat-card .value {
-  font-size: 40px;
+  font-size: 42px;
   font-weight: 800;
   color: var(--accent);
-  margin-top: 8px;
-  letter-spacing: -1px;
+  margin-top: 10px;
+  letter-spacing: -1.5px;
+  line-height: 1.05;
 }
 
 /* Used for the rides-summary row (Rides/Total distance/Total time/Total
@@ -683,15 +686,15 @@ textarea {
 .record-card {
   position: relative;
   background: var(--panel);
-  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 20px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   overflow: hidden;
+  box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
