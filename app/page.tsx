@@ -11,7 +11,10 @@ export default async function Home() {
   const hasSession = cookieStore.has(SESSION_COOKIE_NAME);
 
   if (!hasSession) {
-    redirect("/login");
+    // Pass ?next=/ so the middleware's device-detection fires after login
+    // and routes phone → /m, tablet → /tablet, desktop → /dashboard.
+    // Without this, the login page defaults to /dashboard regardless of device.
+    redirect("/login?next=/");
   }
 
   // Route mobile visitors to the mobile app, desktop to the dashboard.
