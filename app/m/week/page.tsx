@@ -112,7 +112,6 @@ export default async function MobileWeekPage({
     <div style={{
       height: "100%",
       overflowY: "auto",
-      paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
     }}>
       <WeekView
         workouts={workouts}

@@ -120,7 +120,7 @@ export default async function MobileTodayPage() {
   const SCROLL_STYLE: React.CSSProperties = {
     flex: 1,
     overflowY: "auto",
-    paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
+    // No paddingBottom needed — layout content area already ends above the nav
   };
 
   const PAGE_SHELL: React.CSSProperties = {

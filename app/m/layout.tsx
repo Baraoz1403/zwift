@@ -47,34 +47,46 @@ export default async function MobileLayout({ children }: { children: React.React
   // Authenticated + ICU connected — show normal app shell with bottom navigation
   return (
     <>
-      {/* Sync body background with current theme to avoid iOS overscroll colour mismatch */}
-      <style>{`html, body { background-color: ${bodyBg} !important; }`}</style>
+      {/* Sync body/html so iOS overscroll chrome matches app theme */}
+      <style>{`
+        html, body {
+          background-color: ${bodyBg} !important;
+          overflow: hidden !important;
+          position: fixed !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      `}</style>
 
       <div
         data-mobile-shell
         data-mobile-theme={theme}
         style={{
-          height: "100dvh",
-          overflow: "hidden",
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
           background: "var(--m-bg)",
-          display: "flex",
-          flexDirection: "column",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
           WebkitFontSmoothing: "antialiased",
-          overscrollBehavior: "none",
         }}
       >
-        {/* Safe area top spacer */}
-        <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
-
-        {/* Content area — overflow:hidden so each page manages its own scroll.
-            Pages that need to scroll set overflowY:auto internally and add
-            paddingBottom to clear the fixed bottom nav. */}
-        <div style={{ flex: 1, overflow: "hidden" }}>
+        {/*
+          Content area — position:absolute with explicit edges.
+          This gives every child a definite, trustworthy height to resolve
+          height:100% against — no flex-height ambiguity on iOS Safari.
+          Bottom is set to clear the MobileNav (64px) + safe-area-bottom.
+        */}
+        <div style={{
+          position: "absolute",
+          top: "env(safe-area-inset-top, 0px)",
+          left: 0,
+          right: 0,
+          bottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+          overflow: "hidden",
+        }}>
           {children}
         </div>
 
-        {/* Fixed bottom navigation */}
+        {/* MobileNav: already position:fixed at bottom */}
         <MobileNav />
       </div>
     </>

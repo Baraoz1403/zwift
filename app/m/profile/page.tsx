@@ -81,7 +81,6 @@ export default async function MobileProfilePage() {
     <div style={{
       height: "100%",
       overflowY: "auto",
-      paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))",
     }}>
     <div style={{ padding: "16px 16px 0" }}>
 
