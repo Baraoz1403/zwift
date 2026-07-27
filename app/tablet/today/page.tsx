@@ -134,6 +134,8 @@ export default async function TabletTodayPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--m-bg)", color: "var(--m-text)", fontFamily: "system-ui,-apple-system,sans-serif", overflow: "hidden" }}>
+      {/* VERSION BADGE — temporary debug, remove after confirmation */}
+      <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 9999, background: "#FF5A1F", color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 7px", borderRadius: 3, opacity: 0.85 }}>v27-07-C</div>
 
       {/* ── TOP NAV ──────────────────────────────────────────────────────────── */}
       <div style={{
