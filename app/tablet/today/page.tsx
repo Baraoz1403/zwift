@@ -133,158 +133,143 @@ export default async function TabletTodayPage() {
   const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : ZB;
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 380px",
-      gap: 0,
-      minHeight: "100dvh",
-      background: "var(--m-bg)",
-    }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0D1117", color: "#f0f6ff", fontFamily: "system-ui,-apple-system,sans-serif", overflow: "hidden" }}>
 
-      {/* ── LEFT PANEL: Today's workout ────────────────────────────────────── */}
-      <div style={{ borderRight: "1px solid var(--m-border)", display: "flex", flexDirection: "column" }}>
-
-        {/* Hero header */}
-        <div style={{
-          background: "linear-gradient(160deg, #0D1117 0%, #111827 60%, #0D1117 100%)",
-          padding: "36px 40px 30px",
-          position: "relative",
-          overflow: "hidden",
-          flexShrink: 0,
-        }}>
-          {/* Ambient glows — bigger & warmer */}
-          <div style={{ position: "absolute", top: -80, right: -60, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(circle, ${ZO}28 0%, transparent 65%)`, filter: "blur(50px)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: -30, left: -30, width: 240, height: 240, borderRadius: "50%", background: `radial-gradient(circle, ${ZB}22 0%, transparent 65%)`, filter: "blur(36px)", pointerEvents: "none" }} />
-
-          {/* Date chip */}
-          <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(248,250,252,0.45)", marginBottom: 20, letterSpacing: "0.04em", position: "relative", zIndex: 1 }}>
-            {dateLabel}
+      {/* ── TOP NAV ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        height: 52, display: "flex", alignItems: "center",
+        padding: "0 28px", justifyContent: "space-between",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
+        flexShrink: 0,
+      }}>
+        {/* Volt AI logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div style={{
+            width: 26, height: 26, borderRadius: 7,
+            background: `linear-gradient(135deg, ${ZO} 0%, ${ZB} 100%)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 0 10px ${ZO}50`,
+          }}>
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="white">
+              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
+            </svg>
           </div>
+          <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: "0.06em", color: "#fff" }}>VOLT AI</span>
+        </div>
+
+        {/* Date */}
+        <span style={{ fontSize: 14, fontWeight: 500, color: "rgba(248,250,252,0.45)" }}>{dateLabel}</span>
+
+        {/* Rider stats */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {ftp && <span style={{ fontSize: 14, fontWeight: 700, color: ZB }}>{ftp} W</span>}
+          {currentPhase && <span style={{ fontSize: 13, fontWeight: 700, color: ZO, background: `${ZO}15`, padding: "3px 10px", borderRadius: 6 }}>{currentPhase}</span>}
+          {firstName && <span style={{ fontSize: 14, color: "rgba(248,250,252,0.55)", fontWeight: 500 }}>{firstName}</span>}
+        </div>
+      </div>
+
+      {/* ── MAIN BODY ────────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+        {/* LEFT: Today */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "32px 48px 40px" }}>
 
           {/* Greeting */}
-          <div style={{ position: "relative", zIndex: 1, marginBottom: 28 }}>
-            <div style={{ fontSize: 16, fontWeight: 500, color: `${ZB}dd`, marginBottom: 4 }}>{greeting}</div>
-            <div style={{ fontSize: 54, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-2px", lineHeight: 1 }}>
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: `${ZB}bb`, marginBottom: 2 }}>{greeting}</div>
+            <div style={{ fontSize: 44, fontWeight: 900, color: "#fff", letterSpacing: "-1.5px", lineHeight: 1 }}>
               {firstName ?? "Athlete"}
             </div>
           </div>
 
-          {/* Stats row */}
-          <div style={{ display: "flex", gap: 14, position: "relative", zIndex: 1 }}>
-            {ftp && (
-              <div style={{ background: `${ZB}16`, border: `1px solid ${ZB}35`, borderRadius: 14, padding: "14px 22px" }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: ZB, lineHeight: 1 }}>{ftp}W</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(248,250,252,0.40)", textTransform: "uppercase", letterSpacing: ".14em", marginTop: 5 }}>FTP</div>
-              </div>
-            )}
-            {currentPhase && (
-              <div style={{ background: `${ZO}16`, border: `1px solid ${ZO}35`, borderRadius: 14, padding: "14px 22px" }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: ZO, lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(248,250,252,0.40)", textTransform: "uppercase", letterSpacing: ".14em", marginTop: 5 }}>Phase</div>
-              </div>
-            )}
-            {todayWorkout && (
-              <div style={{ background: `${statusColor}16`, border: `1px solid ${statusColor}35`, borderRadius: 14, padding: "14px 22px" }}>
-                <div style={{ fontSize: 28, fontWeight: 900, color: statusColor, lineHeight: 1 }}>{statusLabel}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(248,250,252,0.40)", textTransform: "uppercase", letterSpacing: ".14em", marginTop: 5 }}>Today</div>
-              </div>
-            )}
+          {/* Section label */}
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(248,250,252,0.28)", marginBottom: 18 }}>
+            Today&apos;s session
           </div>
-        </div>
 
-        {/* Workout detail */}
-        <div style={{ flex: 1, padding: "32px 40px", overflowY: "auto" }}>
           {!todayWorkout ? (
-            <div style={{ maxWidth: 480, margin: "60px auto", textAlign: "center", padding: "0 24px" }}>
-              <div style={{ fontSize: 56, marginBottom: 20 }}>🌙</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", marginBottom: 12, letterSpacing: "-0.5px" }}>Rest Day</div>
-              <div style={{ fontSize: 17, color: "var(--m-muted)", lineHeight: 1.7, maxWidth: 340, margin: "0 auto" }}>
-                No workout scheduled today. Quality rest is where adaptation happens — this day is as important as any session.
+            /* REST DAY — no dark box */
+            <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "8px 0 32px" }}>
+              <span style={{ fontSize: 38 }}>🌙</span>
+              <div>
+                <div style={{ fontSize: 30, fontWeight: 900, color: "#f0f6ff", letterSpacing: "-0.5px" }}>Rest Day</div>
+                <div style={{ fontSize: 15, color: "rgba(248,250,252,0.40)", marginTop: 5, lineHeight: 1.5, maxWidth: 380 }}>
+                  Recovery is where adaptation happens. No training today — this is the work.
+                </div>
               </div>
             </div>
           ) : (
-            <>
-              {/* Workout title */}
-              <div style={{ marginBottom: 28 }}>
+            <div>
+              {/* Zone + title */}
+              <div style={{ marginBottom: 22 }}>
                 <div style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  background: `${zoneColor}18`, border: `1px solid ${zoneColor}35`,
-                  borderRadius: 10, padding: "6px 14px", marginBottom: 14,
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  background: `${zoneColor}14`, border: `1px solid ${zoneColor}28`,
+                  borderRadius: 8, padding: "4px 11px", marginBottom: 10,
                 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: zoneColor }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: zoneColor, textTransform: "uppercase", letterSpacing: ".12em" }}>{zoneLabel}</span>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: zoneColor }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: zoneColor, textTransform: "uppercase", letterSpacing: ".1em" }}>{zoneLabel}</span>
                 </div>
-                <h1 style={{ margin: 0, fontSize: 38, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1.08 }}>
+                <h1 style={{ margin: 0, fontSize: 34, fontWeight: 900, color: "#fff", letterSpacing: "-0.8px", lineHeight: 1.08 }}>
                   {todayWorkout.title}
                 </h1>
-                <div style={{ display: "flex", gap: 16, marginTop: 12, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 14, marginTop: 8, alignItems: "center" }}>
                   {todayWorkout.durationMin > 0 && (
-                    <span style={{ fontSize: 18, color: "var(--m-muted)", fontWeight: 600 }}>
-                      {todayWorkout.durationMin} min
-                    </span>
+                    <span style={{ fontSize: 16, color: "rgba(248,250,252,0.45)", fontWeight: 600 }}>{todayWorkout.durationMin} min</span>
                   )}
                   {todayWorkout.targetPowerPctFtp && (
-                    <span style={{ fontSize: 16, color: zoneColor, fontWeight: 700 }}>
-                      {todayWorkout.targetPowerPctFtp}
-                    </span>
+                    <span style={{ fontSize: 14, color: zoneColor, fontWeight: 700 }}>{todayWorkout.targetPowerPctFtp}</span>
                   )}
+                  <span style={{ fontSize: 13, fontWeight: 700, color: statusColor, background: `${statusColor}14`, padding: "3px 9px", borderRadius: 6 }}>{statusLabel}</span>
                 </div>
               </div>
 
               {/* Power chart */}
               {todayWorkout.structure && todayWorkout.structure.length > 0 && (
-                <div style={{ marginBottom: 24, borderRadius: 16, overflow: "hidden", background: "var(--m-card)", border: "1px solid var(--m-border)" }}>
+                <div style={{ marginBottom: 20, borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}>
                   <PowerBarChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} />
                 </div>
               )}
 
               {/* Description */}
               {todayWorkout.description && (
-                <div style={{
-                  background: "var(--m-card)", border: "1px solid var(--m-border)",
-                  borderRadius: 16, padding: "16px 20px", marginBottom: 20,
-                  fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65,
-                }}>
+                <div style={{ fontSize: 15, color: "rgba(248,250,252,0.55)", lineHeight: 1.70, marginBottom: 24, maxWidth: 580 }}>
                   {todayWorkout.description}
                 </div>
               )}
 
-              {/* Interval blocks */}
+              {/* Session blocks */}
               {todayWorkout.structure && todayWorkout.structure.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(248,250,252,0.28)", marginBottom: 10 }}>
                     Session structure
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {todayWorkout.structure.map((block, i) => {
                       const pct = Math.round((block.powerFtp ?? 0) * 100);
                       const bc  = blockColor(pct);
-                      const reps = block.type === "intervals" && block.repeats ? `${block.repeats}× ` : "";
+                      const reps = block.type === "intervals" && block.repeats ? `${block.repeats}×` : "";
                       const timeDet = block.type === "intervals" && block.onSec
-                        ? ` (${Math.round(block.onSec / 60)}/${Math.round((block.offSec ?? 0) / 60)} min)`
+                        ? `${Math.round(block.onSec / 60)}/${Math.round((block.offSec ?? 0) / 60)} min`
                         : "";
                       return (
                         <div key={i} style={{
-                          display: "flex", alignItems: "center", gap: 16,
-                          background: "var(--m-card)", border: "1px solid var(--m-border)",
-                          borderRadius: 14, padding: "16px 20px",
+                          display: "flex", alignItems: "center", gap: 14,
+                          padding: "11px 16px",
+                          background: "rgba(255,255,255,0.025)",
+                          borderRadius: 10,
+                          borderLeft: `3px solid ${bc}`,
                         }}>
-                          <div style={{ width: 5, height: 32, borderRadius: 3, background: bc, flexShrink: 0 }} />
-                          <div style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "var(--m-text)" }}>
-                            {reps}{block.label || block.type}{timeDet}
+                          <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>
+                            {reps && <span style={{ color: bc, marginRight: 5 }}>{reps}</span>}
+                            {block.label || block.type}
+                            {timeDet && <span style={{ color: "rgba(248,250,252,0.35)", fontSize: 13, marginLeft: 7 }}>{timeDet}</span>}
                           </div>
-                          <span style={{ fontSize: 15, color: "var(--m-muted)", fontWeight: 500 }}>
-                            {block.durationMin ?? 0} min
-                          </span>
+                          <span style={{ fontSize: 13, color: "rgba(248,250,252,0.35)" }}>{block.durationMin ?? 0} min</span>
                           {pct > 0 && (
-                            <div style={{
-                              minWidth: 54, height: 34, borderRadius: 9,
-                              background: `${bc}18`, border: `1px solid ${bc}33`,
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 14, fontWeight: 700, color: bc,
-                            }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: bc, background: `${bc}14`, padding: "2px 8px", borderRadius: 5 }}>
                               {pct}%
-                            </div>
+                            </span>
                           )}
                         </div>
                       );
@@ -292,111 +277,91 @@ export default async function TabletTodayPage() {
                   </div>
                 </div>
               )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── RIGHT PANEL: Week overview ─────────────────────────────────────── */}
-      <div style={{ display: "flex", flexDirection: "column", overflowY: "auto" }}>
-        {/* Week header */}
-        <div style={{
-          padding: "36px 28px 20px",
-          borderBottom: "1px solid var(--m-border)",
-          position: "sticky", top: 0, background: "var(--m-bg)", zIndex: 10,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 6 }}>
-            Training week
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-0.5px" }}>
-            {plan ? "This week" : "No plan yet"}
-          </div>
-          {plan?.summary && (
-            <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.5, marginTop: 8 }}>
-              {plan.summary.slice(0, 100)}{plan.summary.length > 100 ? "…" : ""}
             </div>
           )}
         </div>
 
-        {/* Day rows */}
-        <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {ALL_DAYS.map(dayName => {
-            const w = workouts.find(x => x.day === dayName);
-            const isToday = w?.date === todayStr;
-            const isRest  = !w || w.type === "Rest" || w.type?.toLowerCase().includes("rest");
-            const dayStatus: DayStatus | undefined = w?.date ? weekStatus[w.date] : undefined;
+        {/* RIGHT: Week panel */}
+        <div style={{ width: 300, flexShrink: 0, borderLeft: "1px solid rgba(255,255,255,0.07)", overflowY: "auto", display: "flex", flexDirection: "column" }}>
 
-            const rowColor = isRest ? "var(--m-muted)" : (w ? detectZoneColor(w) : ZB);
-            const statusMeta =
-              dayStatus === "completed" ? { text: "Done",   color: "#22c55e" } :
-              dayStatus === "missed"    ? { text: "Missed", color: "#ef4444" } :
-              dayStatus === "bonus"     ? { text: "Bonus",  color: "#f59e0b" } :
-              null;
+          {/* Metrics */}
+          <div style={{ padding: "24px 20px 16px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(248,250,252,0.28)", marginBottom: 14 }}>Your metrics</div>
+            <div style={{ display: "flex", gap: 20 }}>
+              {ftp && (
+                <div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: ZB, letterSpacing: "-0.5px", lineHeight: 1 }}>{ftp}W</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(248,250,252,0.35)", textTransform: "uppercase", letterSpacing: ".12em", marginTop: 4 }}>FTP</div>
+                </div>
+              )}
+              {currentPhase && (
+                <div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: ZO, letterSpacing: "-0.5px", lineHeight: 1 }}>{currentPhase}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(248,250,252,0.35)", textTransform: "uppercase", letterSpacing: ".12em", marginTop: 4 }}>Phase</div>
+                </div>
+              )}
+            </div>
+          </div>
 
-            // Day + date number
-            const dateNum = w?.date ? new Date(w.date + "T12:00:00").getDate() : null;
-            const dayShort = dayName.slice(0, 3).toUpperCase();
+          {/* Week label */}
+          <div style={{ padding: "18px 20px 8px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(248,250,252,0.28)" }}>This week</div>
+          </div>
 
-            return (
-              <div key={dayName} style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 16px",
-                background: isToday ? `${rowColor}14` : "var(--m-card)",
-                border: `1.5px solid ${isToday ? rowColor + "55" : "var(--m-border)"}`,
-                borderRadius: 16,
-                position: "relative",
-                overflow: "hidden",
-              }}>
-                {/* Today accent */}
-                {isToday && (
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 5, background: rowColor }} />
-                )}
+          {/* Day rows */}
+          <div style={{ padding: "0 12px 20px", flex: 1 }}>
+            {ALL_DAYS.map(dayName => {
+              const w = workouts.find(x => x.day === dayName);
+              const isToday = w?.date === todayStr;
+              const isRest  = !w || w.type === "Rest" || w.type?.toLowerCase().includes("rest");
+              const dayStatus: DayStatus | undefined = w?.date ? weekStatus[w.date] : undefined;
+              const rowColor = isRest ? "rgba(248,250,252,0.25)" : (w ? detectZoneColor(w) : ZB);
+              const dateNum  = w?.date ? new Date(w.date + "T12:00:00").getDate() : null;
+              const dayShort = dayName.slice(0, 3);
 
-                {/* Day bubble */}
-                <div style={{
-                  width: 50, height: 50, borderRadius: 13, flexShrink: 0,
-                  background: isRest ? "var(--m-card-inner)" : `${rowColor}22`,
-                  border: `1px solid ${isRest ? "var(--m-border)" : rowColor + "45"}`,
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", gap: 1,
+              return (
+                <div key={dayName} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "9px 10px",
+                  borderRadius: 9,
+                  borderLeft: `3px solid ${isToday ? rowColor : "transparent"}`,
+                  background: isToday ? `${rowColor}10` : "transparent",
+                  marginBottom: 2,
                 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: isRest ? "var(--m-muted)" : rowColor, letterSpacing: ".4px" }}>{dayShort}</span>
-                  {dateNum && (
-                    <span style={{ fontSize: 18, fontWeight: 900, color: isRest ? "var(--m-muted)" : rowColor }}>{dateNum}</span>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 16, fontWeight: 700,
-                    color: isRest ? "var(--m-muted)" : "var(--m-text)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {isRest ? "Rest" : w!.title}
+                  {/* Day / date */}
+                  <div style={{ width: 34, flexShrink: 0, textAlign: "center" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: isToday ? rowColor : "rgba(248,250,252,0.30)", letterSpacing: ".04em", textTransform: "uppercase" }}>{dayShort}</div>
+                    {dateNum && <div style={{ fontSize: 15, fontWeight: 900, color: isToday ? rowColor : "rgba(248,250,252,0.45)", lineHeight: 1 }}>{dateNum}</div>}
                   </div>
-                  {!isRest && w && (
-                    <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3 }}>
-                      {w.durationMin > 0 ? `${w.durationMin} min` : ""}{w.durationMin > 0 && detectZoneLabel(w) ? "  ·  " : ""}{detectZoneLabel(w)}
-                    </div>
-                  )}
-                </div>
 
-                {/* Status / today badge */}
-                {statusMeta ? (
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, color: statusMeta.color,
-                    background: `${statusMeta.color}18`, padding: "4px 12px", borderRadius: 9, flexShrink: 0,
-                  }}>{statusMeta.text}</span>
-                ) : isToday && !isRest ? (
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, color: rowColor,
-                    background: `${rowColor}18`, padding: "4px 12px", borderRadius: 9, flexShrink: 0,
-                  }}>TODAY</span>
-                ) : null}
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: isToday ? 700 : 500, color: isRest ? "rgba(248,250,252,0.25)" : (isToday ? "#fff" : "rgba(248,250,252,0.70)"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {isRest ? "Rest" : w!.title}
+                    </div>
+                    {!isRest && w && (
+                      <div style={{ fontSize: 11, color: rowColor, marginTop: 1, fontWeight: 500, opacity: 0.8 }}>
+                        {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status */}
+                  {dayStatus === "completed" && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
+                  {dayStatus === "missed"    && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Plan summary */}
+          {plan?.summary && (
+            <div style={{ margin: "0 12px 20px", padding: "12px 14px", background: "rgba(255,255,255,0.025)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontSize: 12, color: "rgba(248,250,252,0.40)", lineHeight: 1.6 }}>
+                {plan.summary.slice(0, 130)}{plan.summary.length > 130 ? "…" : ""}
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
       </div>
     </div>
