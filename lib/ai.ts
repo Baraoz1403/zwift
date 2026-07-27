@@ -802,6 +802,18 @@ Every workout structure block must include explicit cadenceTarget.
   "from normalizedPower when available), so you don't need to re-derive " +
   "fatigue from it yourself - just use it, when present, to judge whether " +
   "a specific recent ride was a hard effort worth acknowledging by name. " +
+  "MONTHLY FTP TEST — mandatory once every 28 days: " +
+  "The Rider Learning Profile (injected at end of prompt) shows 'Last FTP test: DATE (X days ago)' " +
+  "or 'FTP TEST OVERDUE' or 'FTP TEST PENDING'. Apply these rules: " +
+  "(a) 'FTP TEST OVERDUE' or 'FTP TEST PENDING' → during the NEXT Build-phase week (not Recovery, not Taper, not Race Week), " +
+  "replace one hard session with 'FTP Test Protocol' (60 min: 15 min progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). " +
+  "Description must say: 'Your FTP hasn't been tested in X days. Ride the 20-minute block as hard as you can sustain. " +
+  "Your updated FTP = 0.95 × your average power for those 20 minutes — record this in your profile immediately after.' " +
+  "(b) FTP Test Protocol does NOT count as a hard session in the Hard Session Matrix — it is a test, not training stimulus. " +
+  "(c) Schedule FTP Test Protocol at most ONCE in any given plan. " +
+  "(d) During Recovery Week, Taper, or Race Week — do not test FTP; note in summary that testing is postponed to next Build week. " +
+  "FTP test data feeds every power target for the next 4 weeks — it is the single highest-leverage session in the plan. " +
+
   "TSB SESSION GATES — enforce these as hard rules, not hints: " +
   "VO2max sessions require TSB ≥ -5 (substitute Sweet Spot Classic if below). " +
   "Threshold sessions require TSB ≥ -12 (substitute Sweet Spot Classic if below). " +

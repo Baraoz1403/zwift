@@ -262,6 +262,28 @@ export function fingerprintToPromptSummary(fp: RiderFingerprint | null): string 
     );
   }
 
+  // ── FTP test history (from session log) ──
+  const ftpTests = fp.sessionLog
+    .filter(e => e.workoutTitle === "FTP Test Protocol")
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (ftpTests.length > 0) {
+    const lastTest = ftpTests[0];
+    const daysSince = Math.floor(
+      (Date.now() - new Date(lastTest.date).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    if (daysSince >= 28) {
+      lines.push(
+        `\nLast FTP test: ${lastTest.date} (${daysSince} days ago). ← FTP TEST OVERDUE — schedule "FTP Test Protocol" in the next Build-phase week.`,
+      );
+    } else {
+      lines.push(`\nLast FTP test: ${lastTest.date} (${daysSince} days ago — within the 28-day window, no test needed this week).`);
+    }
+  } else {
+    lines.push(
+      "\nNo FTP test recorded in session log. ← FTP TEST PENDING — if this rider has never done a structured FTP test, schedule \"FTP Test Protocol\" within the next 2 weeks (during Build or late Base phase).",
+    );
+  }
+
   // ── Category response patterns ──
   const cats = Object.entries(fp.categoryResponses).sort(
     ([, a], [, b]) => b.totalSessions - a.totalSessions,
