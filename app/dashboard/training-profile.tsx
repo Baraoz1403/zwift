@@ -236,6 +236,8 @@ export default function TrainingProfileCard() {
   const [editing, setEditing]       = useState(false);
   const [draft, setDraft]           = useState<RiderTrainingProfile>(DEFAULT);
   const [phaseLabel, setPhaseLabel] = useState<string | null>(null);
+  const [phone, setPhone]           = useState<string>("");
+  const [phoneSaved, setPhoneSaved] = useState<boolean>(false);
 
   useEffect(() => {
     const p = loadProfile();
@@ -291,9 +293,32 @@ export default function TrainingProfileCard() {
     return () => window.removeEventListener("zwift:open-training-profile", open);
   }, [startEdit]);
 
-  function handleSave() {
+  // Load stored phone number on mount
+  useEffect(() => {
+    fetch("/api/profile/phone")
+      .then(r => r.json())
+      .then((d: { ok: boolean; phone?: string | null; hasPhone?: boolean }) => {
+        if (d.ok && d.hasPhone) setPhoneSaved(true);
+        // Don't populate the field with masked value — let user retype if they want to change
+      })
+      .catch(() => {/* best-effort */});
+  }, []);
+
+  async function handleSave() {
     saveProfile(draft);
     setProfile(draft);
+    // Save phone number separately if user entered one
+    if (phone.trim()) {
+      try {
+        await fetch("/api/profile/phone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: phone.trim() }),
+        });
+        setPhoneSaved(true);
+        setPhone("");
+      } catch { /* best-effort */ }
+    }
     setEditing(false);
   }
 
@@ -489,6 +514,38 @@ export default function TrainingProfileCard() {
                 />
               </div>
             )}
+
+            {/* WhatsApp notifications */}
+            <div style={{
+              background: "rgba(37,198,67,0.04)",
+              border: "1px solid rgba(37,198,67,0.18)",
+              borderRadius: 10, padding: "14px 16px",
+            }}>
+              <FieldLabel>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#25d366"/>
+                    <path d="M11.999 2C6.476 2 2 6.476 2 12c0 1.79.47 3.53 1.364 5.074L2 22l5.09-1.333A9.948 9.948 0 0012 22c5.524 0 10-4.476 10-10S17.523 2 11.999 2zm0 18.182c-1.64 0-3.24-.44-4.634-1.275l-.332-.198-3.024.793.805-2.948-.216-.352A8.148 8.148 0 013.818 12C3.818 7.476 7.476 3.818 12 3.818c4.524 0 8.182 3.658 8.182 8.182 0 4.524-3.658 8.182-8.183 8.182z" fill="#25d366"/>
+                  </svg>
+                  WhatsApp notifications
+                </span>
+              </FieldLabel>
+              <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.5 }}>
+                {phoneSaved
+                  ? "✓ Phone saved. You'll receive a WhatsApp message after each completed workout with a link to rate your session."
+                  : "Enter your phone number to receive a WhatsApp message after each workout — with a direct link to rate the session."}
+              </div>
+              <input
+                type="tel"
+                placeholder="e.g. +972501234567"
+                style={{ width: "100%", padding: "8px 10px", background: "#ffffff", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text)", fontSize: 13, outline: "none" }}
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+              />
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 5 }}>
+                Format: +[country code][number] — e.g. +972501234567 for Israel
+              </div>
+            </div>
 
             <div>
               <FieldLabel>Anything else? (optional)</FieldLabel>

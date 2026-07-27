@@ -246,3 +246,42 @@ export async function getIntervalsCredentials(athleteId: string): Promise<Interv
   const icuId = await kvGet(`zwift:${athleteId}:icu_id`);
   return { icuKey, icuId };
 }
+
+// ── WhatsApp phone number ─────────────────────────────────────────────────────
+// Stored separately from RiderTrainingProfile so it never reaches the AI prompt.
+// Format: E.164 (e.g. "+972501234567"). Passed to Twilio when ICU webhook fires.
+
+export async function saveAthletePhone(athleteId: string, phone: string): Promise<void> {
+  if (!kvAvailable() || !athleteId) return;
+  try {
+    // Normalise: strip spaces, ensure leading +
+    const normalised = phone.trim().replace(/\s+/g, "");
+    await kvSet(`zwift:${athleteId}:whatsapp_phone`, normalised);
+  } catch { /* best-effort */ }
+}
+
+export async function getAthletePhone(athleteId: string): Promise<string | null> {
+  if (!kvAvailable() || !athleteId) return null;
+  return kvGet(`zwift:${athleteId}:whatsapp_phone`);
+}
+
+/**
+ * Reverse-lookup: given an Intervals.icu athlete ID (e.g. "i12345"),
+ * find the Zwift athlete ID in the registry. Used by the ICU webhook to
+ * identify who just finished a ride without requiring a session cookie.
+ * Returns null if not found.
+ */
+export async function findAthleteByIcuId(icuAthleteId: string): Promise<string | null> {
+  if (!kvAvailable() || !icuAthleteId) return null;
+  try {
+    const raw = await kvGet("zwift:athletes");
+    const registry: string[] = raw ? JSON.parse(raw) : [];
+    for (const athleteId of registry) {
+      const stored = await kvGet(`zwift:${athleteId}:icu_id`);
+      if (stored === icuAthleteId) return athleteId;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

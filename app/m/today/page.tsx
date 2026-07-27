@@ -64,6 +64,7 @@ export default async function MobileTodayPage() {
 
   // ── Fetch ICU activities for this week ──────────────────────────────────
   let weekStatus: Record<string, DayStatus> = {};
+  let todayAvgHr: number | null = null;
   try {
     const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
     const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
@@ -79,6 +80,11 @@ export default async function MobileTodayPage() {
         timeout,
       ]);
       weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+      // Extract today's avg heart rate for the feedback banner
+      const todayActivity = activities.find(a =>
+        a.start_date_local?.slice(0, 10) === todayStr && a.average_heartrate
+      );
+      todayAvgHr = todayActivity?.average_heartrate ?? null;
     }
   } catch { /* best-effort */ }
 
@@ -180,7 +186,12 @@ export default async function MobileTodayPage() {
 
       {/* Post-ride feedback banner */}
       {todayStatus === "completed" && (
-        <FeedbackBanner workoutTitle={todayWorkout.title} date={todayStr} />
+        <FeedbackBanner
+          workoutTitle={todayWorkout.title}
+          workoutCategory={todayWorkout.type ?? ""}
+          date={todayStr}
+          avgHr={todayAvgHr}
+        />
       )}
 
       {/* Main workout card */}
