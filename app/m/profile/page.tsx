@@ -319,7 +319,7 @@ export default async function MobileProfilePage() {
           padding: "4px 0",
         }}>
           <a
-            href="/m/profile/edit"
+            href="profile/edit"
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "16px 18px", textDecoration: "none",

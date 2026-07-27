@@ -334,9 +334,9 @@ textarea {
 }
 
 .dashboard {
-  max-width: 1240px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 36px 0;
+  padding: 0 48px 0;
 }
 
 .dashboard-header {
@@ -388,14 +388,14 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  margin: 0 0 28px;
+  letter-spacing: -0.7px;
+  margin: 0 0 32px;
   color: #0d1626;
   padding: 0 0 0 20px;
   position: relative;
-  /* Clean left border, no background — Apple style */
+  /* Clean left border — Apple style */
 }
 
 .card-eyebrow {
@@ -432,13 +432,13 @@ textarea {
 }
 
 .section {
-  margin-top: 72px;
+  margin-top: 88px;
 }
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
 }
 
 /* The weekly-plan workout cards need much more room than the compact
@@ -512,7 +512,7 @@ textarea {
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 36px 32px;
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
@@ -545,18 +545,18 @@ textarea {
 .stat-card .label {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .stat-card .value {
-  font-size: 42px;
+  font-size: 52px;
   font-weight: 800;
   color: var(--accent);
-  margin-top: 10px;
-  letter-spacing: -1.5px;
-  line-height: 1.05;
+  margin-top: 12px;
+  letter-spacing: -2px;
+  line-height: 1.0;
 }
 
 /* Used for the rides-summary row (Rides/Total distance/Total time/Total
@@ -573,18 +573,19 @@ textarea {
 }
 
 .stat-grid-3 .stat-card {
-  padding: 18px 20px;
+  padding: 24px 22px;
 }
 
 .stat-grid-3 .label {
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .stat-grid-3 .value {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 800;
   white-space: nowrap;
+  letter-spacing: -0.5px;
 }
 
 @media (max-width: 640px) {
@@ -599,18 +600,19 @@ textarea {
 }
 
 .stat-grid-6 .stat-card {
-  padding: 18px 20px;
+  padding: 24px 20px;
 }
 
 .stat-grid-6 .label {
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .stat-grid-6 .value {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   white-space: nowrap;
+  letter-spacing: -0.5px;
 }
 
 @media (max-width: 900px) {
@@ -689,10 +691,10 @@ textarea {
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   overflow: hidden;
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
@@ -834,10 +836,11 @@ textarea {
 }
 
 .record-card .value {
-  font-size: 20px;
+  font-size: 23px;
   font-weight: 700;
-  margin-top: 2px;
+  margin-top: 4px;
   color: var(--accent-2);
+  letter-spacing: -0.3px;
 }
 
 .record-card .sub {

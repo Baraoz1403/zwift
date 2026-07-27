@@ -682,6 +682,15 @@ Every workout structure block must include explicit cadenceTarget.
 "Staying flat week over week with no stated reason is a coaching failure, not a conservative choice. " +
   "Absent/null previousWeekTitles means this is the first plan — proceed " +
   "normally using only phase/TSB guidance. " +
+  "ADHERENCE → VOLUME SCALING: When lastWeekAdherence is present in the input, apply: " +
+  "≥ 90% completion → rider is absorbing the load well; eligible to add a session or step up one rung. " +
+  "60-89% completion → hold current session count and volume; check which days are being skipped " +
+  "(the rider fingerprint weekdaySkipCounts shows the pattern) and avoid scheduling on those days. " +
+  "< 60% completion → MANDATORY VOLUME REDUCTION: drop total session count by 1 AND " +
+  "shorten hard-session durationMin by 10-15%. " +
+  "A rider who cannot complete the prescribed volume will not improve by receiving more of it — " +
+  "they will abandon the plan in favor of easier external alternatives. " +
+  "State the adherence figure explicitly in the summary when it drives a volume change. " +
   "For any day at or before the today field that already has a matching " +
   "ride in the rides array (same date), that day is already history, not " +
   "a live prescription - do not invent an unrelated placeholder title/type " +
@@ -714,6 +723,24 @@ Every workout structure block must include explicit cadenceTarget.
   "completed) and riderProfile/notes for level signals. " +
   "Always mention the rider's W/kg level in the plan summary (e.g. 'At 3.2 W/kg " +
   "you're in the intermediate range — this week introduces Threshold Development.') " +
+
+  // ── Duration calibration ──
+  "DURATION CALIBRATION — match prescriptions to what this rider actually completes: " +
+  "The ATHLETE PERFORMANCE HISTORY block (injected at the end of this prompt) reports " +
+  "'Avg duration: X min' for the most-recent 10 sessions. " +
+  "Use that figure as the session-length anchor for non-rest days. " +
+  "Prescribe sessions within 80-125% of that anchor — not textbook norms. " +
+  "If the anchor is 48 min, prescribe 38-60 min sessions, not 75-90 min. " +
+  "If riderProfile.sessionLengthMinutes is also present, use the SMALLER of the two as the anchor " +
+  "(the rider's actual behavior is the ground truth). " +
+  "Exceptions: (a) Long Endurance format is 90 min by definition — only schedule it when " +
+  "riderProfile.sessionLengthMinutes ≥ 80 or riderNote explicitly allows it; " +
+  "(b) Taper/Recovery phases may mandate shorter sessions regardless of history; " +
+  "(c) riderNote explicitly requests a longer or shorter session. " +
+  "When durationMin exceeds 125% of the anchor without one of the above exceptions, " +
+  "state the reason in that session's description. " +
+  "Duration mismatch is the primary driver of plan abandonment: when sessions routinely " +
+  "exceed what this rider actually finishes, they will use external options instead. " +
 
   // ── Named workout library ──
   WORKOUT_LIBRARY_PROMPT + " " +
@@ -783,6 +810,17 @@ Every workout structure block must include explicit cadenceTarget.
   "Intermittent/Over-Under sessions require TSB ≥ -8 (substitute Tempo Cruise if below). " +
   "Tempo and Endurance sessions have no TSB floor. Recovery/Rest have no floor. " +
   "When a substitution fires, note it briefly in the description: 'Scheduled as [original], downgraded to [actual] because TSB is [value].' " +
+  "RIDER FINGERPRINT → BINDING ACTION RULES: When the '## Rider Learning Profile' block " +
+  "(injected at the end of this prompt) contains coaching implications, treat them as hard adjustments, " +
+  "not optional personalisation: " +
+  "• 'ready to progress toward threshold' → this week MUST include at least one threshold-category session " +
+  "• 'VO2max sessions consistently feel very hard → prefer shorter rep formats' → no VO2max rep longer than 3 min " +
+  "• 'last session rated 1/5 (destroyed)' → the FIRST session of this week must be Spin & Recover or Foundation Ride " +
+  "• 'feel scores trending upward' → step up one rung on the Progression Ladder for the dominant hard category; " +
+  "  name the step-up in the summary " +
+  "• 'feel scores declining' → step down one rung and cut total weekly volume by ~15%; " +
+  "  name the specific signal that drove this in the summary " +
+  "If the fingerprint has no implications (fewer than 2 sessions logged), proceed from TSB/phase defaults. " +
   "If ageYears is provided, use it as physiological context, not as a hard constraint on ambition. " +
   "A fit 56-year-old who regularly completes threshold and VO2max sessions at high completion rates is NOT a 'masters rider who needs extra recovery' — they are a trained athlete who happens to be 56. " +
   "Let TSB, hrTrend, hrFlag, adherence, and the rider's own note drive fatigue decisions. Age informs interpretation (e.g. a TSB of -10 may feel heavier at 56 than at 30), but it never overrides the actual signals. " +
@@ -943,7 +981,14 @@ Every workout structure block must include explicit cadenceTarget.
   "STEP 5 — STRUCTURE:\n" +
   "  No two hard sessions on consecutive days. The same title should not repeat across the week " +
   "where a clear alternative exists.\n" +
-  "A plan that fails STEP 3, or fails STEP 5, is a template, not coaching. Fix before responding. " +
+  "STEP 6 — DURATION FIT:\n" +
+  "  Every non-Rest session durationMin must be within 80-125% of the ICU recent-10 avg session duration. " +
+  "If any session exceeds this range, verify it has an explicit override reason (phase, riderNote, or profile) " +
+  "and that reason appears in the session description.\n" +
+  "STEP 7 — ADHERENCE COMPLIANCE:\n" +
+  "  If lastWeekAdherence was < 60%, verify the total session count is 1 fewer than last week " +
+  "and the plan summary explicitly states the adherence figure and the volume reduction applied.\n" +
+  "A plan that fails STEP 3, STEP 5, or STEP 6 is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template.";
 
 export async function generateWeeklyPlan(params: {

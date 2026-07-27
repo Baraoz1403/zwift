@@ -319,7 +319,7 @@ function TodayHero({
       }} />
 
       {/* ── Content area ── */}
-      <div style={{ padding: "20px 20px 20px", position: "relative", zIndex: 1 }}>
+      <div style={{ padding: "28px 22px 24px", position: "relative", zIndex: 1 }}>
 
         {/* Top row: brand chip + date */}
         <div style={{
@@ -367,15 +367,15 @@ function TodayHero({
         {/* Personal greeting */}
         <div style={{ marginBottom: workout ? 16 : 18 }}>
           <div style={{
-            fontSize: 13.5, fontWeight: 500,
+            fontSize: 17, fontWeight: 500,
             color: "rgba(0,156,223,0.85)",
-            marginBottom: 1, letterSpacing: "0.02em",
+            marginBottom: 4, letterSpacing: "0.01em",
           }}>
             {timeGreeting}
           </div>
           <div style={{
-            fontSize: 40, fontWeight: 900, color: "#f8fafc",
-            letterSpacing: "-1.4px", lineHeight: 1.0,
+            fontSize: 52, fontWeight: 900, color: "#f8fafc",
+            letterSpacing: "-2px", lineHeight: 0.95,
           }}>
             {firstName ?? "Athlete"}
           </div>
@@ -386,7 +386,7 @@ function TodayHero({
           <div style={{
             background: statusDone ? "rgba(34,197,94,0.08)" : "rgba(0,156,223,0.06)",
             border: `1px solid ${statusDone ? "rgba(34,197,94,0.28)" : "rgba(0,156,223,0.2)"}`,
-            borderRadius: 16, padding: "13px 15px", marginBottom: 14,
+            borderRadius: 16, padding: "16px 18px", marginBottom: 18,
             backdropFilter: "blur(10px)",
           }}>
             <div style={{
@@ -409,8 +409,8 @@ function TodayHero({
               </div>
             </div>
             <div style={{
-              fontSize: 17, fontWeight: 800, color: "#f1f5f9",
-              letterSpacing: "-0.3px", lineHeight: 1.2, marginBottom: 7,
+              fontSize: 21, fontWeight: 800, color: "#f1f5f9",
+              letterSpacing: "-0.5px", lineHeight: 1.2, marginBottom: 10,
             }}>
               {workout.title}
             </div>
@@ -436,7 +436,7 @@ function TodayHero({
         )}
 
         {/* Metric cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <HeroCard label="FTP" value={ftp ? `${ftp} W` : "—"} color={ZB} accent filled={!!ftp} />
           <HeroCard label="Phase" value={phase ?? "—"} color={ZO} filled={!!phase} />
         </div>
@@ -499,7 +499,7 @@ function HeroCard({ label, value, color, filled, accent }: {
         : "rgba(9,22,46,0.6)",
       border: `1px solid ${filled ? color + "30" : "rgba(0,156,223,0.08)"}`,
       borderRadius: 14,
-      padding: "13px 14px",
+      padding: "16px 16px",
       position: "relative",
       overflow: "hidden",
     }}>
@@ -510,15 +510,16 @@ function HeroCard({ label, value, color, filled, accent }: {
         }} />
       )}
       <div style={{
-        fontSize: 24, fontWeight: 900, color,
-        lineHeight: 1, marginBottom: 5,
+        fontSize: 30, fontWeight: 900, color,
+        lineHeight: 1, marginBottom: 6,
         fontVariantNumeric: "tabular-nums",
         textShadow: filled ? `0 0 20px ${color}50` : "none",
+        letterSpacing: "-0.5px",
       }}>
         {value}
       </div>
       <div style={{
-        fontSize: 11, color: "rgba(248,250,252,0.35)",
+        fontSize: 12, color: "rgba(248,250,252,0.35)",
         fontWeight: 700, textTransform: "uppercase", letterSpacing: ".12em",
       }}>
         {label}
