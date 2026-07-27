@@ -389,9 +389,9 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
   `⛔ IRON LAW — COACHING PHILOSOPHY:
 1. EVERY TRAINING DAY = STRUCTURED INTERVALS. This is non-negotiable. Every scheduled workout must contain defined on/off interval blocks with specific power targets, not continuous steady-state riding. A beginner gets 5×3min blocks. An intermediate gets 3×10min Sweet Spot. An advanced rider gets Norwegian 4×4. "Foundation Ride" (unstructured steady-state) is ONLY valid as active recovery the day immediately after a hard session — never as a primary training session. A plan where any non-recovery day is a continuous ride with no interval structure is a FAILED plan.
 2. SELECT FROM THE NAMED WORKOUT LIBRARY BELOW — these are curated protocols. The job is choosing the RIGHT one for this rider today. Every session must reference THIS rider's actual TSB, phase, and stated goals.
-3. STRUCTURED INTENSITY SESSIONS per week: 0-1 for beginners, 1-2 for novice, 2 for intermediate, 2-3 for advanced, 0 for Recovery/illness.
+3. STRUCTURED INTENSITY SESSIONS per week: the exact cap is provided in the HARD CONSTRAINTS block below (injected by the selection engine, keyed to this rider's TSB, W/kg, and phase). Follow those constraints — do NOT add hard sessions beyond the stated maximum, and do NOT reduce them below the recommended count without a named reason.
 4. FORBIDDEN: unstructured steady-state sessions as primary workouts, sessions without defined interval blocks, generic titles like "Endurance Ride" or "Easy Ride".
-5. QUALITY SESSION MINIMUM: Base and Build weeks MUST include at least TWO sessions at Sweet Spot (88%+ FTP) or harder for Intermediate+ riders — unless TSB is below -25 or this is a Recovery phase week.
+5. INTENSITY COUNT: The selection engine (see HARD CONSTRAINTS below) already computed the correct number of intensity sessions for this rider's exact TSB, level, and phase. Trust it. The engine accounts for fatigue, freshness, and progression history — do not override it with a fixed rule.
 6. ALL SESSIONS — including the "easy" days — must have interval structure. Even a recovery day can be Z2 with Cadence Drills (defined cadence blocks) or Surge Ride (defined surge intervals). A session of continuous unstructured riding tells the athlete nothing and trains nothing specifically.
 
 ⚡ PROFESSIONAL INTERVAL STANDARD: The athlete opens Zwift expecting a structured workout file — warmup blocks, defined interval blocks with exact watts, recovery blocks, cooldown. Every session in the plan must produce a proper structured .zwo file. If a session cannot be described in blocks (type/duration/power), it should not be in the plan.
@@ -892,31 +892,22 @@ Every workout structure block must include explicit cadenceTarget.
   "TAPER: min 1, target 1-2, max 2 short race-specific touches (Sweet Spot or Threshold, reduced volume).\n" +
   "RACE WEEK: min 0, target 0-1, max 1 short opener. No new training stress.\n" +
   "ILLNESS/SEVERE FATIGUE/hrTrend=suppressed: override all above — min 0, target 0, max 0.\n" +
-  "HARD-SESSION MINIMUM RULE: If the final plan contains fewer hard sessions than the TARGET: " +
-  "this MUST be explained in the summary with a specific, data-grounded reason (exact TSB, " +
-  "what adherence issue, what symptom) — not a vague 'recovery needed' statement. " +
-  "Returning fewer sessions than target without a named reason is a quality failure. " +
-  "For an Intermediate or higher rider in Build phase: the plan MUST contain 2 hard sessions " +
-  "unless TSB is below -20, the rider reported illness/injury, or adherence shows repeated " +
-  "session failures — in those cases, state the exact reason. " +
-  "TSB alone is not sufficient justification for dropping from target 2 to target 1 " +
-  "unless TSB is below -20. A TSB of -8 to -15 is normal training fatigue, not a reason to halve intensity. " +
+  "IMPORTANT: The HARD CONSTRAINTS section (injected below) is the authoritative session count for THIS rider THIS week. " +
+  "The matrix above is a general reference only. When the two conflict, HARD CONSTRAINTS wins — the engine " +
+  "computed those numbers from actual TSB, W/kg, and 21-day exposure history that the matrix cannot see.\n" +
+  "DEVIATION ACCOUNTABILITY: If the final plan delivers fewer intensity sessions than the HARD CONSTRAINTS " +
+  "recommended count, the summary MUST name the specific reason — exact TSB value, specific adherence " +
+  "failure, or named symptom. A generic 'recovery needed' is not acceptable.\n" +
   "FINAL PLAN QUALITY CHECK — before returning JSON, count and verify:\n" +
   "STEP 1 — COUNT THREE SESSION TYPES:\n" +
   "  (1) Total training sessions this week (non-Rest days)\n" +
   "  (2) Structured sessions: sessions with defined power targets, blocks, or drills\n" +
   "  (3) Hard-intensity sessions: Sweet Spot (≥88%), Threshold (≥97%), VO2max (≥106%), Anaerobic\n" +
   "      → Sprint Builder, Neuromuscular, Tempo (<84%), Foundation, Long Endurance do NOT count\n" +
-  "STEP 2 — HARD-SESSION MINIMUM CHECK:\n" +
-  "  Compare hard-intensity count to the HARD-SESSION MATRIX target for this rider's level+phase.\n" +
-  "  If count < target: you MUST either (a) add a hard session where the week structure allows, " +
-  "or (b) state the specific reason in the summary (exact TSB value, specific adherence failure, " +
-  "or named symptom). A generic 'recovery needed' is not acceptable. " +
-  "For an Intermediate+ rider in Build phase, a plan with only 1 hard session requires an explicit named justification. " +
-  "For an Intermediate+ rider in Base phase with TSB ≥ -15, 2 hard sessions is within target range. " +
-  "CHECK (a-0): Unless Recovery/Taper/RaceWeek, TSB < -25, or rider explicitly requested lighter training: " +
-  "the plan contains at least ONE hard-intensity session. If every session is Tempo and below, " +
-  "verify this is intentional and clearly justified — for most Base/Build riders it is under-prescribing.\n" +
+  "STEP 2 — HARD CONSTRAINTS COMPLIANCE:\n" +
+  "  Verify the hard-intensity count does not EXCEED the maximum in the HARD CONSTRAINTS block.\n" +
+  "  If it does: replace one intensity session with the fallback from that block.\n" +
+  "  If count is below the recommended count: verify you have a named reason (see DEVIATION ACCOUNTABILITY above).\n" +
   "STEP 3 — DESCRIPTION QUALITY:\n" +
   "  Every description names at least one specific data point: exact TSB value, CTL number, " +
   "phase week number, their W/kg, or a title from previousWeekTitles. " +
@@ -929,7 +920,7 @@ Every workout structure block must include explicit cadenceTarget.
   "STEP 5 — STRUCTURE:\n" +
   "  No two hard sessions on consecutive days. The same title should not repeat across the week " +
   "where a clear alternative exists.\n" +
-  "A plan that fails STEP 2 without a named reason, or fails STEP 3, is a template, not coaching. Fix before responding. " +
+  "A plan that fails STEP 3, or fails STEP 5, is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template.";
 
 export async function generateWeeklyPlan(params: {
