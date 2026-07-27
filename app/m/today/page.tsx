@@ -233,9 +233,9 @@ function TodayHero({
     localHour < 17 ? "Good afternoon," :
     localHour < 21 ? "Good evening," : "Good night,";
 
-  // Zwift brand colors
-  const ZO = "#F2541B"; // Zwift Orange — primary brand
-  const ZB = "#009CDF"; // Zwift Electric Blue — secondary
+  // Volt AI brand colors
+  const ZO = "#FF5A1F"; // Power Orange — primary
+  const ZB = "#00C2FF"; // Cyan Electric — secondary
 
   // Status pill
   const statusLabel = statusDone ? "Done ✓" : statusMissed ? "Missed" : statusBonus ? "Bonus ride" : "Planned";
@@ -250,7 +250,7 @@ function TodayHero({
 
   // Ticker items — personal metrics woven in with brand messages
   const tickerItems = [
-    { dot: ZO,       text: "ZWIFT AI TRAINING COACH" },
+    { dot: ZO,       text: "VOLT AI TRAINING COACH" },
     { dot: ZB,       text: ftp ? `FTP · ${ftp} W` : "FTP ANALYSIS ACTIVE" },
     { dot: ZO,       text: "REAL-TIME POWER ANALYSIS" },
     { dot: ZB,       text: phase ? `${phase.toUpperCase()} PHASE` : "ADAPTIVE TRAINING ENGINE" },
@@ -263,7 +263,7 @@ function TodayHero({
   return (
     <div style={{
       position: "relative",
-      background: "linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)",
+      background: "linear-gradient(140deg, #0D1117 0%, #17100a 55%, #0D1117 100%)",
       overflow: "hidden",
       flexShrink: 0,
       display: "flex",
@@ -288,32 +288,32 @@ function TodayHero({
         }
       `}</style>
 
-      {/* ── Neural grid — Zwift Blue tint ── */}
+      {/* ── Neural grid — Volt AI Cyan tint ── */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none",
         backgroundImage: `
-          linear-gradient(rgba(0,156,223,0.06) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,156,223,0.06) 1px, transparent 1px)
+          linear-gradient(rgba(0,194,255,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,194,255,0.05) 1px, transparent 1px)
         `,
         backgroundSize: "36px 36px",
         WebkitMaskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
         maskImage: "radial-gradient(ellipse 120% 100% at 65% 0%, black 0%, transparent 78%)",
       }} />
 
-      {/* ── Zwift Orange aurora top-right ── */}
+      {/* ── Power Orange aurora top-right ── */}
       <div style={{
         position: "absolute", top: -90, right: -70, width: 320, height: 320,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(242,84,27,0.28) 0%, transparent 65%)",
+        background: "radial-gradient(circle, rgba(255,90,31,0.28) 0%, transparent 65%)",
         filter: "blur(50px)", pointerEvents: "none",
         animation: "mHeroAurora 9s ease-in-out infinite",
       }} />
 
-      {/* ── Zwift Blue glow bottom-left ── */}
+      {/* ── Cyan Electric glow bottom-left ── */}
       <div style={{
         position: "absolute", bottom: -30, left: -30, width: 200, height: 200,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(0,156,223,0.18) 0%, transparent 65%)",
+        background: "radial-gradient(circle, rgba(0,194,255,0.18) 0%, transparent 65%)",
         filter: "blur(35px)", pointerEvents: "none",
         animation: "mHeroAurora 12s ease-in-out infinite reverse",
       }} />
@@ -328,33 +328,25 @@ function TodayHero({
         }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: "linear-gradient(135deg, rgba(242,84,27,0.22), rgba(0,156,223,0.14))",
-            border: "1px solid rgba(0,156,223,0.32)",
-            borderRadius: 10, padding: "6px 13px 6px 8px",
-            boxShadow: "0 0 20px rgba(0,156,223,0.12), inset 0 1px 0 rgba(255,255,255,0.06)",
+            background: `linear-gradient(135deg, rgba(255,90,31,0.18), rgba(0,194,255,0.12))`,
+            border: `1px solid rgba(0,194,255,0.30)`,
+            borderRadius: 12, padding: "7px 14px 7px 9px",
+            boxShadow: `0 0 20px rgba(255,90,31,0.10), inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}>
-            {/* Pulsing live dot */}
             <div style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: ZO,
-              boxShadow: `0 0 8px ${ZO}`,
-              animation: "mHeroPulse 1.8s ease-in-out infinite",
-              flexShrink: 0,
-            }} />
-            <div style={{
-              width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+              width: 28, height: 28, borderRadius: 8, flexShrink: 0,
               background: `linear-gradient(135deg, ${ZO} 0%, ${ZB} 100%)`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: `0 0 10px rgba(0,156,223,0.5)`,
+              boxShadow: `0 0 12px ${ZO}60`,
             }}>
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="white">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="white">
                 <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z" />
               </svg>
             </div>
-            <span style={{
-              fontSize: 11, fontWeight: 800, letterSpacing: "0.18em",
-              color: "rgba(248,250,252,0.92)", textTransform: "uppercase",
-            }}>AI Coach</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: "0.12em", color: "#fff", textTransform: "uppercase", lineHeight: 1 }}>Volt</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", color: ZB, textTransform: "uppercase", lineHeight: 1, marginTop: 2 }}>AI Coach</div>
+            </div>
           </div>
           <div style={{
             fontSize: 12, fontWeight: 600,

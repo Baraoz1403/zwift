@@ -8,8 +8,8 @@ import { computeWeekStatus } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 
-const ZO = "#F2541B";
-const ZB = "#009CDF";
+const ZO = "#FF5A1F"; // Volt AI — Power Orange
+const ZB = "#00C2FF"; // Volt AI — Cyan Electric
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const ALL_DAYS  = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -36,10 +36,10 @@ function weekDatesFrom(weekOf: string): string[] {
 
 function detectZoneColor(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-  if (t.includes("sweet spot") || t.includes("sweetspot")) return "#3b82f6";
-  if (t.includes("threshold") || t.includes("ftp")) return "#ef4444";
-  if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "#22c55e";
-  if (t.includes("tempo")) return "#f59e0b";
+  if (t.includes("sweet spot") || t.includes("sweetspot")) return "#10b981";
+  if (t.includes("threshold") || t.includes("ftp")) return "#FF5A1F";
+  if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "#ef4444";
+  if (t.includes("tempo")) return "#00C2FF";
   if (t.includes("sprint") || t.includes("neuromuscular")) return "#a855f7";
   if (t.includes("rest") || t.includes("recovery")) return "#475569";
   return ZB;
@@ -145,7 +145,7 @@ export default async function TabletTodayPage() {
 
         {/* Hero header */}
         <div style={{
-          background: "linear-gradient(140deg, #030c1e 0%, #0b1e40 55%, #04091a 100%)",
+          background: "linear-gradient(140deg, #0D1117 0%, #17100a 55%, #0D1117 100%)",
           padding: "36px 40px 30px",
           position: "relative",
           overflow: "hidden",
@@ -194,11 +194,11 @@ export default async function TabletTodayPage() {
         {/* Workout detail */}
         <div style={{ flex: 1, padding: "32px 40px", overflowY: "auto" }}>
           {!todayWorkout ? (
-            <div style={{ textAlign: "center", padding: "60px 0" }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🌙</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
-              <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.6, maxWidth: 340, margin: "0 auto" }}>
-                No workout scheduled. Quality rest is as important as the training itself.
+            <div style={{ maxWidth: 480, margin: "60px auto", textAlign: "center", padding: "0 24px" }}>
+              <div style={{ fontSize: 56, marginBottom: 20 }}>🌙</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", marginBottom: 12, letterSpacing: "-0.5px" }}>Rest Day</div>
+              <div style={{ fontSize: 17, color: "var(--m-muted)", lineHeight: 1.7, maxWidth: 340, margin: "0 auto" }}>
+                No workout scheduled today. Quality rest is where adaptation happens — this day is as important as any session.
               </div>
             </div>
           ) : (
