@@ -121,22 +121,22 @@ textarea:-webkit-autofill:focus {
 }
 
 [data-mobile-theme="dark"] {
-  --m-bg:            #0b1220;
-  --m-card:          #12203a;
-  --m-card-inner:    #0d1a2e;
-  --m-border:        #1e3050;
-  --m-text:          #f0f6ff;
-  --m-text-2:        #b8ceea;
-  --m-label:         #8aa4c8;
-  --m-muted:         #5a7498;
-  --m-muted-2:       #3d5470;
-  --m-nav-bg:        #0d1a2e;
-  --m-nav-inactive:  #4b6380;
-  --m-icon-primary:  #0f2a4a;
-  --m-icon-muted:    #1a1a2e;
+  --m-bg:            #0a0a0f;
+  --m-card:          #161b22;
+  --m-card-inner:    #0d1117;
+  --m-border:        #2a2a3e;
+  --m-text:          #f0f6fc;
+  --m-text-2:        #94a3b8;
+  --m-label:         #6e6e8a;
+  --m-muted:         #6e6e8a;
+  --m-muted-2:       #3d3d58;
+  --m-nav-bg:        #0d0d18;
+  --m-nav-inactive:  #3d3d58;
+  --m-icon-primary:  #1e1e2e;
+  --m-icon-muted:    #1e1e2e;
   --m-icon-success:  #0f2a1a;
-  --m-btn-muted:     #1e3a5f;
-  --m-btn-muted-txt: #3b82f6;
+  --m-btn-muted:     #161b22;
+  --m-btn-muted-txt: #6e6e8a;
 }
 
 * {

@@ -130,7 +130,7 @@ export default async function MobileTodayPage() {
             <div style={{
               background: "rgba(34,197,94,0.07)",
               border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 20, padding: "22px 20px",
+              borderRadius: 4, padding: "22px 20px",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
                 <div style={{
@@ -149,7 +149,7 @@ export default async function MobileTodayPage() {
               </div>
               <a href="/m/week" style={{
                 display: "block", marginTop: 16, textAlign: "center",
-                padding: "14px", borderRadius: 14,
+                padding: "14px", borderRadius: 4,
                 background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)",
                 color: "#22c55e", fontSize: 17, fontWeight: 700, textDecoration: "none",
               }}>
@@ -161,7 +161,7 @@ export default async function MobileTodayPage() {
             <div style={{
               background: "var(--m-card)",
               border: "1px solid var(--m-border)",
-              borderRadius: 20, padding: "22px 20px",
+              borderRadius: 4, padding: "22px 20px",
             }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
               <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
@@ -169,7 +169,7 @@ export default async function MobileTodayPage() {
               </div>
               <a href="/m/week" style={{
                 display: "block", textAlign: "center",
-                padding: "14px", borderRadius: 14,
+                padding: "14px", borderRadius: 4,
                 background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
                 color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none",
               }}>
@@ -245,39 +245,37 @@ function TodayHero({
 
   return (
     <div style={{
-      background: "#fff",
-      borderBottom: "1px solid #e4e9f0",
-      padding: "20px 20px 16px",
+      background: "var(--m-card)",
+      borderBottom: "1px solid var(--m-border)",
+      padding: "22px 20px 18px",
     }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500, marginBottom: 3 }}>
-            {timeGreeting}
-          </div>
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#0f172a", letterSpacing: "-0.8px", lineHeight: 1 }}>
-            {firstName ?? "Athlete"}
-          </div>
+      <div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, marginBottom: 6, letterSpacing: ".3px" }}>
+        {timeGreeting}
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
+          {firstName ?? "Athlete"}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, paddingTop: 2 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
           {phase && (
             <span style={{
-              fontSize: 12, fontWeight: 700, color: "#FF5A1F",
-              background: "#fff3ee", border: "1px solid #ffd5c2",
-              padding: "3px 10px", borderRadius: 20,
+              fontSize: 11, fontWeight: 700, color: "#FF5A1F",
+              background: "rgba(255,90,31,0.1)", border: "1px solid rgba(255,90,31,0.3)",
+              padding: "3px 10px", borderRadius: 3,
             }}>{phase}</span>
           )}
           {ftp && (
-            <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>{ftp} W FTP</span>
+            <span style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500 }}>{ftp} W FTP</span>
           )}
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-        <span style={{ fontSize: 13, color: "#94a3b8" }}>{dateLabel}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <span style={{ fontSize: 12, color: "var(--m-muted)" }}>{dateLabel}</span>
         {statusBadge && (
           <span style={{
-            fontSize: 12, fontWeight: 700,
+            fontSize: 11, fontWeight: 700, borderRadius: 3,
             color: statusBadge.color, background: statusBadge.bg,
-            padding: "2px 9px", borderRadius: 20,
+            padding: "2px 8px",
           }}>{statusBadge.text}</span>
         )}
       </div>
