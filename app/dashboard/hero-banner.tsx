@@ -243,7 +243,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
     <div
       className="hero-banner-fullbleed"
       style={{
-        background: `linear-gradient(140deg, #030c1e 0%, #09162e 55%, #04091a 100%)`,
+        background: `linear-gradient(140deg, #0D1117 0%, #18100a 55%, #0D1117 100%)`,
         overflow: "hidden",
         position: "relative",
         display: "flex",

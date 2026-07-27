@@ -113,7 +113,9 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
       const data = await res.json();
       if (res.ok && data.ok) {
         setSaveState("done");
-        setTimeout(() => window.location.href = "/m/profile", 1000);
+        // Redirect back to the correct profile page — tablet or mobile
+        const prefix = window.location.pathname.startsWith("/tablet/") ? "/tablet" : "/m";
+        setTimeout(() => window.location.href = `${prefix}/profile`, 1000);
       } else {
         setSaveState("error");
       }
