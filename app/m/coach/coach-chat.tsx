@@ -96,23 +96,23 @@ export default function CoachChat() {
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" }}>
               Ask your coach
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
               {QUICK_ACTIONS.map(({ label, message }) => (
                 <button
                   key={label}
                   onClick={() => sendMessage(message)}
                   style={{
                     textAlign: "left",
-                    padding: "10px 13px",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 12,
-                    color: "#94a3b8",
-                    fontSize: 13,
-                    fontWeight: 500,
+                    padding: "15px 18px",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 14,
+                    color: "#e2e8f0",
+                    fontSize: 15,
+                    fontWeight: 600,
                     cursor: "pointer",
                     WebkitTapHighlightColor: "transparent",
-                    lineHeight: 1.35,
+                    lineHeight: 1.4,
                   }}
                 >
                   {label}
@@ -134,12 +134,12 @@ export default function CoachChat() {
             {msg.role === "coach" && (
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: "#1e3a5f",
-                border: "1px solid #3b82f6",
+                background: "#0D1117",
+                border: "1px solid #FF5A1F",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 14, flexShrink: 0,
               }}>
-                🤖
+                ⚡
               </div>
             )}
             <div style={{
@@ -148,8 +148,8 @@ export default function CoachChat() {
               borderRadius: msg.role === "user"
                 ? "20px 20px 6px 20px"
                 : "20px 20px 20px 6px",
-              background: msg.role === "user" ? "#1d4ed8" : "#111827",
-              border: msg.role === "user" ? "none" : "1px solid #1e293b",
+              background: msg.role === "user" ? "#FF5A1F" : "#111827",
+              border: msg.role === "user" ? "none" : "1px solid rgba(255,255,255,0.08)",
               fontSize: 14,
               color: "#f1f5f9",
               lineHeight: 1.6,
@@ -165,21 +165,21 @@ export default function CoachChat() {
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end", marginBottom: 12 }}>
             <div style={{
               width: 32, height: 32, borderRadius: "50%",
-              background: "#1e3a5f", border: "1px solid #3b82f6",
+              background: "#0D1117", border: "1px solid #FF5A1F",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 14, flexShrink: 0,
             }}>
-              🤖
+              ⚡
             </div>
             <div style={{
               padding: "14px 18px", background: "#111827",
-              border: "1px solid #1e293b", borderRadius: "20px 20px 20px 6px",
+              border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px 20px 20px 6px",
             }}>
               <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
                 {[0, 1, 2].map(i => (
                   <div key={i} style={{
                     width: 7, height: 7, borderRadius: "50%",
-                    background: "#3b82f6",
+                    background: "#FF5A1F",
                     animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
                   }} />
                 ))}

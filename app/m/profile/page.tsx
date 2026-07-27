@@ -101,7 +101,7 @@ export default async function MobileProfilePage() {
             <MetricCard
               value={`${ftpWatts}W`}
               label="FTP"
-              color="#3b82f6"
+              color="#00C2FF"
               desc={ftpSource}
             />
           ) : (
@@ -135,7 +135,7 @@ export default async function MobileProfilePage() {
       <div style={{ marginBottom: 16 }}>
         <SectionLabel>This week</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <MetricCard value={String(workoutsThisWeek)} label="Workouts planned" color="#f1f5f9" />
+          <MetricCard value={String(workoutsThisWeek)} label="Workouts planned" color="#FF5A1F" />
           {currentPhase && (
             <MetricCard
               value={currentPhase}

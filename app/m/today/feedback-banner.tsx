@@ -47,9 +47,11 @@ interface Props {
   workoutCategory: string;
   date: string;
   avgHr?: number | null;
+  /** True when ICU confirms workout was completed. False = workout is planned (banner shows proactively). */
+  completed?: boolean;
 }
 
-export default function FeedbackBanner({ workoutTitle, workoutCategory, date, avgHr }: Props) {
+export default function FeedbackBanner({ workoutTitle, workoutCategory, date, avgHr, completed = false }: Props) {
   const [rpe, setRpe]           = useState<number | null>(null);
   const [note, setNote]         = useState("");
   const [state, setState]       = useState<"idle" | "sending" | "done">("idle");
@@ -134,7 +136,7 @@ export default function FeedbackBanner({ workoutTitle, workoutCategory, date, av
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", marginBottom: 4, letterSpacing: "-0.3px" }}>
-            ✓ Workout complete!
+            {completed ? "✓ Workout complete!" : "📝 Rate today's workout"}
           </div>
           <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.4 }}>
             {workoutTitle.length > 34 ? workoutTitle.slice(0, 32) + "…" : workoutTitle}

@@ -187,16 +187,15 @@ export default async function MobileTodayPage() {
       {/* Hero header */}
       <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
 
-      {/* Post-ride feedback banner — shows when any workout completed today,
-          including non-system workouts (Zwift suggestions, free rides, etc.) */}
-      {(todayStatus === "completed" || todayStatus === "bonus") && (
-        <FeedbackBanner
-          workoutTitle={todayWorkout.title}
-          workoutCategory={todayWorkout.type ?? ""}
-          date={todayStr}
-          avgHr={todayAvgHr}
-        />
-      )}
+      {/* Feedback banner — always visible when there's a workout today.
+          User can rate before or after riding; coach reads it when building next plan. */}
+      <FeedbackBanner
+        workoutTitle={todayWorkout.title}
+        workoutCategory={todayWorkout.type ?? ""}
+        date={todayStr}
+        avgHr={todayAvgHr}
+        completed={todayStatus === "completed" || todayStatus === "bonus"}
+      />
 
       {/* Main workout card */}
       <MobileWorkoutCard
