@@ -6,6 +6,7 @@ import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import SignOutButton from "./sign-out-button";
+import { ThemeToggleButton } from "./theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -331,6 +332,9 @@ export default async function MobileProfilePage() {
             </div>
             <ChevronRight />
           </a>
+          <div style={{ borderBottom: "1px solid var(--m-border)" }}>
+            <ThemeToggleButton />
+          </div>
           <SignOutButton />
         </div>
       </div>

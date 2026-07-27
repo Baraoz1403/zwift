@@ -5,6 +5,7 @@ import { useState, FormEvent } from "react";
 export default function MobileLoginScreen() {
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone]       = useState("");
   const [error, setError]       = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
 
@@ -16,7 +17,7 @@ export default function MobileLoginScreen() {
       const res  = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, phone: phone.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
@@ -181,6 +182,34 @@ export default function MobileLoginScreen() {
                 WebkitAppearance: "none" as const,
               }}
             />
+            <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 10, marginTop: 2 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
+                💬 Step 3 — WhatsApp (optional)
+              </div>
+              <input
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="WhatsApp number (e.g. +972 50 000 0000)"
+                className="m-input"
+                style={{
+                  width: "100%", padding: "15px 16px",
+                  background: "#f8fafc",
+                  border: "1px solid #e4e9f0",
+                  borderRadius: 4,
+                  color: "#0d1626",
+                  fontSize: 16,
+                  outline: "none",
+                  boxSizing: "border-box",
+                  fontFamily: "inherit",
+                  WebkitAppearance: "none" as const,
+                }}
+              />
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>
+                Get a post-ride summary on WhatsApp after each workout.
+              </div>
+            </div>
 
             {error && (
               <div style={{

@@ -145,7 +145,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
             WebkitTapHighlightColor: "transparent",
           }}>
             <Icon color={active ? ZO : muted} />
-            <span style={{ fontSize: 10, fontWeight: active ? 700 : 500, color: active ? ZO : muted }}>
+            <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? ZO : muted }}>
               {label}
             </span>
           </Link>

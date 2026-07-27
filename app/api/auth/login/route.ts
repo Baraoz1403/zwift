@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginToZwift, fetchOwnProfile, ZwiftAuthError, ZwiftApiError } from "@/lib/zwift";
 import { encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { kvGet } from "@/lib/kv";
+import { kvGet, kvSet } from "@/lib/kv";
 import { mirrorZwiftAuthToKv, storeRiderIdentity } from "@/lib/kv-plan-state";
 import { ensurePlanProvisioned } from "@/lib/plan-runner";
 
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
+  const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
 
   if (!email || !password) {
     return NextResponse.json(
@@ -38,6 +39,10 @@ export async function POST(req: NextRequest) {
       // when the live Zwift API call fails later (expired token, rate limit).
       if (athleteId) {
         storeRiderIdentity(athleteId, profile.firstName, profile.ftp).catch(() => {});
+        // Save optional WhatsApp phone number provided at login
+        if (phone) {
+          kvSet(`zwift:${athleteId}:whatsapp_phone`, phone).catch(() => {});
+        }
       }
     } catch {
       athleteId = undefined;
