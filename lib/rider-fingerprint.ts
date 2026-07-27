@@ -357,10 +357,27 @@ export function fingerprintToPromptSummary(fp: RiderFingerprint | null): string 
     }
   }
 
+  // ── Plan deviation pattern detection ──
+  const allNotes = fp.coachingNotes ?? [];
+  const deviationNotes = allNotes.filter(n => n.note.startsWith("[PLAN DEVIATION]"));
+  const recentDeviations = deviationNotes.filter(n => {
+    const daysAgo = (Date.now() - new Date(n.date).getTime()) / (1000 * 60 * 60 * 24);
+    return daysAgo <= 28;
+  });
+  if (recentDeviations.length >= 2) {
+    lines.push(
+      `\n⚠ PLAN ADHERENCE ALERT: ${recentDeviations.length} deviations from the plan in the last 28 days. ` +
+      "The athlete is regularly substituting their own sessions. " +
+      "ACTION REQUIRED: (1) Reduce structured session complexity; (2) Add one free-choice ride per week labelled 'Free Ride — your choice'; " +
+      "(3) Vary workout formats more aggressively to prevent boredom. " +
+      "Deviating athletes are telling you the plan doesn't fit their life — adapt it, don't repeat it."
+    );
+  }
+
   // ── Recent coaching notes from the rider ──
-  const recentNotes = (fp.coachingNotes ?? []).slice(-5);
+  const recentNotes = allNotes.slice(-6);
   if (recentNotes.length > 0) {
-    lines.push("\nRecent rider messages to coach:");
+    lines.push("\nRecent rider messages to coach (includes deviations):");
     for (const n of recentNotes) {
       lines.push(`  [${n.date}] "${n.note}"`);
     }
