@@ -90,7 +90,7 @@ export default function MobileLoginScreen() {
             n: "2",
             color: "#0ea5e9",
             title: "Connect Intervals.icu",
-            desc: "Free account. One API key. This is how workouts appear on your Zwift calendar automatically.",
+            desc: "Free account. One tap to connect — workouts appear on your Zwift calendar automatically.",
             icon: "🔗",
           },
           {
