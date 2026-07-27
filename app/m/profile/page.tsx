@@ -336,6 +336,20 @@ export default async function MobileProfilePage() {
             </div>
             <ChevronRight />
           </a>
+          <a
+            href="/m/legal"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "16px 18px", textDecoration: "none",
+              borderBottom: "1px solid var(--m-border)",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Legal</div>
+              <div style={{ fontSize: 15, color: "var(--m-muted-2)", marginTop: 3 }}>Terms of Service &amp; Privacy Policy</div>
+            </div>
+            <ChevronRight />
+          </a>
           <div style={{ borderBottom: "1px solid var(--m-border)" }}>
             <ThemeToggleButton />
           </div>
