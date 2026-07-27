@@ -1014,6 +1014,15 @@ export async function generateWeeklyPlan(params: {
    * With this, every description can reference the season narrative.
    */
   seasonContext?: string | null;
+  /**
+   * Pre-formatted performance context from lib/icu-performance-context.ts.
+   * Contains a 50/30/20-weighted summary of the athlete's last 30 ICU activities:
+   * avg TSS, power, HR, duration by recency group, plus behavioral patterns
+   * (active days, skip days, sport mix, weekly volume). When present, the AI
+   * uses this to calibrate TSS targets and session duration to what this rider
+   * can actually sustain — not generic textbook numbers.
+   */
+  icuPerformanceContext?: string | null;
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -1122,13 +1131,18 @@ export async function generateWeeklyPlan(params: {
   });
 
   // Build system prompt.
-  // Order: seasonContext (coaching brain) → WEEKLY_PLAN_SYSTEM_PROMPT → selectionContext → riderFingerprint
-  // The AI now has full control over workout selection — no force-merge.
+  // Order: seasonContext (coaching brain) → WEEKLY_PLAN_SYSTEM_PROMPT → selectionContext
+  //        → riderFingerprint → icuPerformanceContext (concrete historical data)
+  //
+  // icuPerformanceContext is last so it's closest to the model's actual attention
+  // window — it contains the most concrete, data-dense signal and should override
+  // vague textbook defaults when the two conflict.
   const systemPrompt =
     (params.seasonContext ? params.seasonContext + "\n\n" : "") +
     WEEKLY_PLAN_SYSTEM_PROMPT +
     (params.selectionContext ? "\n\n" + params.selectionContext : "") +
-    (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "");
+    (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "") +
+    (params.icuPerformanceContext ? "\n\n" + params.icuPerformanceContext : "");
 
   let resp: Response;
   try {

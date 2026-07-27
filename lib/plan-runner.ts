@@ -39,6 +39,7 @@ import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { getSeasonPlan, findSeasonWeek, seasonContextToPrompt } from "@/lib/season-plan";
+import { buildIcuPerformanceContext } from "@/lib/icu-performance-context";
 
 export { AiInsightsError };
 
@@ -234,16 +235,23 @@ export async function runWeeklyPlanGeneration(
   // rides) with proper rTSS / hrTSS, not just Zwift power rides. Falls back to
   // the Zwift FIT proxy automatically when ICU isn't connected or returns nothing.
   const icuCreds = await getIntervalsCredentials(athleteId);
+  // Fetch 90 days so we reliably capture 30 training activities even for athletes
+  // training 3x/week. The extra range costs nothing (ICU paginates on their side).
   const icuActivities =
     icuCreds?.icuId && icuCreds?.icuKey
       ? await fetchIcuActivities(
           icuCreds.icuKey,
           icuCreds.icuId,
-          new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
           new Date().toISOString().slice(0, 10),
         )
       : [];
   const trainingLoad = computeTrainingLoadFromIcu(icuActivities, rides, effectiveFtp ?? profile.ftp);
+
+  // Build weighted ICU performance context (50/30/20 recency weighting) for
+  // the AI prompt. This is the concrete historical data the AI uses to calibrate
+  // TSS targets, duration, and intensity — NOT just "hope the AI picks well."
+  const icuPerformanceContext = buildIcuPerformanceContext(icuActivities);
 
   const weekOf = opts.targetWeekOf ?? mondayOfCurrentWeek();
   const macroCycle = advanceMacroCycle(opts.incomingCycle ?? null, weekOf);
@@ -342,6 +350,7 @@ export async function runWeeklyPlanGeneration(
     riderFingerprint,
     selectionContext: selectionContextPrompt,
     seasonContext: seasonContext ?? undefined,
+    icuPerformanceContext: icuPerformanceContext || undefined,
   });
 
   // ── Save updated coaching state ───────────────────────────────────────────
