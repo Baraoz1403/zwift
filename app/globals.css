@@ -57,24 +57,24 @@ textarea:-webkit-autofill:focus {
      (.stat-card et al) already reference them rather than hardcoding
      colors, so this cascades consistently instead of needing a
      per-component pass. */
-  --bg: #f4f7fb;
+  --bg: #edf2f8;
   --bg-glow: none;
   --panel: #ffffff;
   --panel-solid: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --accent: #3b82f6;
-  --accent-2: #0f172a;
-  --accent-blue: #3b82f6;
-  --good: #1a8f4c;
-  --bad: #d6362a;
-  --border: rgba(15, 23, 42, 0.10);
-  --border-strong: rgba(15, 23, 42, 0.18);
-  --danger: #d6362a;
-  --radius: 8px; /* was 20px, then 12px - "reduce rounded corners everywhere", asked again */
-  --strip-height: 2.5px;   /* top accent strip on all cards — ONE place to change */
-  --shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(47,143,224,0.08);
-  --shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(47,143,224,0.15);
+  --text: #0d1626;
+  --muted: #5a6a80;
+  --accent: #2563eb;
+  --accent-2: #0d1626;
+  --accent-blue: #2563eb;
+  --good: #0d7a3e;
+  --bad: #c9311f;
+  --border: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --danger: #c9311f;
+  --radius: 14px;
+  --strip-height: 3px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.13), 0 4px 12px rgba(0,0,0,0.07);
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
@@ -102,17 +102,17 @@ textarea:-webkit-autofill:focus {
 }
 
 [data-mobile-theme="dark"] {
-  --m-bg:            #0a0f1a;
-  --m-card:          #111827;
-  --m-card-inner:    #0d1117;
-  --m-border:        #1e293b;
-  --m-text:          #f8fafc;
-  --m-text-2:        #c4d0e3;
-  --m-label:         #94a3b8;
-  --m-muted:         #64748b;
-  --m-muted-2:       #475569;
-  --m-nav-bg:        #0d1424;
-  --m-nav-inactive:  #4b5563;
+  --m-bg:            #0b1220;
+  --m-card:          #12203a;
+  --m-card-inner:    #0d1a2e;
+  --m-border:        #1e3050;
+  --m-text:          #f0f6ff;
+  --m-text-2:        #b8ceea;
+  --m-label:         #8aa4c8;
+  --m-muted:         #5a7498;
+  --m-muted-2:       #3d5470;
+  --m-nav-bg:        #0d1a2e;
+  --m-nav-inactive:  #4b6380;
   --m-icon-primary:  #0f2a4a;
   --m-icon-muted:    #1a1a2e;
   --m-icon-success:  #0f2a1a;
@@ -317,9 +317,9 @@ textarea {
 }
 
 .dashboard {
-  max-width: 1100px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0 24px 0;
+  padding: 0 36px 0;
 }
 
 .dashboard-header {
@@ -371,10 +371,10 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 900;
-  letter-spacing: -0.45px;
-  margin: 0 0 20px;
+  letter-spacing: -0.5px;
+  margin: 0 0 24px;
   color: #0f172a;
   text-shadow: 0 1px 3px rgba(15,23,42,0.08);
   /* Animated premium chip */
@@ -432,7 +432,7 @@ textarea {
 }
 
 .section {
-  margin-top: 52px;
+  margin-top: 64px;
 }
 
 .stat-grid {
@@ -513,7 +513,7 @@ textarea {
   border: 1px solid var(--border);
   border-top: none;
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 32px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
 }
@@ -544,14 +544,16 @@ textarea {
 
 .stat-card .label {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .stat-card .value {
-  font-size: 36px;
-  font-weight: 700;
+  font-size: 40px;
+  font-weight: 800;
   color: var(--accent);
-  margin-top: 6px;
+  margin-top: 8px;
+  letter-spacing: -1px;
 }
 
 /* Used for the rides-summary row (Rides/Total distance/Total time/Total
@@ -568,16 +570,17 @@ textarea {
 }
 
 .stat-grid-3 .stat-card {
-  padding: 14px 16px;
+  padding: 18px 20px;
 }
 
 .stat-grid-3 .label {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
 .stat-grid-3 .value {
-  font-size: 19px;
+  font-size: 22px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
@@ -593,16 +596,17 @@ textarea {
 }
 
 .stat-grid-6 .stat-card {
-  padding: 14px 16px;
+  padding: 18px 20px;
 }
 
 .stat-grid-6 .label {
-  font-size: 12px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
 .stat-grid-6 .value {
-  font-size: 19px;
+  font-size: 22px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
