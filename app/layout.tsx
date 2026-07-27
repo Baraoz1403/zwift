@@ -3,10 +3,10 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Zwift AI Coach",
-  description: "Personal AI training coach for your Zwift rides.",
+  title: "Volt AI",
+  description: "Your personal AI cycling coach.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Train" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Volt AI" },
 };
 
 export default function RootLayout({

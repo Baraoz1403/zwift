@@ -7,9 +7,9 @@ import MobileLoginScreen from "./mobile-login";
 import MobileIcuConnect from "./mobile-icu-connect";
 
 export const metadata: Metadata = {
-  title: "Zwift AI Coach",
+  title: "Volt AI",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Train" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Volt AI" },
 };
 
 export const viewport: Viewport = {
@@ -17,7 +17,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#f5f7fa",
+  themeColor: "#FF5A1F",
 };
 
 export default async function MobileLayout({ children }: { children: React.ReactNode }) {

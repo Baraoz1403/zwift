@@ -4,8 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
-const ZO = "#F2541B";
-const ZB = "#009CDF";
+const ZO = "#FF5A1F";
+const ZB = "#00C2FF";
 
 const TABS = [
   { href: "/tablet/today",   label: "Today",   icon: TodayIcon   },
@@ -89,7 +89,7 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.18em", color: ZB, textTransform: "uppercase" }}>
-              AI Coach
+              Volt AI
             </div>
             {firstName && (
               <div style={{ fontSize: 13, fontWeight: 600, color: nameTx, marginTop: 1 }}>

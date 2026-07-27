@@ -1,11 +1,11 @@
 {
-  "name": "Zwift AI Coach",
-  "short_name": "Train",
-  "description": "Your daily AI training workout",
+  "name": "Volt AI",
+  "short_name": "Volt AI",
+  "description": "Your personal AI cycling coach.",
   "start_url": "/m/today",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0D1117",
+  "theme_color": "#FF5A1F",
   "orientation": "portrait",
   "icons": [
     {

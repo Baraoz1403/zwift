@@ -79,9 +79,10 @@ textarea:-webkit-autofill:focus {
   --panel-solid: #ffffff;
   --text: #0d1626;
   --muted: #64748b;
-  --accent: #2563eb;
+  --accent: #FF5A1F;
   --accent-2: #0d1626;
   --accent-blue: #2563eb;
+  --accent-cyan: #00C2FF;
   --good: #16a34a;
   --bad: #dc2626;
   --border: rgba(15, 23, 42, 0.07);

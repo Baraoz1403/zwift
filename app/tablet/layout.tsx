@@ -8,9 +8,9 @@ import TabletSidebar from "./sidebar-nav";
 import MobileIcuConnect from "@/app/m/mobile-icu-connect";
 
 export const metadata: Metadata = {
-  title: "Zwift AI Coach — iPad",
+  title: "Volt AI — iPad",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Train" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Volt AI" },
 };
 
 export const viewport: Viewport = {
@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#f5f7fa",
+  themeColor: "#FF5A1F",
 };
 
 export default async function TabletLayout({ children }: { children: React.ReactNode }) {

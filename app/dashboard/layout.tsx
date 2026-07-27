@@ -81,7 +81,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </div>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 5 }}>
-                AI Training Coach
+                Volt AI
               </div>
               <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900, letterSpacing: "-0.6px", lineHeight: 1 }}>
                 {profile?.firstName ? `Welcome, ${profile.firstName}` : "Welcome"}

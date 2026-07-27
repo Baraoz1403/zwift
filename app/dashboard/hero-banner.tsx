@@ -5,7 +5,8 @@ import ConnectionsNavChip from "./connections-nav-chip";
 import LogoutButton from "./logout-button";
 
 // Unified accent palette - one source of truth for all slides
-const C = { cyan: "#00D4FF", purple: "#7C3AED", gold: "#F59E0B", pink: "#F43F5E" };
+// Volt AI: Power Orange + Cyan Electric + Carbon Black
+const C = { cyan: "#00C2FF", purple: "#FF5A1F", gold: "#F59E0B", pink: "#F43F5E" };
 
 const SLIDES = [
   {
@@ -328,7 +329,7 @@ export default function HeroBanner({ firstName }: { firstName?: string | null })
             <span style={{
               fontSize: 11.5, fontWeight: 800, letterSpacing: "0.15em",
               color: "rgba(248,250,252,0.92)", whiteSpace: "nowrap",
-            }}>AI TRAINING COACH</span>
+            }}>VOLT AI</span>
           </div>
           {firstName && (
             <span style={{ fontSize: 12.5, color: "rgba(248,250,252,0.42)", letterSpacing: "0.02em" }}>
