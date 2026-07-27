@@ -61,15 +61,17 @@ export function middleware(req: NextRequest) {
   }
 
   // ── Device auto-redirect on root "/" ─────────────────────────────────────
-  // Only redirect authenticated riders who hit exactly "/" — never redirect
-  // explicit deep-links so bookmarks / direct navigation always wins.
-  if (pathname === "/" && hasSession) {
+  // Redirect ALL visitors (authenticated or not) to the correct surface.
+  // Unauthenticated mobile/tablet users land on /m or /tablet which show
+  // the login screen. Unauthenticated desktop users land on /dashboard which
+  // the auth gate above then sends to /login.
+  if (pathname === "/") {
     const ua = req.headers.get("user-agent") ?? "";
     const device = detectDevice(ua);
 
     const dest =
       device === "phone"   ? "/m" :
-      device === "tablet"  ? "/tablet" :
+      device === "tablet"  ? "/tablet/today" :
       "/dashboard";
 
     return NextResponse.redirect(new URL(dest, req.url));
