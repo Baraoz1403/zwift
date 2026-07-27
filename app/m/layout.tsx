@@ -54,7 +54,8 @@ export default async function MobileLayout({ children }: { children: React.React
         data-mobile-shell
         data-mobile-theme={theme}
         style={{
-          minHeight: "100dvh",
+          height: "100dvh",
+          overflow: "hidden",
           background: "var(--m-bg)",
           display: "flex",
           flexDirection: "column",
