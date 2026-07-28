@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type {
   RiderTrainingProfile, TrainingGoal, DaysRange,
   SessionLength, TrainingEnvironment, Sport, EventType, Gender,
@@ -79,6 +79,15 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   const [eventEndDate, setEventEndDate] = useState<string>(initialProfile?.eventEndDate ?? "");
   const [eventType, setEventType]       = useState<EventType | "">(initialProfile?.eventType ?? "");
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [backHref, setBackHref]         = useState("/m/profile");
+
+  // On tablet (/tablet/profile/edit) the back button must go to /tablet/profile.
+  // Using useEffect avoids SSR/hydration mismatch (server always returns /m/profile).
+  useEffect(() => {
+    if (window.location.pathname.startsWith("/tablet")) {
+      setBackHref("/tablet/profile");
+    }
+  }, []);
 
   const isEventGoal    = goals.includes("event");
   const isMultiDayEvent = eventType && MULTI_DAY_TYPES.includes(eventType as EventType);
@@ -138,7 +147,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-        <a href="/m/profile" style={{
+        <a href={backHref} style={{
           width: 40, height: 40, borderRadius: 4,
           background: "var(--m-card)", border: "1px solid var(--m-border)",
           display: "flex", alignItems: "center", justifyContent: "center",

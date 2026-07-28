@@ -115,7 +115,7 @@ export default async function TabletLayout({ children }: { children: React.React
         }}>
           {/* Content area — overflow:hidden so each page manages its own scroll.
               Pages use height:100% + internal overflowY:auto to pin their headers. */}
-          <div className="tablet-scroll-area" style={{ flex: 1, overflow: "hidden" }}>
+          <div className="tablet-scroll-area" style={{ flex: 1, height: 0, overflow: "hidden" }}>
             {children}
           </div>
 
