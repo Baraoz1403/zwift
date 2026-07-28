@@ -47,7 +47,14 @@ export async function POST(req: NextRequest) {
   }
 
   const athleteName = (athlete.name as string | undefined) || (athlete.email as string | undefined) || "Intervals.icu user";
-  const athleteId = String(athlete.id ?? "0");
+  // Normalize ICU athlete ID: must be a pure numeric string for URL paths like
+  // /athlete/{id}/activities. Intervals.icu occasionally returns non-numeric IDs
+  // (e.g. "a600") for certain account types — fall back to "me" which always
+  // resolves correctly against the personal API key.
+  const rawId = athlete.id;
+  const athleteId = (rawId != null && /^\d+$/.test(String(rawId).trim()))
+    ? String(rawId).trim()
+    : "me";
 
   const isSecure = process.env.NODE_ENV === "production";
   const cookieOpts = {

@@ -65,13 +65,23 @@ export default async function TabletLayout({ children }: { children: React.React
 
   return (
     <>
-      <style>{`html, body { background-color: ${bodyBg} !important; margin: 0; }`}</style>
+      <style>{`
+        html, body {
+          background-color: ${bodyBg} !important;
+          margin: 0;
+          overflow: hidden !important;
+          position: fixed !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+      `}</style>
 
       <div
         data-mobile-shell
         data-mobile-theme={theme}
         style={{
-          minHeight: "100dvh",
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
           background: "var(--m-bg)",
           display: "flex",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
@@ -91,7 +101,7 @@ export default async function TabletLayout({ children }: { children: React.React
         <div className="tablet-main" style={{
           flex: 1,
           marginLeft: 220,
-          height: "100dvh",
+          height: "100%",
           overflow: "hidden",           /* outer shell never scrolls */
           paddingTop: "env(safe-area-inset-top, 0px)",
           display: "flex",
