@@ -78,25 +78,31 @@ export default async function MobileProfilePage() {
   };
 
   return (
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+      {/* Pinned header — outside scroll, never moves */}
+      <div style={{
+        flexShrink: 0,
+        padding: "16px 16px 14px",
+        background: "var(--m-card)",
+        borderBottom: "1px solid var(--m-border)",
+      }}>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
+          Profile
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+          {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
+        </div>
+      </div>
+
     <div style={{
-      height: "100%",
+      flex: 1,
       overflowY: "auto",
       overscrollBehavior: "contain",
     }}>
     <div style={{ padding: "16px 16px 0" }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 15, color: "var(--m-muted-2)", fontWeight: 600, letterSpacing: ".4px", textTransform: "uppercase" }}>
-          Athlete
-        </div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-.4px", marginTop: 2 }}>
-          {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Profile & Stats"}
-        </div>
-        {zwiftProfile?.firstName && (
-          <div style={{ fontSize: 17, color: "var(--m-muted-2)", marginTop: 4 }}>Profile &amp; Stats</div>
-        )}
-      </div>
+      <div style={{ marginBottom: 20 }} />
 
       {/* Fitness metrics */}
       <div style={{ marginBottom: 16 }}>
@@ -374,6 +380,7 @@ export default async function MobileProfilePage() {
 
     </div>
     </div>
+  </div>
   );
 }
 
