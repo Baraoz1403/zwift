@@ -168,8 +168,6 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
         // element as a real scroll container. Falls back to "100%" until measured.
         height: scrollH != null ? scrollH : "100%",
         overflowY: "scroll",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        WebkitOverflowScrolling: "touch" as any,
         overscrollBehavior: "contain",
       }}
     >
