@@ -13,14 +13,18 @@ export default async function MobileProfileEditPage() {
   const state = await getStoredAthleteState(String(session.athleteId));
   const profile = state.riderProfile ?? null;
 
-  // Use the same flex pattern as all other pages: outer height:100% flex column,
-  // inner flex:1 overflowY:auto. Direct height:100% + overflowY:auto is unreliable
-  // on Safari/iOS when the parent height comes from a flex algorithm (not explicit px).
+  // position:absolute + inset:0 fills the nearest positioned ancestor exactly —
+  // bypasses the Safari height:100% / flex resolution bug entirely.
+  // On mobile: the nearest positioned ancestor is the layout's position:absolute content div.
+  // On tablet: the nearest positioned ancestor is tablet-scroll-area (position:relative added in layout.tsx).
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", minHeight: 0 }}>
-        <MobileProfileEditor initialProfile={profile} />
-      </div>
+    <div style={{
+      position: "absolute",
+      inset: 0,
+      overflowY: "auto",
+      overscrollBehavior: "contain",
+    }}>
+      <MobileProfileEditor initialProfile={profile} />
     </div>
   );
 }

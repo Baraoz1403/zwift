@@ -89,7 +89,9 @@ export function buildFeedbackMessage(params: {
   const name = firstName ?? "Athlete";
   const dur  = durationMin > 0 ? `${durationMin} min` : "";
   const hr   = avgHr && avgHr > 0 ? ` · avg HR ${Math.round(avgHr)} bpm` : "";
-  const link = `${baseUrl}/m/today`;
+  // Use root URL so server-side device detection routes iPad → /tablet/today,
+  // iPhone → /m/today. Avoids stranding iPad users in the mobile layout.
+  const link = `${baseUrl}/`;
 
   return [
     `✅ *${name}, great work!*`,
