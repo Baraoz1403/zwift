@@ -88,7 +88,7 @@ export default function CoachChat() {
       </div>
 
       {/* Messages area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
+      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "0 16px" }}>
 
         {/* Empty state: quick actions */}
         {isEmpty && (

@@ -6,6 +6,7 @@ import { fetchOwnProfile, ZwiftApiError } from "@/lib/zwift";
 import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import TabletSidebar from "./sidebar-nav";
 import MobileIcuConnect from "@/app/m/mobile-icu-connect";
+import IOSScrollFix from "@/app/ios-scroll-fix";
 
 export const metadata: Metadata = {
   title: "Volt AI — iPad",
@@ -91,6 +92,8 @@ export default async function TabletLayout({ children }: { children: React.React
           overscrollBehavior: "none",
         }}
       >
+        {/* Stops iOS Safari viewport rubber-band bounce */}
+        <IOSScrollFix />
         {/* Fixed sidebar */}
         <TabletSidebar firstName={firstName} />
 

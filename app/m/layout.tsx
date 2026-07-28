@@ -5,6 +5,7 @@ import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import MobileNav from "./mobile-nav";
 import MobileLoginScreen from "./mobile-login";
 import MobileIcuConnect from "./mobile-icu-connect";
+import IOSScrollFix from "@/app/ios-scroll-fix";
 
 export const metadata: Metadata = {
   title: "Volt AI",
@@ -91,6 +92,8 @@ export default async function MobileLayout({ children }: { children: React.React
 
         {/* MobileNav: already position:fixed at bottom */}
         <MobileNav />
+        {/* Stops iOS Safari viewport rubber-band bounce */}
+        <IOSScrollFix />
       </div>
     </>
   );
