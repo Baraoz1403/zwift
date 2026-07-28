@@ -105,6 +105,7 @@ export default async function TabletWeekPage() {
           prevWeekHref={null}
           nextWeekHref={null}
           isCurrentWeek={true}
+          hideNav={true}
         />
       </div>
     </div>

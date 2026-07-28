@@ -72,9 +72,11 @@ interface Props {
   prevWeekHref: string | null;
   nextWeekHref: string | null;
   isCurrentWeek: boolean;
+  /** On tablet, TabletPageHeader already shows the week range — hide WeekNav. */
+  hideNav?: boolean;
 }
 
-export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, prevWeekHref, nextWeekHref, isCurrentWeek }: Props) {
+export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, prevWeekHref, nextWeekHref, isCurrentWeek, hideNav = false }: Props) {
   // Auto-expand today by default, or the first completed workout if today has no plan
   const todayWorkout = workouts.find(w => w.date === today);
   const firstCompleted = Object.entries(weekStatus).find(([, s]) => s === "completed")?.[0];
@@ -88,7 +90,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
   if (workouts.length === 0) {
     return (
       <div style={{ padding: "0 0 24px" }}>
-        <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />
+        {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: "var(--m-text)", marginBottom: 8 }}>
@@ -110,7 +112,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
   return (
     <div style={{ padding: "0 0 0" }}>
 
-      <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />
+      {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
 
       <div style={{ padding: "0 16px" }}>
 

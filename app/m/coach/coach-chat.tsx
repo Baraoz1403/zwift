@@ -17,7 +17,7 @@ const QUICK_ACTIONS = [
   { label: "📈  Raise my FTP", message: "What's the best strategy to increase my FTP over the next 8 weeks?" },
 ];
 
-export default function CoachChat() {
+export default function CoachChat({ firstName }: { firstName?: string | null }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,12 +78,12 @@ export default function CoachChat() {
     }}>
 
       {/* Header */}
-      <div style={{ padding: "16px 20px 12px", flexShrink: 0 }}>
-        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".4px", textTransform: "uppercase" }}>
+      <div style={{ padding: "16px 20px 12px", flexShrink: 0, borderBottom: "1px solid var(--m-border)", background: "var(--m-card)" }}>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
           AI Assistant
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-.4px", marginTop: 2 }}>
-          Coach Chat
+        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+          {firstName ?? "Athlete"}
         </div>
       </div>
 

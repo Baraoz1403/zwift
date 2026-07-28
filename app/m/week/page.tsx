@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
-import { fetchActivities } from "@/lib/zwift";
+import { fetchActivities, fetchOwnProfile } from "@/lib/zwift";
 import WeekView from "./week-view";
 
 function addDays(isoDate: string, days: number): string {
@@ -73,12 +73,15 @@ export default async function MobileWeekPage({
 
   const isCurrentWeek = weekOf === currentWeek;
 
-  // Parallel: plan + credentials
+  // Parallel: plan + credentials + athlete name
   const cookieKeyEarly = cookieStore.get("zwift_intervals_key")?.value;
-  const [plan, earlyKvCreds] = await Promise.all([
+  const [plan, earlyKvCreds, zwiftProfile, cachedIdentity] = await Promise.all([
     getCachedPlan(athleteId, weekOf),
     cookieKeyEarly ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
+    fetchOwnProfile(session.accessToken).catch(() => null),
+    getRiderIdentity(athleteId).catch(() => null),
   ]);
+  const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
 
   const todayStr = new Date().toISOString().slice(0, 10);
   const dateMap = buildDateMap(weekOf);
@@ -127,22 +130,36 @@ export default async function MobileWeekPage({
   }
 
   return (
-    <div style={{
-      height: "100%",
-      overflowY: "auto",
-      overscrollBehavior: "contain",
-    }}>
-      <WeekView
-        workouts={workouts}
-        weekOf={weekOf}
-        weekRange={formatWeekRange(weekOf)}
-        today={todayStr}
-        summary={plan?.summary ?? null}
-        weekStatus={weekStatus}
-        prevWeekHref={prevWeekHref}
-        nextWeekHref={nextWeekHref}
-        isCurrentWeek={isCurrentWeek}
-      />
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Pinned name header */}
+      <div style={{
+        flexShrink: 0,
+        padding: "16px 16px 14px",
+        background: "var(--m-card)",
+        borderBottom: "1px solid var(--m-border)",
+      }}>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
+          This week
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+          {firstName ?? "Athlete"}
+        </div>
+      </div>
+
+      {/* Scrollable week view */}
+      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
+        <WeekView
+          workouts={workouts}
+          weekOf={weekOf}
+          weekRange={formatWeekRange(weekOf)}
+          today={todayStr}
+          summary={plan?.summary ?? null}
+          weekStatus={weekStatus}
+          prevWeekHref={prevWeekHref}
+          nextWeekHref={nextWeekHref}
+          isCurrentWeek={isCurrentWeek}
+        />
+      </div>
     </div>
   );
 }

@@ -37,6 +37,9 @@ export default function MobileLoginScreen() {
     border: "1px solid #1e293b",
     borderRadius: 12,
     color: "#f8fafc",
+    // iOS: autofill overrides `color` — these two overrides win
+    WebkitTextFillColor: "#f8fafc",
+    WebkitBoxShadow: "0 0 0px 1000px #111827 inset",
     fontSize: 17,
     outline: "none",
     boxSizing: "border-box",

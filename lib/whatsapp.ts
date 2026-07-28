@@ -96,7 +96,7 @@ export function buildFeedbackMessage(params: {
     ``,
     `*${workoutTitle}* ${dur}${hr}`,
     ``,
-    `How did it feel? Rate your session (RPE 1–10) so your AI coach can personalise next week:`,
+    `How hard was it? Rate 1–5 (1 = Easy, 5 = Max) so your coach can personalise next week:`,
     link,
   ].join("\n");
 }

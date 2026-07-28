@@ -18,11 +18,11 @@ import { useState } from "react";
 const ZO = "#F2541B";
 
 const RPE_ITEMS = [
-  { score: 1, label: "Very easy",  sub: "Could go much harder",   color: "#10b981", emoji: "😌" },
-  { score: 2, label: "Easy",       sub: "Comfortable effort",      color: "#22c55e", emoji: "🙂" },
-  { score: 3, label: "Moderate",   sub: "Challenging, controlled", color: "#eab308", emoji: "😤" },
-  { score: 4, label: "Hard",       sub: "Pushed to complete",      color: "#f97316", emoji: "😓" },
-  { score: 5, label: "Max effort", sub: "Nothing left",            color: "#ef4444", emoji: "🔥" },
+  { score: 1, label: "Easy",     sub: "Could go much harder",   color: "#10b981", emoji: "😌" },
+  { score: 2, label: "Light",    sub: "Comfortable effort",      color: "#22c55e", emoji: "🙂" },
+  { score: 3, label: "Moderate", sub: "Challenging, controlled", color: "#eab308", emoji: "😤" },
+  { score: 4, label: "Hard",     sub: "Pushed to complete",      color: "#f97316", emoji: "😓" },
+  { score: 5, label: "Max",      sub: "Nothing left",            color: "#ef4444", emoji: "🔥" },
 ];
 
 const DEVIATION_REASONS = [
@@ -331,7 +331,7 @@ export default function FeedbackBanner({
               <span style={{ fontSize: 22, lineHeight: 1 }}>{item.emoji}</span>
               <span style={{ fontSize: 17, fontWeight: 900, color: active ? item.color : "var(--m-text)", lineHeight: 1 }}>{item.score}</span>
               <span style={{ fontSize: 9, fontWeight: 700, color: active ? item.color : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", textAlign: "center", lineHeight: 1.2 }}>
-                {item.label.split(" ")[0]}
+                {item.label}
               </span>
             </button>
           );
