@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type {
   RiderTrainingProfile, TrainingGoal, DaysRange,
   SessionLength, TrainingEnvironment, Sport, EventType, Gender,
@@ -81,6 +81,23 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "done" | "error">("idle");
   const [backHref, setBackHref]         = useState("/m/profile");
 
+  // JS-measured scroll height — bypasses all CSS height:100% / flex resolution
+  // issues on iOS Safari. ResizeObserver reads the parent's rendered clientHeight
+  // (a real pixel value the browser has already committed) and sets it explicitly.
+  // This fires synchronously after mount, before the user can try to scroll.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollH, setScrollH] = useState<number | null>(null);
+
+  useEffect(() => {
+    const parent = scrollRef.current?.parentElement;
+    if (!parent) return;
+    const update = () => setScrollH(parent.clientHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(parent);
+    return () => ro.disconnect();
+  }, []);
+
   // On tablet (/tablet/profile/edit) the back button must go to /tablet/profile.
   // Using useEffect avoids SSR/hydration mismatch (server always returns /m/profile).
   useEffect(() => {
@@ -143,6 +160,19 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   };
 
   return (
+    <div
+      ref={scrollRef}
+      style={{
+        // scrollH is set by ResizeObserver to the parent's actual clientHeight.
+        // This gives iOS Safari an unambiguous pixel height so it treats this
+        // element as a real scroll container. Falls back to "100%" until measured.
+        height: scrollH != null ? scrollH : "100%",
+        overflowY: "scroll",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        WebkitOverflowScrolling: "touch" as any,
+        overscrollBehavior: "contain",
+      }}
+    >
     <div style={{ padding: "16px 16px 40px" }}>
 
       {/* Header */}
@@ -418,7 +448,8 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
           Profile updated. Your next plan will reflect these changes.
         </div>
       )}
-    </div>
+    </div> {/* end padding wrapper */}
+    </div> {/* end scroll container */}
   );
 }
 

@@ -128,7 +128,16 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      // ── 4. Check if we already sent feedback for this activity ──────────
+      // ── 4. Check if we already sent feedback for this activity or today ──
+      // Check date-level flag first (set by both cron and FeedbackTrigger/webhook),
+      // then the activity-level flag. If either is set, skip to prevent duplicates.
+      const today = new Date().toISOString().slice(0, 10);
+      const dateFlagKey = `zwift:${athleteId}:fb_sent:${today}`;
+      const dateSent = await kvGet(dateFlagKey).catch(() => null);
+      if (dateSent) {
+        results.push({ athleteId, status: "already_sent", activityId: foundActivity.id });
+        continue;
+      }
       const flagKey = `zwift:${athleteId}:fb_act:${foundActivity.id}`;
       const alreadySent = await kvGet(flagKey).catch(() => null);
       if (alreadySent) {

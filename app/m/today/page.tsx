@@ -293,9 +293,9 @@ function TodayHero({
   });
 
   const statusBadge = statusDone
-    ? { text: "Done ✓",  color: "#16a34a", bg: "#dcfce7" }
+    ? { text: "✓ Done",  color: "#15803d", bg: "#dcfce7", border: "1px solid #bbf7d0" }
     : statusMissed
-    ? { text: "Missed",  color: "#dc2626", bg: "#fee2e2" }
+    ? { text: "Missed",  color: "#dc2626", bg: "#fee2e2", border: "1px solid #fecaca" }
     : null;
 
   return (
@@ -336,9 +336,10 @@ function TodayHero({
         <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
         {statusBadge && (
           <span style={{
-            fontSize: 11, fontWeight: 700, borderRadius: 3,
+            fontSize: 13, fontWeight: 800, borderRadius: 4,
             color: statusBadge.color, background: statusBadge.bg,
-            padding: "2px 8px",
+            border: statusBadge.border,
+            padding: "4px 12px", letterSpacing: ".01em",
           }}>{statusBadge.text}</span>
         )}
       </div>

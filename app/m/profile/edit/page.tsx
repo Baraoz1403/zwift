@@ -13,19 +13,9 @@ export default async function MobileProfileEditPage() {
   const state = await getStoredAthleteState(String(session.athleteId));
   const profile = state.riderProfile ?? null;
 
-  // position:absolute + inset:0 fills the nearest positioned ancestor exactly —
-  // bypasses the Safari height:100% / flex resolution bug entirely.
-  // On mobile: the nearest positioned ancestor is the layout's position:absolute content div.
-  // On tablet: the nearest positioned ancestor is tablet-scroll-area (position:relative added in layout.tsx).
-  // inset:0 shorthand not supported on iOS Safari < 14.5 — use explicit props.
-  return (
-    <div style={{
-      position: "absolute",
-      top: 0, left: 0, right: 0, bottom: 0,
-      overflowY: "auto",
-      overscrollBehavior: "contain",
-    }}>
-      <MobileProfileEditor initialProfile={profile} />
-    </div>
-  );
+  // The scroll container is now managed entirely by MobileProfileEditor itself.
+  // It uses a ResizeObserver to measure the parent's clientHeight and sets an
+  // explicit pixel height — bypassing all CSS height:100% / flex resolution
+  // ambiguity on iOS Safari. No wrapper needed here.
+  return <MobileProfileEditor initialProfile={profile} />;
 }

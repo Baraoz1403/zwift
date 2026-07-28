@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import type { WeeklyWorkout } from "@/lib/ai";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
 import { isRunWorkout } from "@/lib/zwo";
@@ -77,6 +78,10 @@ interface Props {
 }
 
 export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, prevWeekHref, nextWeekHref, isCurrentWeek, hideNav = false }: Props) {
+  const pathname = usePathname();
+  // "View full workout" links to the correct layout based on route
+  const todayHref = pathname.startsWith("/tablet") ? "/tablet/today" : "/m";
+
   // Auto-expand today by default, or the first completed workout if today has no plan
   const todayWorkout = workouts.find(w => w.date === today);
   const firstCompleted = Object.entries(weekStatus).find(([, s]) => s === "completed")?.[0];
@@ -347,7 +352,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
 
                   {/* CTA for today */}
                   {isToday && (
-                    <a href="/m" style={{
+                    <a href={todayHref} style={{
                       display: "block", marginTop: 12, textAlign: "center",
                       padding: "12px", borderRadius: 4,
                       background: colors.accent, color: "#fff",

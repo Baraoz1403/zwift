@@ -133,7 +133,9 @@ export function computeWeekStatus(
   for (const date of weekDates) {
     const workout = workouts.find(w => w.date === date);
     const dayActs = actsByDate.get(date) ?? [];
-    const hasPassed = date <= today;
+    // date < today: only mark as missed for PAST days, not today.
+    // Today with no ICU activity yet = "planned" (the day isn't over).
+    const hasPassed = date < today;
 
     if (!workout || isRestWorkout(workout)) {
       // Rest day
