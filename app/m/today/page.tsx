@@ -214,19 +214,18 @@ export default async function MobileTodayPage() {
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
-        {/* Feedback banner — only after workout is confirmed completed or bonus */}
-        {(todayStatus === "completed" || todayStatus === "bonus") && (
-          <FeedbackBanner
-            workoutTitle={todayWorkout.title}
-            workoutCategory={todayWorkout.type ?? ""}
-            date={todayStr}
-            avgHr={todayAvgHr}
-            completed={true}
-            plannedDurationMin={todayWorkout.durationMin}
-            actualActivityName={todayActivityName}
-            actualDurationMin={todayActivityDurationMin}
-          />
-        )}
+        {/* Feedback banner — always shown for today's workout.
+            ICU sync can lag; don't wait for "completed" status. */}
+        <FeedbackBanner
+          workoutTitle={todayWorkout.title}
+          workoutCategory={todayWorkout.type ?? ""}
+          date={todayStr}
+          avgHr={todayAvgHr}
+          completed={todayStatus === "completed" || todayStatus === "bonus"}
+          plannedDurationMin={todayWorkout.durationMin}
+          actualActivityName={todayActivityName}
+          actualDurationMin={todayActivityDurationMin}
+        />
 
         {/* Main workout card */}
         <MobileWorkoutCard

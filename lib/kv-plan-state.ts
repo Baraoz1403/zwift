@@ -299,12 +299,21 @@ export async function getAthletePhone(athleteId: string): Promise<string | null>
  */
 export async function findAthleteByIcuId(icuAthleteId: string): Promise<string | null> {
   if (!kvAvailable() || !icuAthleteId) return null;
+  // Normalize ICU IDs for comparison: strip leading letter prefix so that
+  // "i12345" (webhook format) matches "12345" (stored format) and vice versa.
+  // Also handles "a600" → "600" matching "a600" → "600".
+  const normalize = (id: string) => id.replace(/^[a-zA-Z]+/, "") || id;
+  const normalizedIncoming = normalize(icuAthleteId);
   try {
     const raw = await kvGet("zwift:athletes");
     const registry: string[] = raw ? JSON.parse(raw) : [];
     for (const athleteId of registry) {
       const stored = await kvGet(`zwift:${athleteId}:icu_id`);
-      if (stored === icuAthleteId) return athleteId;
+      if (!stored) continue;
+      // Exact match OR normalized match (e.g. "i12345" matches "12345")
+      if (stored === icuAthleteId || normalize(stored) === normalizedIncoming) {
+        return athleteId;
+      }
     }
     return null;
   } catch {

@@ -26,6 +26,25 @@ const INTERVALS_API = "https://intervals.icu/api/v1";
 const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/oauth/token";
 
 /**
+ * Resolve an ICU athlete ID for use in URL paths.
+ *
+ * Intervals.icu athlete IDs returned by their API can be:
+ *   - A pure numeric string: "12345"   → use as-is
+ *   - A prefixed string:     "i12345"  → numeric part works in URLs
+ *   - A non-standard string: "a600"    → API rejects; use "me" instead
+ *   - "0" or absent               → use "me"
+ *
+ * "me" always resolves correctly when using a personal API key.
+ * This function is the single point of truth for ID → URL resolution.
+ */
+function resolveIcuId(athleteId: string | undefined): string {
+  if (!athleteId || athleteId === "0" || athleteId === "me") return "me";
+  // "i12345" → strip the "i" prefix → numeric part works in ICU API URLs
+  const stripped = athleteId.replace(/^[a-zA-Z]+/, "");
+  return /^\d+$/.test(stripped) ? stripped : "me";
+}
+
+/**
  * Build the Authorization header for an ICU API call.
  *
  * Accepts two credential forms:
@@ -370,7 +389,7 @@ export async function fetchIcuActivities(
   newest: string,
 ): Promise<IcuActivity[]> {
   try {
-    const url = `${INTERVALS_API}/athlete/${athleteId}/activities?oldest=${oldest}&newest=${newest}`;
+    const url = `${INTERVALS_API}/athlete/${resolveIcuId(athleteId)}/activities?oldest=${oldest}&newest=${newest}`;
     const res = await fetch(url, {
       headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
       signal: AbortSignal.timeout(12000),
