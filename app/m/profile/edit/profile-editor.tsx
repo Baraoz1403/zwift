@@ -437,7 +437,7 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
         </div>
       )}
     </div> {/* end padding wrapper */}
-    </div> {/* end scroll container */}
+    </div>
   );
 }
 
