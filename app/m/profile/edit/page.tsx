@@ -13,5 +13,9 @@ export default async function MobileProfileEditPage() {
   const state = await getStoredAthleteState(String(session.athleteId));
   const profile = state.riderProfile ?? null;
 
-  return <MobileProfileEditor initialProfile={profile} />;
+  return (
+    <div style={{ height: "100%", overflowY: "auto", overscrollBehavior: "contain" }}>
+      <MobileProfileEditor initialProfile={profile} />
+    </div>
+  );
 }
