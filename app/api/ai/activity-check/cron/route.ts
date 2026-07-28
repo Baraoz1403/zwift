@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
       }
 
       // ── 6. Find planned workout title (if any) ──────────────────────────
-      const today = new Date().toISOString().slice(0, 10);
+      // `today` is already declared above (line ~134); reuse it here.
       const weekOf = mondayOfCurrentWeek();
       const plan = await getCachedPlan(athleteId, weekOf).catch(() => null);
       const planned = plan?.workouts?.find(w => w.date === today);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type {
   RiderTrainingProfile, TrainingGoal, DaysRange,
   SessionLength, TrainingEnvironment, Sport, EventType, Gender,
@@ -81,22 +81,9 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
   const [saveState, setSaveState]       = useState<"idle" | "saving" | "done" | "error">("idle");
   const [backHref, setBackHref]         = useState("/m/profile");
 
-  // JS-measured scroll height — bypasses all CSS height:100% / flex resolution
-  // issues on iOS Safari. ResizeObserver reads the parent's rendered clientHeight
-  // (a real pixel value the browser has already committed) and sets it explicitly.
-  // This fires synchronously after mount, before the user can try to scroll.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollH, setScrollH] = useState<number | null>(null);
-
-  useEffect(() => {
-    const parent = scrollRef.current?.parentElement;
-    if (!parent) return;
-    const update = () => setScrollH(parent.clientHeight);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(parent);
-    return () => ro.disconnect();
-  }, []);
+  // No scroll-height state needed — the outer div uses position:absolute with
+  // explicit edges, which gives iOS Safari a definite clientHeight without any
+  // CSS height:100% ambiguity.
 
   // On tablet (/tablet/profile/edit) the back button must go to /tablet/profile.
   // Using useEffect avoids SSR/hydration mismatch (server always returns /m/profile).
@@ -161,12 +148,15 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
 
   return (
     <div
-      ref={scrollRef}
       style={{
-        // scrollH is set by ResizeObserver to the parent's actual clientHeight.
-        // This gives iOS Safari an unambiguous pixel height so it treats this
-        // element as a real scroll container. Falls back to "100%" until measured.
-        height: scrollH != null ? scrollH : "100%",
+        // position:absolute with explicit edges fills the nearest positioned ancestor
+        // (mobile layout content div OR tablet-scroll-area), giving iOS Safari a
+        // definite clientHeight. This is the most reliable cross-device scroll fix.
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         overflowY: "scroll",
         overscrollBehavior: "contain",
       }}

@@ -3,8 +3,8 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { fetchOwnProfile } from "@/lib/zwift";
-import { computeWeekStatus } from "@/lib/activity-sync";
+import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
+import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { TabletPageHeader } from "../tablet-page-header";
@@ -98,13 +98,35 @@ export default async function TabletTodayPage() {
     const cookieId = cookieStore.get("zwift_intervals_id")?.value;
     const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
     const icuId  = cookieId  ?? earlyKvCreds?.icuId;
-    if (icuKey && icuId) {
-      const activities = await Promise.race([
-        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
-      ]);
-      weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
-    }
+
+    // Fetch both ICU and Zwift directly (same as mobile today page).
+    // ICU may lag behind real-time; Zwift direct ensures rides show as "Done"
+    // immediately without waiting for the ICU sync to run.
+    const [icuActivities, zwiftRaw] = await Promise.all([
+      (icuKey && icuId)
+        ? Promise.race([
+            fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+            new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
+          ]).catch(() => [])
+        : Promise.resolve([]),
+      Promise.race([
+        fetchActivities(session.accessToken, session.athleteId!, 50),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 5000)),
+      ]).catch(() => []),
+    ]);
+
+    const zwiftAsIcu = zwiftRaw
+      .map(zwiftActivityToIcu)
+      .filter((a: { start_date_local: string }) => {
+        const d = a.start_date_local.slice(0, 10);
+        return d >= weekDates[0] && d <= weekDates[6];
+      });
+
+    const activities = mergeActivities(
+      icuActivities as import("@/lib/intervals").IcuActivity[],
+      zwiftAsIcu,
+    );
+    weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
   } catch { /* best-effort */ }
 
   const todayStatus: DayStatus = weekStatus[todayStr] ?? "planned";
