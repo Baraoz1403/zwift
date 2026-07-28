@@ -8,8 +8,8 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { fetchOwnProfile } from "@/lib/zwift";
-import { computeWeekStatus } from "@/lib/activity-sync";
+import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
+import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import WeekView from "@/app/m/week/week-view";
 import { TabletPageHeader } from "../tablet-page-header";
 
@@ -59,13 +59,32 @@ export default async function TabletWeekPage() {
   try {
     const icuKey = cookieKey ?? kvCreds?.icuKey;
     const icuId  = cookieId  ?? kvCreds?.icuId;
-    if (icuKey && icuId) {
-      const activities = await Promise.race([
-        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
-      ]);
-      weekStatus = computeWeekStatus(workoutsWithDates, activities, today, weekDates);
-    }
+
+    const [icuActivities, zwiftRaw] = await Promise.all([
+      (icuKey && icuId)
+        ? Promise.race([
+            fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+            new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
+          ]).catch(() => [])
+        : Promise.resolve([]),
+      Promise.race([
+        fetchActivities(session.accessToken, session.athleteId!, 50),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 5000)),
+      ]).catch(() => []),
+    ]);
+
+    const zwiftAsIcu = zwiftRaw
+      .map(zwiftActivityToIcu)
+      .filter(a => {
+        const d = a.start_date_local.slice(0, 10);
+        return d >= weekDates[0] && d <= weekDates[6];
+      });
+
+    const activities = mergeActivities(
+      icuActivities as import("@/lib/intervals").IcuActivity[],
+      zwiftAsIcu,
+    );
+    weekStatus = computeWeekStatus(workoutsWithDates, activities, today, weekDates);
   } catch { /* best-effort */ }
 
   return (

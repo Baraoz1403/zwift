@@ -3,11 +3,12 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { fetchOwnProfile } from "@/lib/zwift";
-import { computeWeekStatus } from "@/lib/activity-sync";
+import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
+import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
+import FeedbackTrigger from "./feedback-trigger";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -64,7 +65,9 @@ export default async function MobileTodayPage() {
     date: w.date ?? dateMap[w.day] ?? undefined,
   }));
 
-  // ── Fetch ICU activities for this week ──────────────────────────────────
+  // ── Fetch activities for this week (ICU + Zwift direct merge) ──────────
+  // ICU covers all platforms IF the athlete has set up Zwift→ICU sync.
+  // We ALSO fetch from Zwift directly so rides are counted regardless of sync.
   let weekStatus: Record<string, DayStatus> = {};
   let todayAvgHr: number | null = null;
   let todayActivityName: string | null = null;
@@ -75,26 +78,42 @@ export default async function MobileTodayPage() {
     const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
     const icuId  = cookieId  ?? earlyKvCreds?.icuId;
 
-    if (icuKey && icuId) {
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("icu_timeout")), 4000)
-      );
-      const activities = await Promise.race([
-        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
-        timeout,
-      ]);
-      weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
-      // Extract today's avg heart rate for the feedback banner
-      const todayActivity = activities.find(a =>
-        a.start_date_local?.slice(0, 10) === todayStr
-      );
-      todayAvgHr = todayActivity?.average_heartrate ?? null;
-      // Pass actual activity metadata so FeedbackBanner can detect deviation
-      if (todayActivity) {
-        todayActivityName = todayActivity.name ?? null;
-        todayActivityDurationMin = todayActivity.moving_time
-          ? Math.round(todayActivity.moving_time / 60) : null;
-      }
+    // Fetch ICU + Zwift in parallel, both best-effort with timeouts
+    const [icuActivities, zwiftRaw] = await Promise.all([
+      (icuKey && icuId)
+        ? Promise.race([
+            fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+            new Promise<never>((_, rej) => setTimeout(() => rej(new Error("icu_timeout")), 4000)),
+          ]).catch(() => [])
+        : Promise.resolve([]),
+      Promise.race([
+        fetchActivities(session.accessToken, session.athleteId!, 50),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("zwift_timeout")), 5000)),
+      ]).catch(() => []),
+    ]);
+
+    // Convert Zwift activities to IcuActivity shape, filter to this week
+    const zwiftAsIcu = zwiftRaw
+      .map(zwiftActivityToIcu)
+      .filter(a => {
+        const d = a.start_date_local.slice(0, 10);
+        return d >= weekDates[0] && d <= weekDates[6];
+      });
+
+    // Merge: ICU wins on duplicates (it's the authoritative source when available)
+    const activities = mergeActivities(icuActivities as import("@/lib/intervals").IcuActivity[], zwiftAsIcu);
+
+    weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+
+    // Extract today's activity metadata for the feedback banner
+    const todayActivity = activities.find(a =>
+      a.start_date_local?.slice(0, 10) === todayStr
+    );
+    todayAvgHr = todayActivity?.average_heartrate ?? null;
+    if (todayActivity) {
+      todayActivityName = todayActivity.name ?? null;
+      todayActivityDurationMin = todayActivity.moving_time
+        ? Math.round(todayActivity.moving_time / 60) : null;
     }
   } catch { /* best-effort */ }
 
@@ -209,6 +228,11 @@ export default async function MobileTodayPage() {
 
   return (
     <div style={PAGE_SHELL}>
+      {/* Fires /api/m/feedback-check after page load — sends WhatsApp if
+          the athlete completed a ride today and hasn't been messaged yet.
+          No ICU webhook setup required. */}
+      <FeedbackTrigger />
+
       {/* Hero header — outside scroll area so it never moves */}
       <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
 

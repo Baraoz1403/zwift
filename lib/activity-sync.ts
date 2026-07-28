@@ -10,6 +10,70 @@
 
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { IcuActivity } from "@/lib/intervals";
+import type { ZwiftActivity } from "@/lib/zwift";
+
+/**
+ * Convert a Zwift activity to the IcuActivity shape used by computeWeekStatus.
+ *
+ * This lets us merge Zwift-direct activities with ICU activities so that rides
+ * done in Zwift are always counted — even when the athlete has NOT set up the
+ * Zwift → Intervals.icu sync in their ICU account.
+ *
+ * Zwift sport strings: "CYCLING", "RUNNING", "SWIMMING", etc.
+ * ICU type strings:    "VirtualRide", "Run", "Ride", etc.
+ */
+export function zwiftActivityToIcu(act: ZwiftActivity): IcuActivity {
+  // Map Zwift sport → ICU type
+  let type = "VirtualRide";
+  const sport = (act.sport as string | undefined)?.toUpperCase() ?? "";
+  if (sport.includes("RUN"))  type = "VirtualRun";
+  else if (sport.includes("SWIM")) type = "Swim";
+
+  // Zwift startDate is ISO with Z: "2026-07-28T06:30:00.000Z"
+  // IcuActivity expects local ISO without Z: "2026-07-28T06:30:00"
+  const startLocal = act.startDate
+    ? act.startDate.replace("Z", "").replace(/\.\d+$/, "")
+    : "";
+
+  return {
+    id: act.id,
+    type,
+    start_date_local: startLocal,
+    name: (act.name as string | undefined) ?? "Zwift activity",
+    moving_time: act.movingTimeInMs ? Math.round(act.movingTimeInMs / 1000) : undefined,
+    average_watts: (act.avgWatts as number | undefined) ?? null,
+    average_heartrate: (act.avgHeartRate as number | undefined) ?? null,
+    distance: (act.distanceInMeters as number | undefined) ?? undefined,
+    // Flag so callers can identify the source
+    _source: "zwift",
+  };
+}
+
+/**
+ * Merge ICU activities and Zwift-converted activities, deduplicating by date+sport.
+ * ICU takes precedence — if ICU already has a ride on a given date, the Zwift
+ * entry for that same date+sport is dropped (ICU likely got it from Zwift sync).
+ */
+export function mergeActivities(
+  icuActivities: IcuActivity[],
+  zwiftActivities: IcuActivity[],
+): IcuActivity[] {
+  // Build a set of "date|normalizedSport" already covered by ICU
+  const CYCLING_TYPES = new Set(["Ride", "VirtualRide", "EBikeRide", "MountainBikeRide", "GravelRide"]);
+  const RUNNING_TYPES = new Set(["Run", "VirtualRun", "TrailRun"]);
+
+  const key = (a: IcuActivity) => {
+    const date = (a.start_date_local ?? "").slice(0, 10);
+    const sport = CYCLING_TYPES.has(a.type) ? "cycling"
+      : RUNNING_TYPES.has(a.type) ? "running"
+      : a.type.toLowerCase();
+    return `${date}|${sport}`;
+  };
+
+  const covered = new Set(icuActivities.map(key));
+  const newFromZwift = zwiftActivities.filter(a => !covered.has(key(a)));
+  return [...icuActivities, ...newFromZwift];
+}
 
 export type DayStatus =
   | "planned"       // workout planned, not yet due or no data

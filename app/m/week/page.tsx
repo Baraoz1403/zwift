@@ -3,7 +3,8 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { computeWeekStatus } from "@/lib/activity-sync";
+import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
+import { fetchActivities } from "@/lib/zwift";
 import WeekView from "./week-view";
 
 function addDays(isoDate: string, days: number): string {
@@ -88,25 +89,42 @@ export default async function MobileWeekPage({
     date: w.date ?? dateMap[w.day] ?? undefined,
   }));
 
-  // Fetch ICU activities — only for current week (future = no rides yet)
+  // Fetch activities — ICU + Zwift direct merge (current week only; future weeks have no rides)
   let weekStatus: Record<string, string> = {};
-  try {
-    const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
-    const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
-    const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
-    const icuId  = cookieId  ?? earlyKvCreds?.icuId;
+  if (isCurrentWeek) {
+    try {
+      const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
+      const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
+      const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
+      const icuId  = cookieId  ?? earlyKvCreds?.icuId;
 
-    if (icuKey && icuId && isCurrentWeek) {
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("icu_timeout")), 4000)
-      );
-      const activities = await Promise.race([
-        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
-        timeout,
+      const [icuActivities, zwiftRaw] = await Promise.all([
+        (icuKey && icuId)
+          ? Promise.race([
+              fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+              new Promise<never>((_, rej) => setTimeout(() => rej(new Error("icu_timeout")), 4000)),
+            ]).catch(() => [])
+          : Promise.resolve([]),
+        Promise.race([
+          fetchActivities(session.accessToken, session.athleteId!, 50),
+          new Promise<never>((_, rej) => setTimeout(() => rej(new Error("zwift_timeout")), 5000)),
+        ]).catch(() => []),
       ]);
+
+      const zwiftAsIcu = zwiftRaw
+        .map(zwiftActivityToIcu)
+        .filter(a => {
+          const d = a.start_date_local.slice(0, 10);
+          return d >= weekDates[0] && d <= weekDates[6];
+        });
+
+      const activities = mergeActivities(
+        icuActivities as import("@/lib/intervals").IcuActivity[],
+        zwiftAsIcu,
+      );
       weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
-    }
-  } catch { /* best-effort */ }
+    } catch { /* best-effort */ }
+  }
 
   return (
     <div style={{
