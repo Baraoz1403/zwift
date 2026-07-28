@@ -158,7 +158,7 @@ export default async function TabletTodayPage() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* LEFT: Today workout */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "32px 40px" }}>
+        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "32px 40px" }}>
 
           {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
           {isRest || !todayWorkout ? (
@@ -338,6 +338,7 @@ export default async function TabletTodayPage() {
           borderLeft: "1px solid var(--m-border)",
           background: "var(--m-card)",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           display: "flex", flexDirection: "column",
         }}>
           {/* Metrics — sticky so the watt box is always visible */}

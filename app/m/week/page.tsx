@@ -112,6 +112,7 @@ export default async function MobileWeekPage({
     <div style={{
       height: "100%",
       overflowY: "auto",
+      overscrollBehavior: "contain",
     }}>
       <WeekView
         workouts={workouts}

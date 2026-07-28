@@ -75,7 +75,7 @@ export default async function TabletWeekPage() {
         name={firstName}
         subtitle={formatWeekRange(weekOf)}
       />
-      <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
+      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "28px" }}>
         <WeekView
           workouts={workoutsWithDates}
           weekOf={weekOf}

@@ -55,6 +55,8 @@ export default async function MobileLayout({ children }: { children: React.React
           position: fixed !important;
           width: 100% !important;
           height: 100% !important;
+          overscroll-behavior: none !important;
+          -webkit-overflow-scrolling: auto !important;
         }
       `}</style>
 
@@ -67,6 +69,7 @@ export default async function MobileLayout({ children }: { children: React.React
           background: "var(--m-bg)",
           fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
           WebkitFontSmoothing: "antialiased",
+          overscrollBehavior: "none",
         }}
       >
         {/*

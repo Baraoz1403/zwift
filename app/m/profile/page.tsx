@@ -81,6 +81,7 @@ export default async function MobileProfilePage() {
     <div style={{
       height: "100%",
       overflowY: "auto",
+      overscrollBehavior: "contain",
     }}>
     <div style={{ padding: "16px 16px 0" }}>
 
