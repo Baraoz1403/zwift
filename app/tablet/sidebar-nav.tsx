@@ -101,6 +101,40 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
         })}
       </nav>
 
+      {/* Legal + Contact links */}
+      <div style={{ padding: "10px 12px", borderTop: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 1 }}>
+        <a href="/m/legal/terms" style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "8px 14px", borderRadius: 4,
+          textDecoration: "none",
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={muted} strokeWidth="1.8" strokeLinecap="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span style={{ fontSize: 13, color: muted, fontWeight: 500 }}>Terms of Service</span>
+        </a>
+        <a href="/m/legal/privacy" style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "8px 14px", borderRadius: 4,
+          textDecoration: "none",
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={muted} strokeWidth="1.8" strokeLinecap="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span style={{ fontSize: 13, color: muted, fontWeight: 500 }}>Privacy Policy</span>
+        </a>
+        <a href="mailto:coach@voltai.app" style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "8px 14px", borderRadius: 4,
+          textDecoration: "none",
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={muted} strokeWidth="1.8" strokeLinecap="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <span style={{ fontSize: 13, color: muted, fontWeight: 500 }}>Contact</span>
+        </a>
+      </div>
+
       {/* Bottom — theme toggle + sign out */}
       <div style={{ padding: "12px 12px calc(16px + env(safe-area-inset-bottom, 0px))", borderTop: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 4 }}>
         {/* Theme toggle — above Sign Out, toggles the ENTIRE site */}

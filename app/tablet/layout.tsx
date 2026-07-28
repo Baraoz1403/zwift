@@ -127,16 +127,12 @@ export default async function TabletLayout({ children }: { children: React.React
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 24,
-            padding: "13px 40px",
-            background: "var(--m-card)",
-            borderTop: "1px solid var(--m-border)",
+            gap: 20,
+            padding: "8px 40px",
           }}>
-            <a href="/m/legal/terms" style={{ fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500 }}>Terms of Service</a>
+            <a href="/m/legal/terms" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>Terms of Service</a>
             <span style={{ color: "var(--m-border)" }}>·</span>
-            <a href="/m/legal/privacy" style={{ fontSize: 13, color: "#ffffff", textDecoration: "none", fontWeight: 500 }}>Privacy Policy</a>
-            <span style={{ color: "var(--m-border)" }}>·</span>
-            <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 400 }}>Volt AI</span>
+            <a href="/m/legal/privacy" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>Privacy Policy</a>
           </footer>
         </div>
       </div>
