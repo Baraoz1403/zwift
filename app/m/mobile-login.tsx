@@ -24,7 +24,10 @@ export default function MobileLoginScreen() {
         setLoading(false);
         return;
       }
-      window.location.href = "/m";
+      // Detect iPad (including iPadOS 13+ which reports Macintosh UA + touch)
+      const isIPad = /iPad/i.test(navigator.userAgent) ||
+        (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      window.location.href = isIPad ? "/tablet/today" : "/m";
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);

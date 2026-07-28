@@ -2,8 +2,15 @@ import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
 
+function isTabletUserAgent(ua: string): boolean {
+  // iPad with standard UA; also catches iPadOS 13+ "Request Desktop" mode via
+  // the "Macintosh" + no "Mobile" combination — handled separately server-side
+  // as navigator.maxTouchPoints is not available here. Standard iPad UA suffices.
+  return /iPad/i.test(ua);
+}
+
 function isMobileUserAgent(ua: string): boolean {
-  return /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
+  return /iPhone|iPod|Android|Mobile/i.test(ua);
 }
 
 export default async function Home() {
@@ -21,7 +28,8 @@ export default async function Home() {
   // This is what makes "Add to Home Screen" open the right version.
   const headerStore = await headers();
   const ua = headerStore.get("user-agent") ?? "";
-  const mobile = isMobileUserAgent(ua);
 
-  redirect(mobile ? "/m/today" : "/dashboard");
+  if (isTabletUserAgent(ua)) redirect("/tablet/today");
+  if (isMobileUserAgent(ua)) redirect("/m/today");
+  redirect("/dashboard");
 }

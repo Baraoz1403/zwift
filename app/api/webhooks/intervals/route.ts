@@ -5,6 +5,7 @@ import {
   getCachedPlan,
 } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
+import { kvGet, kvSet } from "@/lib/kv";
 import { sendWhatsApp, buildFeedbackMessage } from "@/lib/whatsapp";
 
 /**
@@ -111,7 +112,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // ── 7. Build and send WhatsApp ────────────────────────────────────────────
+  // ── 7. Deduplication — same KV flags as the cron job ─────────────────────
+  // Prevents double-send when both the webhook and the cron fire for the same
+  // activity (possible when Zwift→ICU sync is enabled).
+  const icuActivityId = (data.id ?? "") as string | number;
+  const today = activityDate;
+  const dateFlagKey = `zwift:${athleteId}:fb_sent:${today}`;
+
+  // Date-level flag: if cron already sent today, skip
+  const alreadySentToday = await kvGet(dateFlagKey).catch(() => null);
+  if (alreadySentToday) {
+    console.log(`[webhook/intervals] athlete=${athleteId} skipped — already sent today`);
+    return NextResponse.json({ ok: true, skipped: true, reason: "already_sent_today" });
+  }
+
+  // Activity-level flag (keyed by ICU activity id)
+  if (icuActivityId) {
+    const actFlagKey = `zwift:${athleteId}:fb_icu:${icuActivityId}`;
+    const alreadySentAct = await kvGet(actFlagKey).catch(() => null);
+    if (alreadySentAct) {
+      console.log(`[webhook/intervals] athlete=${athleteId} skipped — already sent for activity ${icuActivityId}`);
+      return NextResponse.json({ ok: true, skipped: true, reason: "already_sent_activity" });
+    }
+    // Mark before sending to prevent race with cron
+    await kvSet(actFlagKey, "1").catch(() => {});
+  }
+  await kvSet(dateFlagKey, "1").catch(() => {});
+
+  // ── 8. Build and send WhatsApp ────────────────────────────────────────────
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://zwift-delta.vercel.app";
   const durationMin = Math.round(movingSec / 60);
 
