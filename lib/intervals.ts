@@ -406,6 +406,67 @@ export async function fetchIcuActivities(
   }
 }
 
+/**
+ * Auto-register our activity webhook in the athlete's Intervals.icu account.
+ *
+ * Called immediately after the athlete connects ICU (in both the API-key
+ * /connect route and the OAuth /oauth-callback route). This means athletes
+ * receive WhatsApp feedback automatically — no manual webhook setup in ICU.
+ *
+ * How it works:
+ *   1. GET existing webhooks → skip if our URL is already registered.
+ *   2. POST new webhook for "activity_created" event → our /api/webhooks/intervals endpoint.
+ *
+ * The ICU webhook fires within 2-5 minutes of a Zwift ride finishing
+ * (Zwift→ICU sync processes quickly). This is the fastest possible path
+ * given that Zwift itself has no push notification system.
+ *
+ * Returns true if registered (or already registered), false on any error.
+ * Errors are non-fatal — the 30-min cron job is a reliable fallback.
+ */
+export async function ensureIcuWebhookRegistered(
+  credentialOrBearerToken: string,
+  athleteId: string,
+  webhookUrl: string,
+): Promise<boolean> {
+  const auth = buildAuthHeader(credentialOrBearerToken);
+  const id   = resolveIcuId(athleteId);
+
+  try {
+    // 1. Check if already registered
+    const listRes = await fetch(`${INTERVALS_API}/athlete/${id}/webhooks`, {
+      headers: { Authorization: auth, Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (listRes.ok) {
+      const existing = await listRes.json() as Array<{ url?: string }>;
+      if (Array.isArray(existing) && existing.some(w => w.url === webhookUrl)) {
+        return true; // already registered — nothing to do
+      }
+    }
+
+    // 2. Register the webhook
+    const createRes = await fetch(`${INTERVALS_API}/athlete/${id}/webhooks`, {
+      method: "POST",
+      headers: {
+        Authorization: auth,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        url: webhookUrl,
+        event: "activity_created",
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    return createRes.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Delete a planned workout from Intervals.icu by event id. 404 counts as success (already gone). */
 export async function deleteEventFromIntervals(apiKey: string, eventId: string | number, athleteId?: string): Promise<DeleteIntervalsResult> {
   try {

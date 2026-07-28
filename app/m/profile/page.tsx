@@ -162,27 +162,61 @@ export default async function MobileProfilePage() {
       <div style={{ marginBottom: 16 }}>
         <SectionLabel>Connections</SectionLabel>
 
-        {/* All-synced banner */}
+        {/* Setup checklist */}
         {icuConnected && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 12,
-            background: "rgba(34,197,94,0.08)",
-            border: "1px solid rgba(34,197,94,0.25)",
-            borderRadius: 14, padding: "14px 16px", marginBottom: 12,
-          }}>
+          <div style={{ marginBottom: 12 }}>
+            {/* Zwift→ICU sync guide — the key step for real-time WhatsApp */}
+            <a
+              href="https://intervals.icu/settings"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 12,
+                background: "rgba(245,158,11,0.07)",
+                border: "1px solid rgba(245,158,11,0.3)",
+                borderRadius: 14, padding: "14px 16px", marginBottom: 10,
+                textDecoration: "none",
+              }}
+            >
+              <div style={{
+                width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                background: "rgba(245,158,11,0.12)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginTop: 1,
+              }}>
+                <span style={{ fontSize: 16 }}>⚡</span>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#d97706", marginBottom: 3 }}>
+                  Enable real-time WhatsApp feedback
+                </div>
+                <div style={{ fontSize: 13, color: "var(--m-muted)", lineHeight: 1.55, marginBottom: 8 }}>
+                  Connect Zwift to Intervals.icu once — then every ride you finish triggers a WhatsApp feedback request within minutes, automatically.
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#FF5A1F" }}>
+                  Open Intervals.icu Settings → Connected Apps → Zwift →
+                </div>
+              </div>
+            </a>
+
+            {/* Zwift connected row */}
             <div style={{
-              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-              background: "rgba(34,197,94,0.15)",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              display: "flex", alignItems: "center", gap: 10,
+              background: "rgba(34,197,94,0.06)",
+              border: "1px solid rgba(34,197,94,0.2)",
+              borderRadius: 10, padding: "10px 14px",
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                 stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-            </div>
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#22c55e" }}>All systems synced</div>
-              <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 3 }}>Zwift + Intervals.icu connected</div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>Zwift connected</span>
+              <span style={{ color: "var(--m-border)", margin: "0 2px" }}>·</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>Intervals.icu connected</span>
             </div>
           </div>
         )}

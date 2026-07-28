@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { fetchIntervalsAthlete } from "@/lib/intervals";
+import { fetchIntervalsAthlete, ensureIcuWebhookRegistered } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { kvSet, kvDel } from "@/lib/kv";
 import { ensurePlanProvisioned } from "@/lib/plan-runner";
@@ -93,12 +93,15 @@ export async function POST(req: NextRequest) {
     await kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName);
 
     // ── Auto-provision: first plan + first sync, no button needed ─────────
-    // Handles two cases: a brand-new athlete connecting ICU before ever
-    // having a plan (generates + pushes their first one now), and an
-    // existing athlete whose plan predates this connection (pushes the
-    // already-cached plan using the key that just landed in KV, rather than
-    // waiting for the athlete's next login or the nightly cron).
     await ensurePlanProvisioned(resolvedAthleteId, session.accessToken);
+
+    // ── Auto-register ICU webhook for real-time WhatsApp after rides ──────
+    // When ICU detects a new Zwift activity (via Zwift→ICU sync, which the
+    // athlete sets up once in their ICU Connected Apps settings), it immediately
+    // POSTs to our webhook URL, which triggers a WhatsApp feedback request.
+    // This registration is idempotent — safe to call on every connect.
+    const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://zwift-delta.vercel.app"}/api/webhooks/intervals`;
+    void ensureIcuWebhookRegistered(apiKey.trim(), athleteId, webhookUrl).catch(() => {});
   }
 
   return NextResponse.json({ ok: true, athleteName, athleteId, kvSynced: !!resolvedAthleteId });

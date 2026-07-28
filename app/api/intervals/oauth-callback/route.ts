@@ -16,6 +16,7 @@ import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import {
   exchangeIntervalsCode,
   fetchIntervalsAthlete,
+  ensureIcuWebhookRegistered,
 } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { kvSet } from "@/lib/kv";
@@ -142,6 +143,10 @@ export async function GET(req: NextRequest) {
 
       // Auto-provision plan if needed
       await ensurePlanProvisioned(resolvedAthleteId, session.accessToken);
+
+      // Auto-register ICU webhook for real-time WhatsApp feedback after rides
+      const webhookUrl = `${req.nextUrl.origin}/api/webhooks/intervals`;
+      void ensureIcuWebhookRegistered(accessTokenValue, athleteId, webhookUrl).catch(() => {});
     }
 
     return NextResponse.redirect(
