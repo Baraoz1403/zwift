@@ -5,8 +5,6 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { fetchIcuWellness } from "@/lib/intervals";
-import SignOutButton from "./sign-out-button";
-import { ThemeToggleButton } from "../theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -164,91 +162,6 @@ export default async function MobileProfilePage() {
         </div>
       </div>
 
-      {/* Connections */}
-      <div style={{ marginBottom: 16 }}>
-        <SectionLabel>Connections</SectionLabel>
-
-        {/* Connection status — single banner when all connected; no redundant sub-rows */}
-        {icuConnected && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            background: "rgba(34,197,94,0.06)",
-            border: "1px solid rgba(34,197,94,0.2)",
-            borderRadius: 10, padding: "10px 14px", marginBottom: 12,
-          }}>
-            <span style={{ fontSize: 16 }}>✅</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>
-              All systems active — WhatsApp feedback fires automatically after every ride
-            </span>
-          </div>
-        )}
-
-        <div style={{
-          background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
-          padding: "4px 0",
-        }}>
-          {/* Zwift — always connected (they're logged in) */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", borderBottom: "1px solid var(--m-border)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 9, background: "var(--m-icon-primary)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6" />
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Zwift</div>
-                <div style={{ fontSize: 15, color: "#22c55e", marginTop: 2 }}>Connected</div>
-              </div>
-            </div>
-            <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e" }} />
-          </div>
-
-          {/* Intervals.icu */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 9, background: icuConnected ? "var(--m-icon-success)" : "var(--m-icon-muted)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "var(--m-muted)"}
-                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
-                <div style={{ fontSize: 15, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2 }}>
-                  {icuConnected ? (icuName ?? "Connected") : "Not connected"}
-                </div>
-              </div>
-            </div>
-            {icuConnected ? (
-              <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e" }} />
-            ) : (
-              <a
-                href="/api/intervals/oauth-start?from=m"
-                style={{
-                  fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)",
-                  textDecoration: "none", padding: "7px 14px",
-                  background: "var(--m-btn-muted)", borderRadius: 9,
-                }}
-              >
-                Connect
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Training profile */}
       {profile && (
         <div style={{ marginBottom: 16 }}>
@@ -330,7 +243,6 @@ export default async function MobileProfilePage() {
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "16px 18px", textDecoration: "none",
-              borderBottom: "1px solid var(--m-border)",
             }}
           >
             <div>
@@ -339,39 +251,7 @@ export default async function MobileProfilePage() {
             </div>
             <ChevronRight />
           </a>
-          <a
-            href="/m/legal"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 18px", textDecoration: "none",
-              borderBottom: "1px solid var(--m-border)",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Legal</div>
-              <div style={{ fontSize: 15, color: "var(--m-muted-2)", marginTop: 3 }}>Terms of Service &amp; Privacy Policy</div>
-            </div>
-            <ChevronRight />
-          </a>
-          <div style={{ borderBottom: "1px solid var(--m-border)" }}>
-            <ThemeToggleButton />
-          </div>
-          <SignOutButton />
         </div>
-      </div>
-
-      {/* Legal footer */}
-      <div style={{
-        display: "flex", justifyContent: "center", gap: 20,
-        paddingTop: 8, paddingBottom: 8,
-      }}>
-        <a href="/m/legal/terms" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>
-          Terms of Service
-        </a>
-        <span style={{ color: "var(--m-border)" }}>·</span>
-        <a href="/m/legal/privacy" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>
-          Privacy Policy
-        </a>
       </div>
 
     </div>

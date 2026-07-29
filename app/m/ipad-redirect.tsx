@@ -2,10 +2,11 @@
 import { useEffect } from "react";
 
 const TABLET_MAP: Record<string, string> = {
-  "/m/today":   "/tablet/today",
-  "/m/week":    "/tablet/week",
-  "/m/coach":   "/tablet/coach",
-  "/m/profile": "/tablet/profile",
+  "/m/today":    "/tablet/today",
+  "/m/week":     "/tablet/week",
+  "/m/coach":    "/tablet/coach",
+  "/m/profile":  "/tablet/profile",
+  "/m/settings": "/tablet/settings",
 };
 
 /**

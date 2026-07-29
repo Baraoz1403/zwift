@@ -4,11 +4,11 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const TABS = [
-  { href: "/m/today",       label: "Today",   Icon: TodayIcon   },
-  { href: "/m/week",        label: "Week",    Icon: WeekIcon    },
-  { href: "/m/coach",       label: "Coach",   Icon: CoachIcon   },
-  { href: "/m/profile",     label: "Profile", Icon: ProfileIcon },
-  { href: "/m/legal/terms", label: "Legal",   Icon: LegalIcon   },
+  { href: "/m/today",    label: "Today",    Icon: TodayIcon    },
+  { href: "/m/week",     label: "Week",     Icon: WeekIcon     },
+  { href: "/m/coach",    label: "Coach",    Icon: CoachIcon    },
+  { href: "/m/profile",  label: "Profile",  Icon: ProfileIcon  },
+  { href: "/m/settings", label: "Settings", Icon: SettingsIcon },
 ];
 
 export default function MobileNav() {
@@ -29,7 +29,7 @@ export default function MobileNav() {
     }}>
       {TABS.map(({ href, label, Icon }) => {
         const active = pathname === href || (href === "/m/today" && pathname === "/m") ||
-          (href === "/m/legal/terms" && pathname.startsWith("/m/legal"));
+          (href === "/m/settings" && pathname.startsWith("/m/settings"));
         const color = active ? "#F2541B" : "var(--m-nav-inactive)";
         return (
           <Link
@@ -102,13 +102,11 @@ function ProfileIcon({ color }: { color: string }) {
   );
 }
 
-function LegalIcon({ color }: { color: string }) {
+function SettingsIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="14 2 14 8 20 8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <line x1="16" y1="13" x2="8" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
-      <line x1="16" y1="17" x2="8" y2="17" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8"/>
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }

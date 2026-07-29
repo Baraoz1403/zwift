@@ -75,20 +75,20 @@ export function TabletTopBar({
             {/* Zwift: always connected (required to use the app) */}
             <div style={{
               background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.30)",
-              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 64,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: "#22c55e", lineHeight: 1 }}>Zwift</div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,197,94,0.75)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Connected</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#22c55e", lineHeight: 1 }}>Zwift</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(34,197,94,0.75)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Connected</div>
             </div>
 
             {/* ICU: shown in green when connected, muted grey otherwise */}
             <div style={{
               background: icuConnected ? "rgba(34,197,94,0.10)" : "rgba(100,116,139,0.08)",
               border: `1px solid ${icuConnected ? "rgba(34,197,94,0.30)" : "rgba(100,116,139,0.20)"}`,
-              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 64,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: icuConnected ? "#22c55e" : "#64748b", lineHeight: 1 }}>ICU</div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: icuConnected ? "rgba(34,197,94,0.75)" : "rgba(100,116,139,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: icuConnected ? "#22c55e" : "#64748b", lineHeight: 1 }}>ICU</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: icuConnected ? "rgba(34,197,94,0.75)" : "rgba(100,116,139,0.55)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
                 {icuConnected ? "Connected" : "Not set up"}
               </div>
             </div>
@@ -96,34 +96,45 @@ export function TabletTopBar({
             {/* Visual separator */}
             <div style={{ width: 1, height: 34, background: "var(--m-border)", margin: "0 2px" }} />
 
-            {/* ── Metric chips ── */}
+            {/* ── Metric chips — colors match mobile profile metric cards exactly ── */}
             {ftp && (
               <div style={{
-                background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)",
-                borderRadius: 8, padding: "6px 11px", textAlign: "center", minWidth: 58,
+                background: "rgba(0,194,255,0.07)", border: "1px solid rgba(0,194,255,0.25)",
+                borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 58,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: "#22d3ee", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>FTP</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,194,255,0.65)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
               </div>
             )}
-            {currentPhase && (
-              <div style={{
-                background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.22)",
-                borderRadius: 8, padding: "6px 11px", textAlign: "center", minWidth: 58,
-              }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: ZO, lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>
-                  {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
+            {currentPhase && (() => {
+              // Same color logic as mobile profile metric cards
+              const phaseColor =
+                currentPhase === "Recovery" ? "#f59e0b" :
+                currentPhase === "Build"    ? "#ef4444" :
+                                              "#818cf8"; // Base
+              const phaseAlpha =
+                currentPhase === "Recovery" ? "rgba(245,158,11," :
+                currentPhase === "Build"    ? "rgba(239,68,68,"  :
+                                              "rgba(129,140,248,";
+              return (
+                <div style={{
+                  background: `${phaseAlpha}0.07)`, border: `1px solid ${phaseAlpha}0.25)`,
+                  borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+                }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: phaseColor, lineHeight: 1 }}>{currentPhase}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: `${phaseAlpha}0.65)`, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
+                    {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             {weekWorkoutCount > 0 && (
               <div style={{
-                background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.22)",
-                borderRadius: 8, padding: "6px 11px", textAlign: "center", minWidth: 48,
+                background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.25)",
+                borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 48,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Sessions</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: ZO, lineHeight: 1 }}>{weekWorkoutCount}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,90,31,0.65)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
               </div>
             )}
           </div>

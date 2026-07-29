@@ -6,14 +6,11 @@
  */
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, getRiderIdentity, getIntervalsCredentials } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
-// Re-use all the sub-components from the mobile profile page
-import SignOutButton from "@/app/m/profile/sign-out-button";
-import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
 const GOAL_LABELS: Record<string, string> = {
   fitness: "Improve fitness",
@@ -45,9 +42,7 @@ export default async function TabletProfilePage() {
     if (loadRaw) { const l = JSON.parse(loadRaw); ctl = l.ctl ?? 0; atl = l.atl ?? 0; tsb = l.tsb ?? 0; }
   } catch { /* best-effort */ }
 
-  const icuName      = cookieStore.get("zwift_intervals_name")?.value ?? null;
-  const icuConnected = !!cookieStore.get("zwift_intervals_key")?.value;
-  const profile      = state.riderProfile;
+  const profile = state.riderProfile;
   const macro        = state.macroCycle;
 
   const ftpWatts: number | null =
@@ -114,37 +109,6 @@ export default async function TabletProfilePage() {
           )}
         </div>
 
-        {/* Connections */}
-        <SectionLabel>Connections</SectionLabel>
-        <div style={{ background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", padding: "4px 0", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid var(--m-border)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: "var(--m-icon-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6" /></svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Zwift</div>
-                <div style={{ fontSize: 14, color: "#22c55e", marginTop: 2 }}>Connected</div>
-              </div>
-            </div>
-            <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e" }} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: icuConnected ? "var(--m-icon-success)" : "var(--m-icon-muted)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
-                <div style={{ fontSize: 14, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2 }}>{icuConnected ? (icuName ?? "Connected") : "Not connected"}</div>
-              </div>
-            </div>
-            {!icuConnected && (
-              <a href="/api/intervals/oauth-start?from=tablet" style={{ fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>Connect</a>
-            )}
-          </div>
-        </div>
-
         {/* Training profile */}
         {profile && (
           <>
@@ -160,24 +124,13 @@ export default async function TabletProfilePage() {
         {/* Account */}
         <SectionLabel>Account</SectionLabel>
         <div style={{ background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", padding: "4px 0", marginBottom: 20 }}>
-          <a href="/tablet/profile/edit" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
+          <a href="/tablet/profile/edit" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none" }}>
             <div>
               <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
               <div style={{ fontSize: 14, color: "var(--m-muted-2)", marginTop: 3 }}>Goals, schedule, session length</div>
             </div>
             <ChevronRight />
           </a>
-          <a href="/tablet/legal" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
-            <div>
-              <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Legal</div>
-              <div style={{ fontSize: 14, color: "var(--m-muted-2)", marginTop: 3 }}>Terms of Service &amp; Privacy Policy</div>
-            </div>
-            <ChevronRight />
-          </a>
-          <div style={{ borderBottom: "1px solid var(--m-border)" }}>
-            <ThemeToggleButton />
-          </div>
-          <SignOutButton />
         </div>
 
         {/* Bottom padding to clear portrait bottom nav */}
