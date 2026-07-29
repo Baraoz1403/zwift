@@ -24,7 +24,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await decryptSession(raw);
   if (!session) redirect("/login");
 
-  if (session.expiresAt && session.expiresAt < Date.now()) {
+  // Proactive refresh — mirrors the mobile layout's 5-minute buffer so the
+  // dashboard never hits Zwift with an expired access token. Previous check
+  // only triggered after the token was already expired (reactive); this
+  // triggers 5 minutes early so the refresh happens transparently.
+  const TOKEN_BUFFER_MS = 5 * 60 * 1000;
+  if (session.expiresAt && session.expiresAt < Date.now() + TOKEN_BUFFER_MS) {
     redirect("/api/auth/refresh?next=/dashboard");
   }
 

@@ -71,11 +71,6 @@ export default async function TabletProfilePage() {
     return !t.includes("rest") && !t.includes("recovery") && !t.includes("off");
   }).length ?? 0;
 
-  const firstName = zwiftProfile?.firstName ?? null;
-  const fullName  = zwiftProfile?.firstName
-    ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim()
-    : "Profile";
-
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
       {/* Small in-content section header — main name/chips shown in layout TabletTopBar */}
@@ -86,12 +81,6 @@ export default async function TabletProfilePage() {
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "24px 28px" }}>
-
-        {/* Athlete name */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-.4px" }}>{fullName}</div>
-          <div style={{ fontSize: 17, color: "var(--m-muted-2)", marginTop: 4 }}>Profile &amp; Stats</div>
-        </div>
 
         {/* Fitness metrics */}
         <SectionLabel>Fitness metrics</SectionLabel>
@@ -178,7 +167,7 @@ export default async function TabletProfilePage() {
             </div>
             <ChevronRight />
           </a>
-          <a href="/m/legal" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
+          <a href="/tablet/legal" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
             <div>
               <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Legal</div>
               <div style={{ fontSize: 14, color: "var(--m-muted-2)", marginTop: 3 }}>Terms of Service &amp; Privacy Policy</div>

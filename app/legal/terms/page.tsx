@@ -6,7 +6,7 @@ export default function TermsPage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 80px", fontFamily: "Inter, -apple-system, sans-serif", color: "#14171a", lineHeight: 1.8 }}>
       <div style={{ marginBottom: 32 }}>
-        <Link href="/dashboard" style={{ fontSize: 13, color: "#2f8fe0", textDecoration: "none" }}>← Back to dashboard</Link>
+        <a href="javascript:history.back()" style={{ fontSize: 13, color: "#2f8fe0", textDecoration: "none" }}>← Back</a>
       </div>
 
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6, letterSpacing: "-0.5px" }}>Terms of Use</h1>

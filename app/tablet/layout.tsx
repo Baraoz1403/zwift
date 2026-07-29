@@ -34,6 +34,17 @@ export default async function TabletLayout({ children }: { children: React.React
     redirect("/m");
   }
 
+  // Proactive token refresh — same 5-minute buffer as the mobile layout.
+  // Without this, a rider whose Zwift access token is about to expire would
+  // hit the tablet and get 401 errors on the first data fetch instead of a
+  // clean transparent refresh. The mobile layout has had this since day 1;
+  // the tablet was missing it, which caused the "need to logout and back in"
+  // symptom on iPad.
+  const TOKEN_BUFFER_MS = 5 * 60 * 1000;
+  if (session.refreshToken && session.expiresAt < Date.now() + TOKEN_BUFFER_MS) {
+    redirect("/api/auth/refresh?next=/tablet/today");
+  }
+
   const athleteId = String(session.athleteId);
   const weekOf    = mondayOfCurrentWeek();
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
