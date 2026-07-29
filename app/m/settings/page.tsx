@@ -73,7 +73,7 @@ export default async function MobileSettingsPage() {
                   <div>
                     <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
                     <div style={{ fontSize: 15, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>
-                      {icuConnected ? (icuName ?? "Connected") : "Not connected"}
+                      {icuConnected ? "Connected" : "Not connected"}
                     </div>
                   </div>
                 </div>

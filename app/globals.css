@@ -1629,20 +1629,25 @@ tbody tr:hover {
    bottom-nav (phones already have their own /m bottom nav).
 
    --tablet-bar-h: height of the fixed full-width top bar (greeting + name + chips).
-   Inner content = 94px. Safe-area-inset-top handles the notch. */
+   Inner content = 94px. Safe-area-inset-top handles the notch.
+   --tablet-footer-h: height of the fixed bottom nav bar (always visible, both orientations). */
 :root {
-  --tablet-bar-h: calc(94px + env(safe-area-inset-top, 0px));
+  --tablet-bar-h:    calc(94px + env(safe-area-inset-top, 0px));
+  --tablet-footer-h: calc(60px + env(safe-area-inset-bottom, 0px));
 }
 
 .tablet-sidebar {
   /* visible by default — landscape mode */
 }
 
+/* Bottom nav: ALWAYS visible on iPad (both landscape and portrait).
+   In landscape the sidebar provides navigation; the bottom nav is the visual
+   footer anchor matching the iPhone tab-bar look the rider expects. */
 .tablet-bottom-nav {
-  display: none; /* hidden in landscape */
+  display: flex;
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  height: var(--tablet-footer-h);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 50;
   align-items: stretch;
@@ -1654,13 +1659,10 @@ tbody tr:hover {
   /* content area — no changes in landscape */
 }
 
-/* Portrait on tablet: sidebar hidden, content full-width, bottom nav visible.
-   Legal links (in sidebar) are accessible via the Profile tab in portrait.
+/* Portrait on tablet: sidebar hidden, content full-width.
+   Bottom nav is already shown by default above.
    On phones (< 600px) this block doesn't apply — phones use /m routes. */
 @media (orientation: portrait) and (min-width: 600px) {
   .tablet-sidebar     { display: none !important; }
   .tablet-main        { margin-left: 0 !important; }
-  .tablet-scroll-area { padding-bottom: 60px !important; }
-  .tablet-footer      { display: none !important; }
-  .tablet-bottom-nav  { display: flex !important; }
 }

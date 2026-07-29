@@ -28,17 +28,34 @@ export default function CoachChat({ firstName }: { firstName?: string | null }) 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
-  // Load persisted history on mount
+  // Load persisted history on mount + re-sync when tab becomes visible (cross-device)
   useEffect(() => {
-    fetch("/api/m/chat/history", { credentials: "include" })
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data.messages) && data.messages.length > 0) {
-          setMessages(data.messages);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setHistoryLoading(false));
+    let active = true;
+    const fetchHistory = (resetLoading?: boolean) => {
+      if (resetLoading) setHistoryLoading(true);
+      fetch("/api/m/chat/history", { credentials: "include" })
+        .then(r => r.json())
+        .then(data => {
+          if (!active) return;
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(data.messages);
+          }
+        })
+        .catch(() => {})
+        .finally(() => { if (active) setHistoryLoading(false); });
+    };
+
+    fetchHistory(true);
+
+    // Re-fetch when user switches back to this tab (iPad ↔ iPhone cross-device sync)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchHistory();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -138,6 +155,11 @@ export default function CoachChat({ firstName }: { firstName?: string | null }) 
                     borderRadius: 4, color: "var(--m-text)", fontSize: 15,
                     fontWeight: 600, cursor: "pointer",
                     WebkitTapHighlightColor: "transparent", lineHeight: 1.4,
+                    // iOS Safari: prevent button from clipping wrapped text
+                    WebkitAppearance: "none" as const,
+                    height: "auto", minHeight: 0,
+                    whiteSpace: "normal", wordBreak: "break-word",
+                    display: "block", width: "100%",
                   }}
                 >
                   {label}

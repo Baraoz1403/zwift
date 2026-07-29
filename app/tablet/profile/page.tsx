@@ -79,7 +79,7 @@ export default async function TabletProfilePage() {
 
         {/* Fitness metrics */}
         <SectionLabel>Fitness metrics</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
           {ftpWatts ? (
             <MetricCard value={`${ftpWatts}W`} label="FTP" color="#00C2FF" desc={ftpSource} />
           ) : (
@@ -92,7 +92,7 @@ export default async function TabletProfilePage() {
               <MetricCard value={atl.toFixed(1)} label="ATL (Fatigue)" color="#f59e0b" desc="7-day avg" />
             </>
           ) : (
-            <div style={{ gridColumn: "3/-1", padding: "16px 18px", background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6 }}>
+            <div style={{ gridColumn: "1/-1", padding: "16px 18px", background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6 }}>
               CTL / ATL / TSB appear once rides are processed.
             </div>
           )}
@@ -151,9 +151,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function MetricCard({ value, label, color, desc }: { value: string; label: string; color: string; desc?: string }) {
   return (
     <div style={{ background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", padding: "16px 18px" }}>
-      <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>{value}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--m-label)", marginBottom: 4 }}>{label}</div>
-      {desc && <div style={{ fontSize: 13, color: "var(--m-muted)" }}>{desc}</div>}
+      <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-label)", marginBottom: 4 }}>{label}</div>
+      {desc && <div style={{ fontSize: 14, color: "var(--m-muted)" }}>{desc}</div>}
     </div>
   );
 }

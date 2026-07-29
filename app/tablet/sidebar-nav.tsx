@@ -39,7 +39,7 @@ export default function TabletSidebar() {
       display: "flex", flexDirection: "column", flexShrink: 0,
       position: "fixed",
       top: "var(--tablet-bar-h)",  /* start below the full-width top bar */
-      left: 0, bottom: 0,
+      left: 0, bottom: "var(--tablet-footer-h)", /* stop above the footer nav */
       zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       overflow: "hidden",

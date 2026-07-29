@@ -171,7 +171,8 @@ export default async function TabletLayout({ children }: { children: React.React
             className="tablet-main"
             style={{
               position: "fixed",
-              top: 0, left: 0, right: 0, bottom: 0,
+              top: 0, left: 0, right: 0,
+              bottom: "var(--tablet-footer-h)", /* stop above the always-visible footer nav */
               paddingTop: "var(--tablet-bar-h)",
               marginLeft: 220,
               overflow: "hidden",
