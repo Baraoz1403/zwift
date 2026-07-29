@@ -15,6 +15,8 @@
 
 import { useState } from "react";
 
+const FEEDBACK_KEY = (date: string) => `feedbackDone:${date}`;
+
 const ZO = "#F2541B";
 
 const RPE_ITEMS = [
@@ -67,6 +69,13 @@ export default function FeedbackBanner({
   plannedDurationMin, actualActivityName, actualDurationMin,
   isBonus,
 }: Props) {
+  // If feedback was already submitted today, skip the entire banner.
+  // Lazy initializer runs once on mount so there's no flash of the banner.
+  const [alreadyDone] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return !!localStorage.getItem(FEEDBACK_KEY(date));
+  });
+
   // Bonus rides skip plan-check — there was no plan, just go straight to rating
   const [step, setStep] = useState<Step>(isBonus ? "rate" : "plan-check");
   const [followed, setFollowed] = useState<"yes" | "mostly" | "different" | null>(null);
@@ -118,6 +127,8 @@ export default function FeedbackBanner({
         });
       }
 
+      // Mark feedback as done for today so the banner doesn't reappear
+      localStorage.setItem(FEEDBACK_KEY(date), "1");
       setStep("done");
     } catch {
       setState("idle");
@@ -125,6 +136,9 @@ export default function FeedbackBanner({
   }
 
   const chosenItem = RPE_ITEMS.find(r => r.score === rpe);
+
+  // Feedback was already submitted today — show nothing
+  if (alreadyDone) return null;
 
   // ── DONE ─────────────────────────────────────────────────────────────────
   if (step === "done") {

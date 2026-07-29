@@ -4,10 +4,11 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const TABS = [
-  { href: "/m/today", label: "Today",   Icon: TodayIcon   },
-  { href: "/m/week",  label: "Week",    Icon: WeekIcon    },
-  { href: "/m/coach", label: "Coach",   Icon: CoachIcon   },
-  { href: "/m/profile", label: "Profile", Icon: ProfileIcon },
+  { href: "/m/today",       label: "Today",   Icon: TodayIcon   },
+  { href: "/m/week",        label: "Week",    Icon: WeekIcon    },
+  { href: "/m/coach",       label: "Coach",   Icon: CoachIcon   },
+  { href: "/m/profile",     label: "Profile", Icon: ProfileIcon },
+  { href: "/m/legal/terms", label: "Legal",   Icon: LegalIcon   },
 ];
 
 export default function MobileNav() {
@@ -27,7 +28,8 @@ export default function MobileNav() {
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
       {TABS.map(({ href, label, Icon }) => {
-        const active = pathname === href || (href === "/m/today" && pathname === "/m");
+        const active = pathname === href || (href === "/m/today" && pathname === "/m") ||
+          (href === "/m/legal/terms" && pathname.startsWith("/m/legal"));
         const color = active ? "#F2541B" : "var(--m-nav-inactive)";
         return (
           <Link
@@ -96,6 +98,17 @@ function ProfileIcon({ color }: { color: string }) {
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="1.8" />
       <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LegalIcon({ color }: { color: string }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="14 2 14 8 20 8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="16" y1="13" x2="8" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="16" y1="17" x2="8" y2="17" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }

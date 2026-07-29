@@ -9,6 +9,7 @@ import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
 import FeedbackTrigger from "./feedback-trigger";
+import CoachMessageBox from "./coach-message-box";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -230,20 +231,24 @@ export default async function MobileTodayPage() {
                 actualDurationMin={todayActivityDurationMin}
                 isBonus={true}
               />
+              <CoachMessageBox date={todayStr} />
             </>
           ) : (
             /* Pure rest day — calm, no drama */
-            <div style={{ padding: "24px 16px", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
-              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px" }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
-                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
-                  No workout scheduled today. Quality rest is as important as the training itself.
+            <>
+              <div style={{ padding: "16px 16px 0" }}>
+                <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
+                  <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
+                    No workout scheduled today. Quality rest is as important as the training itself.
+                  </div>
+                  <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
+                    See this week&apos;s plan →
+                  </a>
                 </div>
-                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
-                  See this week&apos;s plan →
-                </a>
               </div>
-            </div>
+              <CoachMessageBox date={todayStr} />
+            </>
           )}
         </div>
       </div>
@@ -283,6 +288,9 @@ export default async function MobileTodayPage() {
           todayStatus={todayStatus}
           weekStatus={weekStatus}
         />
+
+        {/* Always-visible free-text message to coach */}
+        <CoachMessageBox date={todayStr} />
       </div>
     </div>
   );

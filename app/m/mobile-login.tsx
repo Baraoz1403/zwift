@@ -24,9 +24,14 @@ export default function MobileLoginScreen() {
         setLoading(false);
         return;
       }
-      // Detect iPad (including iPadOS 13+ which reports Macintosh UA + touch)
+      // Detect iPad (including iPadOS 13+ which reports Macintosh UA + touch).
+      // Middleware can't see maxTouchPoints — persist the device type in a cookie
+      // so all subsequent requests (even when already logged in) route correctly.
       const isIPad = /iPad/i.test(navigator.userAgent) ||
         (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      if (isIPad) {
+        document.cookie = "device_hint=tablet; path=/; max-age=31536000; SameSite=Lax";
+      }
       window.location.href = isIPad ? "/tablet/today" : "/m";
     } catch {
       setError("Network error. Please try again.");

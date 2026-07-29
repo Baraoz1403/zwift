@@ -73,21 +73,29 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── Tablet UA guard: /m/* → /tablet/* ────────────────────────────────────
-  // Prevents iPad from ever rendering the phone layout when following an
-  // internal link or bookmark that points to /m/*. Applies to all /m/ routes
-  // that have a tablet equivalent; legal pages are left as-is.
-  if (pathname.startsWith("/m/") && !pathname.startsWith("/m/legal")) {
-    const device = detectDevice(ua);
-    if (device === "tablet") {
-      // Find the most specific matching mobile base path
-      const mobileBase = Object.keys(MOBILE_TO_TABLET).find(
-        k => pathname === k || pathname.startsWith(k + "/")
-      );
-      if (mobileBase) {
-        return NextResponse.redirect(new URL(MOBILE_TO_TABLET[mobileBase], req.url));
-      }
-    }
+  // ── Tablet guard: /m and /m/* → /tablet/* ───────────────────────────────
+  // iPadOS 13+ reports a "Macintosh" UA (no "iPad") so UA-only detection fails.
+  // Solution: MobileLoginScreen sets a "device_hint=tablet" cookie (using
+  // navigator.maxTouchPoints which IS available in the browser). Middleware
+  // reads this cookie for all subsequent requests — no re-login required.
+  //
+  // Guard: only redirect authenticated users (session cookie exists).
+  // Unauthenticated iPads hit /m → see mobile login → set cookie there → done.
+  // This prevents an infinite redirect loop with the tablet layout's auth gate,
+  // which redirects unauthenticated users back to /m.
+  const deviceHint = req.cookies.get("device_hint")?.value;
+  const isTablet   = deviceHint === "tablet" || detectDevice(ua) === "tablet";
+
+  const isMobilePath = pathname === "/m" ||
+    (pathname.startsWith("/m/") && !pathname.startsWith("/m/legal"));
+
+  if (isTablet && isMobilePath && hasSession) {
+    // Find best-matching tablet route, fall back to /tablet/today
+    const mobileBase = Object.keys(MOBILE_TO_TABLET).find(
+      k => pathname === k || pathname.startsWith(k + "/")
+    );
+    const dest = mobileBase ? MOBILE_TO_TABLET[mobileBase] : "/tablet/today";
+    return NextResponse.redirect(new URL(dest, req.url));
   }
 
   // ── Device auto-redirect on root "/" ─────────────────────────────────────
