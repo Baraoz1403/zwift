@@ -2,14 +2,15 @@
  * TabletTopBar — full-width fixed header for all tablet pages.
  *
  * Shows (top-to-bottom):
- *   Row 1: greeting · date                    [theme toggle]
- *   Row 2: Athlete name (big)  [ICU●] [TP●]  [FTP chip] [Phase chip] [Sessions chip]
+ *   Row 1: greeting · date                             [theme toggle]
+ *   Row 2: Athlete name (big)   [Zwift ✓] [ICU ✓]  [FTP] [Phase] [Sessions]
+ *
+ * Connection chips (Zwift, ICU) now match the metric chip style — same height,
+ * same card look, green text + "Connected" label. TP removed: the app
+ * integrates with Zwift and Intervals.icu only.
  *
  * Position: fixed top:0 left:0 right:0 z-index:70
  * Height:   94px inner + env(safe-area-inset-top)  → CSS var(--tablet-bar-h)
- *
- * The sidebar and main content are offset by var(--tablet-bar-h) so they
- * appear directly below this bar.
  */
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
@@ -22,14 +23,13 @@ interface TabletTopBarProps {
   weekDisplayNum: number | null;
   weekWorkoutCount: number;
   icuConnected: boolean;
-  tpConnected: boolean;
   greeting: string;
   dateLabel: string;
 }
 
 export function TabletTopBar({
   firstName, ftp, currentPhase, weekDisplayNum, weekWorkoutCount,
-  icuConnected, tpConnected, greeting, dateLabel,
+  icuConnected, greeting, dateLabel,
 }: TabletTopBarProps) {
   return (
     <div
@@ -57,43 +57,46 @@ export function TabletTopBar({
           <ThemeToggleButton compact />
         </div>
 
-        {/* Row 2: name + connection chips on left, fitness chips on right */}
+        {/* Row 2: name on left, connection + fitness chips on right */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 
-          {/* Left: name + ICU + TP */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              fontSize: 34, fontWeight: 900, color: "var(--m-text)",
-              letterSpacing: "-1px", lineHeight: 1,
-            }}>
-              {firstName ?? "Athlete"}
-            </div>
-            <div style={{ display: "flex", gap: 5, paddingTop: 2 }}>
-              {/* ICU chip */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 4,
-                padding: "4px 9px", borderRadius: 6,
-                background: icuConnected ? "rgba(34,211,238,0.08)" : "rgba(100,116,139,0.08)",
-                border: `1px solid ${icuConnected ? "rgba(34,211,238,0.3)" : "rgba(100,116,139,0.2)"}`,
-              }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: icuConnected ? "#22d3ee" : "#64748b", flexShrink: 0 }} />
-                <span style={{ fontSize: 10, fontWeight: 800, color: icuConnected ? "#22d3ee" : "#64748b", letterSpacing: ".06em" }}>ICU</span>
-              </div>
-              {/* TP chip */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 4,
-                padding: "4px 9px", borderRadius: 6,
-                background: tpConnected ? "rgba(59,130,246,0.08)" : "rgba(100,116,139,0.08)",
-                border: `1px solid ${tpConnected ? "rgba(59,130,246,0.3)" : "rgba(100,116,139,0.2)"}`,
-              }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: tpConnected ? "#3b82f6" : "#64748b", flexShrink: 0 }} />
-                <span style={{ fontSize: 10, fontWeight: 800, color: tpConnected ? "#3b82f6" : "#64748b", letterSpacing: ".06em" }}>TP</span>
-              </div>
-            </div>
+          {/* Left: athlete name only */}
+          <div style={{
+            fontSize: 34, fontWeight: 900, color: "var(--m-text)",
+            letterSpacing: "-1px", lineHeight: 1,
+          }}>
+            {firstName ?? "Athlete"}
           </div>
 
-          {/* Right: fitness metric chips */}
+          {/* Right: connection chips + metric chips */}
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
+
+            {/* ── Connection chips ── */}
+            {/* Zwift: always connected (required to use the app) */}
+            <div style={{
+              background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.30)",
+              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: "#22c55e", lineHeight: 1 }}>Zwift</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,197,94,0.75)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Connected</div>
+            </div>
+
+            {/* ICU: shown in green when connected, muted grey otherwise */}
+            <div style={{
+              background: icuConnected ? "rgba(34,197,94,0.10)" : "rgba(100,116,139,0.08)",
+              border: `1px solid ${icuConnected ? "rgba(34,197,94,0.30)" : "rgba(100,116,139,0.20)"}`,
+              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: icuConnected ? "#22c55e" : "#64748b", lineHeight: 1 }}>ICU</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: icuConnected ? "rgba(34,197,94,0.75)" : "rgba(100,116,139,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>
+                {icuConnected ? "Connected" : "Not set up"}
+              </div>
+            </div>
+
+            {/* Visual separator */}
+            <div style={{ width: 1, height: 34, background: "var(--m-border)", margin: "0 2px" }} />
+
+            {/* ── Metric chips ── */}
             {ftp && (
               <div style={{
                 background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)",

@@ -83,9 +83,8 @@ export default async function TabletLayout({ children }: { children: React.React
       (w: { type?: string }) => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
     ).length;
 
-    // Connection status
+    // Connection status — Zwift is always connected (required), ICU is optional
     const icuConnected = !!(cookieKey ?? kvCreds?.icuKey);
-    const tpConnected  = !!(cookieStore.get("zwift_tp_token")?.value);
 
     // Greeting (UTC+3 approximation — same as mobile)
     const now       = new Date();
@@ -154,7 +153,7 @@ export default async function TabletLayout({ children }: { children: React.React
             weekDisplayNum={weekDisplayNum}
             weekWorkoutCount={weekWorkoutCount}
             icuConnected={icuConnected}
-            tpConnected={tpConnected}
+
             greeting={greeting}
             dateLabel={dateLabel}
           />
