@@ -36,7 +36,6 @@ interface Props {
 }
 
 export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayStatus = "planned", weekStatus = {} }: Props) {
-  const [pushState, setPushState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [noteState, setNoteState] = useState<"idle" | "sending" | "done">("idle");
   const [structureOpen, setStructureOpen] = useState(false);
 
@@ -47,27 +46,6 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
   const ifTss = workout.structure && workout.structure.length > 0
     ? computeIfTss(structureToBlocks(workout.structure))
     : null;
-
-  async function pushToZwift() {
-    if (pushState !== "idle") return;
-    setPushState("sending");
-    try {
-      const res = await fetch("/api/intervals/push-workout", {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workoutDay: today, title: workout.title,
-          description: workout.description ?? "",
-          durationMin: workout.durationMin ?? 60,
-          type: workout.type ?? "Bike",
-          targetPower: workout.targetPowerPctFtp,
-          structure: workout.structure,
-        }),
-      });
-      const data = await res.json();
-      setPushState(data.ok ? "done" : "error");
-    } catch { setPushState("error"); }
-  }
 
   async function sendNote(note: string) {
     if (noteState !== "idle") return;
@@ -219,17 +197,6 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
 
       {/* Actions */}
       <div style={{ marginBottom: 14 }}>
-        {!isRest && (
-          <button onClick={pushToZwift} disabled={pushState!=="idle"} style={{
-            width: "100%", padding: "15px", borderRadius: 4, border: "none",
-            fontSize: 15, fontWeight: 700, cursor: pushState==="idle"?"pointer":"default",
-            marginBottom: 8,
-            background: pushState==="done"?"#16a34a":pushState==="error"?"#dc2626":pushState==="sending"?"var(--m-muted)":"#FF5A1F",
-            color: "#fff",
-          }}>
-            {pushState==="idle"?"Send to Zwift":pushState==="sending"?"Sending…":pushState==="done"?"✓ On your Zwift calendar":"Try again"}
-          </button>
-        )}
         {/* Post-workout: tired signal (only after activity logged) */}
         {todayStatus === "completed" && (
           <button onClick={() => sendNote("Felt tired today — please factor into next week")} style={{

@@ -137,13 +137,15 @@ export async function POST(req: NextRequest) {
       }
 
       // ── Auto-provision: first plan + first ICU sync, no button needed ────
-      // See ensurePlanProvisioned's doc comment. Awaited (not fire-and-forget)
-      // because Vercel serverless functions don't guarantee background work
-      // survives after the response is sent unless explicitly using
-      // waitUntil/after - awaiting here with maxDuration=60 is the reliable
-      // option. Only costs real time for an athlete who doesn't already have
-      // this week's plan cached; everyone else returns from this near-instantly.
-      await ensurePlanProvisioned(athleteId, result.accessToken);
+      // Wrapped in its own try-catch: plan generation can fail (AI timeout,
+      // OpenAI rate limit, etc.) and must NEVER block the login response.
+      // The athlete can still log in and the plan will be generated on the
+      // next page load or cron cycle.
+      try {
+        await ensurePlanProvisioned(athleteId, result.accessToken);
+      } catch (planErr) {
+        console.error("[login] Plan provisioning failed (non-blocking):", planErr);
+      }
     }
 
     return res;

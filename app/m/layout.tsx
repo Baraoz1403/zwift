@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import MobileNav from "./mobile-nav";
@@ -29,6 +30,14 @@ export default async function MobileLayout({ children }: { children: React.React
   // Not authenticated — show the mobile login screen (no nav, no children)
   if (!session?.athleteId) {
     return <MobileLoginScreen />;
+  }
+
+  // Auto-refresh Zwift token when expired or within 5 minutes of expiry.
+  // Transparent to the athlete — the refresh endpoint returns a fresh cookie
+  // and redirects back to /m/today.
+  const TOKEN_BUFFER_MS = 5 * 60 * 1000;
+  if (session.refreshToken && session.expiresAt < Date.now() + TOKEN_BUFFER_MS) {
+    redirect("/api/auth/refresh?next=/m/today");
   }
 
   // ── Intervals.icu gate ───────────────────────────────────────────────────

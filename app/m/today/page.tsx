@@ -303,45 +303,48 @@ function TodayHero({
       flexShrink: 0,
       background: "var(--m-card)",
       borderBottom: "1px solid var(--m-border)",
-      padding: "16px 20px 16px",
+      padding: "14px 20px",
     }}>
-      {/* Top row: greeting + theme toggle */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+      {/* Row 1: greeting + theme toggle */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px" }}>
           {timeGreeting}
         </div>
         <ThemeToggleButton compact />
       </div>
 
-      {/* Athlete name row */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div style={{ fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
+      {/* Row 2: athlete name (left) + Done/Missed badge (right) */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ fontSize: 34, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
+        {statusBadge && (
+          <span style={{
+            fontSize: 14, fontWeight: 800, borderRadius: 4,
+            color: statusBadge.color, background: statusBadge.bg,
+            border: statusBadge.border,
+            padding: "6px 14px", letterSpacing: ".01em", flexShrink: 0,
+          }}>{statusBadge.text}</span>
+        )}
+      </div>
+
+      {/* Row 3: date (left) + FTP & phase (right) */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          {ftp && (
+            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>
+              {ftp}&thinsp;<span style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)" }}>W FTP</span>
+            </div>
+          )}
           {phase && (
             <span style={{
               fontSize: 11, fontWeight: 700, color: "#FF5A1F",
               background: "rgba(255,90,31,0.1)", border: "1px solid rgba(255,90,31,0.3)",
-              padding: "3px 10px", borderRadius: 3,
+              padding: "2px 8px", borderRadius: 3,
             }}>{phase}</span>
           )}
-          {ftp && (
-            <span style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500 }}>{ftp} W FTP</span>
-          )}
         </div>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-        <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
-        {statusBadge && (
-          <span style={{
-            fontSize: 13, fontWeight: 800, borderRadius: 4,
-            color: statusBadge.color, background: statusBadge.bg,
-            border: statusBadge.border,
-            padding: "4px 12px", letterSpacing: ".01em",
-          }}>{statusBadge.text}</span>
-        )}
       </div>
     </div>
   );
