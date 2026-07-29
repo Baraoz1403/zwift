@@ -4,7 +4,7 @@
  */
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { fetchOwnProfile } from "@/lib/zwift";
+import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import {
   getRiderIdentity,
   getCachedPlan,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { computeWeekStatus } from "@/lib/activity-sync";
+import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { TabletPageHeader } from "../tablet-page-header";
@@ -67,25 +67,63 @@ export default async function TabletCoachPage() {
   const currentPhase = macro
     ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
     : null;
+  const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
 
   const todayStr  = new Date().toISOString().slice(0, 10);
   const weekDates = weekDatesFrom(weekOf);
   const dateMap   = buildDateMap(weekOf);
   const workouts: WeeklyWorkout[] = (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? dateMap[w.day] ?? undefined }));
 
+  const weekWorkoutCount = workouts.filter(
+    w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+  ).length;
+
   let weekStatus: Record<string, DayStatus> = {};
+  let todayActivityName: string | null = null;
+  let todayActivityDurationMin: number | null = null;
+  let todayAvgHr: number | null = null;
+
   try {
     const cookieId = cookieStore.get("zwift_intervals_id")?.value;
     const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
     const icuId  = cookieId  ?? earlyKvCreds?.icuId;
-    if (icuKey && icuId) {
-      const activities = await Promise.race([
-        fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
-      ]);
-      weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+
+    // Fetch both ICU and Zwift direct (same as Today page) for complete detection
+    const [icuActivities, zwiftRaw] = await Promise.all([
+      (icuKey && icuId)
+        ? Promise.race([
+            fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
+            new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
+          ]).catch(() => [])
+        : Promise.resolve([]),
+      Promise.race([
+        fetchActivities(session.accessToken, session.athleteId!, 50),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 5000)),
+      ]).catch(() => []),
+    ]);
+
+    const zwiftAsIcu = zwiftRaw
+      .map(zwiftActivityToIcu)
+      .filter(a => {
+        const d = a.start_date_local?.slice(0, 10) ?? "";
+        return d >= weekDates[0] && d <= weekDates[6];
+      });
+
+    const activities = mergeActivities(
+      icuActivities as import("@/lib/intervals").IcuActivity[],
+      zwiftAsIcu,
+    );
+    weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+
+    const todayAct = activities.find(a => (a.start_date_local ?? "").slice(0, 10) === todayStr);
+    if (todayAct) {
+      todayActivityName = todayAct.name ?? null;
+      todayActivityDurationMin = todayAct.moving_time ? Math.round(todayAct.moving_time / 60) : null;
+      todayAvgHr = todayAct.average_heartrate ?? null;
     }
   } catch { /* best-effort */ }
+
+  const isBonus = weekStatus[todayStr] === "bonus";
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
@@ -102,14 +140,20 @@ export default async function TabletCoachPage() {
           <CoachChat firstName={firstName} />
         </div>
 
-        {/* Week sidebar — same as Today page */}
+        {/* Week sidebar — full parity with Today page */}
         <TabletWeekSidebar
           ftp={ftp}
           currentPhase={currentPhase}
+          weekDisplayNum={weekDisplayNum}
           workouts={workouts}
           weekStatus={weekStatus}
           todayStr={todayStr}
           planSummary={plan?.summary ?? null}
+          weekWorkoutCount={weekWorkoutCount}
+          isBonus={isBonus}
+          todayActivityName={todayActivityName}
+          todayActivityDurationMin={todayActivityDurationMin}
+          todayAvgHr={todayAvgHr}
         />
       </div>
     </div>

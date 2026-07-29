@@ -1648,22 +1648,24 @@ tbody tr:hover {
   /* content area — no changes in landscape */
 }
 
+/* Portrait on tablet: sidebar stays visible (user wants left bar on iPad too).
+   Bottom nav hidden — sidebar already handles navigation.
+   On small phones (< 600px) this block doesn't apply; phones use /m routes. */
 @media (orientation: portrait) and (min-width: 600px) {
-  .tablet-sidebar {
-    display: none !important;
-  }
+  /* Keep .tablet-sidebar visible — sidebar is always shown on iPad */
   .tablet-main {
-    margin-left: 0 !important;
+    margin-left: 220px !important;  /* same as landscape */
   }
-  /* In portrait the bottom nav is fixed — give the scroll area room underneath it */
+  /* No bottom nav padding needed since we're not showing the bottom nav */
   .tablet-scroll-area {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0 !important;
   }
-  /* Footer replaced by bottom nav in portrait — hide it */
+  /* Footer stays hidden in portrait (sidebar nav replaces it) */
   .tablet-footer {
     display: none !important;
   }
+  /* Bottom nav hidden — sidebar is the nav */
   .tablet-bottom-nav {
-    display: flex !important;
+    display: none !important;
   }
 }

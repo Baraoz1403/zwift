@@ -1,7 +1,10 @@
 /**
- * TabletWeekSidebar — shared right-panel component used on Today and Coach pages.
- * Shows FTP + training phase stats, the week's workout list with status dots,
- * and the week plan summary.
+ * TabletWeekSidebar — shared right-panel for Today, Week, and Coach pages.
+ * Shows FTP + training phase + sessions count, optional bonus-ride highlight,
+ * the week's workout list with status dots, and the week plan summary.
+ *
+ * Matches the inline sidebar layout of tablet/today/page.tsx exactly so all
+ * three pages feel consistent.
  */
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
@@ -34,13 +37,24 @@ function detectZoneLabel(w: WeeklyWorkout): string {
 interface Props {
   ftp: number | null;
   currentPhase: string | null;
+  weekDisplayNum?: number | null;
   workouts: WeeklyWorkout[];
   weekStatus: Record<string, DayStatus>;
   todayStr: string;
   planSummary?: string | null;
+  /** Number of non-rest workouts this week */
+  weekWorkoutCount?: number;
+  /** True when athlete rode on today's rest day */
+  isBonus?: boolean;
+  todayActivityName?: string | null;
+  todayActivityDurationMin?: number | null;
+  todayAvgHr?: number | null;
 }
 
-export function TabletWeekSidebar({ ftp, currentPhase, workouts, weekStatus, todayStr, planSummary }: Props) {
+export function TabletWeekSidebar({
+  ftp, currentPhase, weekDisplayNum, workouts, weekStatus, todayStr, planSummary,
+  weekWorkoutCount, isBonus, todayActivityName, todayActivityDurationMin, todayAvgHr,
+}: Props) {
   return (
     <div style={{
       width: 280, flexShrink: 0,
@@ -53,33 +67,73 @@ export function TabletWeekSidebar({ ftp, currentPhase, workouts, weekStatus, tod
 
       {/* ── Stats — sticky so always visible ──────────────────────────── */}
       <div style={{
-        padding: "24px 20px", borderBottom: "1px solid var(--m-border)",
+        padding: "20px 16px", borderBottom: "1px solid var(--m-border)",
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 16 }}>
-          Your stats
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 12 }}>
+          Fitness metrics
         </div>
-        <div style={{ display: "flex", gap: 16 }}>
-          {ftp && (
-            <div style={{
-              flex: 1, background: `${ZO}08`, border: `1px solid ${ZO}20`,
-              borderRadius: 4, padding: "14px 16px",
-            }}>
-              <div style={{ fontSize: 32, fontWeight: 900, color: ZO, letterSpacing: "-.5px", lineHeight: 1 }}>{ftp}W</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: ZO, opacity: 0.7, textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>FTP</div>
-            </div>
-          )}
+        {/* FTP — cyan, full width */}
+        {ftp && (
+          <div style={{
+            background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)",
+            borderRadius: 8, padding: "14px 16px", marginBottom: 8,
+            display: "flex", alignItems: "baseline", gap: 6,
+          }}>
+            <div style={{ fontSize: 38, fontWeight: 900, color: "#22d3ee", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8 }}>
+          {/* Phase — orange */}
           {currentPhase && (
             <div style={{
-              flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-              borderRadius: 4, padding: "14px 16px",
+              flex: 1, background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.2)",
+              borderRadius: 8, padding: "10px 12px",
             }}>
-              <div style={{ fontSize: 26, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.5px", lineHeight: 1 }}>{currentPhase}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>Phase</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{currentPhase}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
+                {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
+              </div>
+            </div>
+          )}
+          {/* Sessions this week — purple */}
+          {weekWorkoutCount != null && weekWorkoutCount > 0 && (
+            <div style={{
+              flex: 1, background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
+              borderRadius: 8, padding: "10px 12px",
+            }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
             </div>
           )}
         </div>
+        {/* Bonus ride highlight */}
+        {isBonus && (
+          <div style={{
+            marginTop: 10,
+            background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: 8, padding: "12px 14px",
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+              🚴 Bonus ride today
+            </div>
+            {todayActivityName && (
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginBottom: 6, lineHeight: 1.3 }}>
+                {todayActivityName.length > 28 ? todayActivityName.slice(0, 26) + "…" : todayActivityName}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              {todayActivityDurationMin != null && (
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{todayActivityDurationMin} min</span>
+              )}
+              {todayAvgHr != null && (
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{Math.round(todayAvgHr)} bpm</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Week list ─────────────────────────────────────────────────── */}
@@ -128,7 +182,7 @@ export function TabletWeekSidebar({ ftp, currentPhase, workouts, weekStatus, tod
                     color: dayIsRest ? "var(--m-muted)" : "var(--m-text)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
-                    {dayIsRest ? "Rest" : w!.title}
+                    {dayIsRest ? (isToday && isBonus ? "Rest + Bonus 🚴" : "Rest") : w!.title}
                   </div>
                   {!dayIsRest && w && (
                     <div style={{ fontSize: 13, color: rowColor as string, marginTop: 2, fontWeight: 600 }}>
@@ -140,6 +194,7 @@ export function TabletWeekSidebar({ ftp, currentPhase, workouts, weekStatus, tod
                 {/* Status dot */}
                 {dayStatus === "completed" && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
                 {dayStatus === "missed"    && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
+                {dayStatus === "bonus"     && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />}
               </div>
             );
           })}

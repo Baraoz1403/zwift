@@ -5,13 +5,16 @@
  */
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials, getRiderIdentity } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getRiderIdentity, getStoredAthleteState } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import WeekView from "@/app/m/week/week-view";
 import { TabletPageHeader } from "../tablet-page-header";
+import { TabletWeekSidebar } from "../tablet-week-sidebar";
+import type { WeeklyWorkout } from "@/lib/ai";
+import type { DayStatus } from "@/lib/activity-sync";
 
 function formatWeekRange(weekOf: string): string {
   const monday = new Date(weekOf + "T00:00:00Z");
@@ -33,13 +36,20 @@ export default async function TabletWeekPage() {
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
   const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
 
-  const [plan, kvCreds, zwiftProfile, cachedIdentity] = await Promise.all([
+  const [plan, kvCreds, zwiftProfile, cachedIdentity, athleteState] = await Promise.all([
     getCachedPlan(athleteId, weekOf),
     cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
     fetchOwnProfile(session.accessToken).catch(() => null),
     getRiderIdentity(athleteId).catch(() => null),
+    getStoredAthleteState(athleteId).catch(() => null),
   ]);
   const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
+  const ftp = zwiftProfile?.ftp ?? cachedIdentity?.ftp ?? null;
+  const macro = (athleteState as { macroCycle?: { weekIndex: number } } | null)?.macroCycle ?? null;
+  const currentPhase = macro
+    ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
+    : null;
+  const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
 
   const workouts = plan?.workouts ?? [];
   const today    = new Date().toISOString().slice(0, 10);
@@ -55,7 +65,15 @@ export default async function TabletWeekPage() {
   weekDays.forEach((d,i) => { dateMap[d] = weekDates[i]; });
   const workoutsWithDates = workouts.map(w => ({ ...w, date: w.date ?? dateMap[w.day] }));
 
-  let weekStatus: Record<string,string> = {};
+  const weekWorkoutCount = workoutsWithDates.filter(
+    (w: WeeklyWorkout) => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+  ).length;
+
+  let weekStatus: Record<string, DayStatus> = {};
+  let todayActivityName: string | null = null;
+  let todayActivityDurationMin: number | null = null;
+  let todayAvgHr: number | null = null;
+
   try {
     const icuKey = cookieKey ?? kvCreds?.icuKey;
     const icuId  = cookieId  ?? kvCreds?.icuId;
@@ -85,7 +103,16 @@ export default async function TabletWeekPage() {
       zwiftAsIcu,
     );
     weekStatus = computeWeekStatus(workoutsWithDates, activities, today, weekDates);
+
+    const todayAct = activities.find(a => (a.start_date_local ?? "").slice(0, 10) === today);
+    if (todayAct) {
+      todayActivityName = todayAct.name ?? null;
+      todayActivityDurationMin = todayAct.moving_time ? Math.round(todayAct.moving_time / 60) : null;
+      todayAvgHr = todayAct.average_heartrate ?? null;
+    }
   } catch { /* best-effort */ }
+
+  const isBonus = weekStatus[today] === "bonus";
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
@@ -94,18 +121,36 @@ export default async function TabletWeekPage() {
         name={firstName}
         subtitle={formatWeekRange(weekOf)}
       />
-      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "28px" }}>
-        <WeekView
+      {/* Body: week view on left, sidebar on right */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "28px" }}>
+          <WeekView
+            workouts={workoutsWithDates}
+            weekOf={weekOf}
+            weekRange={formatWeekRange(weekOf)}
+            today={today}
+            summary={plan?.summary ?? null}
+            weekStatus={weekStatus}
+            prevWeekHref={null}
+            nextWeekHref={null}
+            isCurrentWeek={true}
+            hideNav={true}
+          />
+        </div>
+
+        <TabletWeekSidebar
+          ftp={ftp}
+          currentPhase={currentPhase}
+          weekDisplayNum={weekDisplayNum}
           workouts={workoutsWithDates}
-          weekOf={weekOf}
-          weekRange={formatWeekRange(weekOf)}
-          today={today}
-          summary={plan?.summary ?? null}
           weekStatus={weekStatus}
-          prevWeekHref={null}
-          nextWeekHref={null}
-          isCurrentWeek={true}
-          hideNav={true}
+          todayStr={today}
+          planSummary={plan?.summary ?? null}
+          weekWorkoutCount={weekWorkoutCount}
+          isBonus={isBonus}
+          todayActivityName={todayActivityName}
+          todayActivityDurationMin={todayActivityDurationMin}
+          todayAvgHr={todayAvgHr}
         />
       </div>
     </div>

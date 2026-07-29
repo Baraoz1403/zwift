@@ -292,6 +292,25 @@ export async function getAthletePhone(athleteId: string): Promise<string | null>
 }
 
 /**
+ * Account-level feedback-done flag: stored in KV so that submitting feedback
+ * on one device (mobile/iPad) prevents the banner showing on any other device.
+ * TTL is 7 days (feedback is per-date, so old keys expire automatically).
+ */
+export async function getFeedbackDone(athleteId: string, date: string): Promise<boolean> {
+  if (!kvAvailable() || !athleteId || !date) return false;
+  try {
+    return (await kvGet(`zwift:${athleteId}:feedback_done:${date}`)) === "1";
+  } catch { return false; }
+}
+
+export async function setFeedbackDone(athleteId: string, date: string): Promise<void> {
+  if (!kvAvailable() || !athleteId || !date) return;
+  try {
+    await kvSet(`zwift:${athleteId}:feedback_done:${date}`, "1", 60 * 60 * 24 * 7);
+  } catch {}
+}
+
+/**
  * Reverse-lookup: given an Intervals.icu athlete ID (e.g. "i12345"),
  * find the Zwift athlete ID in the registry. Used by the ICU webhook to
  * identify who just finished a ride without requiring a session cookie.

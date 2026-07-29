@@ -13,9 +13,10 @@
  * (athlete keeps skipping structured work → plan needs more variety).
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-const FEEDBACK_KEY = (date: string) => `feedbackDone:${date}`;
+// localStorage key — fast local check (avoids network on same device)
+const LS_FEEDBACK_KEY = (date: string) => `feedbackDone:${date}`;
 
 const ZO = "#F2541B";
 
@@ -70,14 +71,37 @@ export default function FeedbackBanner({
   isBonus,
 }: Props) {
   // If feedback was already submitted today, skip the entire banner.
-  // null = not yet checked (after SSR hydration); avoids flash of the banner.
-  // Using useEffect (not lazy initializer) because Next.js keeps the server
-  // value (false) during hydration — the lazy initializer doesn't re-run,
-  // so the banner would always show on first load even when already done.
+  // null = not yet checked; avoids flash of the banner.
+  // Strategy: check localStorage first (instant, same device). If not found
+  // there, check the server (covers feedback submitted on another device).
   const [alreadyDone, setAlreadyDone] = useState<boolean | null>(null);
-  useEffect(() => {
-    setAlreadyDone(!!localStorage.getItem(FEEDBACK_KEY(date)));
+
+  const checkFeedbackDone = useCallback(async () => {
+    // Fast path: localStorage (same device)
+    if (typeof window !== "undefined" && localStorage.getItem(LS_FEEDBACK_KEY(date))) {
+      setAlreadyDone(true);
+      return;
+    }
+    // Slow path: server (other device may have submitted)
+    try {
+      const res = await fetch(`/api/ai/feedback-status?date=${date}`, { credentials: "include" });
+      if (res.ok) {
+        const { done } = await res.json() as { done: boolean };
+        if (done) {
+          // Mirror to localStorage so future page loads are instant
+          try { localStorage.setItem(LS_FEEDBACK_KEY(date), "1"); } catch {}
+        }
+        setAlreadyDone(done);
+      } else {
+        setAlreadyDone(false);
+      }
+    } catch {
+      // Network error — default to not done (show banner, let them submit)
+      setAlreadyDone(false);
+    }
   }, [date]);
+
+  useEffect(() => { checkFeedbackDone(); }, [checkFeedbackDone]);
 
   // Bonus rides skip plan-check — there was no plan, just go straight to rating
   const [step, setStep] = useState<Step>(isBonus ? "rate" : "plan-check");
@@ -130,8 +154,14 @@ export default function FeedbackBanner({
         });
       }
 
-      // Mark feedback as done for today so the banner doesn't reappear
-      localStorage.setItem(FEEDBACK_KEY(date), "1");
+      // Mark feedback as done — both locally (fast) and on the server
+      // (account-level: prevents banner re-appearing on other devices)
+      try { localStorage.setItem(LS_FEEDBACK_KEY(date), "1"); } catch {}
+      fetch("/api/ai/feedback-status", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      }).catch(() => {});
       setStep("done");
     } catch {
       setState("idle");
