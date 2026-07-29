@@ -7,8 +7,6 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
-import FeedbackBanner from "./feedback-banner";
-import FeedbackTrigger from "./feedback-trigger";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -230,16 +228,6 @@ export default async function MobileTodayPage() {
                 </div>
               </div>
 
-              {/* Feedback banner — adapted for bonus (skip plan-check, go straight to RPE) */}
-              <FeedbackBanner
-                workoutTitle={todayActivityName ?? "Bonus ride"}
-                workoutCategory="bonus"
-                date={todayStr}
-                avgHr={todayAvgHr}
-                completed={true}
-                actualDurationMin={todayActivityDurationMin}
-                isBonus={true}
-              />
             </>
           ) : (
             /* Pure rest day — calm, no drama */
@@ -262,29 +250,12 @@ export default async function MobileTodayPage() {
 
   return (
     <div style={PAGE_SHELL}>
-      {/* Fires /api/m/feedback-check after page load — sends WhatsApp if
-          the athlete completed a ride today and hasn't been messaged yet.
-          No ICU webhook setup required. */}
-      <FeedbackTrigger />
 
       {/* Hero header — outside scroll area so it never moves */}
       <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} />
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
-        {/* Feedback banner — always shown for today's workout.
-            ICU sync can lag; don't wait for "completed" status. */}
-        <FeedbackBanner
-          workoutTitle={todayWorkout.title}
-          workoutCategory={todayWorkout.type ?? ""}
-          date={todayStr}
-          avgHr={todayAvgHr}
-          completed={todayStatus === "completed" || todayStatus === "bonus"}
-          plannedDurationMin={todayWorkout.durationMin}
-          actualActivityName={todayActivityName}
-          actualDurationMin={todayActivityDurationMin}
-        />
-
         {/* Main workout card */}
         <MobileWorkoutCard
           workout={todayWorkout}
@@ -392,50 +363,49 @@ function TodayHero({
         </div>
       </div>
 
-      {/* Row 3: colored stats chips — FTP, Phase, Sessions, and today's session.
-          Colors match the tablet TopBar exactly: FTP=#00C2FF, Phase=dynamic, Sessions=#FF5A1F */}
+      {/* Row 3: stat cards — same MetricCard composition as the Profile page, compact for the header.
+          Background = var(--m-card), border = var(--m-border), value = colored, label = muted gray. */}
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-        {/* FTP — cyan #00C2FF (matches tablet) */}
+        {/* FTP */}
         {ftp && (
           <div style={{
-            background: "rgba(0,194,255,0.07)", border: "1px solid rgba(0,194,255,0.25)",
-            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
           }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,194,255,0.60)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>W FTP</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>FTP</div>
           </div>
         )}
-        {/* Phase — dynamic: Build=red, Recovery=amber, Base=purple (matches tablet) */}
+        {/* Phase — Build=red, Recovery=amber, Base=purple */}
         {phase && (() => {
           const phaseColor = phase === "Recovery" ? "#f59e0b" : phase === "Build" ? "#ef4444" : "#818cf8";
-          const phaseAlpha = phase === "Recovery" ? "rgba(245,158,11," : phase === "Build" ? "rgba(239,68,68," : "rgba(129,140,248,";
           return (
             <div style={{
-              background: `${phaseAlpha}0.07)`, border: `1px solid ${phaseAlpha}0.25)`,
-              borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
+              background: "var(--m-card)", border: "1px solid var(--m-border)",
+              borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
             }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: phaseColor, lineHeight: 1 }}>{phase}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: `${phaseAlpha}0.60)`, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>
-                {weekIndex !== null ? `Week ${weekIndex + 1}` : "Phase"}
+              <div style={{ fontSize: 17, fontWeight: 800, color: phaseColor, lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>
+                {weekIndex !== null ? `Wk ${weekIndex + 1}` : "Phase"}
               </div>
             </div>
           );
         })()}
-        {/* Sessions — orange #FF5A1F (matches tablet) */}
+        {/* Sessions this week */}
         {weekWorkoutCount > 0 && (
           <div style={{
-            background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.25)",
-            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 52,
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
           }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{weekWorkoutCount}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,90,31,0.60)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>Sessions</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#FF5A1F", lineHeight: 1 }}>{weekWorkoutCount}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>Sessions</div>
           </div>
         )}
-        {/* Today's session chip — shows workout title (or "Rest Day" on rest/bonus days) */}
+        {/* Today's workout label */}
         <div style={{
-          flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+          flex: 2, background: "var(--m-card)", border: "1px solid var(--m-border)",
           borderLeft: `3px solid ${isRestOrBonus ? "var(--m-border)" : sessionColor}`,
-          borderRadius: 8, padding: "7px 10px",
+          borderRadius: 12, padding: "10px 12px",
           display: "flex", alignItems: "center",
           minWidth: 0,
         }}>
