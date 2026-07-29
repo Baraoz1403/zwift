@@ -9,7 +9,6 @@ import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
 import FeedbackTrigger from "./feedback-trigger";
-import CoachMessageBox from "./coach-message-box";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -132,7 +131,6 @@ export default async function MobileTodayPage() {
 
   // Connection status for header icons
   const icuConnected = !!(cookieKeyEarly ?? earlyKvCreds?.icuKey);
-  const tpConnected  = !!(cookieStore.get("zwift_tp_token")?.value);
 
   const macro = athleteState?.macroCycle ?? null;
   let currentPhase: string | null = null;
@@ -166,7 +164,7 @@ export default async function MobileTodayPage() {
   if (!plan || workouts.length === 0) {
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} icuConnected={icuConnected} tpConnected={tpConnected} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} icuConnected={icuConnected} />
         <div style={SCROLL_STYLE}>
           <NoPlanScreen />
         </div>
@@ -179,7 +177,7 @@ export default async function MobileTodayPage() {
     const isBonus = todayStatus === "bonus";
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} tpConnected={tpConnected} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} />
         <div style={SCROLL_STYLE}>
           {isBonus ? (
             /* Bonus ride — show actual ride data + feedback banner */
@@ -242,24 +240,20 @@ export default async function MobileTodayPage() {
                 actualDurationMin={todayActivityDurationMin}
                 isBonus={true}
               />
-              <CoachMessageBox date={todayStr} />
             </>
           ) : (
             /* Pure rest day — calm, no drama */
-            <>
-              <div style={{ padding: "16px 16px 0" }}>
-                <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 12 }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
-                  <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
-                    No workout scheduled today. Quality rest is as important as the training itself.
-                  </div>
-                  <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
-                    See this week&apos;s plan →
-                  </a>
+            <div style={{ padding: "16px 16px 0" }}>
+              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
+                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
+                  No workout scheduled today. Quality rest is as important as the training itself.
                 </div>
+                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
+                  See this week&apos;s plan →
+                </a>
               </div>
-              <CoachMessageBox date={todayStr} />
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -274,7 +268,7 @@ export default async function MobileTodayPage() {
       <FeedbackTrigger />
 
       {/* Hero header — outside scroll area so it never moves */}
-      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} tpConnected={tpConnected} />
+      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} />
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
@@ -300,8 +294,6 @@ export default async function MobileTodayPage() {
           weekStatus={weekStatus}
         />
 
-        {/* Always-visible free-text message to coach */}
-        <CoachMessageBox date={todayStr} />
       </div>
     </div>
   );
@@ -313,7 +305,7 @@ type HeroWorkout = { title: string; durationMin?: number; type?: string } | null
 
 function TodayHero({
   firstName, ftp, phase, weekIndex, weekWorkoutCount, todayStatus, workout,
-  icuConnected, tpConnected,
+  icuConnected,
 }: {
   firstName: string | null;
   ftp: number | null;
@@ -324,7 +316,6 @@ function TodayHero({
   workout: HeroWorkout;
   todayActivityDurationMin?: number | null;
   icuConnected: boolean;
-  tpConnected: boolean;
 }) {
   const statusDone   = todayStatus === "completed";
   const statusBonus  = todayStatus === "bonus";
@@ -373,68 +364,71 @@ function TodayHero({
         <ThemeToggleButton compact />
       </div>
 
-      {/* Row 2: athlete name + connection icons (ICU / TP) */}
-      {/* Note: no status badge here — bonus/done/missed shown in the main content area */}
+      {/* Row 2: athlete name + Zwift/ICU connection chips */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {/* ICU connection chip */}
+          {/* Zwift — always connected */}
           <div style={{
             display: "flex", alignItems: "center", gap: 4,
             padding: "4px 9px", borderRadius: 6,
-            background: icuConnected ? "rgba(34,211,238,0.08)" : "rgba(100,116,139,0.08)",
-            border: `1px solid ${icuConnected ? "rgba(34,211,238,0.28)" : "rgba(100,116,139,0.18)"}`,
+            background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)",
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: icuConnected ? "#22d3ee" : "#64748b", flexShrink: 0 }} />
-            <span style={{ fontSize: 10, fontWeight: 800, color: icuConnected ? "#22d3ee" : "#94a3b8", letterSpacing: ".06em" }}>ICU</span>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#22c55e", letterSpacing: ".06em" }}>Zwift</span>
           </div>
-          {/* TP connection chip */}
+          {/* ICU */}
           <div style={{
             display: "flex", alignItems: "center", gap: 4,
             padding: "4px 9px", borderRadius: 6,
-            background: tpConnected ? "rgba(59,130,246,0.08)" : "rgba(100,116,139,0.08)",
-            border: `1px solid ${tpConnected ? "rgba(59,130,246,0.28)" : "rgba(100,116,139,0.18)"}`,
+            background: icuConnected ? "rgba(34,197,94,0.08)" : "rgba(100,116,139,0.08)",
+            border: `1px solid ${icuConnected ? "rgba(34,197,94,0.25)" : "rgba(100,116,139,0.18)"}`,
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: tpConnected ? "#3b82f6" : "#64748b", flexShrink: 0 }} />
-            <span style={{ fontSize: 10, fontWeight: 800, color: tpConnected ? "#3b82f6" : "#94a3b8", letterSpacing: ".06em" }}>TP</span>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: icuConnected ? "#22c55e" : "#64748b", flexShrink: 0 }} />
+            <span style={{ fontSize: 11, fontWeight: 800, color: icuConnected ? "#22c55e" : "#94a3b8", letterSpacing: ".06em" }}>ICU</span>
           </div>
         </div>
       </div>
 
-      {/* Row 3: colored stats chips — FTP, Phase, Sessions, and today's session */}
+      {/* Row 3: colored stats chips — FTP, Phase, Sessions, and today's session.
+          Colors match the tablet TopBar exactly: FTP=#00C2FF, Phase=dynamic, Sessions=#FF5A1F */}
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-        {/* FTP — cyan */}
+        {/* FTP — cyan #00C2FF (matches tablet) */}
         {ftp && (
           <div style={{
-            background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)",
+            background: "rgba(0,194,255,0.07)", border: "1px solid rgba(0,194,255,0.25)",
             borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
           }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#22d3ee", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>W FTP</div>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,194,255,0.60)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>W FTP</div>
           </div>
         )}
-        {/* Phase + week — orange */}
-        {phase && (
-          <div style={{
-            background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.22)",
-            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
-          }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{phase}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>
-              {weekIndex !== null ? `Week ${weekIndex + 1}` : "Phase"}
+        {/* Phase — dynamic: Build=red, Recovery=amber, Base=purple (matches tablet) */}
+        {phase && (() => {
+          const phaseColor = phase === "Recovery" ? "#f59e0b" : phase === "Build" ? "#ef4444" : "#818cf8";
+          const phaseAlpha = phase === "Recovery" ? "rgba(245,158,11," : phase === "Build" ? "rgba(239,68,68," : "rgba(129,140,248,";
+          return (
+            <div style={{
+              background: `${phaseAlpha}0.07)`, border: `1px solid ${phaseAlpha}0.25)`,
+              borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: phaseColor, lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: `${phaseAlpha}0.60)`, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>
+                {weekIndex !== null ? `Week ${weekIndex + 1}` : "Phase"}
+              </div>
             </div>
-          </div>
-        )}
-        {/* Sessions this week — purple */}
+          );
+        })()}
+        {/* Sessions — orange #FF5A1F (matches tablet) */}
         {weekWorkoutCount > 0 && (
           <div style={{
-            background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.22)",
+            background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.25)",
             borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 52,
           }}>
-            <div style={{ fontSize: 21, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Sessions</div>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{weekWorkoutCount}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,90,31,0.60)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 2 }}>Sessions</div>
           </div>
         )}
         {/* Today's session chip — shows workout title (or "Rest Day" on rest/bonus days) */}

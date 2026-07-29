@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 
 const ZO = "#FF5A1F";
 
@@ -14,32 +13,29 @@ const TABS = [
   { href: "/tablet/settings", label: "Settings", icon: SettingsIcon },
 ];
 
+/**
+ * TabletSidebar — landscape vertical sidebar + portrait bottom nav.
+ *
+ * Theme sync: All colors use CSS custom properties (var(--m-card), var(--m-border),
+ * var(--m-muted), var(--m-text)) which are defined under [data-mobile-shell][data-mobile-theme]
+ * selectors in globals.css. This means theme changes applied by ThemeToggleButton
+ * (which sets data-mobile-theme on the shell div) cascade here automatically —
+ * no JS state or cookie reads needed.
+ */
 export default function TabletSidebar() {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<"dark" | "light">("light");
-
-  useEffect(() => {
-    const saved = document.cookie.split(";").find(c => c.trim().startsWith("mobileTheme="));
-    setTheme(saved?.includes("dark") ? "dark" : "light");
-  }, []);
-
-  const isDark  = theme === "dark";
-  const bg      = isDark ? "#0d1117" : "#ffffff";
-  const border  = isDark ? "#21262d" : "#e4e9f0";
-  const muted   = isDark ? "#6e7681" : "#94a3b8";
-  const textCol = isDark ? "#f0f6fc" : "#0d1626";
 
   return (
     <>
     {/* ── Landscape: vertical sidebar (starts below the fixed top bar) ─ */}
     <div className="tablet-sidebar" style={{
       width: 220,
-      background: bg,
-      borderRight: `1px solid ${border}`,
+      background: "var(--m-card)",
+      borderRight: "1px solid var(--m-border)",
       display: "flex", flexDirection: "column", flexShrink: 0,
       position: "fixed",
-      top: "var(--tablet-bar-h)",  /* start below the full-width top bar */
-      left: 0, bottom: "var(--tablet-footer-h)", /* stop above the footer nav */
+      top: "var(--tablet-bar-h)",
+      left: 0, bottom: "var(--tablet-footer-h)",
       zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       overflow: "hidden",
@@ -56,10 +52,10 @@ export default function TabletSidebar() {
               border: `1px solid ${active ? ZO + "35" : "transparent"}`,
               textDecoration: "none",
             }}>
-              <Icon color={active ? ZO : muted} />
+              <Icon color={active ? ZO : "var(--m-muted)"} />
               <span style={{
                 fontSize: 16, fontWeight: active ? 700 : 500,
-                color: active ? textCol : muted,
+                color: active ? "var(--m-text)" : "var(--m-muted)",
               }}>{label}</span>
               {active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: 1, background: ZO }} />}
             </Link>
@@ -69,8 +65,12 @@ export default function TabletSidebar() {
 
     </div>
 
-    {/* ── Portrait: bottom nav ─────────────────────────────────────── */}
-    <nav className="tablet-bottom-nav" style={{ background: bg, borderTopColor: border, borderTopWidth: 1, borderTopStyle: "solid", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}>
+    {/* ── Portrait + landscape: bottom nav (always visible) ────────── */}
+    <nav className="tablet-bottom-nav" style={{
+      background: "var(--m-card)",
+      borderTopColor: "var(--m-border)", borderTopWidth: 1, borderTopStyle: "solid",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+    }}>
       {TABS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
         return (
@@ -80,8 +80,8 @@ export default function TabletSidebar() {
             gap: 4, textDecoration: "none", paddingTop: 8,
             WebkitTapHighlightColor: "transparent",
           }}>
-            <Icon color={active ? ZO : muted} />
-            <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? ZO : muted }}>
+            <Icon color={active ? ZO : "var(--m-muted)"} />
+            <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? ZO : "var(--m-muted)" }}>
               {label}
             </span>
           </Link>
