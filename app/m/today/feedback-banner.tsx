@@ -154,10 +154,12 @@ export default function FeedbackBanner({
         });
       }
 
-      // Mark feedback as done — both locally (fast) and on the server
-      // (account-level: prevents banner re-appearing on other devices)
+      // Mark feedback as done — locally first (instant), then server (cross-device).
+      // MUST await the server write: if fire-and-forget, the KV write may not
+      // complete before the function returns, causing the banner to re-appear
+      // on other devices or after PWA cache clear.
       try { localStorage.setItem(LS_FEEDBACK_KEY(date), "1"); } catch {}
-      fetch("/api/ai/feedback-status", {
+      await fetch("/api/ai/feedback-status", {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date }),

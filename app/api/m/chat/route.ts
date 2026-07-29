@@ -316,6 +316,10 @@ export async function POST(req: NextRequest) {
     ? `\n${fpSummary}`
     : "\n(No ride history yet — plan based on profile only.)";
 
+  const icuStatus = (icuKey && icuAthleteId)
+    ? "ICU connected — update_workout will auto-push to Intervals.icu and sync to Zwift."
+    : "ICU not connected — plan updates save to KV only; athlete must connect ICU in Settings for Zwift sync.";
+
   const systemPrompt =
     "You are a knowledgeable, direct AI cycling coach with REAL authority to modify the athlete's training plan.\n\n" +
     "CRITICAL RULES:\n" +
@@ -324,6 +328,12 @@ export async function POST(req: NextRequest) {
     "- After calling a tool, give a brief, direct confirmation (1-2 sentences). Don't repeat the full plan.\n" +
     "- Be direct and practical. 2-4 sentences max unless the athlete asks for a detailed explanation.\n" +
     "- Always respect the rider's wishes. If they want to swap or drop a workout, do it — don't argue.\n\n" +
+    "YOUR ZWIFT / ICU SYNC CAPABILITY:\n" +
+    `- ${icuStatus}\n` +
+    "- When update_workout succeeds AND ICU is connected, the tool result will say 'Also pushed to Intervals.icu'.\n" +
+    "- In your reply after a successful update, ALWAYS tell the athlete: (1) what changed, (2) that it was pushed to Zwift via ICU sync.\n" +
+    "- If the tool result does NOT mention ICU push, tell the athlete: 'Updated in your plan — to sync to Zwift, make sure ICU is connected in Settings.'\n" +
+    "- You DO have full authority to push workouts to Zwift via Intervals.icu. Never say you cannot do this.\n\n" +
     "ATHLETE CONTEXT:\n" +
     contextLines.join("\n") +
     fpSection;

@@ -346,24 +346,41 @@ function TodayHero({
           {firstName ?? "Athlete"}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {/* Zwift — always connected */}
+          {/* Zwift — always connected. Mini-card style matching Settings page. */}
           <div style={{
-            display: "flex", alignItems: "center", gap: 4,
-            padding: "4px 9px", borderRadius: 6,
-            background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)",
+            display: "flex", alignItems: "center", gap: 6,
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 10, padding: "6px 8px",
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#22c55e", letterSpacing: ".06em" }}>Zwift</span>
+            <div style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
+              <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
+            </div>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
           </div>
-          {/* ICU */}
+          {/* ICU — mini-card, green if connected */}
           <div style={{
-            display: "flex", alignItems: "center", gap: 4,
-            padding: "4px 9px", borderRadius: 6,
-            background: icuConnected ? "rgba(34,197,94,0.08)" : "rgba(100,116,139,0.08)",
-            border: `1px solid ${icuConnected ? "rgba(34,197,94,0.25)" : "rgba(100,116,139,0.18)"}`,
+            display: "flex", alignItems: "center", gap: 6,
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 10, padding: "6px 8px",
           }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: icuConnected ? "#22c55e" : "#64748b", flexShrink: 0 }} />
-            <span style={{ fontSize: 11, fontWeight: 800, color: icuConnected ? "#22c55e" : "#94a3b8", letterSpacing: ".06em" }}>ICU</span>
+            <div style={{ width: 26, height: 26, borderRadius: 6, background: icuConnected ? "rgba(34,197,94,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "var(--m-muted)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
+              <div style={{ fontSize: 10, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
+                {icuConnected ? "Connected" : "Not linked"}
+              </div>
+            </div>
+            {icuConnected && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>}
           </div>
         </div>
       </div>
