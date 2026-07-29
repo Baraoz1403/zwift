@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, setCachedPlan } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
+import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "@/lib/intervals";
+import { generateZwoXml } from "@/lib/zwo";
 import type { WeeklyWorkout } from "@/lib/ai";
 
 /**
@@ -89,6 +91,64 @@ const TOOLS = [
     },
   },
 ];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Convert "Tuesday" + weekOf (Monday YYYY-MM-DD) → YYYY-MM-DD for that day. */
+function dayNameToDate(weekOf: string, dayName: string): string {
+  const ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  const idx = ORDER.indexOf(dayName);
+  if (idx < 0) return weekOf;
+  const monday = new Date(weekOf + "T00:00:00Z");
+  monday.setUTCDate(monday.getUTCDate() + idx);
+  return monday.toISOString().slice(0, 10);
+}
+
+/**
+ * After a workout is updated in KV, push it to Intervals.icu so Zwift sees it.
+ * Replaces any existing WORKOUT event on the same day (delete-then-create).
+ * Best-effort: does not throw, returns ok/error for logging.
+ */
+async function pushUpdatedWorkoutToIcu(
+  icuKey: string,
+  icuAthleteId: string,
+  weekOf: string,
+  workout: UpdateWorkoutInput,
+): Promise<{ pushed: boolean; error?: string }> {
+  try {
+    const workoutDate = dayNameToDate(weekOf, workout.day);
+
+    // Delete any existing WORKOUT events for this day so we don't duplicate
+    const existing = await listIntervalsEvents(icuKey, workoutDate, workoutDate, icuAthleteId).catch(() => []);
+    for (const ev of existing.filter(e => e.category === "WORKOUT")) {
+      await deleteEventFromIntervals(icuKey, ev.id, icuAthleteId).catch(() => {});
+    }
+
+    // Generate ZWO XML (same as the manual export flow)
+    const zwoXml = generateZwoXml({
+      title: workout.title,
+      type: workout.type,
+      durationMin: workout.durationMin,
+      description: workout.description,
+      targetPowerPctFtp: workout.targetPowerPctFtp,
+    });
+
+    const result = await pushWorkoutToIntervals({
+      apiKey: icuKey,
+      athleteId: icuAthleteId,
+      workoutDay: workoutDate,
+      title: workout.title,
+      description: workout.description ?? workout.title,
+      durationMin: workout.durationMin,
+      type: workout.type,
+      zwoXml,
+    });
+
+    return { pushed: result.ok, error: result.error };
+  } catch (e) {
+    return { pushed: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
 
 // ── Tool execution ────────────────────────────────────────────────────────────
 
@@ -179,6 +239,14 @@ export async function POST(req: NextRequest) {
 
   const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
+
+  // ── ICU credentials (needed for auto-push after workout update) ───────────
+  const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value ?? null;
+  const cookieIcuId  = cookieStore.get("zwift_intervals_id")?.value ?? null;
+  // Fall back to KV-stored creds if cookies aren't set (other device connected ICU)
+  const kvIcuCreds = cookieIcuKey ? null : await getIntervalsCredentials(athleteId).catch(() => null);
+  const icuKey    = cookieIcuKey ?? kvIcuCreds?.icuKey ?? null;
+  const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
   // ── Load all context in parallel ──────────────────────────────────────────
   const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw] = await Promise.all([
@@ -315,8 +383,22 @@ export async function POST(req: NextRequest) {
         let result: { ok: boolean; message: string; toolAction?: string };
 
         if (block.name === "update_workout") {
-          result = await execUpdateWorkout(athleteId, weekOf, block.input as UpdateWorkoutInput);
-          if (result.ok) planUpdated = true;
+          const workoutInput = block.input as UpdateWorkoutInput;
+          result = await execUpdateWorkout(athleteId, weekOf, workoutInput);
+          if (result.ok) {
+            planUpdated = true;
+            // Auto-push to Intervals.icu so Zwift sees the change via ICU sync
+            if (icuKey && icuAthleteId) {
+              const icuPush = await pushUpdatedWorkoutToIcu(icuKey, icuAthleteId, weekOf, workoutInput);
+              if (icuPush.pushed) {
+                result.message += " Also pushed to Intervals.icu (Zwift will sync automatically).";
+                result.toolAction = (result.toolAction ?? "") + " → pushed to ICU";
+              } else {
+                // Log but don't fail — KV update already succeeded
+                console.warn("ICU push failed after workout update:", icuPush.error);
+              }
+            }
+          }
         } else if (block.name === "add_coach_note") {
           result = await execAddCoachNote(athleteId, block.input as { note: string });
         } else {
