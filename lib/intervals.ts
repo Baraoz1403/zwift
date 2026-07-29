@@ -406,6 +406,58 @@ export async function fetchIcuActivities(
   }
 }
 
+export interface IcuWellness {
+  ctl: number;   // Chronic Training Load — "fitness"
+  atl: number;   // Acute Training Load — "fatigue"
+  tsb: number;   // Training Stress Balance — "freshness" (CTL - ATL)
+  date: string;  // YYYY-MM-DD
+}
+
+/**
+ * Fetch the athlete's latest CTL / ATL / TSB from Intervals.icu's wellness endpoint.
+ *
+ * ICU computes these daily from ALL activities (Zwift, Garmin, Strava, manual)
+ * using each sport's correct TSS formula (power-based, HR-based, etc.).
+ * We request the last 7 days and return the most recent entry that has CTL data.
+ *
+ * Returns null if ICU is not reachable or the athlete has no data yet.
+ */
+export async function fetchIcuWellness(
+  apiKey: string,
+  athleteId: string,
+): Promise<IcuWellness | null> {
+  try {
+    const newest = new Date().toISOString().slice(0, 10);
+    const oldestDate = new Date();
+    oldestDate.setDate(oldestDate.getDate() - 7);
+    const oldest = oldestDate.toISOString().slice(0, 10);
+
+    const url = `${INTERVALS_API}/athlete/${resolveIcuId(athleteId)}/wellness?oldest=${oldest}&newest=${newest}`;
+    const res = await fetch(url, {
+      headers: { Authorization: buildAuthHeader(apiKey), Accept: "application/json" },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+
+    const data: unknown = await res.json();
+    const entries = Array.isArray(data) ? data : [];
+
+    // ICU returns entries oldest-first; scan from the end to find the latest with CTL
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i] as Record<string, unknown>;
+      const ctl = typeof e.ctl === "number" ? e.ctl : null;
+      const atl = typeof e.atl === "number" ? e.atl : null;
+      const tsb = typeof e.form === "number" ? e.form : (typeof e.tsb === "number" ? e.tsb : null);
+      if (ctl !== null && atl !== null && tsb !== null) {
+        return { ctl, atl, tsb, date: String(e.id ?? e.date ?? "") };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Auto-register our activity webhook in the athlete's Intervals.icu account.
  *

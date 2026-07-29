@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
-import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
+import { fetchIcuWellness } from "@/lib/intervals";
 import SignOutButton from "./sign-out-button";
 import { ThemeToggleButton } from "../theme-toggle-button";
 
@@ -17,28 +17,31 @@ export default async function MobileProfilePage() {
 
   const athleteId = session.athleteId!;
 
-  const [state, currentPlan, fingerprint, zwiftProfile] = await Promise.all([
+  // ICU credentials — cookie first, then KV fallback
+  const icuKeyCookie = cookieStore.get("zwift_intervals_key")?.value ?? null;
+  const icuIdCookie  = cookieStore.get("zwift_intervals_id")?.value ?? null;
+  const icuName      = cookieStore.get("zwift_intervals_name")?.value ?? null;
+
+  const icuKvCreds = icuKeyCookie ? null : await getIntervalsCredentials(String(athleteId)).catch(() => null);
+  const icuKey = icuKeyCookie ?? icuKvCreds?.icuKey ?? null;
+  const icuId  = icuIdCookie  ?? icuKvCreds?.icuId  ?? null;
+  const icuConnected = !!icuKey;
+
+  const [state, currentPlan, fingerprint, zwiftProfile, wellness] = await Promise.all([
     getStoredAthleteState(athleteId),
     getCachedPlan(athleteId, mondayOfCurrentWeek()),
     getFingerprint(athleteId).catch(() => null),
     fetchOwnProfile(session.accessToken).catch(() => null),
+    // Fetch live CTL/ATL/TSB from ICU — always fresh, no caching needed
+    (icuKey && icuId)
+      ? fetchIcuWellness(icuKey, icuId).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
-  // Training load from KV (stored alongside plan after each generation)
-  let ctl = 0, atl = 0, tsb = 0;
-  try {
-    const loadRaw = await kvGet(`zwift:${athleteId}:training_load`);
-    if (loadRaw) {
-      const load = JSON.parse(loadRaw);
-      ctl = load.ctl ?? 0;
-      atl = load.atl ?? 0;
-      tsb = load.tsb ?? 0;
-    }
-  } catch { /* best-effort */ }
-
-  // ICU connection status (cookie readable server-side)
-  const icuName = cookieStore.get("zwift_intervals_name")?.value ?? null;
-  const icuConnected = !!cookieStore.get("zwift_intervals_key")?.value;
+  // CTL/ATL/TSB: live from ICU (most accurate — uses all activity sources)
+  const ctl = wellness?.ctl ?? 0;
+  const atl = wellness?.atl ?? 0;
+  const tsb = wellness?.tsb ?? 0;
 
   const profile = state.riderProfile;
   const macro = state.macroCycle;
@@ -61,8 +64,11 @@ export default async function MobileProfilePage() {
     else currentPhase = "Build";
   }
 
-  const tsbLabel = tsb > 5 ? "Fresh" : tsb < -5 ? "Fatigued" : "Neutral";
-  const tsbColor = tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "#f59e0b";
+  const hasWellness = wellness !== null;
+  const tsbLabel = !hasWellness ? "—" : tsb > 5 ? "Fresh" : tsb < -5 ? "Fatigued" : "Neutral";
+  const tsbColor = !hasWellness ? "#475569" : tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "#f59e0b";
+  const tsbDesc  = !hasWellness ? (icuConnected ? "Loading from ICU…" : "Connect Intervals.icu") :
+                   `TSB ${tsb > 0 ? "+" : ""}${tsb.toFixed(1)}`;
 
   const workoutsThisWeek = currentPlan?.workouts.filter(w => {
     const t = (w.title + " " + (w.type ?? "")).toLowerCase();
@@ -121,24 +127,24 @@ export default async function MobileProfilePage() {
           <MetricCard
             value={tsbLabel}
             label="Freshness"
-            color={tsb !== 0 ? tsbColor : "#475569"}
-            desc={tsb !== 0 ? `TSB ${tsb > 0 ? "+" : ""}${tsb.toFixed(1)}` : "No data yet"}
+            color={tsbColor}
+            desc={tsbDesc}
           />
-          {ctl > 0 ? (
+          {hasWellness && ctl > 0 ? (
             <>
               <MetricCard value={ctl.toFixed(1)} label="CTL (Fitness)" color="#818cf8" desc="42-day average" />
               <MetricCard value={atl.toFixed(1)} label="ATL (Fatigue)" color="#f59e0b" desc="7-day average" />
             </>
-          ) : (
+          ) : !icuConnected ? (
             <div style={{
               gridColumn: "1/-1",
               padding: "16px 18px",
               background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
-              fontSize: 16, color: "var(--m-muted)", lineHeight: 1.6,
+              fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6,
             }}>
-              CTL / ATL / TSB will appear here once your rides are processed.
+              Connect Intervals.icu to see CTL, ATL, and TSB — computed automatically from all your activities.
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
