@@ -65,8 +65,14 @@ export default async function MobileProfilePage() {
   const hasWellness = wellness !== null;
   const tsbLabel = !hasWellness ? "—" : tsb > 5 ? "Fresh" : tsb < -5 ? "Fatigued" : "Neutral";
   const tsbColor = !hasWellness ? "#475569" : tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "#f59e0b";
+  // TSB = Form = CTL − ATL. Positive = rested, negative = accumulated fatigue.
+  const tsbDescText = tsb > 10 ? "Peak form — race ready" :
+                      tsb > 5  ? "Rested, ready to train hard" :
+                      tsb > -5 ? "Balanced — normal training" :
+                      tsb > -15 ? "Fatigued — ease up slightly" :
+                                  "Deep fatigue — recovery needed";
   const tsbDesc  = !hasWellness ? (icuConnected ? "Loading from ICU…" : "Connect Intervals.icu") :
-                   `TSB ${tsb > 0 ? "+" : ""}${tsb.toFixed(1)}`;
+                   `Form (TSB ${tsb > 0 ? "+" : ""}${tsb.toFixed(1)}) · ${tsbDescText}`;
 
   const workoutsThisWeek = currentPlan?.workouts.filter(w => {
     const t = (w.title + " " + (w.type ?? "")).toLowerCase();
@@ -130,8 +136,10 @@ export default async function MobileProfilePage() {
           />
           {hasWellness && ctl > 0 ? (
             <>
-              <MetricCard value={ctl.toFixed(1)} label="CTL (Fitness)" color="#818cf8" desc="42-day average" />
-              <MetricCard value={atl.toFixed(1)} label="ATL (Fatigue)" color="#f59e0b" desc="7-day average" />
+              {/* CTL = how fit you are right now (42-day average of training stress) */}
+              <MetricCard value={ctl.toFixed(1)} label="Fitness" color="#818cf8" desc={`CTL — 42-day load${ctl >= 60 ? " · High fitness" : ctl >= 40 ? " · Good base" : " · Building"}`} />
+              {/* ATL = how fatigued you are from recent training (7-day average) */}
+              <MetricCard value={atl.toFixed(1)} label="Fatigue" color="#f59e0b" desc={`ATL — 7-day load${atl > ctl ? " · Accumulating" : " · Manageable"}`} />
             </>
           ) : !icuConnected ? (
             <div style={{
@@ -140,7 +148,7 @@ export default async function MobileProfilePage() {
               background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
               fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6,
             }}>
-              Connect Intervals.icu to see CTL, ATL, and TSB — computed automatically from all your activities.
+              Connect Intervals.icu to see fitness load (CTL), fatigue (ATL), and form (TSB) — fetched automatically.
             </div>
           ) : null}
         </div>

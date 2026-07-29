@@ -419,6 +419,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 
 ⚡ PROFESSIONAL INTERVAL STANDARD: The athlete opens Zwift expecting a structured workout file — warmup blocks, defined interval blocks with exact watts, recovery blocks, cooldown. Every session in the plan must produce a proper structured .zwo file. If a session cannot be described in blocks (type/duration/power), it should not be in the plan.
 
+⚡ COOLDOWN RULE — HARD LIMIT: Every workout ends with a cooldown block of EXACTLY 3–5 minutes (never more, never less). durationMin must be ≤ 5 for all cooldown blocks. A 10-minute cooldown is a waste of the athlete's time. Use 5 min maximum — this is non-negotiable and applies to every single session including FTP tests, VO2max, and endurance rides.
+
 🚫 NO SAFE DEFAULTS: A plan full of Foundation Rides and Sweet Spot Classic is a FAILED plan for any rider who has trained before. For Intermediate (3.0–3.5 W/kg) in Build phase: the hard sessions MUST be Threshold or above — Sweet Spot is a recovery-week ceiling, not a Build-phase target. For Trained/Advanced (3.5+ W/kg): Norwegian 4×4, Critical Power Development, or Over-Under Intervals are the default hard sessions — justify in the summary if you prescribe anything less. Sweet Spot Classic repeated week after week for a developed rider signals the AI chose safety over coaching — forbidden.
 
 WEEK SHAPE:
@@ -808,7 +810,7 @@ Every workout structure block must include explicit cadenceTarget.
   "The Rider Learning Profile (injected at end of prompt) shows 'Last FTP test: DATE (X days ago)' " +
   "or 'FTP TEST OVERDUE' or 'FTP TEST PENDING'. Apply these rules: " +
   "(a) 'FTP TEST OVERDUE' or 'FTP TEST PENDING' → during the NEXT Build-phase week (not Recovery, not Taper, not Race Week), " +
-  "replace one hard session with 'FTP Test Protocol' (60 min: 15 min progressive warmup → 5 min easy → 20 min ALL OUT → 20 min cooldown). " +
+  "replace one hard session with 'FTP Test Protocol' (45 min: 15 min progressive warmup → 5 min easy spin → 20 min ALL OUT → 5 min easy cooldown). " +
   "Description must say: 'Your FTP hasn't been tested in X days. Ride the 20-minute block as hard as you can sustain. " +
   "Your updated FTP = 0.95 × your average power for those 20 minutes — record this in your profile immediately after.' " +
   "(b) FTP Test Protocol does NOT count as a hard session in the Hard Session Matrix — it is a test, not training stimulus. " +
@@ -946,8 +948,8 @@ Every workout structure block must include explicit cadenceTarget.
   '{"type":"warmup","durationMin":15,"powerFtp":0.60,"label":"Easy warm-up"},' +
   '{"type":"intervals","durationMin":50,"powerFtp":1.10,' +
   '"recoveryPowerFtp":0.50,"repeats":5,"onSec":300,"offSec":300,' +
-  '"label":"5×5 min @ 110% FTP"},{"type":"cooldown","durationMin":10,' +
-  '"powerFtp":0.55,"label":"Easy cool-down"}]}] ' +
+  '"label":"5×5 min @ 110% FTP"},{"type":"cooldown","durationMin":5,' +
+  '"powerFtp":0.50,"label":"5 min easy spin-down"}]}] ' +
   "(HARD LIMIT: always return EXACTLY 7 entries total, one per calendar " +
   "day Monday through Sunday. Include actual sessions for training days, " +
   "and use type='Rest', title='Rest Day', durationMin=0 for non-training " +
