@@ -51,10 +51,11 @@ function detectDevice(ua: string): "phone" | "tablet" | "desktop" {
  * Legal pages are excluded — they use the mobile layout on all devices.
  */
 const MOBILE_TO_TABLET: Record<string, string> = {
-  "/m/today":   "/tablet/today",
-  "/m/week":    "/tablet/week",
-  "/m/coach":   "/tablet/coach",
-  "/m/profile": "/tablet/profile",
+  "/m/today":    "/tablet/today",
+  "/m/week":     "/tablet/week",
+  "/m/coach":    "/tablet/coach",
+  "/m/profile":  "/tablet/profile",
+  "/m/settings": "/tablet/settings",
 };
 
 export function middleware(req: NextRequest) {
