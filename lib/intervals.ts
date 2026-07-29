@@ -39,8 +39,9 @@ const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/oauth/token";
  */
 function resolveIcuId(athleteId: string | undefined): string {
   if (!athleteId || athleteId === "0" || athleteId === "me") return "me";
-  // "i12345" → strip the "i" prefix → numeric part works in ICU API URLs
-  const stripped = athleteId.replace(/^[a-zA-Z]+/, "");
+  // "i12345" → strip the known "i" prefix only → numeric part works in ICU API URLs
+  // "a600" and other non-"i" prefixed strings are non-standard; ICU rejects them → use "me"
+  const stripped = athleteId.startsWith("i") ? athleteId.slice(1) : athleteId;
   return /^\d+$/.test(stripped) ? stripped : "me";
 }
 
@@ -251,7 +252,7 @@ export async function pushWorkoutToIntervals(opts: PushIntervalsOptions): Promis
   };
 
   try {
-    const res = await fetch(`${INTERVALS_API}/athlete/${opts.athleteId ?? "me"}/events`, {
+    const res = await fetch(`${INTERVALS_API}/athlete/${resolveIcuId(opts.athleteId)}/events`, {
       method: "POST",
       headers: {
         Authorization: basicAuthHeader(opts.apiKey),
@@ -315,7 +316,7 @@ export async function listIntervalsEvents(
     // document that filter and may return [] or a non-array wrapper when it
     // doesn't recognise it, silently killing all cleanup. Fetch all events in
     // the date range; callers filter by category in JS instead.
-    const url = `${INTERVALS_API}/athlete/${athleteId ?? "me"}/events?oldest=${oldest}&newest=${newest}`;
+    const url = `${INTERVALS_API}/athlete/${resolveIcuId(athleteId)}/events?oldest=${oldest}&newest=${newest}`;
     const res = await fetch(url, {
       headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
       signal: AbortSignal.timeout(10000),
@@ -522,7 +523,7 @@ export async function ensureIcuWebhookRegistered(
 /** Delete a planned workout from Intervals.icu by event id. 404 counts as success (already gone). */
 export async function deleteEventFromIntervals(apiKey: string, eventId: string | number, athleteId?: string): Promise<DeleteIntervalsResult> {
   try {
-    const res = await fetch(`${INTERVALS_API}/athlete/${athleteId ?? "me"}/events/${eventId}`, {
+    const res = await fetch(`${INTERVALS_API}/athlete/${resolveIcuId(athleteId)}/events/${eventId}`, {
       method: "DELETE",
       headers: { Authorization: basicAuthHeader(apiKey), Accept: "application/json" },
       signal: AbortSignal.timeout(8000),
