@@ -1,9 +1,11 @@
 "use client";
 
 /**
- * BonusRideCard — expandable ride card for bonus rides on the Today page.
- * Collapsed: shows ride name + duration chip.
- * Expanded (on tap): shows full ride stats — duration, avg HR, and a link to ICU.
+ * BonusRideCard — displays an actual bonus ride (or completed ride that differs from plan)
+ * using the EXACT same card style as the Week page day cards.
+ *
+ * Collapsed: date bubble + ride name + Bonus badge + duration/HR chips + chevron
+ * Expanded:  actual ride stats in detail cards (duration, HR)
  */
 
 import { useState } from "react";
@@ -12,148 +14,150 @@ interface Props {
   activityName: string | null;
   durationMin: number | null;
   avgHr: number | null;
-  icuActivityId?: string | null;
+  /** ISO date string YYYY-MM-DD — used for the date bubble */
+  date: string;
 }
 
-export default function BonusRideCard({ activityName, durationMin, avgHr, icuActivityId }: Props) {
+export default function BonusRideCard({ activityName, durationMin, avgHr, date }: Props) {
   const [expanded, setExpanded] = useState(false);
 
+  // Parse date for the bubble
+  const d = new Date(date + "T12:00:00");
+  const dayShort = d.toLocaleDateString("en-US", { weekday: "short" });
+  const dayNum   = d.toLocaleDateString("en-US", { day: "numeric" });
+
   const displayName = activityName ?? "Bonus ride";
+  const AMBER = "#f59e0b";
 
   return (
-    <div
-      onClick={() => setExpanded(e => !e)}
-      style={{
-        borderRadius: 4, overflow: "hidden",
-        background: "var(--m-card)", border: "1px solid var(--m-border)",
-        borderTop: "3px solid #f59e0b",
-        marginBottom: 10,
-        cursor: "pointer",
-        WebkitTapHighlightColor: "transparent",
-        userSelect: "none",
-      }}
-    >
-      {/* Header row — always visible */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px" }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 4 }}>
-            Bonus ride
+    <div>
+      {/* Main tappable row — matches Week page day card exactly */}
+      <div
+        role="button"
+        onClick={() => setExpanded(e => !e)}
+        style={{
+          background: "rgba(245,158,11,0.06)",
+          borderRadius: expanded ? "4px 4px 0 0" : 4,
+          border: "1px solid rgba(245,158,11,0.25)",
+          borderBottom: expanded ? "none" : undefined,
+          padding: "16px 14px",
+          cursor: "pointer",
+          position: "relative",
+          overflow: "hidden",
+          WebkitTapHighlightColor: "transparent",
+          userSelect: "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Date bubble — same 52×52 as Week page */}
+          <div style={{
+            width: 52, height: 52, borderRadius: 4, flexShrink: 0,
+            background: `${AMBER}18`,
+            border: `1px solid ${AMBER}44`,
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 1,
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: AMBER, letterSpacing: ".3px" }}>
+              {dayShort.toUpperCase()}
+            </span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: AMBER }}>
+              {dayNum}
+            </span>
           </div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1.2, letterSpacing: "-0.3px" }}>
-            {displayName}
+
+          {/* Ride info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Title row + status badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                fontSize: 20, fontWeight: 700, color: "var(--m-text)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                flex: 1, minWidth: 0,
+              }}>
+                {displayName}
+              </span>
+              {/* "Bonus" badge — same as Week page statusMeta */}
+              <span style={{
+                fontSize: 13, fontWeight: 700, color: AMBER,
+                background: "rgba(245,158,11,0.12)", padding: "3px 9px", borderRadius: 3, flexShrink: 0,
+              }}>Bonus</span>
+            </div>
+
+            {/* Sub-row: RIDE badge + duration + HR + chevron */}
+            <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{
+                fontSize: 12, fontWeight: 800, color: "#3b82f6",
+                background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)",
+                borderRadius: 3, padding: "2px 8px", flexShrink: 0,
+              }}>RIDE</span>
+              {durationMin && durationMin > 0 && (
+                <span style={{ fontSize: 16, color: "#64748b" }}>{durationMin} min</span>
+              )}
+              {avgHr && avgHr > 0 && (
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#ef4444" }}>
+                  {Math.round(avgHr)} bpm avg
+                </span>
+              )}
+              {/* Expand chevron */}
+              <span style={{
+                marginLeft: "auto", fontSize: 14, color: "var(--m-muted)",
+                display: "inline-block",
+                transform: expanded ? "rotate(180deg)" : "none",
+                transition: "transform .2s",
+                flexShrink: 0,
+              }}>⌄</span>
+            </div>
           </div>
-        </div>
-        {/* Chevron */}
-        <div style={{
-          width: 28, height: 28, borderRadius: "50%",
-          background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0, marginLeft: 12,
-          transition: "transform 0.2s",
-          transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-        }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9l6 6 6-6" stroke="var(--m-muted)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
         </div>
       </div>
 
-      {/* Quick stats row — always visible */}
-      <div style={{ display: "flex", gap: 8, padding: "0 16px 14px", flexWrap: "wrap" }}>
-        {durationMin && durationMin > 0 && (
-          <StatChip value={String(durationMin)} unit="min" color="var(--m-text)" />
-        )}
-        {avgHr && avgHr > 0 && (
-          <StatChip value={String(Math.round(avgHr))} unit="bpm avg" color="#ef4444" />
-        )}
-      </div>
-
-      {/* Expanded detail section */}
+      {/* Expanded detail panel — same style as Week page */}
       {expanded && (
         <div style={{
+          background: "var(--m-card)",
+          border: "1px solid rgba(245,158,11,0.25)",
           borderTop: "1px solid var(--m-border)",
-          padding: "16px 16px",
-          background: "var(--m-card-inner)",
-          animation: "fadeIn 0.15s ease",
+          borderRadius: "0 0 4px 4px",
+          padding: "12px 16px 16px",
         }}>
-          {/* Ride stats grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          {/* Actual ride stats grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
             {durationMin && (
-              <DetailCard
-                label="Duration"
-                value={`${durationMin} min`}
-                sub={durationMin >= 60
-                  ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`
-                  : undefined}
-                color="#f59e0b"
-              />
+              <div style={{
+                background: "var(--m-card-inner)", borderRadius: 4, padding: "14px 16px",
+                border: "1px solid var(--m-border)",
+              }}>
+                <div style={{ fontSize: 26, fontWeight: 800, color: AMBER, lineHeight: 1 }}>
+                  {durationMin >= 60
+                    ? `${Math.floor(durationMin / 60)}h${durationMin % 60 > 0 ? ` ${durationMin % 60}m` : ""}`
+                    : `${durationMin} min`}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".06em", marginTop: 6 }}>Duration</div>
+              </div>
             )}
-            {avgHr && (
-              <DetailCard
-                label="Avg heart rate"
-                value={`${Math.round(avgHr)}`}
-                sub="bpm"
-                color="#ef4444"
-              />
+            {avgHr && avgHr > 0 && (
+              <div style={{
+                background: "var(--m-card-inner)", borderRadius: 4, padding: "14px 16px",
+                border: "1px solid var(--m-border)",
+              }}>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "#ef4444", lineHeight: 1 }}>
+                  {Math.round(avgHr)}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".06em", marginTop: 6 }}>Avg HR (bpm)</div>
+              </div>
             )}
           </div>
 
-          {/* Ride note */}
+          {/* Bonus ride note */}
           <div style={{
-            background: "var(--m-card)", border: "1px solid var(--m-border)",
-            borderRadius: 10, padding: "12px 14px", marginBottom: 14,
-            fontSize: 14, color: "var(--m-muted)", lineHeight: 1.55,
+            background: "var(--m-card-inner)", borderRadius: 4, padding: "10px 14px",
+            border: "1px solid var(--m-border)",
+            fontSize: 13, color: "var(--m-muted)", lineHeight: 1.55,
           }}>
-            🎉 Great job on the bonus ride! This data is being saved to your coaching profile to help tailor future training plans.
+            🎉 Bonus ride on a rest day — data saved to your coaching profile.
           </div>
-
-          {/* Open in ICU link */}
-          {icuActivityId && (
-            <a
-              href={`https://intervals.icu/activities/${icuActivityId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "12px 16px", borderRadius: 10,
-                background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)",
-                color: "#22c55e", fontSize: 15, fontWeight: 700, textDecoration: "none",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              View full ride in Intervals.icu
-            </a>
-          )}
         </div>
       )}
-    </div>
-  );
-}
-
-function StatChip({ value, unit, color }: { value: string; unit: string; color: string }) {
-  return (
-    <div style={{
-      background: "var(--m-card-inner)", borderRadius: 3, padding: "8px 12px",
-      textAlign: "center", border: "1px solid var(--m-border)",
-    }}>
-      <div style={{ fontSize: 17, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>{unit}</div>
-    </div>
-  );
-}
-
-function DetailCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
-  return (
-    <div style={{
-      background: "var(--m-card)", border: "1px solid var(--m-border)",
-      borderRadius: 12, padding: "14px 16px",
-    }}>
-      <div style={{ fontSize: 26, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 13, color: "var(--m-muted)", marginBottom: 4 }}>{sub}</div>}
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".06em" }}>{label}</div>
     </div>
   );
 }

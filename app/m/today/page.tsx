@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity, getFeedbackDone } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
@@ -125,6 +125,10 @@ export default async function MobileTodayPage() {
     workouts.find(w => w.day === todayDayName) ??
     null;
 
+  // Server-side feedback check — if already done on any device, don't render FeedbackBanner at all.
+  // This is the authoritative gate: no client-side race condition, no flash-then-hide.
+  const feedbackAlreadyDone = await getFeedbackDone(athleteId, todayStr).catch(() => false);
+
   // ── Hero data ────────────────────────────────────────────────────────────
   // Use live Zwift profile when available; fall back to KV-cached identity
   // (written at login time) when the token is expired or the API is slow.
@@ -196,16 +200,16 @@ export default async function MobileTodayPage() {
                 </span>
               </div>
 
-              {/* Tap to expand ride card */}
+              {/* Tap to expand ride card — Week page day card style */}
               <BonusRideCard
                 activityName={todayActivityName}
                 durationMin={todayActivityDurationMin}
                 avgHr={todayAvgHr}
-                icuActivityId={todayIcuId}
+                date={todayStr}
               />
 
-              {/* Feedback — cross-device KV sync */}
-              <FeedbackBanner
+              {/* Feedback — server-side KV gate ensures it shows once across all devices */}
+              {!feedbackAlreadyDone && <FeedbackBanner
                 workoutTitle={todayActivityName ?? "Bonus ride"}
                 workoutCategory="bonus"
                 date={todayStr}
@@ -213,7 +217,7 @@ export default async function MobileTodayPage() {
                 completed={true}
                 actualDurationMin={todayActivityDurationMin}
                 isBonus={true}
-              />
+              />}
             </div>
           ) : (
             /* Pure rest day — calm, no drama */
@@ -243,7 +247,8 @@ export default async function MobileTodayPage() {
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
         {/* Feedback — shown after ride, cross-device KV sync (won't show twice) */}
-        {(todayStatus === "completed" || todayStatus === "bonus") && (
+        {/* Feedback — server-side gate prevents re-showing after submit on any device */}
+        {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus") && (
           <FeedbackBanner
             workoutTitle={todayWorkout.title}
             workoutCategory={todayWorkout.type ?? ""}

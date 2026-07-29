@@ -96,45 +96,41 @@ export function TabletTopBar({
             {/* Visual separator */}
             <div style={{ width: 1, height: 34, background: "var(--m-border)", margin: "0 2px" }} />
 
-            {/* ── Metric chips — colors match mobile profile metric cards exactly ── */}
+            {/* ── Metric cards — MetricCard style: var(--m-card) bg, neutral border, colored value, muted label.
+                Matches the Profile page metric cards exactly (same composition, slightly smaller). ── */}
             {ftp && (
               <div style={{
-                background: "rgba(0,194,255,0.07)", border: "1px solid rgba(0,194,255,0.25)",
-                borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 58,
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 58,
               }}>
                 <div style={{ fontSize: 19, fontWeight: 900, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,194,255,0.65)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
               </div>
             )}
             {currentPhase && (() => {
-              // Same color logic as mobile profile metric cards
               const phaseColor =
                 currentPhase === "Recovery" ? "#f59e0b" :
                 currentPhase === "Build"    ? "#ef4444" :
-                                              "#818cf8"; // Base
-              const phaseAlpha =
-                currentPhase === "Recovery" ? "rgba(245,158,11," :
-                currentPhase === "Build"    ? "rgba(239,68,68,"  :
-                                              "rgba(129,140,248,";
+                                              "#818cf8";
               return (
                 <div style={{
-                  background: `${phaseAlpha}0.07)`, border: `1px solid ${phaseAlpha}0.25)`,
-                  borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 60,
+                  background: "var(--m-card)", border: "1px solid var(--m-border)",
+                  borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
                 }}>
                   <div style={{ fontSize: 15, fontWeight: 900, color: phaseColor, lineHeight: 1 }}>{currentPhase}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: `${phaseAlpha}0.65)`, textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
-                    {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
+                    {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
                   </div>
                 </div>
               );
             })()}
             {weekWorkoutCount > 0 && (
               <div style={{
-                background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.25)",
-                borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 48,
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 48,
               }}>
                 <div style={{ fontSize: 19, fontWeight: 900, color: ZO, lineHeight: 1 }}>{weekWorkoutCount}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,90,31,0.65)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
               </div>
             )}
           </div>
