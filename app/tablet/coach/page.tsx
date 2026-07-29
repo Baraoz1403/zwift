@@ -16,7 +16,6 @@ import { fetchIcuActivities } from "@/lib/intervals";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
-import { TabletPageHeader } from "../tablet-page-header";
 import { TabletWeekSidebar } from "../tablet-week-sidebar";
 import CoachChat from "@/app/m/coach/coach-chat";
 
@@ -127,11 +126,11 @@ export default async function TabletCoachPage() {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
-      <TabletPageHeader
-        section="AI Coach"
-        name={firstName}
-        subtitle="Training insights & plan generation"
-      />
+      {/* Small in-content coach title (main header is in layout TabletTopBar) */}
+      <div style={{ padding:"14px 28px 10px", borderBottom:"1px solid var(--m-border)", background:"var(--m-card)", flexShrink:0 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--m-muted)", textTransform:"uppercase", letterSpacing:".12em" }}>AI Coach</div>
+        <div style={{ fontSize:14, color:"var(--m-muted)", marginTop:2, fontWeight:500 }}>Training insights & plan generation</div>
+      </div>
 
       {/* Body: chat on left, week sidebar on right */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>

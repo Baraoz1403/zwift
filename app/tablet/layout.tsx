@@ -3,8 +3,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { fetchOwnProfile, ZwiftApiError } from "@/lib/zwift";
-import { getIntervalsCredentials } from "@/lib/kv-plan-state";
+import { getIntervalsCredentials, getCachedPlan, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
+import { mondayOfCurrentWeek } from "@/lib/periodization";
 import TabletSidebar from "./sidebar-nav";
+import { TabletTopBar } from "./tablet-top-bar";
 import MobileIcuConnect from "@/app/m/mobile-icu-connect";
 import IOSScrollFix from "@/app/ios-scroll-fix";
 
@@ -29,113 +31,161 @@ export default async function TabletLayout({ children }: { children: React.React
 
   // Auth gate
   if (!session?.athleteId) {
-    redirect("/m");  // Reuse the mobile login screen
+    redirect("/m");
   }
 
-  // Auto-refresh Zwift token if expired (same logic as layout.tsx)
+  const athleteId = String(session.athleteId);
+  const weekOf    = mondayOfCurrentWeek();
+  const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
+
+  // Parallel data fetch for the top bar
   let firstName: string | null = null;
+  let ftp: number | null = null;
   try {
-    const profile = await fetchOwnProfile(session.accessToken);
-    firstName = profile.firstName ?? null;
-  } catch (e) {
-    if (e instanceof ZwiftApiError && e.status === 401 && session.refreshToken) {
-      redirect("/api/auth/refresh?next=/tablet/today");
-    }
-  }
-
-  // ICU gate
-  const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
-  const icuConnected = icuFromCookie
-    ? true
-    : !!(await getIntervalsCredentials(String(session.athleteId)));
-
-  if (!icuConnected) {
-    return (
-      <div
-        data-mobile-shell
-        data-mobile-theme="light"
-        style={{ minHeight: "100dvh", background: "var(--m-bg)", fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" }}
-      >
-        <MobileIcuConnect />
-      </div>
-    );
-  }
-
-  const theme = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
-  const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
-
-  return (
-    <>
-      <style>{`
-        html, body {
-          background-color: ${bodyBg} !important;
-          margin: 0;
-          overflow: hidden !important;
-          position: fixed !important;
-          width: 100% !important;
-          height: 100% !important;
-          overscroll-behavior: none !important;
-          -webkit-overflow-scrolling: auto !important;
+    const [profile, cachedId, kvCreds, plan, athleteState] = await Promise.all([
+      fetchOwnProfile(session.accessToken).catch((e: unknown) => {
+        // Auto-refresh if 401
+        if (e instanceof ZwiftApiError && (e as ZwiftApiError).status === 401 && session.refreshToken) {
+          redirect("/api/auth/refresh?next=/tablet/today");
         }
-      `}</style>
+        return null;
+      }),
+      getRiderIdentity(athleteId).catch(() => null),
+      cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId).catch(() => null),
+      getCachedPlan(athleteId, weekOf).catch(() => null),
+      getStoredAthleteState(athleteId).catch(() => null),
+    ]);
 
-      <div
-        data-mobile-shell
-        data-mobile-theme={theme}
-        style={{
-          position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: "var(--m-bg)",
-          display: "flex",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-          WebkitFontSmoothing: "antialiased",
-          overscrollBehavior: "none",
-        }}
-      >
-        {/* Stops iOS Safari viewport rubber-band bounce */}
-        <IOSScrollFix />
-        {/* Fixed sidebar */}
-        <TabletSidebar firstName={firstName} />
+    firstName = profile?.firstName ?? cachedId?.firstName ?? null;
+    ftp       = profile?.ftp ?? cachedId?.ftp ?? null;
 
-        {/*
-          Main content — outer shell is fixed-height (100dvh) so the browser
-          never scrolls the window. The inner .tablet-scroll-area does all the
-          scrolling, which makes position:sticky work correctly on TabletPageHeader.
-          The footer lives OUTSIDE the scroll area so it is always visible and
-          cannot be scrolled past.
-        */}
-        <div className="tablet-main" style={{
-          flex: 1,
-          marginLeft: 220,
-          height: "100%",
-          overflow: "hidden",           /* outer shell never scrolls */
-          paddingTop: "env(safe-area-inset-top, 0px)",
-          display: "flex",
-          flexDirection: "column",
-        }}>
-          {/* Content area — overflow:hidden so each page manages its own scroll.
-              Pages use height:100% + internal overflowY:auto to pin their headers. */}
-          {/* position:relative makes this the containing block for absolutely-positioned
-              page content (e.g. profile edit scroll fix). */}
-          <div className="tablet-scroll-area" style={{ flex: 1, height: 0, overflow: "hidden", position: "relative" }}>
-            {children}
+    // Phase + week from macro cycle
+    const macro = (athleteState as { macroCycle?: { weekIndex: number } } | null)?.macroCycle ?? null;
+    const currentPhase = macro
+      ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
+      : null;
+    const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
+
+    // Session count from plan
+    const workouts = plan?.workouts ?? [];
+    const weekWorkoutCount = workouts.filter(
+      (w: { type?: string }) => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+    ).length;
+
+    // Connection status
+    const icuConnected = !!(cookieKey ?? kvCreds?.icuKey);
+    const tpConnected  = !!(cookieStore.get("zwift_tp_token")?.value);
+
+    // Greeting (UTC+3 approximation — same as mobile)
+    const now       = new Date();
+    const utcHour   = now.getUTCHours();
+    const localHour = (utcHour + 3) % 24;
+    const greeting  =
+      localHour < 5  ? "Late night" :
+      localHour < 12 ? "Good morning" :
+      localHour < 17 ? "Good afternoon" :
+      localHour < 21 ? "Good evening" : "Good night";
+    const dateLabel = now.toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Jerusalem",
+    });
+
+    // ICU gate — show connect screen if not set up
+    if (!icuConnected) {
+      const theme   = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
+      const bodyBg  = theme === "light" ? "#f5f7fa" : "#0a0f1a";
+      return (
+        <>
+          <style>{`html,body{background-color:${bodyBg}!important;margin:0;overflow:hidden!important;position:fixed!important;width:100%!important;height:100%!important;overscroll-behavior:none!important}`}</style>
+          <div data-mobile-shell data-mobile-theme={theme} style={{ minHeight:"100dvh", background:"var(--m-bg)", fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif" }}>
+            <MobileIcuConnect />
           </div>
+        </>
+      );
+    }
 
-          {/* Footer — outside scroll area, always pinned to bottom, hidden in portrait (bottom nav takes over) */}
-          <footer className="tablet-footer" style={{
-            flexShrink: 0,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 20,
-            padding: "8px 40px",
-          }}>
-            <a href="/m/legal/terms" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>Terms of Service</a>
-            <span style={{ color: "var(--m-border)" }}>·</span>
-            <a href="/m/legal/privacy" style={{ fontSize: 14, color: "var(--m-muted)", textDecoration: "none" }}>Privacy Policy</a>
-          </footer>
+    const theme  = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
+    const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
+
+    return (
+      <>
+        <style>{`
+          html, body {
+            background-color: ${bodyBg} !important;
+            margin: 0;
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
+            overscroll-behavior: none !important;
+            -webkit-overflow-scrolling: auto !important;
+          }
+        `}</style>
+
+        <div
+          data-mobile-shell
+          data-mobile-theme={theme}
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "var(--m-bg)",
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+            WebkitFontSmoothing: "antialiased",
+            overscrollBehavior: "none",
+          }}
+        >
+          <IOSScrollFix />
+
+          {/* ── Full-width top bar (landscape + portrait) ───────────────── */}
+          <TabletTopBar
+            firstName={firstName}
+            ftp={ftp}
+            currentPhase={currentPhase}
+            weekDisplayNum={weekDisplayNum}
+            weekWorkoutCount={weekWorkoutCount}
+            icuConnected={icuConnected}
+            tpConnected={tpConnected}
+            greeting={greeting}
+            dateLabel={dateLabel}
+          />
+
+          {/* ── Left sidebar (landscape only — hidden in portrait via CSS) ─ */}
+          <TabletSidebar />
+
+          {/*
+            Main content area.
+            paddingTop = var(--tablet-bar-h) pushes content below the fixed top bar.
+            marginLeft = 220 offsets from the sidebar (portrait CSS overrides to 0).
+            overflow:hidden so each page manages its own scrolling.
+          */}
+          <div
+            className="tablet-main"
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              paddingTop: "var(--tablet-bar-h)",
+              marginLeft: 220,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              className="tablet-scroll-area"
+              style={{ flex: 1, height: 0, overflow: "hidden", position: "relative" }}
+            >
+              {children}
+            </div>
+            {/*
+              No footer here — legal links live in the sidebar (landscape).
+              In portrait, they're accessible via the Profile tab.
+            */}
+          </div>
         </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  } catch (e) {
+    // If anything above throws unexpectedly, redirect to login
+    console.error("TabletLayout error:", e);
+    redirect("/m");
+  }
 }

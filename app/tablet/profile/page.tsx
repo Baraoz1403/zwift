@@ -11,7 +11,6 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet } from "@/lib/kv";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
-import { TabletPageHeader } from "../tablet-page-header";
 // Re-use all the sub-components from the mobile profile page
 import SignOutButton from "@/app/m/profile/sign-out-button";
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
@@ -79,8 +78,11 @@ export default async function TabletProfilePage() {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--m-bg)", overflow: "hidden" }}>
-      {/* Pinned header — never scrolls */}
-      <TabletPageHeader section="Profile" name={firstName} subtitle="Stats & settings" />
+      {/* Small in-content section header — main name/chips shown in layout TabletTopBar */}
+      <div style={{ padding:"14px 28px 10px", borderBottom:"1px solid var(--m-border)", background:"var(--m-card)", flexShrink:0 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--m-muted)", textTransform:"uppercase", letterSpacing:".12em" }}>Profile</div>
+        <div style={{ fontSize:14, color:"var(--m-muted)", marginTop:2, fontWeight:500 }}>Stats &amp; settings</div>
+      </div>
 
       {/* Scrollable content */}
       <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "24px 28px" }}>

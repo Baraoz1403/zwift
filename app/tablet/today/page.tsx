@@ -7,7 +7,6 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
-import { TabletPageHeader } from "../tablet-page-header";
 
 const ZO = "#FF5A1F";
 
@@ -178,22 +177,9 @@ export default async function TabletTodayPage() {
       overflow: "hidden",
     }}>
 
-      {/* ── HEADER ─ matches profile page style exactly ─────────────── */}
-      <TabletPageHeader
-        section={greeting}
-        name={firstName}
-        subtitle={dateLabel}
-        right={
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 4, background: ZO, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="white"><path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/></svg>
-            </div>
-            <span style={{ fontSize: 15, fontWeight: 900, color: "var(--m-muted)", letterSpacing: ".06em" }}>VOLT AI</span>
-          </div>
-        }
-      />
-
       {/* ── BODY ────────────────────────────────────────────────────────── */}
+      {/* No per-page header — the full-width TabletTopBar in layout.tsx shows
+          greeting, name, connection icons, and fitness chips for all tablet pages. */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* LEFT: Today workout */}

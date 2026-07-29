@@ -1626,7 +1626,13 @@ tbody tr:hover {
    Landscape: sidebar visible, content offset by 220px, bottom nav hidden.
    Portrait:  sidebar hidden, content full-width, bottom nav visible.
    The threshold (min-width: 600px) ensures phones never trigger the tablet
-   bottom-nav (phones already have their own /m bottom nav). */
+   bottom-nav (phones already have their own /m bottom nav).
+
+   --tablet-bar-h: height of the fixed full-width top bar (greeting + name + chips).
+   Inner content = 94px. Safe-area-inset-top handles the notch. */
+:root {
+  --tablet-bar-h: calc(94px + env(safe-area-inset-top, 0px));
+}
 
 .tablet-sidebar {
   /* visible by default — landscape mode */
@@ -1648,24 +1654,13 @@ tbody tr:hover {
   /* content area — no changes in landscape */
 }
 
-/* Portrait on tablet: sidebar stays visible (user wants left bar on iPad too).
-   Bottom nav hidden — sidebar already handles navigation.
-   On small phones (< 600px) this block doesn't apply; phones use /m routes. */
+/* Portrait on tablet: sidebar hidden, content full-width, bottom nav visible.
+   Legal links (in sidebar) are accessible via the Profile tab in portrait.
+   On phones (< 600px) this block doesn't apply — phones use /m routes. */
 @media (orientation: portrait) and (min-width: 600px) {
-  /* Keep .tablet-sidebar visible — sidebar is always shown on iPad */
-  .tablet-main {
-    margin-left: 220px !important;  /* same as landscape */
-  }
-  /* No bottom nav padding needed since we're not showing the bottom nav */
-  .tablet-scroll-area {
-    padding-bottom: 0 !important;
-  }
-  /* Footer stays hidden in portrait (sidebar nav replaces it) */
-  .tablet-footer {
-    display: none !important;
-  }
-  /* Bottom nav hidden — sidebar is the nav */
-  .tablet-bottom-nav {
-    display: none !important;
-  }
+  .tablet-sidebar     { display: none !important; }
+  .tablet-main        { margin-left: 0 !important; }
+  .tablet-scroll-area { padding-bottom: 60px !important; }
+  .tablet-footer      { display: none !important; }
+  .tablet-bottom-nav  { display: flex !important; }
 }

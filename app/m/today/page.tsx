@@ -130,6 +130,10 @@ export default async function MobileTodayPage() {
   const firstName = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
   const ftp = zwiftProfile?.ftp ?? cachedIdentity?.ftp ?? null;
 
+  // Connection status for header icons
+  const icuConnected = !!(cookieKeyEarly ?? earlyKvCreds?.icuKey);
+  const tpConnected  = !!(cookieStore.get("zwift_tp_token")?.value);
+
   const macro = athleteState?.macroCycle ?? null;
   let currentPhase: string | null = null;
   let weekIndex: number | null = null;
@@ -162,7 +166,7 @@ export default async function MobileTodayPage() {
   if (!plan || workouts.length === 0) {
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} icuConnected={icuConnected} tpConnected={tpConnected} />
         <div style={SCROLL_STYLE}>
           <NoPlanScreen />
         </div>
@@ -175,7 +179,7 @@ export default async function MobileTodayPage() {
     const isBonus = todayStatus === "bonus";
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} tpConnected={tpConnected} />
         <div style={SCROLL_STYLE}>
           {isBonus ? (
             /* Bonus ride — show actual ride data + feedback banner */
@@ -270,7 +274,7 @@ export default async function MobileTodayPage() {
       <FeedbackTrigger />
 
       {/* Hero header — outside scroll area so it never moves */}
-      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} />
+      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} tpConnected={tpConnected} />
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
@@ -308,7 +312,8 @@ export default async function MobileTodayPage() {
 type HeroWorkout = { title: string; durationMin?: number; type?: string } | null;
 
 function TodayHero({
-  firstName, ftp, phase, weekIndex, weekWorkoutCount, todayStatus, workout, todayActivityDurationMin,
+  firstName, ftp, phase, weekIndex, weekWorkoutCount, todayStatus, workout,
+  icuConnected, tpConnected,
 }: {
   firstName: string | null;
   ftp: number | null;
@@ -318,10 +323,12 @@ function TodayHero({
   todayStatus: DayStatus | "bonus";
   workout: HeroWorkout;
   todayActivityDurationMin?: number | null;
+  icuConnected: boolean;
+  tpConnected: boolean;
 }) {
   const statusDone   = todayStatus === "completed";
-  const statusMissed = todayStatus === "missed";
   const statusBonus  = todayStatus === "bonus";
+  const isRestOrBonus = !workout || statusBonus;
 
   const utcHour = new Date().getUTCHours();
   const localHour = (utcHour + 3) % 24;
@@ -335,22 +342,12 @@ function TodayHero({
     weekday: "long", month: "short", day: "numeric", timeZone: "Asia/Jerusalem",
   });
 
-  const statusBadge = statusDone
-    ? { text: "✓ Done",  color: "#15803d", bg: "#dcfce7", border: "1px solid #bbf7d0" }
-    : statusMissed
-    ? { text: "Missed",  color: "#dc2626", bg: "#fee2e2", border: "1px solid #fecaca" }
-    : statusBonus
-    ? { text: "🚴 Bonus", color: "#92400e", bg: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)" }
-    : null;
-
-  // Today's session label for the header
+  // Today's session label — bonus/rest days just say "Rest Day" (no bonus mention in header)
   const sessionLabel = workout
     ? (workout.title.length > 26 ? workout.title.slice(0, 24) + "…" : workout.title)
-    : statusBonus
-    ? `Rest Day + Bonus${todayActivityDurationMin ? ` · ${todayActivityDurationMin}m` : ""}`
     : "Rest Day";
 
-  // Detect workout zone color for the session label
+  // Detect workout zone color for the session chip
   const workoutType = (workout?.title ?? "").toLowerCase();
   const sessionColor =
     workoutType.includes("sweet") ? "#10b981" :
@@ -359,7 +356,6 @@ function TodayHero({
     workoutType.includes("tempo") ? "#3b82f6" :
     workoutType.includes("sprint") ? "#a855f7" :
     workoutType.includes("endurance") || workoutType.includes("z2") ? "#22d3ee" :
-    statusBonus ? "#f59e0b" :
     "var(--m-muted)";
 
   return (
@@ -377,22 +373,37 @@ function TodayHero({
         <ThemeToggleButton compact />
       </div>
 
-      {/* Row 2: athlete name + status badge */}
+      {/* Row 2: athlete name + connection icons (ICU / TP) */}
+      {/* Note: no status badge here — bonus/done/missed shown in the main content area */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
-        {statusBadge && (
-          <span style={{
-            fontSize: 13, fontWeight: 800, borderRadius: 6,
-            color: statusBadge.color, background: statusBadge.bg,
-            border: statusBadge.border,
-            padding: "5px 12px", letterSpacing: ".01em", flexShrink: 0,
-          }}>{statusBadge.text}</span>
-        )}
+        <div style={{ display: "flex", gap: 6 }}>
+          {/* ICU connection chip */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 4,
+            padding: "4px 9px", borderRadius: 6,
+            background: icuConnected ? "rgba(34,211,238,0.08)" : "rgba(100,116,139,0.08)",
+            border: `1px solid ${icuConnected ? "rgba(34,211,238,0.28)" : "rgba(100,116,139,0.18)"}`,
+          }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: icuConnected ? "#22d3ee" : "#64748b", flexShrink: 0 }} />
+            <span style={{ fontSize: 10, fontWeight: 800, color: icuConnected ? "#22d3ee" : "#94a3b8", letterSpacing: ".06em" }}>ICU</span>
+          </div>
+          {/* TP connection chip */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 4,
+            padding: "4px 9px", borderRadius: 6,
+            background: tpConnected ? "rgba(59,130,246,0.08)" : "rgba(100,116,139,0.08)",
+            border: `1px solid ${tpConnected ? "rgba(59,130,246,0.28)" : "rgba(100,116,139,0.18)"}`,
+          }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: tpConnected ? "#3b82f6" : "#64748b", flexShrink: 0 }} />
+            <span style={{ fontSize: 10, fontWeight: 800, color: tpConnected ? "#3b82f6" : "#94a3b8", letterSpacing: ".06em" }}>TP</span>
+          </div>
+        </div>
       </div>
 
-      {/* Row 3: colored stats chips */}
+      {/* Row 3: colored stats chips — FTP, Phase, Sessions, and today's session */}
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         {/* FTP — cyan */}
         {ftp && (
@@ -426,19 +437,20 @@ function TodayHero({
             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Sessions</div>
           </div>
         )}
-        {/* Today's session — fills remaining space */}
+        {/* Today's session chip — shows workout title (or "Rest Day" on rest/bonus days) */}
         <div style={{
           flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-          borderLeft: `3px solid ${sessionColor}`,
+          borderLeft: `3px solid ${isRestOrBonus ? "var(--m-border)" : sessionColor}`,
           borderRadius: 8, padding: "7px 10px",
           display: "flex", alignItems: "center",
           minWidth: 0,
         }}>
           <span style={{
-            fontSize: 12, fontWeight: 700, color: sessionColor,
+            fontSize: 12, fontWeight: 700,
+            color: isRestOrBonus ? "var(--m-muted)" : sessionColor,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
-            {sessionLabel}
+            {statusDone && workout ? `✓ ${sessionLabel}` : sessionLabel}
           </span>
         </div>
       </div>

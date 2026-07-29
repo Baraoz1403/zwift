@@ -13,7 +13,7 @@ const TABS = [
   { href: "/tablet/profile", label: "Profile", icon: ProfileIcon },
 ];
 
-export default function TabletSidebar({ firstName }: { firstName?: string | null }) {
+export default function TabletSidebar() {
   const pathname = usePathname();
   const router   = useRouter();
   const [theme, setTheme]     = useState<"dark" | "light">("light");
@@ -47,38 +47,20 @@ export default function TabletSidebar({ firstName }: { firstName?: string | null
 
   return (
     <>
-    {/* ── Landscape: vertical sidebar ─────────────────────────────── */}
+    {/* ── Landscape: vertical sidebar (starts below the fixed top bar) ─ */}
     <div className="tablet-sidebar" style={{
       width: 220,
-      height: "100dvh",
       background: bg,
       borderRight: `1px solid ${border}`,
       display: "flex", flexDirection: "column", flexShrink: 0,
-      position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
+      position: "fixed",
+      top: "var(--tablet-bar-h)",  /* start below the full-width top bar */
+      left: 0, bottom: 0,
+      zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       overflow: "hidden",
     }}>
-      <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
-
-      {/* Brand */}
-      <div style={{ padding: "28px 20px 24px", borderBottom: `1px solid ${border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 4, background: ZO, flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="white">
-              <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: textCol, letterSpacing: "-.3px" }}>Volt AI</div>
-            {firstName && <div style={{ fontSize: 14, color: muted, marginTop: 1 }}>{firstName}</div>}
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
+      {/* Nav — no brand section (top bar handles branding) */}
       <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
