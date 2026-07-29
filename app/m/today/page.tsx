@@ -73,6 +73,10 @@ export default async function MobileTodayPage() {
   let todayActivityName: string | null = null;
   let todayActivityDurationMin: number | null = null;
   let todayIcuId: string | null = null;
+  let todayAvgPower: number | null = null;
+  let todayNormalizedPower: number | null = null;
+  let todayDistanceKm: number | null = null;
+  let todayTss: number | null = null;
   try {
     const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
     const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
@@ -116,6 +120,15 @@ export default async function MobileTodayPage() {
       todayActivityDurationMin = todayActivity.moving_time
         ? Math.round(todayActivity.moving_time / 60) : null;
       todayIcuId = (todayActivity as { id?: string }).id ?? null;
+      // Additional stats for BonusRideCard
+      todayAvgPower = (todayActivity.average_watts != null && todayActivity.average_watts > 0)
+        ? Math.round(todayActivity.average_watts) : null;
+      todayNormalizedPower = (todayActivity.normalized_power != null && todayActivity.normalized_power > 0)
+        ? Math.round(todayActivity.normalized_power) : null;
+      todayDistanceKm = (todayActivity.distance != null && todayActivity.distance > 0)
+        ? Math.round(todayActivity.distance / 100) / 10 : null; // m → km, 1 decimal
+      todayTss = (todayActivity.icu_training_load != null && todayActivity.icu_training_load > 0)
+        ? Math.round(todayActivity.icu_training_load) : null;
     }
   } catch { /* best-effort */ }
 
@@ -205,6 +218,11 @@ export default async function MobileTodayPage() {
                 activityName={todayActivityName}
                 durationMin={todayActivityDurationMin}
                 avgHr={todayAvgHr}
+                avgPower={todayAvgPower}
+                normalizedPower={todayNormalizedPower}
+                distanceKm={todayDistanceKm}
+                tss={todayTss}
+                ftp={ftp}
                 date={todayStr}
               />
 
