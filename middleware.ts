@@ -45,9 +45,22 @@ function detectDevice(ua: string): "phone" | "tablet" | "desktop" {
   return "desktop";
 }
 
+/**
+ * Map of mobile routes that have tablet equivalents.
+ * Used to redirect tablet UA away from /m/* to /tablet/*.
+ * Legal pages are excluded — they use the mobile layout on all devices.
+ */
+const MOBILE_TO_TABLET: Record<string, string> = {
+  "/m/today":   "/tablet/today",
+  "/m/week":    "/tablet/week",
+  "/m/coach":   "/tablet/coach",
+  "/m/profile": "/tablet/profile",
+};
+
 export function middleware(req: NextRequest) {
   const hasSession = req.cookies.has(SESSION_COOKIE_NAME);
   const { pathname } = req.nextUrl;
+  const ua = req.headers.get("user-agent") ?? "";
 
   // ── Auth gate for protected routes ────────────────────────────────────────
   // Only protect /dashboard here — /m and /tablet layouts handle their own
@@ -60,13 +73,29 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ── Tablet UA guard: /m/* → /tablet/* ────────────────────────────────────
+  // Prevents iPad from ever rendering the phone layout when following an
+  // internal link or bookmark that points to /m/*. Applies to all /m/ routes
+  // that have a tablet equivalent; legal pages are left as-is.
+  if (pathname.startsWith("/m/") && !pathname.startsWith("/m/legal")) {
+    const device = detectDevice(ua);
+    if (device === "tablet") {
+      // Find the most specific matching mobile base path
+      const mobileBase = Object.keys(MOBILE_TO_TABLET).find(
+        k => pathname === k || pathname.startsWith(k + "/")
+      );
+      if (mobileBase) {
+        return NextResponse.redirect(new URL(MOBILE_TO_TABLET[mobileBase], req.url));
+      }
+    }
+  }
+
   // ── Device auto-redirect on root "/" ─────────────────────────────────────
   // Redirect ALL visitors (authenticated or not) to the correct surface.
   // Unauthenticated mobile/tablet users land on /m or /tablet which show
   // the login screen. Unauthenticated desktop users land on /dashboard which
   // the auth gate above then sends to /login.
   if (pathname === "/") {
-    const ua = req.headers.get("user-agent") ?? "";
     const device = detectDevice(ua);
 
     const dest =

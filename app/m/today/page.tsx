@@ -168,57 +168,81 @@ export default async function MobileTodayPage() {
     return (
       <div style={PAGE_SHELL}>
         <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={isBonus ? "bonus" : "planned"} workout={null} />
-        <div style={{ ...SCROLL_STYLE, padding: "24px 16px", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
+        <div style={SCROLL_STYLE}>
           {isBonus ? (
-            /* Bonus ride — athlete rode on their rest day. Keep it short + positive. */
-            <div style={{
-              background: "rgba(34,197,94,0.07)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 4, padding: "22px 20px",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
+            /* Bonus ride — show actual ride data + feedback banner */
+            <>
+              <div style={{ padding: "16px 16px 0" }}>
+                {/* Bonus badge + rest day context */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+                    Today&apos;s session
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
+                    Bonus
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
+                    Rest day planned
+                  </span>
+                </div>
+
+                {/* Ride data card */}
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: "rgba(34,197,94,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 24,
-                }}>✓</div>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>Extra ride logged</div>
-                  <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 2 }}>Today was a rest day — nice bonus work</div>
+                  borderRadius: 4, overflow: "hidden",
+                  background: "var(--m-card)", border: "1px solid var(--m-border)",
+                  borderTop: "3px solid #f59e0b", marginBottom: 10,
+                }}>
+                  <div style={{ height: 70, background: "var(--m-card-inner)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>
+                    🚴
+                  </div>
+                  <div style={{ padding: "14px 16px 16px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 5 }}>
+                      Bonus ride
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1.15, letterSpacing: "-0.4px", marginBottom: 10 }}>
+                      {todayActivityName ?? "Bonus ride"}
+                    </div>
+                    <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                      {todayActivityDurationMin && todayActivityDurationMin > 0 && (
+                        <div style={{ background: "var(--m-card-inner)", borderRadius: 3, padding: "8px 12px", textAlign: "center", border: "1px solid var(--m-border)" }}>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>{todayActivityDurationMin}</div>
+                          <div style={{ fontSize: 11, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>min</div>
+                        </div>
+                      )}
+                      {todayAvgHr && todayAvgHr > 0 && (
+                        <div style={{ background: "rgba(239,68,68,0.08)", borderRadius: 3, padding: "8px 12px", textAlign: "center", border: "1px solid rgba(239,68,68,0.2)" }}>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: "#ef4444", lineHeight: 1 }}>{Math.round(todayAvgHr)}</div>
+                          <div style={{ fontSize: 11, color: "rgba(239,68,68,0.5)", marginTop: 2, fontWeight: 500 }}>bpm avg</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65 }}>
-                Your training load has been updated. The AI will factor this extra session into next week.
-              </div>
-              <a href="/m/week" style={{
-                display: "block", marginTop: 16, textAlign: "center",
-                padding: "14px", borderRadius: 4,
-                background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)",
-                color: "#22c55e", fontSize: 17, fontWeight: 700, textDecoration: "none",
-              }}>
-                View weekly plan →
-              </a>
-            </div>
+
+              {/* Feedback banner — adapted for bonus (skip plan-check, go straight to RPE) */}
+              <FeedbackBanner
+                workoutTitle={todayActivityName ?? "Bonus ride"}
+                workoutCategory="bonus"
+                date={todayStr}
+                avgHr={todayAvgHr}
+                completed={true}
+                actualDurationMin={todayActivityDurationMin}
+                isBonus={true}
+              />
+            </>
           ) : (
             /* Pure rest day — calm, no drama */
-            <div style={{
-              background: "var(--m-card)",
-              border: "1px solid var(--m-border)",
-              borderRadius: 4, padding: "22px 20px",
-            }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
-              <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
-                No workout scheduled today. Quality rest is as important as the training itself.
+            <div style={{ padding: "24px 16px", paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}>
+              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
+                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
+                  No workout scheduled today. Quality rest is as important as the training itself.
+                </div>
+                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
+                  See this week&apos;s plan →
+                </a>
               </div>
-              <a href="/m/week" style={{
-                display: "block", textAlign: "center",
-                padding: "14px", borderRadius: 4,
-                background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-                color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none",
-              }}>
-                See this week&apos;s plan →
-              </a>
             </div>
           )}
         </div>
@@ -269,13 +293,13 @@ export default async function MobileTodayPage() {
 type HeroWorkout = { title: string; durationMin?: number; type?: string } | null;
 
 function TodayHero({
-  firstName, ftp, phase, todayStatus,
+  firstName, ftp, phase, todayStatus, workout,
 }: {
   firstName: string | null;
   ftp: number | null;
   phase: string | null;
   todayStatus: DayStatus | "bonus";
-  workout: HeroWorkout; // kept in signature so callers don't need to change
+  workout: HeroWorkout;
 }) {
   const statusDone   = todayStatus === "completed";
   const statusMissed = todayStatus === "missed";
@@ -328,7 +352,7 @@ function TodayHero({
         )}
       </div>
 
-      {/* Row 3: date (left) + FTP & phase (right) */}
+      {/* Row 3: date (left) + FTP, phase, workout (right) */}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
@@ -344,6 +368,12 @@ function TodayHero({
               padding: "2px 8px", borderRadius: 3,
             }}>{phase}</span>
           )}
+          {/* Today's planned session — truncated if long */}
+          <span style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, maxWidth: 160, textAlign: "right", lineHeight: 1.2 }}>
+            {workout
+              ? (workout.title.length > 22 ? workout.title.slice(0, 20) + "…" : workout.title)
+              : (todayStatus === "bonus" ? "Rest Day + Bonus" : "Rest Day")}
+          </span>
         </div>
       </div>
     </div>

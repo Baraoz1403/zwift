@@ -168,41 +168,18 @@ export default async function MobileProfilePage() {
       <div style={{ marginBottom: 16 }}>
         <SectionLabel>Connections</SectionLabel>
 
-        {/* Connection status */}
+        {/* Connection status — single banner when all connected; no redundant sub-rows */}
         {icuConnected && (
-          <div style={{ marginBottom: 12 }}>
-            {/* All good — no manual steps needed. Cron + ICU webhook handle everything. */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: "rgba(34,197,94,0.06)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 10, padding: "10px 14px", marginBottom: 10,
-            }}>
-              <span style={{ fontSize: 16 }}>✅</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>
-                All systems active — WhatsApp feedback fires automatically after every ride
-              </span>
-            </div>
-
-            {/* Zwift connected row */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              background: "rgba(34,197,94,0.06)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 10, padding: "10px 14px",
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>Zwift connected</span>
-              <span style={{ color: "var(--m-border)", margin: "0 2px" }}>·</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>Intervals.icu connected</span>
-            </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "rgba(34,197,94,0.06)",
+            border: "1px solid rgba(34,197,94,0.2)",
+            borderRadius: 10, padding: "10px 14px", marginBottom: 12,
+          }}>
+            <span style={{ fontSize: 16 }}>✅</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#22c55e" }}>
+              All systems active — WhatsApp feedback fires automatically after every ride
+            </span>
           </div>
         )}
 

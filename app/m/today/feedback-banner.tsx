@@ -58,13 +58,17 @@ interface Props {
   /** From Intervals.icu — the actual activity logged today */
   actualActivityName?: string | null;
   actualDurationMin?: number | null;
+  /** Bonus ride: skip "did you follow the plan?" — go straight to RPE */
+  isBonus?: boolean;
 }
 
 export default function FeedbackBanner({
   workoutTitle, workoutCategory, date, avgHr,
   plannedDurationMin, actualActivityName, actualDurationMin,
+  isBonus,
 }: Props) {
-  const [step, setStep] = useState<Step>("plan-check");
+  // Bonus rides skip plan-check — there was no plan, just go straight to rating
+  const [step, setStep] = useState<Step>(isBonus ? "rate" : "plan-check");
   const [followed, setFollowed] = useState<"yes" | "mostly" | "different" | null>(null);
 
   // Deviation fields
@@ -93,7 +97,9 @@ export default function FeedbackBanner({
 
       // Build coaching note — richer when a deviation occurred
       let coachNote = "";
-      if (followed === "different") {
+      if (isBonus) {
+        coachNote = `[BONUS RIDE — rest day]\n${workoutTitle}${actualDurationMin ? ` (${actualDurationMin} min)` : ""}${rpe ? ` — RPE ${rpe}/5` : ""}${note.trim() ? `\nNote: ${note.trim()}` : ""}`;
+      } else if (followed === "different") {
         const reasonLabel = DEVIATION_REASONS.find(r => r.id === deviationReason)?.label ?? deviationReason ?? "";
         const plannedStr  = `${workoutTitle}${plannedDurationMin ? ` (${plannedDurationMin} min)` : ""}`;
         const actualStr   = `${actualDesc || "different session"}${actualDurationMin ? ` (${actualDurationMin} min)` : ""}`;
@@ -297,7 +303,7 @@ export default function FeedbackBanner({
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", letterSpacing: "-0.3px" }}>
-          How hard was it?
+          {isBonus ? "How did the bonus ride feel?" : "How hard was it?"}
         </div>
         {avgHr && avgHr > 0 && (
           <div style={{
