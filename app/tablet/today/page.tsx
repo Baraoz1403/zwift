@@ -94,6 +94,9 @@ export default async function TabletTodayPage() {
   const workouts = (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? dateMap[w.day] ?? undefined }));
 
   let weekStatus: Record<string, DayStatus> = {};
+  let todayAvgHr: number | null = null;
+  let todayActivityName: string | null = null;
+  let todayActivityDurationMin: number | null = null;
   try {
     const cookieId = cookieStore.get("zwift_intervals_id")?.value;
     const icuKey = cookieKey ?? earlyKvCreds?.icuKey;
@@ -127,6 +130,15 @@ export default async function TabletTodayPage() {
       zwiftAsIcu,
     );
     weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+
+    // Extract today's activity for bonus ride display
+    const todayActivity = activities.find(a => a.start_date_local?.slice(0, 10) === todayStr);
+    if (todayActivity) {
+      todayAvgHr = todayActivity.average_heartrate ?? null;
+      todayActivityName = todayActivity.name ?? null;
+      todayActivityDurationMin = todayActivity.moving_time
+        ? Math.round(todayActivity.moving_time / 60) : null;
+    }
   } catch { /* best-effort */ }
 
   const todayStatus: DayStatus = weekStatus[todayStr] ?? "planned";
@@ -147,11 +159,16 @@ export default async function TabletTodayPage() {
   const greeting  = localHour < 12 ? "Good morning" : localHour < 17 ? "Good afternoon" : "Good evening";
   const dateLabel = todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Jerusalem" });
 
-  const isRest     = !todayWorkout || ["rest","recovery"].some(k => (todayWorkout.type ?? "").toLowerCase().includes(k));
-  const zoneColor  = !isRest && todayWorkout ? detectZoneColor(todayWorkout) : "#64748b";
-  const zoneLabel  = !isRest && todayWorkout ? detectZoneLabel(todayWorkout) : "";
-  const statusLabel = todayStatus === "completed" ? "Done ✓" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus" : "Planned";
+  const isBonus    = todayStatus === "bonus";
+  const isRest     = !isBonus && (!todayWorkout || ["rest","recovery"].some(k => (todayWorkout.type ?? "").toLowerCase().includes(k)));
+  const zoneColor  = !isRest && !isBonus && todayWorkout ? detectZoneColor(todayWorkout) : isBonus ? "#f59e0b" : "#64748b";
+  const zoneLabel  = !isRest && !isBonus && todayWorkout ? detectZoneLabel(todayWorkout) : isBonus ? "Bonus Ride" : "";
+  const statusLabel = todayStatus === "completed" ? "Done ✓" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus 🚴" : "Planned";
   const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : "#94a3b8";
+  const weekWorkoutCount = workouts.filter(
+    w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+  ).length;
+  const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
 
   return (
     <div style={{
@@ -183,7 +200,7 @@ export default async function TabletTodayPage() {
         <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "32px 40px" }}>
 
           {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
-          {isRest || !todayWorkout ? (
+          {isRest || (!todayWorkout && !isBonus) ? (
             /* ── REST DAY ─────────────────────────────────────────────── */
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 20 }}>
@@ -206,6 +223,75 @@ export default async function TabletTodayPage() {
                   <div style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6, maxWidth: 420 }}>
                     Recovery is where adaptation happens. No training today — this is the work.
                   </div>
+                </div>
+              </div>
+            </div>
+          ) : isBonus ? (
+            /* ── BONUS RIDE ─────────────────────────────────────────────── */
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
+                  Today&apos;s session
+                </div>
+                <span style={{
+                  fontSize: 13, fontWeight: 800, color: "#92400e",
+                  background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)",
+                  borderRadius: 4, padding: "3px 10px",
+                }}>🚴 Bonus ride</span>
+                <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 500 }}>Rest day planned</span>
+              </div>
+
+              {/* Bonus ride card */}
+              <div style={{
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderLeft: "4px solid #f59e0b",
+                borderRadius: 4, padding: "28px 32px", marginBottom: 16,
+              }}>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)",
+                  borderRadius: 3, padding: "3px 10px", marginBottom: 14,
+                }}>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#f59e0b" }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em" }}>Bonus Ride</span>
+                </div>
+
+                <h1 style={{ margin: "0 0 16px", fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1.1 }}>
+                  {todayActivityName ?? "Bonus ride"}
+                </h1>
+
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                  {todayActivityDurationMin && todayActivityDurationMin > 0 && (
+                    <div style={{
+                      background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+                      borderRadius: 4, padding: "12px 20px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{todayActivityDurationMin}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>min</div>
+                    </div>
+                  )}
+                  {todayAvgHr && todayAvgHr > 0 && (
+                    <div style={{
+                      background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)",
+                      borderRadius: 4, padding: "12px 20px", textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: "#ef4444", lineHeight: 1 }}>{Math.round(todayAvgHr)}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(239,68,68,0.5)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>bpm avg</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Coach note for bonus */}
+              <div style={{
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 4, padding: "20px 24px",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
+                  Note
+                </div>
+                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65 }}>
+                  Great work getting an extra session in on your rest day. Your coach will factor this into next week&apos;s load.
                 </div>
               </div>
             </div>
@@ -365,33 +451,73 @@ export default async function TabletTodayPage() {
         }}>
           {/* Metrics — sticky so the watt box is always visible */}
           <div style={{
-            padding: "24px 20px", borderBottom: "1px solid var(--m-border)",
+            padding: "20px 16px", borderBottom: "1px solid var(--m-border)",
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--m-card)",
           }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 16 }}>
-              Your stats
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 12 }}>
+              Fitness metrics
             </div>
-            <div style={{ display: "flex", gap: 16 }}>
-              {ftp && (
-                <div style={{
-                  flex: 1, background: `${ZO}08`, border: `1px solid ${ZO}20`,
-                  borderRadius: 4, padding: "14px 16px",
-                }}>
-                  <div style={{ fontSize: 32, fontWeight: 900, color: ZO, letterSpacing: "-.5px", lineHeight: 1 }}>{ftp}W</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: ZO, opacity: 0.7, textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>FTP</div>
-                </div>
-              )}
+            {/* FTP — cyan, full width */}
+            {ftp && (
+              <div style={{
+                background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)",
+                borderRadius: 8, padding: "14px 16px", marginBottom: 8,
+                display: "flex", alignItems: "baseline", gap: 6,
+              }}>
+                <div style={{ fontSize: 38, fontWeight: 900, color: "#22d3ee", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              {/* Phase — orange */}
               {currentPhase && (
                 <div style={{
-                  flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-                  borderRadius: 4, padding: "14px 16px",
+                  flex: 1, background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.2)",
+                  borderRadius: 8, padding: "10px 12px",
                 }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.5px", lineHeight: 1 }}>{currentPhase}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 6 }}>Phase</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{currentPhase}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
+                    {weekDisplayNum ? `Week ${weekDisplayNum}` : "Phase"}
+                  </div>
+                </div>
+              )}
+              {/* Sessions this week — purple */}
+              {weekWorkoutCount > 0 && (
+                <div style={{
+                  flex: 1, background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
+                  borderRadius: 8, padding: "10px 12px",
+                }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
                 </div>
               )}
             </div>
+            {/* Bonus ride highlight — shown when athlete rode on a rest day */}
+            {isBonus && (
+              <div style={{
+                marginTop: 10,
+                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                borderRadius: 8, padding: "12px 14px",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+                  🚴 Bonus ride today
+                </div>
+                {todayActivityName && (
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginBottom: 6, lineHeight: 1.3 }}>
+                    {todayActivityName.length > 28 ? todayActivityName.slice(0, 26) + "…" : todayActivityName}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 8 }}>
+                  {todayActivityDurationMin && (
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{todayActivityDurationMin} min</span>
+                  )}
+                  {todayAvgHr && (
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{Math.round(todayAvgHr)} bpm</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Week list */}

@@ -7,6 +7,7 @@ import MobileNav from "./mobile-nav";
 import MobileLoginScreen from "./mobile-login";
 import MobileIcuConnect from "./mobile-icu-connect";
 import IOSScrollFix from "@/app/ios-scroll-fix";
+import IpadRedirect from "./ipad-redirect";
 
 export const metadata: Metadata = {
   title: "Volt AI",
@@ -103,6 +104,9 @@ export default async function MobileLayout({ children }: { children: React.React
         <MobileNav />
         {/* Stops iOS Safari viewport rubber-band bounce */}
         <IOSScrollFix />
+        {/* Redirect iPads to /tablet/* — handles already-logged-in iPads that
+            don't have the device_hint cookie yet (set at login for new logins) */}
+        <IpadRedirect />
       </div>
     </>
   );

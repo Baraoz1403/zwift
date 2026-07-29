@@ -13,7 +13,7 @@
  * (athlete keeps skipping structured work → plan needs more variety).
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const FEEDBACK_KEY = (date: string) => `feedbackDone:${date}`;
 
@@ -70,11 +70,14 @@ export default function FeedbackBanner({
   isBonus,
 }: Props) {
   // If feedback was already submitted today, skip the entire banner.
-  // Lazy initializer runs once on mount so there's no flash of the banner.
-  const [alreadyDone] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return !!localStorage.getItem(FEEDBACK_KEY(date));
-  });
+  // null = not yet checked (after SSR hydration); avoids flash of the banner.
+  // Using useEffect (not lazy initializer) because Next.js keeps the server
+  // value (false) during hydration — the lazy initializer doesn't re-run,
+  // so the banner would always show on first load even when already done.
+  const [alreadyDone, setAlreadyDone] = useState<boolean | null>(null);
+  useEffect(() => {
+    setAlreadyDone(!!localStorage.getItem(FEEDBACK_KEY(date)));
+  }, [date]);
 
   // Bonus rides skip plan-check — there was no plan, just go straight to rating
   const [step, setStep] = useState<Step>(isBonus ? "rate" : "plan-check");
@@ -137,7 +140,8 @@ export default function FeedbackBanner({
 
   const chosenItem = RPE_ITEMS.find(r => r.score === rpe);
 
-  // Feedback was already submitted today — show nothing
+  // Feedback was already submitted today (or not yet checked) — show nothing
+  if (alreadyDone === null) return null;  // waiting for localStorage read
   if (alreadyDone) return null;
 
   // ── DONE ─────────────────────────────────────────────────────────────────

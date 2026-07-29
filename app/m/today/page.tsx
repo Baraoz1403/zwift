@@ -132,10 +132,17 @@ export default async function MobileTodayPage() {
 
   const macro = athleteState?.macroCycle ?? null;
   let currentPhase: string | null = null;
+  let weekIndex: number | null = null;
   if (macro) {
     const wi = (macro as { weekIndex: number }).weekIndex ?? 0;
+    weekIndex = wi;
     currentPhase = wi === 0 ? "Base" : (wi % 4) === 3 ? "Recovery" : "Build";
   }
+
+  // Count planned workouts this week (non-rest)
+  const weekWorkoutCount = workouts.filter(
+    w => !["rest", "recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+  ).length;
 
   const SCROLL_STYLE: React.CSSProperties = {
     flex: 1,
@@ -155,7 +162,7 @@ export default async function MobileTodayPage() {
   if (!plan || workouts.length === 0) {
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={null} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} />
         <div style={SCROLL_STYLE}>
           <NoPlanScreen />
         </div>
@@ -168,7 +175,7 @@ export default async function MobileTodayPage() {
     const isBonus = todayStatus === "bonus";
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={isBonus ? "bonus" : "planned"} workout={null} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} />
         <div style={SCROLL_STYLE}>
           {isBonus ? (
             /* Bonus ride — show actual ride data + feedback banner */
@@ -263,7 +270,7 @@ export default async function MobileTodayPage() {
       <FeedbackTrigger />
 
       {/* Hero header — outside scroll area so it never moves */}
-      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} todayStatus={todayStatus} workout={todayWorkout} />
+      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} />
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
@@ -301,16 +308,20 @@ export default async function MobileTodayPage() {
 type HeroWorkout = { title: string; durationMin?: number; type?: string } | null;
 
 function TodayHero({
-  firstName, ftp, phase, todayStatus, workout,
+  firstName, ftp, phase, weekIndex, weekWorkoutCount, todayStatus, workout, todayActivityDurationMin,
 }: {
   firstName: string | null;
   ftp: number | null;
   phase: string | null;
+  weekIndex: number | null;
+  weekWorkoutCount: number;
   todayStatus: DayStatus | "bonus";
   workout: HeroWorkout;
+  todayActivityDurationMin?: number | null;
 }) {
   const statusDone   = todayStatus === "completed";
   const statusMissed = todayStatus === "missed";
+  const statusBonus  = todayStatus === "bonus";
 
   const utcHour = new Date().getUTCHours();
   const localHour = (utcHour + 3) % 24;
@@ -328,59 +339,106 @@ function TodayHero({
     ? { text: "✓ Done",  color: "#15803d", bg: "#dcfce7", border: "1px solid #bbf7d0" }
     : statusMissed
     ? { text: "Missed",  color: "#dc2626", bg: "#fee2e2", border: "1px solid #fecaca" }
+    : statusBonus
+    ? { text: "🚴 Bonus", color: "#92400e", bg: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)" }
     : null;
+
+  // Today's session label for the header
+  const sessionLabel = workout
+    ? (workout.title.length > 26 ? workout.title.slice(0, 24) + "…" : workout.title)
+    : statusBonus
+    ? `Rest Day + Bonus${todayActivityDurationMin ? ` · ${todayActivityDurationMin}m` : ""}`
+    : "Rest Day";
+
+  // Detect workout zone color for the session label
+  const workoutType = (workout?.title ?? "").toLowerCase();
+  const sessionColor =
+    workoutType.includes("sweet") ? "#10b981" :
+    workoutType.includes("threshold") || workoutType.includes("ftp") ? "#FF5A1F" :
+    workoutType.includes("vo2") ? "#ef4444" :
+    workoutType.includes("tempo") ? "#3b82f6" :
+    workoutType.includes("sprint") ? "#a855f7" :
+    workoutType.includes("endurance") || workoutType.includes("z2") ? "#22d3ee" :
+    statusBonus ? "#f59e0b" :
+    "var(--m-muted)";
 
   return (
     <div style={{
       flexShrink: 0,
       background: "var(--m-card)",
       borderBottom: "1px solid var(--m-border)",
-      padding: "14px 20px",
+      padding: "12px 18px 14px",
     }}>
       {/* Row 1: greeting + theme toggle */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px" }}>
-          {timeGreeting}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".5px", textTransform: "uppercase" }}>
+          {timeGreeting} · {dateLabel}
         </div>
         <ThemeToggleButton compact />
       </div>
 
-      {/* Row 2: athlete name (left) + Done/Missed badge (right) */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ fontSize: 34, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
+      {/* Row 2: athlete name + status badge */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
         {statusBadge && (
           <span style={{
-            fontSize: 14, fontWeight: 800, borderRadius: 4,
+            fontSize: 13, fontWeight: 800, borderRadius: 6,
             color: statusBadge.color, background: statusBadge.bg,
             border: statusBadge.border,
-            padding: "6px 14px", letterSpacing: ".01em", flexShrink: 0,
+            padding: "5px 12px", letterSpacing: ".01em", flexShrink: 0,
           }}>{statusBadge.text}</span>
         )}
       </div>
 
-      {/* Row 3: date (left) + FTP, phase, workout (right) */}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 13, color: "var(--m-muted)" }}>{dateLabel}</span>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-          {ftp && (
-            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>
-              {ftp}&thinsp;<span style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)" }}>W FTP</span>
+      {/* Row 3: colored stats chips */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        {/* FTP — cyan */}
+        {ftp && (
+          <div style={{
+            background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.22)",
+            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
+          }}>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "#22d3ee", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>W FTP</div>
+          </div>
+        )}
+        {/* Phase + week — orange */}
+        {phase && (
+          <div style={{
+            background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.22)",
+            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 64,
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{phase}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>
+              {weekIndex !== null ? `Week ${weekIndex + 1}` : "Phase"}
             </div>
-          )}
-          {phase && (
-            <span style={{
-              fontSize: 11, fontWeight: 700, color: "#FF5A1F",
-              background: "rgba(255,90,31,0.1)", border: "1px solid rgba(255,90,31,0.3)",
-              padding: "2px 8px", borderRadius: 3,
-            }}>{phase}</span>
-          )}
-          {/* Today's planned session — truncated if long */}
-          <span style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, maxWidth: 160, textAlign: "right", lineHeight: 1.2 }}>
-            {workout
-              ? (workout.title.length > 22 ? workout.title.slice(0, 20) + "…" : workout.title)
-              : (todayStatus === "bonus" ? "Rest Day + Bonus" : "Rest Day")}
+          </div>
+        )}
+        {/* Sessions this week — purple */}
+        {weekWorkoutCount > 0 && (
+          <div style={{
+            background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.22)",
+            borderRadius: 8, padding: "7px 11px", textAlign: "center", minWidth: 52,
+          }}>
+            <div style={{ fontSize: 21, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 2 }}>Sessions</div>
+          </div>
+        )}
+        {/* Today's session — fills remaining space */}
+        <div style={{
+          flex: 1, background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+          borderLeft: `3px solid ${sessionColor}`,
+          borderRadius: 8, padding: "7px 10px",
+          display: "flex", alignItems: "center",
+          minWidth: 0,
+        }}>
+          <span style={{
+            fontSize: 12, fontWeight: 700, color: sessionColor,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {sessionLabel}
           </span>
         </div>
       </div>
