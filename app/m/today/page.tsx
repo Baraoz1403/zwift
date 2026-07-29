@@ -7,6 +7,8 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
+import FeedbackBanner from "./feedback-banner";
+import BonusRideCard from "./bonus-ride-card";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -70,6 +72,7 @@ export default async function MobileTodayPage() {
   let todayAvgHr: number | null = null;
   let todayActivityName: string | null = null;
   let todayActivityDurationMin: number | null = null;
+  let todayIcuId: string | null = null;
   try {
     const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
     const cookieId  = cookieStore.get("zwift_intervals_id")?.value;
@@ -103,7 +106,7 @@ export default async function MobileTodayPage() {
 
     weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
 
-    // Extract today's activity metadata for the feedback banner
+    // Extract today's activity metadata for the feedback banner and ride card
     const todayActivity = activities.find(a =>
       a.start_date_local?.slice(0, 10) === todayStr
     );
@@ -112,6 +115,7 @@ export default async function MobileTodayPage() {
       todayActivityName = todayActivity.name ?? null;
       todayActivityDurationMin = todayActivity.moving_time
         ? Math.round(todayActivity.moving_time / 60) : null;
+      todayIcuId = (todayActivity as { id?: string }).id ?? null;
     }
   } catch { /* best-effort */ }
 
@@ -178,57 +182,39 @@ export default async function MobileTodayPage() {
         <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} />
         <div style={SCROLL_STYLE}>
           {isBonus ? (
-            /* Bonus ride — show actual ride data + feedback banner */
-            <>
-              <div style={{ padding: "16px 16px 0" }}>
-                {/* Bonus badge + rest day context */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
-                    Today&apos;s session
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
-                    Bonus
-                  </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
-                    Rest day planned
-                  </span>
+            /* Bonus ride — expandable ride card + feedback */
+            <div style={{ padding: "16px 16px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+                  Today&apos;s session
                 </div>
-
-                {/* Ride data card */}
-                <div style={{
-                  borderRadius: 4, overflow: "hidden",
-                  background: "var(--m-card)", border: "1px solid var(--m-border)",
-                  borderTop: "3px solid #f59e0b", marginBottom: 10,
-                }}>
-                  <div style={{ height: 70, background: "var(--m-card-inner)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>
-                    🚴
-                  </div>
-                  <div style={{ padding: "14px 16px 16px" }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 5 }}>
-                      Bonus ride
-                    </div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1.15, letterSpacing: "-0.4px", marginBottom: 10 }}>
-                      {todayActivityName ?? "Bonus ride"}
-                    </div>
-                    <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                      {todayActivityDurationMin && todayActivityDurationMin > 0 && (
-                        <div style={{ background: "var(--m-card-inner)", borderRadius: 3, padding: "8px 12px", textAlign: "center", border: "1px solid var(--m-border)" }}>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>{todayActivityDurationMin}</div>
-                          <div style={{ fontSize: 11, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>min</div>
-                        </div>
-                      )}
-                      {todayAvgHr && todayAvgHr > 0 && (
-                        <div style={{ background: "rgba(239,68,68,0.08)", borderRadius: 3, padding: "8px 12px", textAlign: "center", border: "1px solid rgba(239,68,68,0.2)" }}>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: "#ef4444", lineHeight: 1 }}>{Math.round(todayAvgHr)}</div>
-                          <div style={{ fontSize: 11, color: "rgba(239,68,68,0.5)", marginTop: 2, fontWeight: 500 }}>bpm avg</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
+                  Bonus
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
+                  Rest day planned
+                </span>
               </div>
 
-            </>
+              {/* Tap to expand ride card */}
+              <BonusRideCard
+                activityName={todayActivityName}
+                durationMin={todayActivityDurationMin}
+                avgHr={todayAvgHr}
+                icuActivityId={todayIcuId}
+              />
+
+              {/* Feedback — cross-device KV sync */}
+              <FeedbackBanner
+                workoutTitle={todayActivityName ?? "Bonus ride"}
+                workoutCategory="bonus"
+                date={todayStr}
+                avgHr={todayAvgHr}
+                completed={true}
+                actualDurationMin={todayActivityDurationMin}
+                isBonus={true}
+              />
+            </div>
           ) : (
             /* Pure rest day — calm, no drama */
             <div style={{ padding: "16px 16px 0" }}>
@@ -256,6 +242,20 @@ export default async function MobileTodayPage() {
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
+        {/* Feedback — shown after ride, cross-device KV sync (won't show twice) */}
+        {(todayStatus === "completed" || todayStatus === "bonus") && (
+          <FeedbackBanner
+            workoutTitle={todayWorkout.title}
+            workoutCategory={todayWorkout.type ?? ""}
+            date={todayStr}
+            avgHr={todayAvgHr}
+            completed={true}
+            plannedDurationMin={todayWorkout.durationMin}
+            actualActivityName={todayActivityName}
+            actualDurationMin={todayActivityDurationMin}
+          />
+        )}
+
         {/* Main workout card */}
         <MobileWorkoutCard
           workout={todayWorkout}
@@ -363,9 +363,9 @@ function TodayHero({
         </div>
       </div>
 
-      {/* Row 3: stat cards — same MetricCard composition as the Profile page, compact for the header.
-          Background = var(--m-card), border = var(--m-border), value = colored, label = muted gray. */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+      {/* Row 3: 3 stat cards — MetricCard style (matches Profile page).
+          Background = var(--m-card), border neutral, value = colored, label = muted gray. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         {/* FTP */}
         {ftp && (
           <div style={{
@@ -401,22 +401,21 @@ function TodayHero({
             <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>Sessions</div>
           </div>
         )}
-        {/* Today's workout label */}
-        <div style={{
-          flex: 2, background: "var(--m-card)", border: "1px solid var(--m-border)",
-          borderLeft: `3px solid ${isRestOrBonus ? "var(--m-border)" : sessionColor}`,
-          borderRadius: 12, padding: "10px 12px",
-          display: "flex", alignItems: "center",
-          minWidth: 0,
+      </div>
+
+      {/* Row 4: today's session label — full width so it never truncates */}
+      <div style={{
+        background: "var(--m-card)", border: "1px solid var(--m-border)",
+        borderLeft: `3px solid ${isRestOrBonus ? "var(--m-border)" : sessionColor}`,
+        borderRadius: 12, padding: "10px 14px", marginBottom: 10,
+        display: "flex", alignItems: "center",
+      }}>
+        <span style={{
+          fontSize: 13, fontWeight: 700,
+          color: isRestOrBonus ? "var(--m-muted)" : sessionColor,
         }}>
-          <span style={{
-            fontSize: 12, fontWeight: 700,
-            color: isRestOrBonus ? "var(--m-muted)" : sessionColor,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {statusDone && workout ? `✓ ${sessionLabel}` : sessionLabel}
-          </span>
-        </div>
+          {statusDone && workout ? `✓ ${sessionLabel}` : sessionLabel}
+        </span>
       </div>
     </div>
   );
