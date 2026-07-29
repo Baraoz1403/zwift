@@ -226,6 +226,30 @@ that respects this choice; both underlying push functions (`pushPlanToTP`,
 | Forgetting `style={{ margin: 0 }}` on `section-title` | Default margin adds unwanted space |
 
 
+## ⛔ עיקרון יסוד — מאמן שמתכתב חייב להיות מסוגל לפעול
+
+**שיחה עם מאמן שלא מובילה לפעולה היא חסרת ערך.**
+
+כל שינוי שהמאמן מתחייב עליו בשיחה **חייב** להתבצע בפועל:
+- בקשה לשינוי אימון → `update_workout` tool call → עדכון ב-KV → Week page מתעדכן
+- מידע חשוב מהמתאמן → `add_coach_note` → נשמר בפינגרפרינט → משפיע על תוכניות עתידיות
+- היסטוריית שיחה → נשמרת ב-KV → גלויה בכל מכשיר (iPhone + iPad)
+
+**אחידות בין מכשירים — לא אופציונלי:**
+- היסטוריית שיחת מאמן: KV key `zwift:{id}:chat_history`
+- תוכנית שבועית: KV key `zwift:{id}:plan:{weekOf}`
+- פינגרפרינט: KV key `zwift:{id}:fingerprint`
+כל שינוי מכל מכשיר מתעדכן ב-KV וגלוי מיד בכל שאר המכשירים.
+
+**הקונטקסט שהמאמן חייב לקבל בכל שיחה:**
+- `fingerprintToPromptSummary()` — 30+ רכיבות, feel scores, FTP trend, skip patterns
+- תוכנית השבוע הנוכחי (כולל סוג ומשך כל אימון)
+- CTL/ATL/TSB ממדד האימון
+- פרופיל המתאמן (גיל, מטרות, זמינות)
+- 20 ההודעות האחרונות מהיסטוריית השיחה
+
+---
+
 ## ⛔ עיקרון יסוד — בניית אימון
 
 **הספרייה (MyWhoosh/Zwift) היא תורה — לא קטלוג לבחירת אימונים.**
