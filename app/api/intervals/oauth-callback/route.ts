@@ -95,8 +95,12 @@ export async function GET(req: NextRequest) {
     };
 
     const accessTokenValue = `Bearer ${tokens.access_token}`;
-    // Default to 1 hour if intervals.icu omits expires_in (non-standard but observed)
-    const expiresInSec = tokens.expires_in ?? 3600;
+    // intervals.icu does not return expires_in — tokens appear to be long-lived.
+    // Use 30 days for the cookie when expires_in is absent so athletes aren't
+    // forced to re-auth every hour. The KV key has no TTL; re-auth is only
+    // triggered when the cookie expires and the layout detects a stale Bearer.
+    const THIRTY_DAYS = 30 * 24 * 60 * 60;
+    const expiresInSec = tokens.expires_in ?? THIRTY_DAYS;
     const expiresAt = Date.now() + expiresInSec * 1000;
 
     // Fetch athlete info using the new token.
