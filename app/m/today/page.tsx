@@ -267,7 +267,7 @@ export default async function MobileTodayPage() {
       <div style={SCROLL_STYLE}>
         {/* Feedback — shown after ride, cross-device KV sync (won't show twice) */}
         {/* Feedback — server-side gate prevents re-showing after submit on any device */}
-        {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus") && (
+        {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus" || todayStatus === "extra") && (
           <FeedbackBanner
             workoutTitle={todayWorkout.title}
             workoutCategory={todayWorkout.type ?? ""}
@@ -280,7 +280,35 @@ export default async function MobileTodayPage() {
           />
         )}
 
-        {/* Main workout card */}
+        {/* Actual activity — shown when athlete did a different sport than planned (todayStatus === "extra") */}
+        {todayStatus === "extra" && todayActivityName && (
+          <div style={{ padding: "16px 16px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+                Actual activity
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
+                Different sport
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
+                Different from plan
+              </span>
+            </div>
+            <BonusRideCard
+              activityName={todayActivityName}
+              durationMin={todayActivityDurationMin}
+              avgHr={todayAvgHr}
+              avgPower={todayAvgPower}
+              normalizedPower={todayNormalizedPower}
+              distanceKm={todayDistanceKm}
+              tss={todayTss}
+              ftp={ftp}
+              date={todayStr}
+            />
+          </div>
+        )}
+
+        {/* Main workout card (planned) */}
         <MobileWorkoutCard
           workout={todayWorkout}
           weekWorkouts={workouts}
