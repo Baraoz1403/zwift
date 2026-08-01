@@ -1,10 +1,22 @@
+"use client";
+
 /**
  * MobileIcuConnect
  * Step 2 of onboarding — shown after Zwift login when Intervals.icu is not yet connected.
  * Redesigned to match Volt AI light theme (white, sharp corners, orange accent).
  */
 
+import { useEffect, useState } from "react";
+
 export default function MobileIcuConnect() {
+  const [icuError, setIcuError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get("icu_error");
+    if (err) setIcuError(decodeURIComponent(err));
+  }, []);
+
   return (
     <div style={{
       minHeight: "100dvh",
@@ -83,6 +95,32 @@ export default function MobileIcuConnect() {
         </div>
       </div>
 
+      {/* ── ERROR BANNER (shown only on OAuth failure) ─────────────────── */}
+      {icuError && (
+        <div style={{
+          margin: "12px 16px 0",
+          padding: "14px 16px",
+          background: "rgba(220,38,38,0.07)",
+          border: "1px solid rgba(220,38,38,0.2)",
+          borderRadius: 4,
+          display: "flex",
+          gap: 10,
+          alignItems: "flex-start",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#dc2626", marginBottom: 2 }}>Connection failed</div>
+            <div style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.5 }}>
+              {icuError === "access_denied"
+                ? "You cancelled the connection. Tap the button below to try again."
+                : `Error: ${icuError}. Please try again or switch account.`}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── WHAT YOU GET ───────────────────────────────────────────────── */}
       <div style={{ background: "#fff", margin: "12px 16px 0", borderRadius: 4, border: "1px solid #e4e9f0" }}>
         <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid #f1f5f9" }}>
@@ -115,7 +153,7 @@ export default function MobileIcuConnect() {
       </div>
 
       {/* ── CTA ────────────────────────────────────────────────────────── */}
-      <div style={{ padding: "16px 16px 32px" }}>
+      <div style={{ padding: "16px 16px 0" }}>
         <a
           href="/api/intervals/oauth-start?from=m"
           style={{
@@ -138,17 +176,48 @@ export default function MobileIcuConnect() {
         </div>
       </div>
 
-      {/* Switch account link */}
-      <div style={{ textAlign: "center", paddingBottom: 12 }}>
+      {/* ── ESCAPE HATCH ───────────────────────────────────────────────── */}
+      <div style={{
+        margin: "20px 16px 0",
+        padding: "14px 16px",
+        background: "#fff",
+        border: "1px solid #e4e9f0",
+        borderRadius: 4,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: ".1em", textTransform: "uppercase" }}>
+          Having trouble?
+        </div>
         <a
-          href="/api/auth/logout"
-          style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none" }}
+          href="/api/auth/logout?next=/m"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 0", textDecoration: "none", borderBottom: "1px solid #f1f5f9",
+          }}
         >
-          Not you? Switch account →
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#0d1626" }}>Switch Zwift account</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <a
+          href="/api/intervals/oauth-start?from=m"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "12px 0", textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#0d1626" }}>Try connecting again</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
         </a>
       </div>
 
-      <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }} />
+      <div style={{ flex: 1 }} />
+      <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0, minHeight: 24 }} />
     </div>
   );
 }
