@@ -141,8 +141,12 @@ export async function GET(req: NextRequest) {
         await kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt));
       }
 
-      // Auto-provision plan if needed
-      await ensurePlanProvisioned(resolvedAthleteId, session.accessToken);
+      // Auto-provision plan in the background — do NOT await.
+      // Plan generation calls OpenAI and can take 30–60 s. Awaiting it here
+      // blocks the OAuth redirect until it completes, causing a Vercel 504
+      // timeout for new athletes. The nightly cron and the next app load both
+      // get another chance if this run doesn't finish in time.
+      void ensurePlanProvisioned(resolvedAthleteId, session.accessToken).catch(() => {});
 
       // Auto-register ICU webhook for real-time WhatsApp feedback after rides
       const webhookUrl = `${req.nextUrl.origin}/api/webhooks/intervals`;
