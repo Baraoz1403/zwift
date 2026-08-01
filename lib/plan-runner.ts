@@ -34,6 +34,7 @@ import {
   getIntervalsCredentials,
   wasIntervalsSynced,
 } from "@/lib/kv-plan-state";
+import { kvSet } from "@/lib/kv";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
@@ -352,6 +353,14 @@ export async function runWeeklyPlanGeneration(
     seasonContext: seasonContext ?? undefined,
     icuPerformanceContext: icuPerformanceContext || undefined,
   });
+
+  // ── Cache ICU performance context for the coach (Marco) ─────────────────
+  // The chat route (Marco) doesn't call ICU on every message (too slow). Instead
+  // it reads this cached summary which is rebuilt here whenever a plan is generated.
+  // TTL = 7 days — rebuilt weekly with each plan generation cycle.
+  if (icuPerformanceContext) {
+    kvSet(`zwift:${athleteId}:icu_perf_ctx`, icuPerformanceContext, 7 * 24 * 60 * 60).catch(() => {});
+  }
 
   // ── Save updated coaching state ───────────────────────────────────────────
   // Best-effort — never blocks the return of the plan.

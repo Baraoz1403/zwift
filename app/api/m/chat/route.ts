@@ -46,7 +46,8 @@ const TOOLS = [
     description:
       "Update or replace a workout in the athlete's current weekly training plan. " +
       "Use when the athlete asks to change, modify, swap, adjust, shorten, or replace a specific day's workout. " +
-      "Always call this tool when the athlete requests a plan change — do not just describe the change in text.",
+      "Always call this tool when the athlete requests a plan change — do not just describe the change in text. " +
+      "CRITICAL: description is REQUIRED — always write the complete workout structure: warmup blocks, main interval sets with exact power % and durations, recovery durations, cooldown. Example: 'Warmup 10min @50-60% FTP. Main: 3×8min @88-93% FTP / 4min @50% FTP. Cooldown 10min @50% FTP.' Without description, the athlete sees the old workout content and ICU gets a hollow ZWO file.",
     input_schema: {
       type: "object",
       properties: {
@@ -59,11 +60,11 @@ const TOOLS = [
         durationMin: { type: "number", description: "Duration in minutes" },
         description: {
           type: "string",
-          description: "Full workout description with intervals, targets, and instructions",
+          description: "REQUIRED — complete workout structure: warmup (duration + power %), main intervals (sets × duration @ power % / recovery duration @ power %), cooldown. Example: 'Warmup 10min @50-60% FTP. Main: 3×8min @88-93% FTP with 4min @50% FTP recovery. Cooldown 10min @50% FTP.' Must include ALL blocks — never leave empty.",
         },
         targetPowerPctFtp: {
           type: "string",
-          description: "Target power range as percentage of FTP, e.g. '56-75%' or '85-95%'",
+          description: "Target power range as percentage of FTP for the main effort, e.g. '56-75%' or '85-95%'",
         },
         type: {
           type: "string",
@@ -72,7 +73,7 @@ const TOOLS = [
         },
         reason: { type: "string", description: "Brief physiological reason for this change (1 sentence)" },
       },
-      required: ["day", "title", "durationMin", "type"],
+      required: ["day", "title", "durationMin", "type", "description"],
     },
   },
   {
@@ -249,12 +250,15 @@ export async function POST(req: NextRequest) {
   const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
   // ── Load all context in parallel ──────────────────────────────────────────
-  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw] = await Promise.all([
+  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw, icuPerfCtxRaw] = await Promise.all([
     getStoredAthleteState(athleteId).catch(() => null),
     getCachedPlan(athleteId, weekOf).catch(() => null),
     kvGet(`zwift:${athleteId}:training_load`).catch(() => null),
     getFingerprint(athleteId).catch(() => null),
     kvGet(CHAT_HISTORY_KEY(athleteId)).catch(() => null),
+    // ICU performance context: pre-computed during plan generation, cached for 7 days.
+    // Contains 50/30/20-weighted summary of last 30 rides — power, HR, TSS, volume, patterns.
+    kvGet(`zwift:${athleteId}:icu_perf_ctx`).catch(() => null),
   ]);
 
   const profile = state?.riderProfile;
@@ -310,11 +314,17 @@ export async function POST(req: NextRequest) {
     if (currentPlan.summary) contextLines.push(`\nWeek summary: ${currentPlan.summary.slice(0, 400)}`);
   }
 
-  // Full 30-ride fingerprint — the most important context
+  // Full 30-ride fingerprint — feel scores + FTP trajectory from submitted feedback
   const fpSummary = fingerprintToPromptSummary(fingerprint);
   const fpSection = fpSummary
     ? `\n${fpSummary}`
-    : "\n(No ride history yet — plan based on profile only.)";
+    : "\n(No feedback history yet.)";
+
+  // ICU performance context — actual ride data from last 30 activities (power, HR, TSS, volume)
+  // Cached from plan generation. Without this, Marco only knows CTL/ATL/TSB, not actual ride content.
+  const icuPerfSection = icuPerfCtxRaw
+    ? `\n\n## Last 30 Rides — Performance Context\n${icuPerfCtxRaw}`
+    : "";
 
   const icuStatus = (icuKey && icuAthleteId)
     ? "ICU connected — update_workout will auto-push to Intervals.icu and sync to Zwift."
@@ -329,15 +339,23 @@ export async function POST(req: NextRequest) {
     "- After calling a tool, give a brief, direct confirmation (1-2 sentences). Don't repeat the full plan.\n" +
     "- Be direct and practical. 2-4 sentences max unless the athlete asks for a detailed explanation.\n" +
     "- Always respect the rider's wishes. If they want to swap or drop a workout, do it — don't argue.\n\n" +
+    "WORKOUT UPDATE RULE — NON-NEGOTIABLE:\n" +
+    "- ALWAYS provide 'description' when calling update_workout. NEVER omit it.\n" +
+    "- The description must include the full block structure: warmup → intervals → cooldown.\n" +
+    "- Format: 'Warmup Xmin @50-60% FTP. Main: N×Xmin @X-X% FTP / Xmin @50% FTP recovery. Cooldown Xmin @50% FTP.'\n" +
+    "- Without description, the athlete sees the OLD workout content and Zwift gets a hollow file — this is a coaching failure.\n" +
+    "- Also provide targetPowerPctFtp for the main effort (e.g. '85-95%' for threshold).\n\n" +
     "YOUR ZWIFT / ICU SYNC CAPABILITY:\n" +
     `- ${icuStatus}\n` +
     "- When update_workout succeeds AND ICU is connected, the tool result will say 'Also pushed to Intervals.icu'.\n" +
     "- In your reply after a successful update, ALWAYS tell the athlete: (1) what changed, (2) that it was pushed to Zwift via ICU sync.\n" +
+    "- If the tool result says 'ICU push failed', tell the athlete the update is saved but the Zwift sync failed, and they should reconnect ICU in Settings.\n" +
     "- If the tool result does NOT mention ICU push, tell the athlete: 'Updated in your plan — to sync to Zwift, make sure ICU is connected in Settings.'\n" +
     "- You DO have full authority to push workouts to Zwift via Intervals.icu. Never say you cannot do this.\n\n" +
     "ATHLETE CONTEXT:\n" +
     contextLines.join("\n") +
-    fpSection;
+    fpSection +
+    icuPerfSection;
 
   // ── Build Anthropic messages from recent history ─────────────────────────
   const recentHistory = chatHistory.slice(-CONTEXT_MESSAGES);
@@ -405,7 +423,8 @@ export async function POST(req: NextRequest) {
                 result.message += " Also pushed to Intervals.icu (Zwift will sync automatically).";
                 result.toolAction = (result.toolAction ?? "") + " → pushed to ICU";
               } else {
-                // Log but don't fail — KV update already succeeded
+                // Surface the failure to the AI so it can report it to the athlete
+                result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen.`;
                 console.warn("ICU push failed after workout update:", icuPush.error);
               }
             }

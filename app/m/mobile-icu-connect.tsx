@@ -54,13 +54,13 @@ export default function MobileIcuConnect() {
           <div style={{ flex: 1, height: 2, background: "#22c55e", margin: "0 8px", marginBottom: 14 }} />
           {/* Step 2: ICU — current */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(99,102,241,0.12)", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {/* intervals.icu logo — ECG/activity line */}
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(13,148,136,0.12)", border: "2px solid #0d9488", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#6366f1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#0d9488" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#6366f1" }}>ICU</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#0d9488" }}>ICU</span>
           </div>
           <div style={{ flex: 1, height: 2, background: "#e4e9f0", margin: "0 8px", marginBottom: 14 }} />
           {/* Step 3: Train — upcoming */}
