@@ -94,7 +94,9 @@ export async function GET(req: NextRequest) {
     };
 
     const accessTokenValue = `Bearer ${tokens.access_token}`;
-    const expiresAt = Date.now() + tokens.expires_in * 1000;
+    // Default to 1 hour if intervals.icu omits expires_in (non-standard but observed)
+    const expiresInSec = tokens.expires_in ?? 3600;
+    const expiresAt = Date.now() + expiresInSec * 1000;
 
     // Fetch athlete info using the new token.
     // Uses SETTINGS:READ scope — if not granted, fall back to "me" (which the
@@ -157,7 +159,7 @@ export async function GET(req: NextRequest) {
 
     res.cookies.set("zwift_intervals_key", accessTokenValue, {
       ...cookieBase,
-      maxAge: tokens.expires_in, // seconds — typically 3600
+      maxAge: expiresInSec,
     });
 
     if (tokens.refresh_token) {
@@ -184,7 +186,7 @@ export async function GET(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
-    await writeDebug("redirect_ok", `returnTo=${returnTo} cookie_key_set=true expires_in=${tokens.expires_in}`);
+    await writeDebug("redirect_ok", `returnTo=${returnTo} cookie_key_set=true expires_in=${expiresInSec} has_refresh=${!!tokens.refresh_token}`);
     return res;
 
   } catch (e) {
