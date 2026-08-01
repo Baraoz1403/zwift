@@ -364,41 +364,43 @@ function TodayHero({
           {firstName ?? "Athlete"}
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {/* Zwift — always connected. Mini-card style matching Settings page. */}
+          {/* Zwift — always connected */}
           <div style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 8,
             background: "var(--m-card)", border: "1px solid var(--m-border)",
-            borderRadius: 10, padding: "6px 8px",
+            borderRadius: 11, padding: "7px 10px",
           }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: "rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6"/>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,90,31,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* Zwift official logo — lightning bolt */}
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="#FF5A1F">
+                <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
-              <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
+              <div style={{ fontSize: 11, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
             </div>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0, marginLeft: 2 }}/>
           </div>
-          {/* ICU — mini-card, green if connected */}
+          {/* intervals.icu */}
           <div style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 8,
             background: "var(--m-card)", border: "1px solid var(--m-border)",
-            borderRadius: 10, padding: "6px 8px",
+            borderRadius: 11, padding: "7px 10px",
           }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: icuConnected ? "rgba(34,197,94,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "var(--m-muted)"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: icuConnected ? "rgba(99,102,241,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* intervals.icu logo — ECG/activity line */}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#6366f1" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
-              <div style={{ fontSize: 10, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
+              <div style={{ fontSize: 11, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
                 {icuConnected ? "Connected" : "Not linked"}
               </div>
             </div>
-            {icuConnected && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>}
+            {icuConnected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0, marginLeft: 2 }}/>}
           </div>
         </div>
       </div>

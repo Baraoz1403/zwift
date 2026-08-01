@@ -35,20 +35,37 @@ export default function MobileIcuConnect() {
 
         {/* Stepper */}
         <div style={{ display: "flex", alignItems: "center", marginBottom: 22 }}>
+          {/* Step 1: Zwift — done ✓ */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 4, background: "#22c55e", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div style={{ position: "relative" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: "#FF5A1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {/* Zwift logo — lightning bolt */}
+                <svg width="17" height="17" viewBox="0 0 20 20" fill="white">
+                  <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+                </svg>
+              </div>
+              {/* Done badge */}
+              <div style={{ position: "absolute", bottom: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "#22c55e", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
             </div>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#22c55e" }}>Zwift</span>
           </div>
-          <div style={{ flex: 1, height: 2, background: "#22c55e", margin: "0 6px", marginBottom: 14 }} />
+          <div style={{ flex: 1, height: 2, background: "#22c55e", margin: "0 8px", marginBottom: 14 }} />
+          {/* Step 2: ICU — current */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 4, background: "#FF5A1F", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>2</div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#FF5A1F" }}>ICU</span>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(99,102,241,0.12)", border: "2px solid #6366f1", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* intervals.icu logo — ECG/activity line */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#6366f1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#6366f1" }}>ICU</span>
           </div>
-          <div style={{ flex: 1, height: 2, background: "#e4e9f0", margin: "0 6px", marginBottom: 14 }} />
+          <div style={{ flex: 1, height: 2, background: "#e4e9f0", margin: "0 8px", marginBottom: 14 }} />
+          {/* Step 3: Train — upcoming */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 4, background: "#f1f5f9", border: "1px solid #e4e9f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>3</div>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: "#f1f5f9", border: "1px solid #e4e9f0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>3</div>
             <span style={{ fontSize: 10, fontWeight: 600, color: "#94a3b8" }}>Train</span>
           </div>
         </div>
