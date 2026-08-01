@@ -1,124 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-// Imported from session-constants, NOT @/lib/session - that file pulls in
-// node:crypto + jose, which the Edge runtime (what middleware runs on)
-// can't bundle. This file is plain constants only, safe for Edge.
-import { SESSION_COOKIE_NAME } from "@/lib/session-constants";
 
 /**
- * Detects phone vs tablet vs desktop from User-Agent and redirects the root
- * path "/" to the correct app surface:
- *   phone   → /m   (mobile PWA)
- *   tablet  → /tablet (iPad app)
- *   desktop → /dashboard
- *
- * Only fires on "/" — deep links are never touched so bookmarks work as-is.
- * The rider can override by navigating directly to any route.
- *
- * UA matching is intentionally broad (false positives towards mobile = better
- * UX than falsely sending a phone to the desktop dashboard).
+ * Minimal middleware — all devices → /m/today.
+ * Legacy tablet/dashboard/device-detection routing removed.
  */
-function detectDevice(ua: string): "phone" | "tablet" | "desktop" {
-  const uaLower = ua.toLowerCase();
-
-  // iPad detection: iPad UA or "Macintosh" on touch (modern iPadOS)
-  // We can't detect touch in middleware (no DOM), so we match known iPad strings.
-  if (
-    uaLower.includes("ipad") ||
-    (uaLower.includes("macintosh") && uaLower.includes("mobile")) ||
-    // Android tablets: "android" without "mobile"
-    (uaLower.includes("android") && !uaLower.includes("mobile"))
-  ) {
-    return "tablet";
-  }
-
-  // Phones
-  if (
-    uaLower.includes("iphone") ||
-    uaLower.includes("ipod") ||
-    (uaLower.includes("android") && uaLower.includes("mobile")) ||
-    uaLower.includes("blackberry") ||
-    uaLower.includes("windows phone")
-  ) {
-    return "phone";
-  }
-
-  return "desktop";
-}
-
-/**
- * Map of mobile routes that have tablet equivalents.
- * Used to redirect tablet UA away from /m/* to /tablet/*.
- * Legal pages are excluded — they use the mobile layout on all devices.
- */
-const MOBILE_TO_TABLET: Record<string, string> = {
-  "/m/today":    "/tablet/today",
-  "/m/week":     "/tablet/week",
-  "/m/coach":    "/tablet/coach",
-  "/m/profile":  "/tablet/profile",
-  "/m/settings": "/tablet/settings",
-};
-
 export function middleware(req: NextRequest) {
-  const hasSession = req.cookies.has(SESSION_COOKIE_NAME);
   const { pathname } = req.nextUrl;
-  const ua = req.headers.get("user-agent") ?? "";
 
-  // ── Auth gate for protected routes ────────────────────────────────────────
-  // Only protect /dashboard here — /m and /tablet layouts handle their own
-  // unauthenticated state (they render MobileLoginScreen / redirect to /m).
-  // Intercepting /m here would send the user to a desktop /login page instead
-  // of the mobile login screen, which is the wrong UX.
-  if (pathname.startsWith("/dashboard") && !hasSession) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // ── Tablet guard: /m and /m/* → /tablet/* ───────────────────────────────
-  // iPadOS 13+ reports a "Macintosh" UA (no "iPad") so UA-only detection fails.
-  // Solution: MobileLoginScreen sets a "device_hint=tablet" cookie (using
-  // navigator.maxTouchPoints which IS available in the browser). Middleware
-  // reads this cookie for all subsequent requests — no re-login required.
-  //
-  // Guard: only redirect authenticated users (session cookie exists).
-  // Unauthenticated iPads hit /m → see mobile login → set cookie there → done.
-  // This prevents an infinite redirect loop with the tablet layout's auth gate,
-  // which redirects unauthenticated users back to /m.
-  const deviceHint = req.cookies.get("device_hint")?.value;
-  const isTablet   = deviceHint === "tablet" || detectDevice(ua) === "tablet";
-
-  const isMobilePath = pathname === "/m" ||
-    (pathname.startsWith("/m/") && !pathname.startsWith("/m/legal"));
-
-  if (isTablet && isMobilePath && hasSession) {
-    // Find best-matching tablet route, fall back to /tablet/today
-    const mobileBase = Object.keys(MOBILE_TO_TABLET).find(
-      k => pathname === k || pathname.startsWith(k + "/")
-    );
-    const dest = mobileBase ? MOBILE_TO_TABLET[mobileBase] : "/tablet/today";
-    return NextResponse.redirect(new URL(dest, req.url));
-  }
-
-  // ── Device auto-redirect on root "/" ─────────────────────────────────────
-  // Redirect ALL visitors (authenticated or not) to the correct surface.
-  // Unauthenticated mobile/tablet users land on /m or /tablet which show
-  // the login screen. Unauthenticated desktop users land on /dashboard which
-  // the auth gate above then sends to /login.
   if (pathname === "/") {
-    const device = detectDevice(ua);
-
-    const dest =
-      device === "phone"   ? "/m" :
-      device === "tablet"  ? "/tablet/today" :
-      "/dashboard";
-
-    return NextResponse.redirect(new URL(dest, req.url));
+    return NextResponse.redirect(new URL("/m/today", req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Apply to dashboard, mobile, tablet, and root
-  matcher: ["/", "/dashboard/:path*", "/m/:path*", "/tablet/:path*"],
+  matcher: ["/"],
 };
