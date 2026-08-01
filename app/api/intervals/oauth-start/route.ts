@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
     // ACTIVITY:READ  — fetch completed activities for training load analysis
     // CALENDAR:WRITE — push planned workouts to the athlete's calendar
     // SETTINGS:READ  — read athlete profile (id, name) after token exchange
-    scope: "ACTIVITY:READ CALENDAR:WRITE SETTINGS:READ",
+    // offline_access — request a refresh token so we can silently re-auth after expiry
+    scope: "ACTIVITY:READ CALENDAR:WRITE SETTINGS:READ offline_access",
     state,
   });
 

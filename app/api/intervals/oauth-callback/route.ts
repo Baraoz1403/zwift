@@ -83,7 +83,8 @@ export async function GET(req: NextRequest) {
   try {
     await writeDebug("exchange_start", `code_length=${code.length} redirect_uri=${redirectUri}`);
     const tokens = await exchangeIntervalsCode(code, redirectUri);
-    await writeDebug("exchange_ok", `has_access=${!!tokens.access_token} has_refresh=${!!tokens.refresh_token} expires_in=${tokens.expires_in}`);
+    // Log full token response keys (not values) to understand what intervals.icu returns
+    await writeDebug("exchange_ok", `keys=${Object.keys(tokens as object).join(',')} has_access=${!!tokens.access_token} has_refresh=${!!tokens.refresh_token} expires_in=${tokens.expires_in}`);
 
     const isSecure = process.env.NODE_ENV === "production";
     const cookieBase = {
