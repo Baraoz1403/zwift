@@ -135,9 +135,11 @@ export async function GET(req: NextRequest) {
         kvSet(`zwift:${resolvedAthleteId}:icu_key`, accessTokenValue),
         kvSet(`zwift:${resolvedAthleteId}:icu_id`, athleteId),
         kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName),
+        // Always store expiry so the layout can detect when to trigger silent re-auth.
+        // Also store refresh token if provided (intervals.icu currently doesn't provide one).
+        kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt)),
         ...(tokens.refresh_token ? [
           kvSet(`zwift:${resolvedAthleteId}:icu_refresh`, tokens.refresh_token),
-          kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt)),
         ] : []),
       ]);
 

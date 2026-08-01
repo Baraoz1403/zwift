@@ -48,6 +48,18 @@ export default async function MobileLayout({ children }: { children: React.React
     : !!(await getIntervalsCredentials(String(session.athleteId)));
 
   if (!icuConnected) {
+    // Check if there is a stored (but possibly expired) Bearer token in KV.
+    // If so, try a silent re-auth (prompt=none) so the athlete never sees a
+    // connect screen after the initial setup. This works when the athlete is
+    // already logged into intervals.icu and has previously approved this client.
+    // If silent re-auth fails (not logged in / consent revoked), intervals.icu
+    // redirects back with ?error=... and the ICU connect screen shows instead.
+    const { kvGet } = await import("@/lib/kv");
+    const storedKey = await kvGet(`zwift:${session.athleteId}:icu_key`);
+    if (storedKey?.startsWith("Bearer ")) {
+      // Had a Bearer token before — attempt silent re-auth before showing screen
+      redirect(`/api/intervals/oauth-start?from=m&prompt=none`);
+    }
     return <MobileIcuConnect />;
   }
 

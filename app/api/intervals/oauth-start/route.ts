@@ -39,7 +39,11 @@ export async function GET(req: NextRequest) {
   // Encode the return destination in the OAuth state param so the callback
   // can redirect back to the right place (/m vs /dashboard).
   const from = req.nextUrl.searchParams.get("from") ?? "dashboard";
-  const state = Buffer.from(JSON.stringify({ from })).toString("base64url");
+  // prompt=none triggers a silent re-auth — intervals.icu skips the consent
+  // screen if the user is already authenticated and has previously approved
+  // this client. Used for automatic token renewal when the Bearer token expires.
+  const silent = req.nextUrl.searchParams.get("prompt") === "none";
+  const state = Buffer.from(JSON.stringify({ from, silent })).toString("base64url");
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -48,9 +52,9 @@ export async function GET(req: NextRequest) {
     // ACTIVITY:READ  — fetch completed activities for training load analysis
     // CALENDAR:WRITE — push planned workouts to the athlete's calendar
     // SETTINGS:READ  — read athlete profile (id, name) after token exchange
-    // offline_access — request a refresh token so we can silently re-auth after expiry
-    scope: "ACTIVITY:READ CALENDAR:WRITE SETTINGS:READ offline_access",
+    scope: "ACTIVITY:READ CALENDAR:WRITE SETTINGS:READ",
     state,
+    ...(silent ? { prompt: "none" } : {}),
   });
 
   return NextResponse.redirect(`${INTERVALS_AUTH_URL}?${params}`);
