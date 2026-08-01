@@ -71,14 +71,14 @@ export function TabletTopBar({
           {/* Right: connection chips + metric chips */}
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
 
-            {/* ── Connection chips — logo + name + status ── */}
-            {/* Zwift: always connected */}
+            {/* ── Connection chips — neutral card bg, colored icon box (matches /m/today card style) ── */}
+            {/* Zwift */}
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
-              background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.25)",
+              background: "var(--m-card)", border: "1px solid var(--m-border)",
               borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,90,31,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,90,31,0.13)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="#FF5A1F">
                   <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
                 </svg>
@@ -90,14 +90,13 @@ export function TabletTopBar({
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
 
-            {/* ICU: shown in teal when connected, muted grey otherwise */}
+            {/* ICU */}
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
-              background: icuConnected ? "rgba(13,148,136,0.10)" : "rgba(100,116,139,0.08)",
-              border: `1px solid ${icuConnected ? "rgba(13,148,136,0.30)" : "rgba(100,116,139,0.20)"}`,
+              background: "var(--m-card)", border: "1px solid var(--m-border)",
               borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: icuConnected ? "rgba(13,148,136,0.15)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#0d9488" : "#64748b"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
