@@ -11,8 +11,6 @@ const nextConfig: NextConfig = {
     return [
       { source: "/dashboard",          destination: "/m/today", permanent: false },
       { source: "/dashboard/:path*",   destination: "/m/today", permanent: false },
-      { source: "/tablet",             destination: "/m/today", permanent: false },
-      { source: "/tablet/:path*",      destination: "/m/today", permanent: false },
     ];
   },
 };
