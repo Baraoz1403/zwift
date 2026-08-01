@@ -7,12 +7,41 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
-import { WeekDayListClient, type DayRowData, type RideSummary } from "./week-sidebar-client";
+import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
 
 const ZO = "#FF5A1F";
 
 const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const ALL_DAYS  = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+/** Returns a new weekOf date shifted by n weeks */
+function addWeeks(weekOf: string, n: number): string {
+  const d = new Date(weekOf + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n * 7);
+  return d.toISOString().slice(0, 10);
+}
+
+/** "2026-08-03" → "Aug 3 – 9" */
+function weekLabel(weekOf: string): string {
+  const monday = new Date(weekOf + "T00:00:00Z");
+  const sunday = new Date(weekOf + "T00:00:00Z");
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  return `${fmt(monday)} – ${fmt(sunday)}`;
+}
+
+/** Inline stat chip for the "actual ride" section */
+function ActualRideChip({ label, value, color = "var(--m-text)" }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{
+      background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
+      borderRadius: 8, padding: "10px 14px", textAlign: "center", minWidth: 80,
+    }}>
+      <div style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>{label}</div>
+    </div>
+  );
+}
 
 function buildDateMap(weekOf: string): Record<string, string> {
   const monday = new Date(weekOf + "T00:00:00Z");
@@ -66,7 +95,11 @@ function blockColor(pct: number): string {
   return "#64748b";
 }
 
-export default async function TabletTodayPage() {
+export default async function TabletTodayPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string>> | Record<string, string>;
+}) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!raw) return null;
@@ -74,16 +107,32 @@ export default async function TabletTodayPage() {
   if (!session?.athleteId) return null;
 
   const athleteId = String(session.athleteId);
-  const weekOf    = mondayOfCurrentWeek();
+  const currentWeekOf = mondayOfCurrentWeek();
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
 
-  const [plan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity] = await Promise.all([
-    getCachedPlan(athleteId, weekOf),
+  // Support ?week=YYYY-MM-DD for viewing other weeks in the sidebar
+  const params = searchParams instanceof Promise ? await searchParams : (searchParams ?? {});
+  const weekParam = typeof params?.week === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : null;
+  // sidebarWeekOf: the week shown in the sidebar (may differ from current)
+  // For the main panel (today's workout), we always use currentWeekOf.
+  const sidebarWeekOf = weekParam ?? currentWeekOf;
+  const isCurrentWeek = sidebarWeekOf === currentWeekOf;
+
+  // weekOf in the rest of the file refers to the SIDEBAR week (for plan/date lookups).
+  // todayWorkout + todayStatus always use currentWeekOf for the main panel.
+  const weekOf = sidebarWeekOf;
+
+  const [sidebarPlan, currentPlan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity] = await Promise.all([
+    getCachedPlan(athleteId, sidebarWeekOf),
+    isCurrentWeek ? Promise.resolve(null) : getCachedPlan(athleteId, currentWeekOf),
     cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
     fetchOwnProfile(session.accessToken).catch(() => null),
     getStoredAthleteState(athleteId).catch(() => null),
     getRiderIdentity(athleteId).catch(() => null),
   ]);
+  // plan = the sidebar week's plan; todayPlan = current week's plan for the main panel
+  const plan = sidebarPlan;
+  const todayPlan = isCurrentWeek ? sidebarPlan : currentPlan;
 
   const todayDate    = new Date();
   const todayStr     = todayDate.toISOString().slice(0, 10);
@@ -91,7 +140,12 @@ export default async function TabletTodayPage() {
   const dateMap      = buildDateMap(weekOf);
   const weekDates    = weekDatesFrom(weekOf);
 
+  // sidebarWorkouts: for the RIGHT panel (selected week)
   const workouts = (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? dateMap[w.day] ?? undefined }));
+  // todayWorkouts: for the LEFT panel (always current week)
+  const todayPlanWorkouts = isCurrentWeek
+    ? workouts
+    : (todayPlan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? buildDateMap(currentWeekOf)[w.day] ?? undefined }));
 
   let weekStatus: Record<string, DayStatus> = {};
   let allActivities: import("@/lib/intervals").IcuActivity[] = [];
@@ -131,9 +185,10 @@ export default async function TabletTodayPage() {
       zwiftAsIcu,
     );
     allActivities = activities;
+    // weekStatus is computed from the SIDEBAR week's workouts (for the sidebar dots)
     weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
 
-    // Extract today's activity for bonus ride display
+    // Extract today's activity for bonus ride display (always from current week)
     const todayActivity = activities.find(a => a.start_date_local?.slice(0, 10) === todayStr);
     if (todayActivity) {
       todayAvgHr = todayActivity.average_heartrate ?? null;
@@ -143,10 +198,11 @@ export default async function TabletTodayPage() {
     }
   } catch { /* best-effort */ }
 
+  // todayStatus and todayWorkout always use CURRENT WEEK (main panel)
   const todayStatus: DayStatus = weekStatus[todayStr] ?? "planned";
   const todayWorkout =
-    workouts.find(w => w.date === todayStr) ??
-    workouts.find(w => w.day === todayDayName) ??
+    todayPlanWorkouts.find(w => w.date === todayStr) ??
+    todayPlanWorkouts.find(w => w.day === todayDayName) ??
     null;
 
   const firstName    = zwiftProfile?.firstName ?? cachedIdentity?.firstName ?? null;
@@ -191,13 +247,24 @@ export default async function TabletTodayPage() {
     }
   }
 
-  // Build day rows for the client component
+  // Actual ride data for today (from ICU/Zwift activities)
+  const todayActualRide: RideSummary | null = completedRides[todayStr] ?? null;
+
+  // Build day rows for the sidebar (uses sidebarWeekOf's workouts)
+  const sidebarDateMap = isCurrentWeek ? dateMap : buildDateMap(sidebarWeekOf);
+  const sidebarWeekDates = isCurrentWeek ? weekDates : weekDatesFrom(sidebarWeekOf);
+  const sidebarWorkoutsWithDates = isCurrentWeek
+    ? workouts
+    : (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? sidebarDateMap[w.day] ?? undefined }));
+
   const dayRows: DayRowData[] = ALL_DAYS.map(dayName => {
-    const w        = workouts.find(x => x.day === dayName);
+    const w        = sidebarWorkoutsWithDates.find(x => x.day === dayName);
     const isRest   = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
-    const dateStr  = w?.date;
+    // Use sidebar week's date for the row
+    const dateStr  = w?.date ?? sidebarDateMap[dayName];
     const dateNum  = dateStr ? new Date(dateStr + "T12:00:00").getDate() : undefined;
-    const isToday  = dateStr === todayStr;
+    // isToday: only highlight if we're viewing current week AND this is today
+    const isToday  = isCurrentWeek && dateStr === todayStr;
     const dayStatus = dateStr ? (weekStatus[dateStr] as DayStatus | undefined) : undefined;
     const rowColor  = !isRest && w ? detectZoneColor(w) : undefined;
     const rowLabel  = !isRest && w ? detectZoneLabel(w) : undefined;
@@ -206,15 +273,25 @@ export default async function TabletTodayPage() {
       date: dateStr,
       dateNum,
       isToday,
-      isRest,
-      workoutTitle: !isRest ? w?.title : undefined,
+      isRest: !w ? true : isRest,
+      workoutTitle: !isRest && w ? w.title : undefined,
       zoneLabel: rowLabel,
       zoneColor: rowColor,
-      durationMin: !isRest ? w?.durationMin : undefined,
-      status: dayStatus,
-      ride: dayStatus === "completed" && dateStr ? completedRides[dateStr] : undefined,
+      durationMin: !isRest && w ? w.durationMin : undefined,
+      status: isCurrentWeek ? dayStatus : (dateStr ? (sidebarWeekDates.includes(dateStr) ? "planned" : undefined) : undefined),
+      ride: isCurrentWeek && dayStatus === "completed" && dateStr ? completedRides[dateStr] : undefined,
     };
   });
+
+  // Week navigation data for the sidebar
+  const weekNav: WeekNavData = {
+    prevWeekUrl: `/tablet/today?week=${addWeeks(sidebarWeekOf, -1)}`,
+    nextWeekUrl: `/tablet/today?week=${addWeeks(sidebarWeekOf, 1)}`,
+    currentWeekUrl: `/tablet/today`,
+    weekLabel: weekLabel(sidebarWeekOf),
+    isCurrentWeek,
+    hasPlan: (plan?.workouts?.length ?? 0) > 0,
+  };
 
   return (
     <div style={{
@@ -409,6 +486,50 @@ export default async function TabletTodayPage() {
                 </div>
               )}
 
+              {/* ── Actual ride (when the day is completed) ─────────── */}
+              {(todayStatus === "completed" || todayStatus === "extra") && todayActualRide && (
+                <div style={{
+                  background: "var(--m-card)", border: "1px solid var(--m-border)",
+                  borderLeft: "4px solid #22c55e",
+                  borderRadius: 4, padding: "20px 24px", marginBottom: 16,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#22c55e", textTransform: "uppercase", letterSpacing: ".1em" }}>
+                      Actual ride
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", marginBottom: 14, lineHeight: 1.2 }}>
+                    {todayActualRide.name}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    {todayActualRide.durationMin > 0 && (
+                      <ActualRideChip label="Duration" value={`${todayActualRide.durationMin} min`} />
+                    )}
+                    {todayActualRide.avgWatts != null && todayActualRide.avgWatts > 0 && (
+                      <ActualRideChip label="Avg Power" value={`${Math.round(todayActualRide.avgWatts)}W`} color="#22d3ee" />
+                    )}
+                    {todayActualRide.normalizedPower != null && todayActualRide.normalizedPower > 0 && (
+                      <ActualRideChip label="NP" value={`${Math.round(todayActualRide.normalizedPower)}W`} color="#60a5fa" />
+                    )}
+                    {todayActualRide.avgHr != null && todayActualRide.avgHr > 0 && (
+                      <ActualRideChip label="Avg HR" value={`${Math.round(todayActualRide.avgHr)} bpm`} color="#ef4444" />
+                    )}
+                    {todayActualRide.tss != null && todayActualRide.tss > 0 && (
+                      <ActualRideChip label="TSS" value={Math.round(todayActualRide.tss).toString()} color="#a78bfa" />
+                    )}
+                    {todayActualRide.distanceKm != null && todayActualRide.distanceKm > 0 && (
+                      <ActualRideChip label="Distance" value={`${todayActualRide.distanceKm.toFixed(1)} km`} color="#34d399" />
+                    )}
+                  </div>
+                  {todayStatus === "extra" && (
+                    <div style={{ marginTop: 12, fontSize: 13, color: "var(--m-muted)" }}>
+                      Different sport than planned — great cross-training!
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Session structure */}
               {todayWorkout.structure && todayWorkout.structure.length > 0 && (
                 <div style={{
@@ -554,11 +675,8 @@ export default async function TabletTodayPage() {
           </div>
 
           {/* Week list */}
-          <div style={{ padding: "20px 16px", flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
-              This week
-            </div>
-            <WeekDayListClient days={dayRows} />
+          <div style={{ padding: "16px 16px 0", flex: 1 }}>
+            <WeekDayListClient days={dayRows} weekNav={weekNav} />
           </div>
 
           {/* Plan summary */}
