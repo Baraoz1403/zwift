@@ -137,15 +137,12 @@ export async function POST(req: NextRequest) {
       }
 
       // ── Auto-provision: first plan + first ICU sync, no button needed ────
-      // Wrapped in its own try-catch: plan generation can fail (AI timeout,
-      // OpenAI rate limit, etc.) and must NEVER block the login response.
-      // The athlete can still log in and the plan will be generated on the
-      // next page load or cron cycle.
-      try {
-        await ensurePlanProvisioned(athleteId, result.accessToken);
-      } catch (planErr) {
-        console.error("[login] Plan provisioning failed (non-blocking):", planErr);
-      }
+      // Fire-and-forget — do NOT await. Plan generation calls Zwift + OpenAI
+      // and can take 30–90 s. Awaiting it caused the login route to exceed
+      // Vercel's 60 s maxDuration, killing the function mid-response and
+      // surfacing as "Network error" on the client. The nightly cron and the
+      // next page load both retry ensurePlanProvisioned if it didn't finish.
+      void ensurePlanProvisioned(athleteId, result.accessToken).catch(() => {});
     }
 
     return res;
