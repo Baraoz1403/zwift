@@ -66,10 +66,10 @@ export default async function MobileSettingsPage() {
               {/* Intervals.icu */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 11, background: icuConnected ? "rgba(99,102,241,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {/* intervals.icu logo — ECG/activity line */}
+                  <div style={{ width: 44, height: 44, borderRadius: 11, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#6366f1" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#0d9488" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                   <div>

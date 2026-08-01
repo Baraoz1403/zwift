@@ -150,6 +150,7 @@ export default async function MobileTodayPage() {
 
   // Connection status for header icons
   const icuConnected = !!(cookieKeyEarly ?? earlyKvCreds?.icuKey);
+  const icuName = cookieStore.get("zwift_intervals_name")?.value ?? earlyKvCreds?.icuName ?? null;
 
   const macro = athleteState?.macroCycle ?? null;
   let currentPhase: string | null = null;
@@ -183,7 +184,7 @@ export default async function MobileTodayPage() {
   if (!plan || workouts.length === 0) {
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} icuConnected={icuConnected} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={null} icuConnected={icuConnected} icuName={icuName} />
         <div style={SCROLL_STYLE}>
           <NoPlanScreen />
         </div>
@@ -196,7 +197,7 @@ export default async function MobileTodayPage() {
     const isBonus = todayStatus === "bonus";
     return (
       <div style={PAGE_SHELL}>
-        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} />
+        <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={isBonus ? "bonus" : "planned"} workout={null} todayActivityDurationMin={todayActivityDurationMin} icuConnected={icuConnected} icuName={icuName} />
         <div style={SCROLL_STYLE}>
           {isBonus ? (
             /* Bonus ride — expandable ride card + feedback */
@@ -260,7 +261,7 @@ export default async function MobileTodayPage() {
     <div style={PAGE_SHELL}>
 
       {/* Hero header — outside scroll area so it never moves */}
-      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} />
+      <TodayHero firstName={firstName} ftp={ftp} phase={currentPhase} weekIndex={weekIndex} weekWorkoutCount={weekWorkoutCount} todayStatus={todayStatus} workout={todayWorkout} icuConnected={icuConnected} icuName={icuName} />
 
       {/* Scrollable content */}
       <div style={SCROLL_STYLE}>
@@ -299,7 +300,7 @@ type HeroWorkout = { title: string; durationMin?: number; type?: string } | null
 
 function TodayHero({
   firstName, ftp, phase, weekIndex, weekWorkoutCount, todayStatus, workout,
-  icuConnected,
+  icuConnected, icuName,
 }: {
   firstName: string | null;
   ftp: number | null;
@@ -310,6 +311,7 @@ function TodayHero({
   workout: HeroWorkout;
   todayActivityDurationMin?: number | null;
   icuConnected: boolean;
+  icuName?: string | null;
 }) {
   const statusDone   = todayStatus === "completed";
   const statusBonus  = todayStatus === "bonus";
@@ -358,50 +360,60 @@ function TodayHero({
         <ThemeToggleButton compact />
       </div>
 
-      {/* Row 2: athlete name + Zwift/ICU connection chips */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      {/* Row 2: athlete name */}
+      <div style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {/* Zwift — always connected */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "var(--m-card)", border: "1px solid var(--m-border)",
-            borderRadius: 11, padding: "7px 10px",
-          }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,90,31,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {/* Zwift official logo — lightning bolt */}
-              <svg width="15" height="15" viewBox="0 0 20 20" fill="#FF5A1F">
+      </div>
+
+      {/* Row 3: Connection status card — same design as Settings page */}
+      <div style={{
+        background: "var(--m-card)", borderRadius: 14,
+        border: "1px solid var(--m-border)", marginBottom: 12,
+      }}>
+        {/* Zwift row */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "13px 16px", borderBottom: "1px solid var(--m-border)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,90,31,0.13)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* Zwift official logo — orange lightning bolt */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="#FF5A1F">
                 <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
-              <div style={{ fontSize: 11, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)" }}>Zwift</div>
+              <div style={{ fontSize: 14, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
             </div>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0, marginLeft: 2 }}/>
           </div>
-          {/* intervals.icu */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "var(--m-card)", border: "1px solid var(--m-border)",
-            borderRadius: 11, padding: "7px 10px",
-          }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: icuConnected ? "rgba(99,102,241,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {/* intervals.icu logo — ECG/activity line */}
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#6366f1" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
+        </div>
+        {/* intervals.icu row */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "13px 16px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#0d9488" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
-              <div style={{ fontSize: 11, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
-                {icuConnected ? "Connected" : "Not linked"}
+              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)" }}>Intervals.icu</div>
+              <div style={{ fontSize: 14, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
+                {icuConnected ? (icuName ?? "Connected") : "Not connected"}
               </div>
             </div>
-            {icuConnected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0, marginLeft: 2 }}/>}
           </div>
+          {icuConnected
+            ? <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
+            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>Connect</a>
+          }
         </div>
       </div>
 
