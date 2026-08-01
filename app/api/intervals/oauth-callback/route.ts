@@ -96,13 +96,23 @@ export async function GET(req: NextRequest) {
     const accessTokenValue = `Bearer ${tokens.access_token}`;
     const expiresAt = Date.now() + tokens.expires_in * 1000;
 
-    // Fetch athlete info using the new token
-    const athlete = await fetchIntervalsAthlete(accessTokenValue);
-    const athleteId = athlete.id != null ? String(athlete.id).trim() : "0";
-    const athleteName =
-      (athlete.name as string | undefined) ??
-      (athlete.email as string | undefined) ??
-      "Intervals.icu user";
+    // Fetch athlete info using the new token.
+    // Uses SETTINGS:READ scope — if not granted, fall back to "me" (which the
+    // push endpoint accepts as a self-referential ID). This makes the flow
+    // resilient even if the client registration doesn't include SETTINGS:READ.
+    let athleteId = "me";
+    let athleteName = "Intervals.icu user";
+    try {
+      const athlete = await fetchIntervalsAthlete(accessTokenValue);
+      if (athlete.id != null) athleteId = String(athlete.id).trim();
+      athleteName =
+        (athlete.name as string | undefined) ??
+        (athlete.email as string | undefined) ??
+        "Intervals.icu user";
+    } catch {
+      // SETTINGS:READ not granted or endpoint unavailable — "me" fallback is safe
+      await writeDebug("athlete_fetch_skipped", "fallback to athleteId=me");
+    }
 
     // Mirror to KV for cross-device persistence
     let resolvedAthleteId = session.athleteId;

@@ -45,9 +45,10 @@ export async function GET(req: NextRequest) {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    // ACTIVITY:READ — fetch completed activities for training load analysis
+    // ACTIVITY:READ  — fetch completed activities for training load analysis
     // CALENDAR:WRITE — push planned workouts to the athlete's calendar
-    scope: "ACTIVITY:READ CALENDAR:WRITE",
+    // SETTINGS:READ  — read athlete profile (id, name) after token exchange
+    scope: "ACTIVITY:READ CALENDAR:WRITE SETTINGS:READ",
     state,
   });
 
