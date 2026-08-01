@@ -39,7 +39,7 @@ import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
 import { fetchIcuActivities } from "@/lib/intervals";
-import { getSeasonPlan, findSeasonWeek, seasonContextToPrompt } from "@/lib/season-plan";
+import { getSeasonPlan, findSeasonWeek, seasonContextToPrompt, generateSeasonPlan } from "@/lib/season-plan";
 import { buildIcuPerformanceContext } from "@/lib/icu-performance-context";
 
 export { AiInsightsError };
@@ -323,6 +323,28 @@ export async function runWeeklyPlanGeneration(
   // This provides the "coaching brain" — the multi-week arc that transforms
   // isolated weekly generation into execution of a long-term plan.
   const seasonPlan = await getSeasonPlan(athleteId);
+
+  // Auto-generate season plan on first encounter — fire-and-forget.
+  // The season plan is the "coaching brain" that transforms isolated weekly
+  // generation into execution of a long-term training arc. Without it,
+  // seasonContext is null and every week is generated with no continuity.
+  // This call doesn't block the weekly plan — the NEXT plan generation
+  // (and all subsequent ones) will have the full arc context.
+  // Only triggers when: no season plan exists + riderProfile is set + FTP known.
+  if (!seasonPlan && opts.riderProfile) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (apiKey) {
+      generateSeasonPlan({
+        athleteId,
+        profile: opts.riderProfile,
+        currentFtp: effectiveFtp ?? 200,
+        weightKg: weightKg ?? null,
+        startWeekOf: weekOf,
+        apiKey,
+      }).catch(() => {}); // generateSeasonPlan saves internally — best-effort, never block
+    }
+  }
+
   const currentSeasonWeek = seasonPlan ? findSeasonWeek(seasonPlan, weekOf) : null;
   const previousSeasonWeek = seasonPlan && currentSeasonWeek && currentSeasonWeek.weekIndex > 1
     ? (seasonPlan.weeks[currentSeasonWeek.weekIndex - 2] ?? null)
