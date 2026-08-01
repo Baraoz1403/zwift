@@ -73,8 +73,17 @@ export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin;
   const redirectUri = `${origin}/api/intervals/oauth-callback`;
 
+  // Write a debug log entry to KV so we can inspect it at /api/debug/icu-state
+  // even when Vercel function logs aren't accessible. Keyed by athlete so each
+  // rider's last attempt is stored independently. Removed once flow is stable.
+  const debugKey = `zwift:${session.athleteId ?? "unknown"}:oauth_debug`;
+  const writeDebug = (step: string, detail: string) =>
+    kvSet(debugKey, JSON.stringify({ step, detail, ts: new Date().toISOString() })).catch(() => {});
+
   try {
+    await writeDebug("exchange_start", `code_length=${code.length} redirect_uri=${redirectUri}`);
     const tokens = await exchangeIntervalsCode(code, redirectUri);
+    await writeDebug("exchange_ok", `has_access=${!!tokens.access_token} has_refresh=${!!tokens.refresh_token} expires_in=${tokens.expires_in}`);
 
     const isSecure = process.env.NODE_ENV === "production";
     const cookieBase = {
@@ -105,6 +114,8 @@ export async function GET(req: NextRequest) {
         // best-effort
       }
     }
+
+    await writeDebug("kv_write", `resolvedAthleteId=${resolvedAthleteId ?? "undefined"} icuId=${athleteId} icuName=${athleteName}`);
 
     if (resolvedAthleteId) {
       await Promise.all([
@@ -163,10 +174,12 @@ export async function GET(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
+    await writeDebug("redirect_ok", `returnTo=${returnTo} cookie_key_set=true expires_in=${tokens.expires_in}`);
     return res;
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : "OAuth exchange failed";
+    await writeDebug("error", msg);
     return NextResponse.redirect(
       new URL(`${returnTo}?icu_error=${encodeURIComponent(msg)}`, req.nextUrl.origin)
     );

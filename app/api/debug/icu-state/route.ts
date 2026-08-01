@@ -16,15 +16,16 @@ export async function GET(req: NextRequest) {
   const athleteId = session?.athleteId;
 
   // Read all ICU-related KV keys for this athlete
-  const [icuKey, icuId, icuName, icuRefresh, icuExpires] = athleteId
+  const [icuKey, icuId, icuName, icuRefresh, icuExpires, oauthDebug] = athleteId
     ? await Promise.all([
         kvGet(`zwift:${athleteId}:icu_key`),
         kvGet(`zwift:${athleteId}:icu_id`),
         kvGet(`zwift:${athleteId}:icu_name`),
         kvGet(`zwift:${athleteId}:icu_refresh`),
         kvGet(`zwift:${athleteId}:icu_expires`),
+        kvGet(`zwift:${athleteId}:oauth_debug`),
       ])
-    : [null, null, null, null, null];
+    : [null, null, null, null, null, null];
 
   return NextResponse.json({
     session: {
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
         ? `${icuExpires} (${new Date(Number(icuExpires)).toISOString()})`
         : "NOT SET",
     },
+    oauth_debug: oauthDebug ? JSON.parse(oauthDebug) : null,
     diagnosis: athleteId
       ? icuKey
         ? "KV has ICU key — next login should auto-restore. If still showing ICU screen, cookie is the issue."
