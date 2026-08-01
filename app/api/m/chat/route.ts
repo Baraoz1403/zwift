@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getCachedIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
@@ -116,6 +116,7 @@ async function pushUpdatedWorkoutToIcu(
   icuAthleteId: string,
   weekOf: string,
   workout: UpdateWorkoutInput,
+  riderName?: string,
 ): Promise<{ pushed: boolean; error?: string }> {
   try {
     const workoutDate = dayNameToDate(weekOf, workout.day);
@@ -126,14 +127,19 @@ async function pushUpdatedWorkoutToIcu(
       await deleteEventFromIntervals(icuKey, ev.id, icuAthleteId).catch(() => {});
     }
 
-    // Generate ZWO XML (same as the manual export flow)
-    const zwoXml = generateZwoXml({
-      title: workout.title,
-      type: workout.type,
-      durationMin: workout.durationMin,
-      description: workout.description,
-      targetPowerPctFtp: workout.targetPowerPctFtp,
-    });
+    // Generate ZWO XML — pass riderName so personal TextEvent messages are injected
+    const zwoXml = generateZwoXml(
+      {
+        title: workout.title,
+        type: workout.type,
+        durationMin: workout.durationMin,
+        description: workout.description,
+        targetPowerPctFtp: workout.targetPowerPctFtp,
+      },
+      undefined,
+      "Zwift Dashboard AI",
+      riderName,
+    );
 
     const result = await pushWorkoutToIntervals({
       apiKey: icuKey,
@@ -254,7 +260,7 @@ export async function POST(req: NextRequest) {
   const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
   // ── Load all context in parallel ──────────────────────────────────────────
-  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw, storedPerfCtxRaw] = await Promise.all([
+  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw, storedPerfCtxRaw, cachedIdentity] = await Promise.all([
     getStoredAthleteState(athleteId).catch(() => null),
     getCachedPlan(athleteId, weekOf).catch(() => null),
     kvGet(`zwift:${athleteId}:training_load`).catch(() => null),
@@ -263,7 +269,12 @@ export async function POST(req: NextRequest) {
     // ICU performance context: pre-computed during plan generation, cached for 7 days.
     // Contains 50/30/20-weighted summary of last 30 rides — power, HR, TSS, volume, patterns.
     kvGet(`zwift:${athleteId}:icu_perf_ctx`).catch(() => null),
+    getCachedIdentity(athleteId).catch(() => null),
   ]);
+
+  // Rider first name — injected into ZWO TextEvent messages so on-screen prompts
+  // say "Interval 3 of 8 — GO! Barak" instead of a generic greeting.
+  const riderFirstName = cachedIdentity?.firstName ?? undefined;
 
   // Build ICU performance context on-demand if not yet cached.
   // This ensures Marco always has 30-ride history even before a plan is generated.
@@ -438,7 +449,7 @@ export async function POST(req: NextRequest) {
             planUpdated = true;
             // Auto-push to Intervals.icu so Zwift sees the change via ICU sync
             if (icuKey && icuAthleteId) {
-              const icuPush = await pushUpdatedWorkoutToIcu(icuKey, icuAthleteId, weekOf, workoutInput);
+              const icuPush = await pushUpdatedWorkoutToIcu(icuKey, icuAthleteId, weekOf, workoutInput, riderFirstName);
               if (icuPush.pushed) {
                 result.message += " Also pushed to Intervals.icu (Zwift will sync automatically).";
                 result.toolAction = (result.toolAction ?? "") + " → pushed to ICU";

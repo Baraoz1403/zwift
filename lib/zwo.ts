@@ -198,7 +198,10 @@ export function structureToBlocks(structure: WorkoutStructureBlock[]): ZwoBlock[
         break;
       case "intervals": {
         const onSec  = b.onSec  ?? Math.round(durationSec / ((b.repeats ?? 3) * 2));
-        const offSec = b.offSec ?? onSec;
+        // Hard cap: recovery between intervals ≤ 5 minutes (300 s).
+        // If the AI outputs a longer rest, clamp it here — the prompt enforces
+        // this rule upstream but the code is the last line of defence.
+        const offSec = Math.min(300, b.offSec ?? onSec);
         const repeat = b.repeats ?? Math.max(2, Math.round(durationSec / (onSec + offSec)));
         blocks.push({
           kind: "IntervalsT",
@@ -620,8 +623,16 @@ function blockToXml(b: ZwoBlock, isRun = false): string {
 
 /**
  * Generates personal TextEvent messages that appear on-screen during the ride.
- * Placed at strategic moments: start, before each main interval set, halfway,
- * final push, and cooldown. Personalised with the rider's first name.
+ *
+ * Messages include:
+ * - Workout start personalised greeting
+ * - Pre-main-set alert (30s before intervals begin)
+ * - Per-repetition counter at the start of each ON phase ("Interval 3 of 8 — GO!")
+ * - Water/recovery reminder at the start of each OFF phase
+ * - Alert 10s before each interval begins ("Coming up in 10s…")
+ * - Halfway-through total workout marker
+ * - Last 5-minute warning
+ * - Cooldown celebration
  */
 function generateTextEvents(
   resolvedBlocks: ZwoBlock[],
@@ -649,62 +660,97 @@ function generateTextEvents(
   const totalSec = cursor || 1;
 
   // Workout start
-  events.push({ offset: 5, msg: `Let's go, ${name}! 💪 Stay focused and pace yourself.` });
+  events.push({ offset: 5, msg: `Let's go, ${name}! 💪 Focus up — great session ahead.` });
 
-  // Pre-warmup end (warmup about to finish)
+  // Warmup approaching end → main set alert
   if (resolvedBlocks[0]?.kind === "Warmup") {
     const warmupEnd = blockStarts[0] + resolvedBlocks[0].durationSec;
-    events.push({ offset: warmupEnd - 60, msg: `Almost there, ${name} — main set coming up in 1 minute!` });
+    if (warmupEnd > 90) {
+      events.push({ offset: warmupEnd - 60, msg: `${name} — main set in 1 minute. Get ready to work! 🔥` });
+    }
   }
 
-  // Before each interval block
-  resolvedBlocks.forEach((b, i) => {
+  // Per-interval messages for each IntervalsT block
+  resolvedBlocks.forEach((b, blockIdx) => {
     if (b.kind !== "IntervalsT") return;
-    const start = blockStarts[i];
+    const blockStart = blockStarts[blockIdx];
     const pct = Math.round(b.onPower * 100);
-    events.push({
-      offset: Math.max(start - 30, start),
-      msg: `${name} — ${b.repeat} intervals at ${pct}% FTP starting NOW. You've got this!`,
-    });
-    // Midpoint of the interval block
-    const totalBlock = b.repeat * (b.onDuration + b.offDuration);
-    events.push({
-      offset: start + Math.floor(totalBlock / 2),
-      msg: `Halfway through, ${name}! Keep the power consistent — every rep counts.`,
-    });
-    // Last rep warning
-    const lastRepStart = start + (b.repeat - 1) * (b.onDuration + b.offDuration);
-    events.push({
-      offset: lastRepStart,
-      msg: `Last rep, ${name}! Give it everything — then it's done.`,
-    });
+    const recPct = Math.round(b.offPower * 100);
+    const onMin = Math.round(b.onDuration / 6) / 10; // 1 decimal minute
+    const offMin = Math.round(b.offDuration / 6) / 10;
+
+    // 30s before the first interval of this block
+    const alertOffset = blockStart - 30;
+    if (alertOffset >= 0) {
+      events.push({
+        offset: alertOffset,
+        msg: `${name} — ${b.repeat}×${onMin}min @ ${pct}% FTP starting in 30 seconds!`,
+      });
+    }
+
+    // Per-repetition messages
+    for (let rep = 0; rep < b.repeat; rep++) {
+      const repStart = blockStart + rep * (b.onDuration + b.offDuration);
+      const recStart = repStart + b.onDuration;
+      const remaining = b.repeat - rep - 1; // intervals still left after this one
+
+      // 10s countdown before interval starts (skip rep 0 — block alert already covers it)
+      if (rep > 0 && b.offDuration >= 15) {
+        events.push({
+          offset: recStart + b.offDuration - 10,
+          msg: `${name} — interval in 10 seconds! ${remaining + 1} remaining.`,
+        });
+      }
+
+      // ON phase start — interval counter
+      const repLabel = rep === 0 ? "Here we go!" : rep === b.repeat - 1 ? "LAST ONE — give everything!" : "Push!";
+      events.push({
+        offset: repStart,
+        msg: `Interval ${rep + 1} of ${b.repeat} — ${repLabel} ${pct}% FTP · ${onMin}min`,
+      });
+
+      // OFF phase start — recovery + water reminder + count remaining
+      if (remaining > 0) {
+        const waterMsg = (rep % 2 === 0)
+          ? `💧 Drink water now, ${name}! ${remaining} interval${remaining > 1 ? "s" : ""} left · ${offMin}min recovery @ ${recPct}%`
+          : `Recover & breathe, ${name}. ${remaining} more to go — you've got this! 💪`;
+        events.push({ offset: recStart, msg: waterMsg });
+      } else {
+        // Last recovery (after final interval)
+        events.push({
+          offset: recStart,
+          msg: `Done! 🎉 Nice work, ${name} — interval set complete. Recover well.`,
+        });
+      }
+    }
   });
 
-  // Halfway through total workout
+  // Halfway through total workout (only if no interval block already covers it)
+  const halfwayOffset = Math.floor(totalSec / 2);
   events.push({
-    offset: Math.floor(totalSec / 2),
-    msg: `Halfway there, ${name}! You're doing great — keep going!`,
+    offset: halfwayOffset,
+    msg: `Halfway there, ${name}! You're doing great — stay consistent.`,
   });
 
   // 5 min before end
   if (totalSec > 600) {
-    events.push({ offset: totalSec - 300, msg: `Last 5 minutes, ${name}. Finish strong!` });
+    events.push({ offset: totalSec - 300, msg: `Last 5 minutes, ${name}. Finish strong — almost there!` });
   }
 
   // Cooldown start
   const lastBlock = resolvedBlocks[resolvedBlocks.length - 1];
   if (lastBlock?.kind === "Cooldown") {
     const coolStart = blockStarts[resolvedBlocks.length - 1];
-    events.push({ offset: coolStart + 10, msg: `Cooldown time, ${name}. Spin easy and recover — great session! 🎉` });
+    events.push({ offset: coolStart + 5, msg: `Cooldown, ${name} — spin easy and let the legs flush out. Outstanding session! 🏆` });
   }
 
-  // Deduplicate and sort by offset
+  // Deduplicate (keep first at each second) and sort
   const seen = new Set<number>();
   const unique = events
     .filter(e => {
       if (e.offset < 0) return false;
-      if (seen.has(e.offset)) return false;
-      seen.add(e.offset);
+      if (seen.has(Math.round(e.offset))) return false;
+      seen.add(Math.round(e.offset));
       return true;
     })
     .sort((a, b) => a.offset - b.offset);

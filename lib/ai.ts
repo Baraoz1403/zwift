@@ -421,6 +421,8 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 
 ⚡ COOLDOWN RULE — HARD LIMIT: Every workout ends with a cooldown block of EXACTLY 3–5 minutes (never more, never less). durationMin must be ≤ 5 for all cooldown blocks. A 10-minute cooldown is a waste of the athlete's time. Use 5 min maximum — this is non-negotiable and applies to every single session including FTP tests, VO2max, and endurance rides.
 
+⚡ RECOVERY INTERVAL RULE — HARD LIMIT: offSec (recovery between intervals) must be ≤ 300 seconds (5 minutes) for ALL interval blocks without exception. If the physiology calls for longer rest (e.g. neuromuscular sprints), use multiple shorter recovery blocks or a steadystate block — do NOT exceed 300 s offSec. This cap applies to every workout type: VO2max, threshold, sweet spot, sprint, neuromuscular. A 10-minute recovery between intervals is a different session, not an interval workout.
+
 🚫 NO SAFE DEFAULTS: A plan full of Foundation Rides and Sweet Spot Classic is a FAILED plan for any rider who has trained before. For Intermediate (3.0–3.5 W/kg) in Build phase: the hard sessions MUST be Threshold or above — Sweet Spot is a recovery-week ceiling, not a Build-phase target. For Trained/Advanced (3.5+ W/kg): Norwegian 4×4, Critical Power Development, or Over-Under Intervals are the default hard sessions — justify in the summary if you prescribe anything less. Sweet Spot Classic repeated week after week for a developed rider signals the AI chose safety over coaching — forbidden.
 
 WEEK SHAPE:
