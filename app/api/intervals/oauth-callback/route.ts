@@ -8,6 +8,12 @@
  * The access token is stored as "Bearer <token>" in zwift_intervals_key so
  * all existing intervals API code (which reads that cookie) works without
  * change — buildAuthHeader() detects the "Bearer " prefix and skips Basic auth.
+ *
+ * IMPORTANT: cookies must be set on the redirect response object, NOT via
+ * cookieStore.set(). In Next.js 14 Route Handlers, cookieStore.set() cookies
+ * are NOT included when a NextResponse.redirect() is returned — the two are
+ * separate response objects and the Set-Cookie headers are lost. Always call
+ * res.cookies.set() on the same response that gets returned.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -27,8 +33,8 @@ export const INTERVALS_REFRESH_COOKIE = "zwift_intervals_refresh";
 /** Cookie that carries the access token expiry (ms since epoch, as string). */
 export const INTERVALS_EXPIRES_COOKIE = "zwift_intervals_token_exp";
 
-// Token exchange can trigger plan generation (30-60s) for new athletes.
-export const maxDuration = 60;
+// Token exchange can take a few seconds. Plan generation is now fire-and-forget.
+export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
@@ -78,48 +84,16 @@ export async function GET(req: NextRequest) {
       path: "/",
     };
 
-    // Store access token as "Bearer <token>" in the existing key cookie.
-    // buildAuthHeader() checks for this prefix so all ICU API calls work.
     const accessTokenValue = `Bearer ${tokens.access_token}`;
     const expiresAt = Date.now() + tokens.expires_in * 1000;
 
-    cookieStore.set("zwift_intervals_key", accessTokenValue, {
-      ...cookieBase,
-      maxAge: tokens.expires_in, // seconds
-    });
-
-    if (tokens.refresh_token) {
-      cookieStore.set(INTERVALS_REFRESH_COOKIE, tokens.refresh_token, {
-        ...cookieBase,
-        maxAge: 60 * 60 * 24 * 365, // refresh tokens are long-lived
-      });
-    }
-
-    cookieStore.set(INTERVALS_EXPIRES_COOKIE, String(expiresAt), {
-      ...cookieBase,
-      httpOnly: false, // readable by client JS so it can pre-emptively re-auth
-      maxAge: 60 * 60 * 24 * 365,
-    });
-
     // Fetch athlete info using the new token
     const athlete = await fetchIntervalsAthlete(accessTokenValue);
-    // Store the raw ICU athlete ID as returned by the API — needed for webhook
-    // reverse-lookup. API URL calls resolve this to "me" if non-numeric.
     const athleteId = athlete.id != null ? String(athlete.id).trim() : "0";
     const athleteName =
       (athlete.name as string | undefined) ??
       (athlete.email as string | undefined) ??
       "Intervals.icu user";
-
-    cookieStore.set("zwift_intervals_id", athleteId, {
-      ...cookieBase,
-      maxAge: 60 * 60 * 24 * 365,
-    });
-    cookieStore.set("zwift_intervals_name", athleteName, {
-      ...cookieBase,
-      httpOnly: false,
-      maxAge: 60 * 60 * 24 * 365,
-    });
 
     // Mirror to KV for cross-device persistence
     let resolvedAthleteId = session.athleteId;
@@ -133,19 +107,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (resolvedAthleteId) {
-      await kvSet(`zwift:${resolvedAthleteId}:icu_key`, accessTokenValue);
-      await kvSet(`zwift:${resolvedAthleteId}:icu_id`, athleteId);
-      await kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName);
-      if (tokens.refresh_token) {
-        await kvSet(`zwift:${resolvedAthleteId}:icu_refresh`, tokens.refresh_token);
-        await kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt));
-      }
+      await Promise.all([
+        kvSet(`zwift:${resolvedAthleteId}:icu_key`, accessTokenValue),
+        kvSet(`zwift:${resolvedAthleteId}:icu_id`, athleteId),
+        kvSet(`zwift:${resolvedAthleteId}:icu_name`, athleteName),
+        ...(tokens.refresh_token ? [
+          kvSet(`zwift:${resolvedAthleteId}:icu_refresh`, tokens.refresh_token),
+          kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt)),
+        ] : []),
+      ]);
 
-      // Auto-provision plan in the background — do NOT await.
-      // Plan generation calls OpenAI and can take 30–60 s. Awaiting it here
-      // blocks the OAuth redirect until it completes, causing a Vercel 504
-      // timeout for new athletes. The nightly cron and the next app load both
-      // get another chance if this run doesn't finish in time.
+      // Fire-and-forget — do NOT await. Plan generation calls OpenAI and can
+      // take 30–60 s. The nightly cron and next app load both retry if needed.
       void ensurePlanProvisioned(resolvedAthleteId, session.accessToken).catch(() => {});
 
       // Auto-register ICU webhook for real-time WhatsApp feedback after rides
@@ -153,9 +126,45 @@ export async function GET(req: NextRequest) {
       void ensureIcuWebhookRegistered(accessTokenValue, athleteId, webhookUrl).catch(() => {});
     }
 
-    return NextResponse.redirect(
+    // Build the redirect response, then set ALL cookies on it directly.
+    // NEVER use cookieStore.set() here — those cookies are on a different
+    // response object and are silently discarded when NextResponse.redirect()
+    // is returned. The browser would never receive Set-Cookie headers.
+    const res = NextResponse.redirect(
       new URL(`${returnTo}?icu_connected=1`, req.nextUrl.origin)
     );
+
+    res.cookies.set("zwift_intervals_key", accessTokenValue, {
+      ...cookieBase,
+      maxAge: tokens.expires_in, // seconds — typically 3600
+    });
+
+    if (tokens.refresh_token) {
+      res.cookies.set(INTERVALS_REFRESH_COOKIE, tokens.refresh_token, {
+        ...cookieBase,
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+
+    res.cookies.set(INTERVALS_EXPIRES_COOKIE, String(expiresAt), {
+      ...cookieBase,
+      httpOnly: false, // readable by client JS
+      maxAge: 60 * 60 * 24 * 365,
+    });
+
+    res.cookies.set("zwift_intervals_id", athleteId, {
+      ...cookieBase,
+      maxAge: 60 * 60 * 24 * 365,
+    });
+
+    res.cookies.set("zwift_intervals_name", athleteName, {
+      ...cookieBase,
+      httpOnly: false,
+      maxAge: 60 * 60 * 24 * 365,
+    });
+
+    return res;
+
   } catch (e) {
     const msg = e instanceof Error ? e.message : "OAuth exchange failed";
     return NextResponse.redirect(
