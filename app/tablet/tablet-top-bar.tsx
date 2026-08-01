@@ -71,26 +71,44 @@ export function TabletTopBar({
           {/* Right: connection chips + metric chips */}
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
 
-            {/* ── Connection chips ── */}
-            {/* Zwift: always connected (required to use the app) */}
+            {/* ── Connection chips — logo + name + status ── */}
+            {/* Zwift: always connected */}
             <div style={{
-              background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.30)",
-              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 64,
+              display: "flex", alignItems: "center", gap: 8,
+              background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.25)",
+              borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#22c55e", lineHeight: 1 }}>Zwift</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(34,197,94,0.75)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Connected</div>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,90,31,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#FF5A1F">
+                  <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", marginTop: 2 }}>Connected</div>
+              </div>
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
 
-            {/* ICU: shown in green when connected, muted grey otherwise */}
+            {/* ICU: shown in teal when connected, muted grey otherwise */}
             <div style={{
-              background: icuConnected ? "rgba(34,197,94,0.10)" : "rgba(100,116,139,0.08)",
-              border: `1px solid ${icuConnected ? "rgba(34,197,94,0.30)" : "rgba(100,116,139,0.20)"}`,
-              borderRadius: 8, padding: "6px 12px", textAlign: "center", minWidth: 64,
+              display: "flex", alignItems: "center", gap: 8,
+              background: icuConnected ? "rgba(13,148,136,0.10)" : "rgba(100,116,139,0.08)",
+              border: `1px solid ${icuConnected ? "rgba(13,148,136,0.30)" : "rgba(100,116,139,0.20)"}`,
+              borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: icuConnected ? "#22c55e" : "#64748b", lineHeight: 1 }}>ICU</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: icuConnected ? "rgba(34,197,94,0.75)" : "rgba(100,116,139,0.55)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
-                {icuConnected ? "Connected" : "Not set up"}
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: icuConnected ? "rgba(13,148,136,0.15)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#0d9488" : "#64748b"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: icuConnected ? "#22c55e" : "#64748b", marginTop: 2 }}>
+                  {icuConnected ? "Connected" : "Not set up"}
+                </div>
+              </div>
+              {icuConnected && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>}
             </div>
 
             {/* Visual separator */}

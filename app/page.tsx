@@ -24,12 +24,12 @@ export default async function Home() {
     redirect("/login?next=/");
   }
 
-  // Route mobile visitors to the mobile app, desktop to the dashboard.
-  // This is what makes "Add to Home Screen" open the right version.
+  // Route all visitors to the active app. Desktop → /m/today (same as mobile).
+  // The old /dashboard route is legacy and no longer the entry point.
   const headerStore = await headers();
   const ua = headerStore.get("user-agent") ?? "";
 
   if (isTabletUserAgent(ua)) redirect("/tablet/today");
-  if (isMobileUserAgent(ua)) redirect("/m/today");
-  redirect("/dashboard");
+  // All other devices (phone, desktop, unknown) → mobile app
+  redirect("/m/today");
 }
