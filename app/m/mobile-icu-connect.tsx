@@ -138,6 +138,16 @@ export default function MobileIcuConnect() {
         </div>
       </div>
 
+      {/* Switch account link */}
+      <div style={{ textAlign: "center", paddingBottom: 12 }}>
+        <a
+          href="/api/auth/logout"
+          style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none" }}
+        >
+          Not you? Switch account →
+        </a>
+      </div>
+
       <div style={{ height: "env(safe-area-inset-bottom, 0px)", flexShrink: 0 }} />
     </div>
   );

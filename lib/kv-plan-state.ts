@@ -267,9 +267,42 @@ export interface IntervalsCredentials {
  */
 export async function getIntervalsCredentials(athleteId: string): Promise<IntervalsCredentials | null> {
   if (!kvAvailable() || !athleteId) return null;
-  const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
+  const [icuKey, icuId, icuRefresh, icuExpiresRaw] = await Promise.all([
+    kvGet(`zwift:${athleteId}:icu_key`),
+    kvGet(`zwift:${athleteId}:icu_id`),
+    kvGet(`zwift:${athleteId}:icu_refresh`),
+    kvGet(`zwift:${athleteId}:icu_expires`),
+  ]);
   if (!icuKey) return null;
-  const icuId = await kvGet(`zwift:${athleteId}:icu_id`);
+
+  // Auto-refresh expired OAuth Bearer tokens so server-side ICU sync
+  // keeps working indefinitely after the initial access token expires.
+  // API-key credentials (non-Bearer) never expire and skip this block.
+  if (icuKey.startsWith("Bearer ") && icuRefresh && icuExpiresRaw) {
+    const expiresAt = Number(icuExpiresRaw);
+    const bufferMs = 5 * 60 * 1000; // refresh 5 min before expiry
+    if (!isNaN(expiresAt) && Date.now() + bufferMs > expiresAt) {
+      try {
+        const { refreshIntervalsToken } = await import("./intervals");
+        const tokens = await refreshIntervalsToken(icuRefresh);
+        const newKey = `Bearer ${tokens.access_token}`;
+        const newExpires = String(Date.now() + tokens.expires_in * 1000);
+        await Promise.all([
+          kvSet(`zwift:${athleteId}:icu_key`, newKey),
+          kvSet(`zwift:${athleteId}:icu_expires`, newExpires),
+          ...(tokens.refresh_token
+            ? [kvSet(`zwift:${athleteId}:icu_refresh`, tokens.refresh_token)]
+            : []),
+        ]);
+        return { icuKey: newKey, icuId };
+      } catch {
+        // best-effort — if refresh fails, try with the existing (possibly
+        // expired) token; the push errors will surface in IntervalsSyncResult
+        // and the week will NOT be marked synced, so the next load retries.
+      }
+    }
+  }
+
   return { icuKey, icuId };
 }
 

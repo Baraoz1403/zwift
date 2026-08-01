@@ -302,7 +302,13 @@ export async function syncPlanToIcuAndMark(
   const { oldest, newest } = wideCleanupRange();
   const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
 
-  await markIntervalsSynced(athleteId, weekOf);
+  // Only mark synced when at least one workout was actually pushed.
+  // If the push failed (expired OAuth token, ICU unreachable, 0 workouts
+  // pushed), we intentionally leave the flag unset so the next plan load
+  // retries automatically — fixing the root cause of "runs once, never again".
+  if (narrow.pushed > 0) {
+    await markIntervalsSynced(athleteId, weekOf);
+  }
 
   return {
     pushed: narrow.pushed,
