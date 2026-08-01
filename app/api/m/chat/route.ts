@@ -5,7 +5,8 @@ import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCreden
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
-import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals } from "@/lib/intervals";
+import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals, fetchIcuActivities } from "@/lib/intervals";
+import { buildIcuPerformanceContext } from "@/lib/icu-performance-context";
 import { generateZwoXml } from "@/lib/zwo";
 import type { WeeklyWorkout } from "@/lib/ai";
 
@@ -176,8 +177,11 @@ async function execUpdateWorkout(
       w => w.day?.toLowerCase() === input.day.toLowerCase(),
     );
 
+    // Destructure away old structure blocks — Marco's description replaces them.
+    // Keeping old structure would show an outdated power chart after the update.
+    const { structure: _cleared, ...oldWorkout } = (idx >= 0 ? plan.workouts[idx] : {}) as Partial<WeeklyWorkout>;
     const updatedWorkout: WeeklyWorkout = {
-      ...(idx >= 0 ? plan.workouts[idx] : {}),
+      ...oldWorkout,
       day: input.day,
       title: input.title,
       durationMin: input.durationMin,
@@ -250,7 +254,7 @@ export async function POST(req: NextRequest) {
   const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
   // ── Load all context in parallel ──────────────────────────────────────────
-  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw, icuPerfCtxRaw] = await Promise.all([
+  const [state, currentPlan, loadRaw, fingerprint, storedHistoryRaw, storedPerfCtxRaw] = await Promise.all([
     getStoredAthleteState(athleteId).catch(() => null),
     getCachedPlan(athleteId, weekOf).catch(() => null),
     kvGet(`zwift:${athleteId}:training_load`).catch(() => null),
@@ -260,6 +264,22 @@ export async function POST(req: NextRequest) {
     // Contains 50/30/20-weighted summary of last 30 rides — power, HR, TSS, volume, patterns.
     kvGet(`zwift:${athleteId}:icu_perf_ctx`).catch(() => null),
   ]);
+
+  // Build ICU performance context on-demand if not yet cached.
+  // This ensures Marco always has 30-ride history even before a plan is generated.
+  let icuPerfCtxRaw = storedPerfCtxRaw;
+  if (!icuPerfCtxRaw && icuKey && icuAthleteId) {
+    try {
+      const todayD = new Date().toISOString().slice(0, 10);
+      const since  = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const acts   = await fetchIcuActivities(icuKey, icuAthleteId, since, todayD);
+      const built  = buildIcuPerformanceContext(acts);
+      if (built) {
+        icuPerfCtxRaw = built;
+        kvSet(`zwift:${athleteId}:icu_perf_ctx`, built, 7 * 24 * 60 * 60).catch(() => {});
+      }
+    } catch { /* best-effort — never fail the chat request */ }
+  }
 
   const profile = state?.riderProfile;
   const macro = state?.macroCycle;

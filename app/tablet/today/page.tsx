@@ -7,6 +7,7 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
+import { WeekDayListClient, type DayRowData, type RideSummary } from "./week-sidebar-client";
 
 const ZO = "#FF5A1F";
 
@@ -93,6 +94,7 @@ export default async function TabletTodayPage() {
   const workouts = (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? dateMap[w.day] ?? undefined }));
 
   let weekStatus: Record<string, DayStatus> = {};
+  let allActivities: import("@/lib/intervals").IcuActivity[] = [];
   let todayAvgHr: number | null = null;
   let todayActivityName: string | null = null;
   let todayActivityDurationMin: number | null = null;
@@ -128,6 +130,7 @@ export default async function TabletTodayPage() {
       icuActivities as import("@/lib/intervals").IcuActivity[],
       zwiftAsIcu,
     );
+    allActivities = activities;
     weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
 
     // Extract today's activity for bonus ride display
@@ -168,6 +171,50 @@ export default async function TabletTodayPage() {
     w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
   ).length;
   const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
+
+  // Build serializable ride summaries for completed days
+  const completedRides: Record<string, RideSummary> = {};
+  for (const a of allActivities) {
+    const date = a.start_date_local?.slice(0, 10);
+    if (date) {
+      completedRides[date] = {
+        name: (a.name as string) ?? "Ride",
+        date,
+        durationMin: a.moving_time ? Math.round((a.moving_time as number) / 60) : 0,
+        avgWatts: (a.average_watts as number | null) ?? null,
+        normalizedPower: (a.normalized_power as number | null) ?? null,
+        avgHr: (a.average_heartrate as number | null) ?? null,
+        maxHr: (a["max_heartrate"] as number | null) ?? null,
+        tss: (a.icu_training_load as number | null) ?? null,
+        distanceKm: a.distance ? Math.round((a.distance as number) / 100) / 10 : null,
+      };
+    }
+  }
+
+  // Build day rows for the client component
+  const dayRows: DayRowData[] = ALL_DAYS.map(dayName => {
+    const w        = workouts.find(x => x.day === dayName);
+    const isRest   = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
+    const dateStr  = w?.date;
+    const dateNum  = dateStr ? new Date(dateStr + "T12:00:00").getDate() : undefined;
+    const isToday  = dateStr === todayStr;
+    const dayStatus = dateStr ? (weekStatus[dateStr] as DayStatus | undefined) : undefined;
+    const rowColor  = !isRest && w ? detectZoneColor(w) : undefined;
+    const rowLabel  = !isRest && w ? detectZoneLabel(w) : undefined;
+    return {
+      dayName,
+      date: dateStr,
+      dateNum,
+      isToday,
+      isRest,
+      workoutTitle: !isRest ? w?.title : undefined,
+      zoneLabel: rowLabel,
+      zoneColor: rowColor,
+      durationMin: !isRest ? w?.durationMin : undefined,
+      status: dayStatus,
+      ride: dayStatus === "completed" && dateStr ? completedRides[dateStr] : undefined,
+    };
+  });
 
   return (
     <div style={{
@@ -511,63 +558,7 @@ export default async function TabletTodayPage() {
             <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
               This week
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {ALL_DAYS.map(dayName => {
-                const w        = workouts.find(x => x.day === dayName);
-                const isToday  = w?.date === todayStr;
-                const dayIsRest = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
-                const dayStatus: DayStatus | undefined = w?.date ? weekStatus[w.date] : undefined;
-                const rowColor = dayIsRest ? "var(--m-border)" : (w ? detectZoneColor(w) : ZO);
-                const dateNum  = w?.date ? new Date(w.date + "T12:00:00").getDate() : null;
-
-                return (
-                  <div key={dayName} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 12px", borderRadius: 4,
-                    background: isToday ? "var(--m-card-inner)" : "transparent",
-                    border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
-                    borderLeft: `3px solid ${isToday ? (dayIsRest ? "var(--m-border)" : rowColor) : "transparent"}`,
-                  }}>
-                    {/* Day bubble */}
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 4, flexShrink: 0,
-                      background: isToday ? (dayIsRest ? "rgba(100,116,139,0.08)" : `${rowColor}14`) : "var(--m-card-inner)",
-                      border: `1px solid ${isToday ? (dayIsRest ? "rgba(100,116,139,0.15)" : `${rowColor}25`) : "var(--m-border)"}`,
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
-                        {dayName.slice(0, 3)}
-                      </div>
-                      {dateNum && (
-                        <div style={{ fontSize: 16, fontWeight: 900, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
-                          {dateNum}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: 15, fontWeight: isToday ? 700 : 500,
-                        color: dayIsRest ? "var(--m-muted)" : "var(--m-text)",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>
-                        {dayIsRest ? "Rest" : w!.title}
-                      </div>
-                      {!dayIsRest && w && (
-                        <div style={{ fontSize: 13, color: rowColor as string, marginTop: 2, fontWeight: 600 }}>
-                          {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status dot */}
-                    {dayStatus === "completed" && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
-                    {dayStatus === "missed"    && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
-                  </div>
-                );
-              })}
-            </div>
+            <WeekDayListClient days={dayRows} />
           </div>
 
           {/* Plan summary */}
