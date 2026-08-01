@@ -23,7 +23,9 @@
  */
 
 const INTERVALS_API = "https://intervals.icu/api/v1";
-const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/oauth/token";
+// NOTE: The token endpoint is /api/oauth/token, NOT /oauth/token.
+// /oauth/token is an SPA route — nginx blocks POST there with 405.
+const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/api/oauth/token";
 
 /**
  * Resolve an ICU athlete ID for use in URL paths.
