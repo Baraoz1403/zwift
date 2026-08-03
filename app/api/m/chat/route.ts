@@ -461,7 +461,8 @@ export async function POST(req: NextRequest) {
   const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value ?? null;
   const cookieIcuId  = cookieStore.get("zwift_intervals_id")?.value ?? null;
   // Fall back to KV-stored creds if cookies aren't set (other device connected ICU)
-  const kvIcuCreds = cookieIcuKey ? null : await getIntervalsCredentials(athleteId).catch(() => null);
+  let kvIcuCreds: { icuKey?: string; icuId?: string } | null = null;
+  try { kvIcuCreds = cookieIcuKey ? null : await getIntervalsCredentials(athleteId); } catch { kvIcuCreds = null; }
   const icuKey    = cookieIcuKey ?? kvIcuCreds?.icuKey ?? null;
   const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
@@ -521,9 +522,8 @@ export async function POST(req: NextRequest) {
 
   // Auto-clear history after 30 minutes of inactivity
   const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
-  const rawMessages: StoredMessage[] = storedHistoryRaw
-    ? (JSON.parse(storedHistoryRaw) as StoredMessage[])
-    : [];
+  let rawMessages: StoredMessage[] = [];
+  try { rawMessages = storedHistoryRaw ? (JSON.parse(storedHistoryRaw) as StoredMessage[]) : []; } catch { rawMessages = []; }
   const lastTs = rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].ts : 0;
   const sessionExpired = lastTs > 0 && Date.now() - lastTs > SESSION_TIMEOUT_MS;
   if (sessionExpired) {
