@@ -438,7 +438,7 @@ async function execAddCoachNote(
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function GET() {
-  return NextResponse.json({ ok: true, version: "fixGetIdentity", ts: Date.now() });
+  return NextResponse.json({ ok: true, version: "debugAnthropic", ts: Date.now() });
 }
 
 export async function POST(req: NextRequest) {
@@ -677,9 +677,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!aiRes1.ok) {
-      const err = await aiRes1.text();
-      console.error("Anthropic error:", aiRes1.status, err);
-      return NextResponse.json({ ok: false, error: "AI service error." }, { status: 502 });
+      const errBody = await aiRes1.text();
+      console.error("Anthropic error:", aiRes1.status, errBody);
+      return NextResponse.json({ ok: false, error: `Anthropic ${aiRes1.status}: ${errBody.slice(0, 200)}` }, { status: 502 });
     }
 
     const data1 = await aiRes1.json();
