@@ -45,14 +45,33 @@ export default async function MobileLayout({ children }: { children: React.React
   const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
 
   // Check ICU token validity: expiry timestamp + 401-detected invalid flag
-  const { kvGet } = await import("@/lib/kv");
+  const { kvGet, kvSet } = await import("@/lib/kv");
   const [icuKvExpires, icuInvalid] = await Promise.all([
     kvGet(`zwift:${session.athleteId}:icu_expires`),
     kvGet(`zwift:${session.athleteId}:icu_invalid`),
   ]);
+  // If the key is a Bearer OAuth token and we have no stored expiry,
+  // it was set before expiry tracking was added — probe ICU to verify it's still valid.
+  // API keys (non-Bearer) never expire so skip the probe for those.
+  let icuProbeExpired = false;
+  const icuKeyKv = icuFromCookie ?? null;
+  if (!icuKvExpires && icuKeyKv?.startsWith("Bearer ")) {
+    // Quick HEAD-like check: fetch athlete profile — cheap, same auth as pushes
+    try {
+      const { fetchIntervalsAthlete } = await import("@/lib/intervals");
+      await fetchIntervalsAthlete(icuKeyKv);
+    } catch {
+      // 401 or network error — treat as expired
+      icuProbeExpired = true;
+      // Mark in KV so layout doesn't re-probe on every load
+      kvSet(`zwift:${session.athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+    }
+  }
+
   const icuTokenExpired =
     (icuKvExpires ? Number(icuKvExpires) < Date.now() : false) ||
-    icuInvalid === "1";
+    icuInvalid === "1" ||
+    icuProbeExpired;
 
   const icuConnected = !icuTokenExpired && (icuFromCookie
     ? true
