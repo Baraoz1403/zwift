@@ -15,8 +15,9 @@ import type { WorkoutStructureBlock } from "@/lib/zwo";
  * POST /api/m/chat
  *
  * Mobile + tablet coach chat. The coach has REAL capabilities:
- *   1. update_workout  — modifies a day's workout in the KV plan (persisted immediately)
- *   2. add_coach_note  — saves a coaching note to the rider fingerprint
+ *   1. update_workout  — modifies a single day's workout in the KV plan
+ *   2. rebuild_week    — replaces the ENTIRE week's plan in one call (preferred for full rebuilds)
+ *   3. add_coach_note  — saves a coaching note to the rider fingerprint
  *
  * Context fed to every request:
  *   - Full rider fingerprint summary (30+ ride history, feel scores, FTP trend)
@@ -91,6 +92,29 @@ const TOOLS = [
         note: { type: "string", description: "The coaching observation or athlete note to save permanently" },
       },
       required: ["note"],
+    },
+  },
+  {
+    name: "rebuild_week",
+    description:
+      "Replace the ENTIRE week's training plan in a single call. " +
+      "Use this when the athlete asks to: rebuild the week, generate a new plan, make the week more interesting, add more intervals, change the training focus, or when they say the current plan doesn't match their preferences. " +
+      "DO NOT use update_workout repeatedly — call rebuild_week ONCE instead. " +
+      "You provide a focus style and any specific notes; the system builds all workouts from the athlete's profile automatically.",
+    input_schema: {
+      type: "object",
+      properties: {
+        focus: {
+          type: "string",
+          enum: ["intervals", "endurance", "sweet-spot", "mixed", "recovery", "race-prep"],
+          description: "Overall training focus for the week",
+        },
+        notes: {
+          type: "string",
+          description: "Any specific athlete requests or constraints (e.g., 'athlete wants VO2max intervals, 75min sessions, no Tuesday ride'). Leave empty if no special requests.",
+        },
+      },
+      required: ["focus"],
     },
   },
 ];
@@ -210,6 +234,142 @@ interface UpdateWorkoutInput {
   targetPowerPctFtp?: string;
   type: string;
   reason?: string;
+}
+
+interface RebuildWeekInput {
+  focus: "intervals" | "endurance" | "sweet-spot" | "mixed" | "recovery" | "race-prep";
+  notes?: string;
+}
+
+/** Build a full week of workouts from the athlete profile + requested focus. */
+async function execRebuildWeek(
+  athleteId: string,
+  weekOf: string,
+  input: RebuildWeekInput,
+  profile: { daysRange?: string; sessionLength?: string; goals?: string[] } | null | undefined,
+  ftpW: number | null,
+): Promise<{ ok: boolean; message: string; toolAction?: string }> {
+  try {
+    const plan = await getCachedPlan(athleteId, weekOf);
+    if (!plan) return { ok: false, message: "No plan found for this week. A base plan must exist first." };
+
+    const sessionMin = parseInt(profile?.sessionLength ?? "75", 10) || 75;
+
+    // Determine riding days from daysRange (e.g. "5-6" → pick 5 or 6 days)
+    const rangeParts = (profile?.daysRange ?? "5").split("-").map(Number);
+    const targetDays = rangeParts[rangeParts.length - 1] || 5;
+
+    // Canonical day order — spread riding days intelligently
+    const ALL_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+    // Pick days evenly distributed across the week, preserving rest days
+    const ridingDayPool = ["Monday","Tuesday","Wednesday","Thursday","Saturday","Sunday","Friday"];
+    const ridingDays = ridingDayPool.slice(0, Math.min(targetDays, 6));
+    const restDays = ALL_DAYS.filter(d => !ridingDays.includes(d));
+
+    const focus = input.focus;
+    const notes = input.notes ?? "";
+
+    type WorkoutTemplate = { title: string; type: string; powerPct: string; descFn: (min: number) => string };
+    // Workout templates per focus
+    const templates: Record<string, WorkoutTemplate[]> = {
+      intervals: [
+        { title: "VO2max Intervals", type: "vo2max", powerPct: "110-120%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 5×3min @110-120% FTP / 3min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Threshold Intervals", type: "threshold", powerPct: "88-95%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×8min @88-95% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Sweet Spot Intervals", type: "sweet-spot", powerPct: "85-92%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 2×15min @85-92% FTP / 5min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Sprint & Power Intervals", type: "sprint", powerPct: "120-150%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @60-70% FTP. Main: 8×30sec @130-150% FTP / 2.5min @50% FTP. Endurance filler @65-70% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Over-Under Intervals", type: "threshold", powerPct: "88-105%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×(4min @105% / 4min @88%) FTP × 2 sets / 5min rest. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "VO2max Long Intervals", type: "vo2max", powerPct: "108-115%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×5min @108-115% FTP / 5min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+      ],
+      endurance: [
+        { title: "Aerobic Base Ride", type: "endurance", powerPct: "60-75%",
+          descFn: (m) => `Steady aerobic effort. Warmup 10min @55% FTP. Main: ${m-20}min @62-72% FTP with cadence variations every 10min. Cooldown 10min @50% FTP.` },
+        { title: "Tempo Endurance", type: "endurance", powerPct: "72-82%",
+          descFn: (m) => `Warmup 10min @55-65% FTP. Main: ${m-20}min @72-80% FTP steady tempo. Cooldown 10min @50% FTP.` },
+        { title: "Long Steady Effort", type: "endurance", powerPct: "62-70%",
+          descFn: (m) => `Pure zone-2 ride. Warmup 10min @55% FTP. Main: ${m-20}min @62-70% FTP. Cooldown 10min @50% FTP.` },
+        { title: "Cadence Drill Ride", type: "endurance", powerPct: "60-70%",
+          descFn: (m) => `Warmup 10min @55% FTP. Main: alternating 5min @95-100rpm / 5min @75-80rpm @63-70% FTP for ${m-20}min. Cooldown 10min @50% FTP.` },
+      ],
+      "sweet-spot": [
+        { title: "Sweet Spot Block", type: "sweet-spot", powerPct: "85-92%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×12min @85-92% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Extended Sweet Spot", type: "sweet-spot", powerPct: "83-90%",
+          descFn: (m) => `Warmup 10min @55-65% FTP. Main: 2×20min @83-90% FTP / 5min @55% FTP. Cooldown 10min @50% FTP.` },
+        { title: "Sweet Spot + Tempo", type: "sweet-spot", powerPct: "82-92%",
+          descFn: (m) => `Warmup 10min @55-65% FTP. Tempo block: 10min @78-83% FTP. Sweet spot: 3×8min @88-92% FTP / 3min @55% FTP. Cooldown 10min @50% FTP.` },
+      ],
+      mixed: [
+        { title: "Threshold Intervals", type: "threshold", powerPct: "88-95%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×8min @88-95% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Aerobic Endurance", type: "endurance", powerPct: "62-72%",
+          descFn: (m) => `Steady aerobic effort. Warmup 10min @55% FTP. Main: ${m-20}min @62-72% FTP. Cooldown 10min @50% FTP.` },
+        { title: "Sweet Spot Block", type: "sweet-spot", powerPct: "85-92%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×12min @85-92% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "VO2max Intervals", type: "vo2max", powerPct: "110-120%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 5×3min @110-120% FTP / 3min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Sprint Power", type: "sprint", powerPct: "120-150%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @60-70% FTP. Main: 8×30sec @130-150% FTP / 2.5min @50% FTP. Filler @65-70% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+      ],
+      recovery: [
+        { title: "Easy Recovery Spin", type: "recovery", powerPct: "45-55%",
+          descFn: (m) => `Very easy spin. All effort @45-55% FTP. High cadence 90-100rpm. Duration: ${m}min. No pressure — just flush the legs.` },
+        { title: "Active Recovery Ride", type: "recovery", powerPct: "50-60%",
+          descFn: (m) => `Easy aerobic. Warmup 10min @50% FTP. Main: ${m-15}min @50-60% FTP. Cooldown 5min @45% FTP.` },
+      ],
+      "race-prep": [
+        { title: "Race-Pace Efforts", type: "threshold", powerPct: "92-100%",
+          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 4×5min @92-100% FTP / 5min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
+        { title: "Sprint Activation", type: "sprint", powerPct: "120-150%",
+          descFn: (m) => `Warmup 15min @55-70% FTP. Main: 6×20sec max sprint / 3min easy. Openers: 3×1min @90-95% FTP / 3min easy. Cooldown 10min @50% FTP.` },
+        { title: "Threshold Block", type: "threshold", powerPct: "90-97%",
+          descFn: (m) => `Warmup 10min @55-65% FTP. Main: 3×10min @90-97% FTP / 5min @55% FTP. Cooldown 10min @50% FTP.` },
+      ],
+    };
+
+    const tpl = templates[focus] ?? templates["mixed"];
+    const updatedWorkouts: WeeklyWorkout[] = [];
+
+    // Build riding days
+    ridingDays.forEach((day, i) => {
+      const t = tpl[i % tpl.length];
+      const workout: WeeklyWorkout = {
+        day,
+        title: t.title,
+        durationMin: sessionMin,
+        type: t.type as WeeklyWorkout["type"],
+        description: t.descFn(sessionMin),
+        targetPowerPctFtp: t.powerPct,
+        structure: inferStructure(t.type, sessionMin, t.powerPct),
+      };
+      updatedWorkouts.push(workout);
+    });
+
+    // Add rest days
+    restDays.forEach(day => {
+      updatedWorkouts.push({ day, title: "Rest Day", durationMin: 0, type: "rest", description: "Full rest — recovery and adaptation." });
+    });
+
+    // Sort by canonical day order
+    updatedWorkouts.sort((a, b) => ALL_DAYS.indexOf(a.day) - ALL_DAYS.indexOf(b.day));
+
+    const summary = `${targetDays}-day ${focus} week, ${sessionMin}min sessions. ${notes ? "Notes: " + notes : ""}`;
+    await setCachedPlan(athleteId, { ...plan, workouts: updatedWorkouts, summary });
+
+    const dayList = ridingDays.map((d, i) => `${d}: ${updatedWorkouts.find(w=>w.day===d)?.title}`).join(", ");
+    return {
+      ok: true,
+      message: `Week rebuilt with ${targetDays} ${focus}-focused workouts (${sessionMin}min each). Days: ${dayList}.`,
+      toolAction: `Rebuilt week: ${targetDays}×${sessionMin}min ${focus} focus`,
+    };
+  } catch (e) {
+    return { ok: false, message: `Failed to rebuild week: ${String(e)}` };
+  }
 }
 
 async function execUpdateWorkout(
@@ -444,10 +604,10 @@ export async function POST(req: NextRequest) {
     "IMPORTANT: The ICU connection status above reflects the CURRENT real-time state. If earlier messages in this conversation mentioned communication errors or ICU issues, those are now resolved — do not repeat them or reference them unless a NEW error occurs.\n" +
     "Your name is Marco. When introducing yourself or when asked your name, say 'Marco'.\n\n" +
     "CRITICAL RULES:\n" +
-    "- When the athlete asks to change ANY workout, ALWAYS call the update_workout tool immediately — do not describe the change, just DO it.\n" +
-    "- When the athlete asks to rebuild or regenerate the whole week, call update_workout for EACH riding day one by one — do not ask for details you already have in the profile.\n" +
-    "- NEVER ask the athlete to repeat information already in the Athlete Context below (FTP, goals, training phase, session length, event date). Use it.\n" +
-    "- NEVER say 'I will do it' or 'Building now' — just call the tool immediately and confirm after.\n" +
+    "- When the athlete asks to change a SINGLE workout, call update_workout immediately. Do not describe — just DO it.\n" +
+    "- When the athlete asks to rebuild the week, add more intervals, change the training focus, or says the plan is boring/wrong — call rebuild_week ONCE. Never call update_workout multiple times for a full rebuild.\n" +
+    "- NEVER ask the athlete to repeat information already in the Athlete Context (FTP, goals, training phase, session length, event date, rides/week). Use it. If they said '5-6 rides' in their profile, rebuild_week will use it automatically.\n" +
+    "- NEVER say 'I will do it', 'Building now', or 'Let me...' — just call the tool immediately and confirm with 1-2 sentences after.\n" +
     "- When the athlete shares something important (injury, fatigue, goal change), ALWAYS call add_coach_note — then acknowledge.\n" +
     "- After calling a tool, give a brief, direct confirmation (1-2 sentences). Don't repeat the full plan.\n" +
     "- Be direct and practical. 2-4 sentences max unless the athlete asks for a detailed explanation.\n" +
@@ -542,6 +702,32 @@ export async function POST(req: NextRequest) {
                 }
                 result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen. Please reconnect Intervals.icu in Settings.`;
                 console.warn("ICU push failed after workout update:", icuPush.error);
+              }
+            }
+          }
+        } else if (block.name === "rebuild_week") {
+          const rebuildInput = block.input as RebuildWeekInput;
+          result = await execRebuildWeek(athleteId, weekOf, rebuildInput, profile, ftpEntry?.ftp ?? null);
+          if (result.ok) {
+            planUpdated = true;
+            // Auto-push all workouts to ICU after a full week rebuild
+            if (icuKey && icuAthleteId) {
+              const rebuiltPlan = await getCachedPlan(athleteId, weekOf).catch(() => null);
+              if (rebuiltPlan) {
+                let icuPushCount = 0;
+                for (const w of rebuiltPlan.workouts) {
+                  if (w.type === "rest") continue;
+                  const icuPush = await pushUpdatedWorkoutToIcu(icuKey, icuAthleteId, weekOf, w, riderFirstName);
+                  if (icuPush.pushed) icuPushCount++;
+                  else if ((icuPush as { status401?: boolean }).status401) {
+                    kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+                    break;
+                  }
+                }
+                if (icuPushCount > 0) {
+                  result.message += ` Pushed ${icuPushCount} workouts to Intervals.icu — Zwift will sync automatically.`;
+                  result.toolAction = (result.toolAction ?? "") + ` → pushed ${icuPushCount} to ICU`;
+                }
               }
             }
           }
