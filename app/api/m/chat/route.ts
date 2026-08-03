@@ -349,9 +349,18 @@ export async function POST(req: NextRequest) {
   let trainingLoad: Record<string, unknown> | null = null;
   try { if (loadRaw) trainingLoad = JSON.parse(loadRaw); } catch { /* */ }
 
-  const chatHistory: StoredMessage[] = storedHistoryRaw
+  // Auto-clear history after 30 minutes of inactivity
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+  const rawMessages: StoredMessage[] = storedHistoryRaw
     ? (JSON.parse(storedHistoryRaw) as StoredMessage[])
     : [];
+  const lastTs = rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].ts : 0;
+  const sessionExpired = lastTs > 0 && Date.now() - lastTs > SESSION_TIMEOUT_MS;
+  if (sessionExpired) {
+    // Clear stale history silently — athlete starts a fresh session
+    kvSet(CHAT_HISTORY_KEY(athleteId), "[]", 1).catch(() => {});
+  }
+  const chatHistory: StoredMessage[] = sessionExpired ? [] : rawMessages;
 
   // ── Build system prompt ───────────────────────────────────────────────────
   const todayStr = new Date().toISOString().slice(0, 10);
