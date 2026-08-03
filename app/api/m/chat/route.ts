@@ -483,14 +483,19 @@ export async function POST(req: NextRequest) {
   const riderFirstName = cachedIdentity?.firstName ?? undefined;
 
   // Build ICU performance context on-demand if not yet cached.
-  // This ensures Marco always has 30-ride history even before a plan is generated.
+  // Skip if icu_invalid is set — avoids hanging on a known-bad token.
   let icuPerfCtxRaw = storedPerfCtxRaw;
-  if (!icuPerfCtxRaw && icuKey && icuAthleteId) {
+  const preCheckInvalid = await kvGet(`zwift:${athleteId}:icu_invalid`).catch(() => null);
+  if (!icuPerfCtxRaw && icuKey && icuAthleteId && preCheckInvalid !== "1") {
     try {
       const todayD = new Date().toISOString().slice(0, 10);
       const since  = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      const acts   = await fetchIcuActivities(icuKey, icuAthleteId, since, todayD);
-      const built  = buildIcuPerformanceContext(acts);
+      // 5-second timeout to prevent Vercel function timeout
+      const acts = await Promise.race([
+        fetchIcuActivities(icuKey, icuAthleteId, since, todayD),
+        new Promise<never>((_, r) => setTimeout(() => r(new Error("ICU fetch timeout")), 5000)),
+      ]);
+      const built = buildIcuPerformanceContext(acts);
       if (built) {
         icuPerfCtxRaw = built;
         kvSet(`zwift:${athleteId}:icu_perf_ctx`, built, 7 * 24 * 60 * 60).catch(() => {});
@@ -511,12 +516,8 @@ export async function POST(req: NextRequest) {
   let trainingLoad: Record<string, unknown> | null = null;
   try { if (loadRaw) trainingLoad = JSON.parse(loadRaw); } catch { /* */ }
 
-  // Force-refresh ICU perf context if icu_invalid is set — ensures 401 detection runs
-  const icuInvalidFlag = await kvGet(`zwift:${athleteId}:icu_invalid`);
-  if (icuInvalidFlag === "1") {
-    // Clear cached perf context so fetchIcuActivities runs and re-confirms the 401
-    kvSet(`zwift:${athleteId}:icu_perf_ctx`, "", 1).catch(() => {});
-  }
+  // icu_invalid check already done above (preCheckInvalid) — reuse it here
+  const icuInvalidFlag = preCheckInvalid;
 
   // Auto-clear history after 30 minutes of inactivity
   const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
