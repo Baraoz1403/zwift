@@ -438,7 +438,7 @@ async function execAddCoachNote(
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function GET() {
-  return NextResponse.json({ ok: true, version: "c41ea9b", ts: Date.now() });
+  return NextResponse.json({ ok: true, version: "outerTryCatch", ts: Date.now() });
 }
 
 export async function POST(req: NextRequest) {
@@ -460,6 +460,9 @@ export async function POST(req: NextRequest) {
 
   const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
+
+  // Outer try-catch wraps all business logic so any uncaught error returns JSON (not empty 500)
+  try {
 
   // ── ICU credentials (needed for auto-push after workout update) ───────────
   const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value ?? null;
@@ -495,9 +498,12 @@ export async function POST(req: NextRequest) {
     try {
       const todayD = new Date().toISOString().slice(0, 10);
       const since  = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      // 5-second timeout to prevent Vercel function timeout
+      // 5-second timeout to prevent Vercel function timeout.
+      // Assign to variable first so we can suppress the unhandled rejection if timeout wins.
+      const actsPromise = fetchIcuActivities(icuKey, icuAthleteId, since, todayD);
+      actsPromise.catch(() => {}); // prevent unhandled rejection if timeout fires first
       const acts = await Promise.race([
-        fetchIcuActivities(icuKey, icuAthleteId, since, todayD),
+        actsPromise,
         new Promise<never>((_, r) => setTimeout(() => r(new Error("ICU fetch timeout")), 5000)),
       ]);
       const built = buildIcuPerformanceContext(acts);
@@ -540,7 +546,7 @@ export async function POST(req: NextRequest) {
   const ERROR_PATTERNS = ["בעיית תקשורת", "communication error", "network error", "couldn't get a response", "AI service error"];
   const cleanedMessages = sessionExpired ? [] : rawMessages.filter(m => {
     if (m.role !== "coach") return true;
-    const lower = m.text.toLowerCase();
+    const lower = (m.text ?? "").toLowerCase();
     return !ERROR_PATTERNS.some(p => lower.includes(p.toLowerCase()));
   });
   const chatHistory: StoredMessage[] = cleanedMessages;
@@ -805,5 +811,12 @@ export async function POST(req: NextRequest) {
     const stack = err instanceof Error ? (err.stack ?? "") : "";
     console.error("Coach chat error:", msg, stack);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+  }
+  } catch (outerErr) {
+    // Catches any error thrown before the Anthropic section (KV reads, fingerprint, prompt building, etc.)
+    const msg = outerErr instanceof Error ? outerErr.message : String(outerErr);
+    const stack = outerErr instanceof Error ? (outerErr.stack ?? "") : "";
+    console.error("Coach chat outer error:", msg, stack);
+    return NextResponse.json({ ok: false, error: `Handler error: ${msg}` }, { status: 500 });
   }
 }
