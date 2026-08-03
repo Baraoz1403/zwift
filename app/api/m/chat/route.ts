@@ -360,7 +360,16 @@ export async function POST(req: NextRequest) {
     // Clear stale history silently — athlete starts a fresh session
     kvSet(CHAT_HISTORY_KEY(athleteId), "[]", 1).catch(() => {});
   }
-  const chatHistory: StoredMessage[] = sessionExpired ? [] : rawMessages;
+  // Filter out coach messages that contain error indicators — these are stale
+  // "communication error" messages that would mislead Marco into continuing
+  // the error narrative even after the underlying issue is resolved.
+  const ERROR_PATTERNS = ["בעיית תקשורת", "communication error", "network error", "couldn't get a response", "AI service error"];
+  const cleanedMessages = sessionExpired ? [] : rawMessages.filter(m => {
+    if (m.role !== "coach") return true;
+    const lower = m.text.toLowerCase();
+    return !ERROR_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+  });
+  const chatHistory: StoredMessage[] = cleanedMessages;
 
   // ── Build system prompt ───────────────────────────────────────────────────
   const todayStr = new Date().toISOString().slice(0, 10);
