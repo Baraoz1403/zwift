@@ -13,7 +13,15 @@ export async function GET(_req: NextRequest) {
 
   try {
     const stored = await kvGet(`zwift:${session.athleteId}:chat_history`);
-    const messages = stored ? JSON.parse(stored) : [];
+    const messages: Array<{ ts?: number }> = stored ? JSON.parse(stored) : [];
+    // Auto-clear if last message is older than 30 minutes
+    const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+    const lastTs = messages.length > 0 ? (messages[messages.length - 1].ts ?? 0) : 0;
+    if (lastTs > 0 && Date.now() - lastTs > SESSION_TIMEOUT_MS) {
+      const { kvSet } = await import("@/lib/kv");
+      kvSet(`zwift:${session.athleteId}:chat_history`, "[]", 1).catch(() => {});
+      return NextResponse.json({ messages: [] });
+    }
     return NextResponse.json({ messages });
   } catch {
     return NextResponse.json({ messages: [] });
