@@ -44,25 +44,26 @@ export default async function MobileLayout({ children }: { children: React.React
   // ── Intervals.icu gate ───────────────────────────────────────────────────
   const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
 
-  // Check ICU token expiry from KV — detect stale tokens even when KV key exists
+  // Check ICU token validity: expiry timestamp + 401-detected invalid flag
   const { kvGet } = await import("@/lib/kv");
-  const icuKvExpires = await kvGet(`zwift:${session.athleteId}:icu_expires`);
-  // Expired when icu_expires is recorded and the timestamp has passed
-  const icuTokenExpired = icuKvExpires ? Number(icuKvExpires) < Date.now() : false;
+  const [icuKvExpires, icuInvalid] = await Promise.all([
+    kvGet(`zwift:${session.athleteId}:icu_expires`),
+    kvGet(`zwift:${session.athleteId}:icu_invalid`),
+  ]);
+  const icuTokenExpired =
+    (icuKvExpires ? Number(icuKvExpires) < Date.now() : false) ||
+    icuInvalid === "1";
 
   const icuConnected = !icuTokenExpired && (icuFromCookie
     ? true
     : !!(await getIntervalsCredentials(String(session.athleteId))));
 
   if (!icuConnected || icuTokenExpired) {
-    // Either never connected, or token is expired — redirect to re-auth if we
-    // have a stored key (so athlete never sees the first-time connect screen
-    // again after a token rotation). Otherwise show the first-time connect screen.
+    // Token expired or invalidated by a 401 — show reconnect screen if we have
+    // a stored key, otherwise show first-time connect screen.
     const storedKey = await kvGet(`zwift:${session.athleteId}:icu_key`);
-    if (storedKey?.startsWith("Bearer ") || icuFromCookie) {
-      redirect(`/api/intervals/oauth-start?from=m`);
-    }
-    return <MobileIcuConnect />;
+    const hasHadIcu = storedKey?.startsWith("Bearer ") || !!icuFromCookie;
+    return hasHadIcu ? <MobileIcuConnect reconnect /> : <MobileIcuConnect />;
   }
 
   // Read persisted theme preference (cookie set by ThemeToggleButton client component)

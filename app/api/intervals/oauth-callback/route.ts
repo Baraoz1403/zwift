@@ -142,6 +142,8 @@ export async function GET(req: NextRequest) {
         // Always store expiry so the layout can detect when to trigger silent re-auth.
         // Also store refresh token if provided (intervals.icu currently doesn't provide one).
         kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt)),
+        // Clear the invalid flag set by the chat route when it detects a 401
+        kvSet(`zwift:${resolvedAthleteId}:icu_invalid`, "0", 1),
         ...(tokens.refresh_token ? [
           kvSet(`zwift:${resolvedAthleteId}:icu_refresh`, tokens.refresh_token),
         ] : []),

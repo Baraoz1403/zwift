@@ -49,25 +49,27 @@ export default async function TabletLayout({ children }: { children: React.React
   const weekOf    = mondayOfCurrentWeek();
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
 
-  // Check ICU token expiry before the main data fetch
+  // Check ICU token validity: expiry timestamp + 401-detected invalid flag
   const { kvGet } = await import("@/lib/kv");
-  const icuKvExpires = await kvGet(`zwift:${athleteId}:icu_expires`);
-  const icuTokenExpired = icuKvExpires ? Number(icuKvExpires) < Date.now() : false;
+  const [icuKvExpires, icuInvalid] = await Promise.all([
+    kvGet(`zwift:${athleteId}:icu_expires`),
+    kvGet(`zwift:${athleteId}:icu_invalid`),
+  ]);
+  const icuTokenExpired =
+    (icuKvExpires ? Number(icuKvExpires) < Date.now() : false) ||
+    icuInvalid === "1";
 
-  // If token is expired, redirect to re-auth immediately (before expensive data fetches)
+  // If token is expired/invalid, show reconnect screen before expensive data fetches
   if (icuTokenExpired) {
     const storedKey = await kvGet(`zwift:${athleteId}:icu_key`);
-    if (storedKey?.startsWith("Bearer ") || cookieKey) {
-      redirect(`/api/intervals/oauth-start?from=tablet`);
-    }
-    // No stored key at all — show first-time connect screen
+    const hasHadIcu = storedKey?.startsWith("Bearer ") || !!cookieKey;
     const theme  = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
     const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
     return (
       <>
         <style>{`html,body{background-color:${bodyBg}!important;margin:0;overflow:hidden!important;position:fixed!important;width:100%!important;height:100%!important;overscroll-behavior:none!important}`}</style>
         <div data-mobile-shell data-mobile-theme={theme} style={{ minHeight:"100dvh", background:"var(--m-bg)", fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif" }}>
-          <MobileIcuConnect />
+          {hasHadIcu ? <MobileIcuConnect reconnect /> : <MobileIcuConnect />}
         </div>
       </>
     );
@@ -123,19 +125,17 @@ export default async function TabletLayout({ children }: { children: React.React
       weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Jerusalem",
     });
 
-    // ICU gate — show connect screen if not set up
+    // ICU gate — show reconnect screen if previously connected, first-time screen if not
     if (!icuConnected) {
       const storedKey = await kvGet(`zwift:${athleteId}:icu_key`);
+      const hasHadIcu = storedKey?.startsWith("Bearer ") || !!cookieKey;
       const theme   = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
       const bodyBg  = theme === "light" ? "#f5f7fa" : "#0a0f1a";
-      if (storedKey?.startsWith("Bearer ")) {
-        redirect(`/api/intervals/oauth-start?from=tablet`);
-      }
       return (
         <>
           <style>{`html,body{background-color:${bodyBg}!important;margin:0;overflow:hidden!important;position:fixed!important;width:100%!important;height:100%!important;overscroll-behavior:none!important}`}</style>
           <div data-mobile-shell data-mobile-theme={theme} style={{ minHeight:"100dvh", background:"var(--m-bg)", fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif" }}>
-            <MobileIcuConnect />
+            {hasHadIcu ? <MobileIcuConnect reconnect /> : <MobileIcuConnect />}
           </div>
         </>
       );

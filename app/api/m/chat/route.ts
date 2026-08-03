@@ -333,7 +333,14 @@ export async function POST(req: NextRequest) {
         icuPerfCtxRaw = built;
         kvSet(`zwift:${athleteId}:icu_perf_ctx`, built, 7 * 24 * 60 * 60).catch(() => {});
       }
-    } catch { /* best-effort — never fail the chat request */ }
+    } catch (e: unknown) {
+      // If ICU returns 401, mark token as invalid so the layout shows reconnect screen
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
+        kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+      }
+      /* best-effort — never fail the chat request */
+    }
   }
 
   const profile = state?.riderProfile;
