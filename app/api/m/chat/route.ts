@@ -9,6 +9,7 @@ import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals, 
 import { buildIcuPerformanceContext } from "@/lib/icu-performance-context";
 import { generateZwoXml } from "@/lib/zwo";
 import type { WeeklyWorkout } from "@/lib/ai";
+import type { WorkoutStructureBlock } from "@/lib/zwo";
 
 /**
  * POST /api/m/chat
@@ -160,6 +161,45 @@ async function pushUpdatedWorkoutToIcu(
 
 // ── Tool execution ────────────────────────────────────────────────────────────
 
+/**
+ * Regenerate WorkoutStructureBlock[] from coach update inputs.
+ * Rebuilds the power graph and session-structure panel after a coach edit.
+ * Replaces clearing structure (which left just a 🚴 placeholder).
+ */
+function inferStructure(type: string, durationMin: number, targetPowerPctFtp?: string): WorkoutStructureBlock[] {
+  const nums = (targetPowerPctFtp ?? "").match(/\d+/g)?.map(Number) ?? [];
+  const mainPower = nums.length >= 2 ? ((nums[0] + nums[1]) / 2) / 100
+                  : nums.length === 1 ? nums[0] / 100
+                  : 0.70;
+  const t = type.toLowerCase();
+  const warmMin = Math.max(5, Math.round(durationMin * 0.15));
+  const coolMin = Math.min(5, Math.max(3, Math.round(durationMin * 0.08)));
+  const mainMin = Math.max(1, durationMin - warmMin - coolMin);
+
+  if (t.includes("interval") || t.includes("sweet") || t.includes("threshold") || t.includes("vo2")) {
+    const onMin  = t.includes("vo2") ? 3 : t.includes("threshold") ? 8 : 5;
+    const offMin = Math.max(2, Math.round(onMin * 0.5));
+    const repeats = Math.max(2, Math.round(mainMin / (onMin + offMin)));
+    return [
+      { type: "warmup",    durationMin: warmMin,                   powerFtp: 0.60, label: "Warm up" },
+      { type: "intervals", durationMin: repeats * (onMin + offMin), powerFtp: mainPower, recoveryPowerFtp: 0.50, repeats, onSec: onMin * 60, offSec: offMin * 60, label: "Main set" },
+      { type: "cooldown",  durationMin: coolMin,                   powerFtp: 0.50, label: "Cool down" },
+    ];
+  }
+  if (t.includes("recover")) {
+    return [
+      { type: "warmup",      durationMin: warmMin, powerFtp: mainPower, label: "Easy start" },
+      { type: "steadystate", durationMin: mainMin, powerFtp: mainPower, label: "Easy effort" },
+      { type: "cooldown",    durationMin: coolMin, powerFtp: 0.45,      label: "Cool down" },
+    ];
+  }
+  return [
+    { type: "warmup",      durationMin: warmMin, powerFtp: mainPower, label: "Warm up" },
+    { type: "steadystate", durationMin: mainMin, powerFtp: mainPower, label: "Main effort" },
+    { type: "cooldown",    durationMin: coolMin, powerFtp: 0.50,      label: "Cool down" },
+  ];
+}
+
 interface UpdateWorkoutInput {
   day: string;
   title: string;
@@ -186,6 +226,7 @@ async function execUpdateWorkout(
     // Destructure away old structure blocks — Marco's description replaces them.
     // Keeping old structure would show an outdated power chart after the update.
     const { structure: _cleared, ...oldWorkout } = (idx >= 0 ? plan.workouts[idx] : {}) as Partial<WeeklyWorkout>;
+    const effectivePowerPct = input.targetPowerPctFtp ?? (oldWorkout as WeeklyWorkout).targetPowerPctFtp;
     const updatedWorkout: WeeklyWorkout = {
       ...oldWorkout,
       day: input.day,
@@ -193,7 +234,10 @@ async function execUpdateWorkout(
       durationMin: input.durationMin,
       type: input.type,
       ...(input.description ? { description: input.description } : {}),
-      ...(input.targetPowerPctFtp ? { targetPowerPctFtp: input.targetPowerPctFtp } : {}),
+      ...(effectivePowerPct ? { targetPowerPctFtp: effectivePowerPct } : {}),
+      // Regenerate structure from updated type/duration/power so the graph and
+      // session-structure panel show the new workout (not 🚴 placeholder).
+      structure: inferStructure(input.type, input.durationMin, effectivePowerPct),
     };
 
     const updatedWorkouts = [...plan.workouts];
