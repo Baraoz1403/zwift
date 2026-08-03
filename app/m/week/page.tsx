@@ -115,7 +115,14 @@ export default async function MobileWeekPage({
           ? Promise.race([
               fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
               new Promise<never>((_, rej) => setTimeout(() => rej(new Error("icu_timeout")), 4000)),
-            ]).catch(() => [])
+            ]).catch((e: unknown) => {
+              const msg = e instanceof Error ? e.message : String(e);
+              if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
+                const { kvSet } = await import("@/lib/kv");
+                kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+              }
+              return [];
+            })
           : Promise.resolve([]),
         Promise.race([
           fetchActivities(session.accessToken, session.athleteId!, 50),

@@ -24,8 +24,20 @@ export default function MobileLoginScreen() {
         setLoading(false);
         return;
       }
-      // All devices → mobile app
-      window.location.href = "/m/today";
+      // Detect device type and send to the right interface
+      const isIpad =
+        /iPad/.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+      const isDesktop =
+        !isIpad &&
+        navigator.maxTouchPoints === 0 &&
+        !(/Android|iPhone|iPod/.test(navigator.userAgent));
+      if (isIpad || isDesktop) {
+        document.cookie = "device_hint=tablet; path=/; max-age=31536000; SameSite=Lax";
+        window.location.href = "/tablet/today";
+      } else {
+        window.location.href = "/m/today";
+      }
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
