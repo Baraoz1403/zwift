@@ -94,6 +94,15 @@ export default async function MobileWeekPage({
 
   // Fetch activities — ICU + Zwift direct merge (current week only; future weeks have no rides)
   let weekStatus: Record<string, string> = {};
+  let bonusActivities: Record<string, {
+    durationMin?: number;
+    avgPower?: number;
+    normalizedPower?: number;
+    avgHr?: number;
+    tss?: number;
+    distanceKm?: number;
+    sport?: string;
+  }> = {};
   if (isCurrentWeek) {
     try {
       const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
@@ -126,6 +135,22 @@ export default async function MobileWeekPage({
         zwiftAsIcu,
       );
       weekStatus = computeWeekStatus(workouts, activities, todayStr, weekDates);
+
+      // Extract activity data for bonus days so WeekView can show a rich card
+      for (const a of activities) {
+        const d = (a.start_date_local ?? "").slice(0, 10);
+        if (weekStatus[d] === "bonus") {
+          bonusActivities[d] = {
+            durationMin: a.moving_time ? Math.round(a.moving_time / 60) : undefined,
+            avgPower: a.average_watts ?? undefined,
+            normalizedPower: a.normalized_power ?? undefined,
+            avgHr: a.average_heartrate ?? undefined,
+            tss: a.icu_training_load ?? undefined,
+            distanceKm: a.distance ? Math.round(a.distance / 100) / 10 : undefined,
+            sport: a.type ?? undefined,
+          };
+        }
+      }
     } catch { /* best-effort */ }
   }
 
@@ -155,6 +180,7 @@ export default async function MobileWeekPage({
           today={todayStr}
           summary={plan?.summary ?? null}
           weekStatus={weekStatus}
+          bonusActivities={bonusActivities}
           prevWeekHref={prevWeekHref}
           nextWeekHref={nextWeekHref}
           isCurrentWeek={isCurrentWeek}

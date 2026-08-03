@@ -111,6 +111,7 @@ export default async function TabletWeekPage({
 
   // ── Activity fetch (current week only — future weeks have no rides) ─────
   let weekStatus: Record<string, DayStatus> = {};
+  let bonusActivities: Record<string, import("@/app/m/week/week-view").BonusActivityInfo> = {};
   let todayActivityName: string | null = null;
   let todayActivityDurationMin: number | null = null;
   let todayAvgHr: number | null = null;
@@ -145,6 +146,20 @@ export default async function TabletWeekPage({
         zwiftAsIcu,
       );
       weekStatus = computeWeekStatus(workoutsWithDates, activities, today, weekDates);
+      for (const a of activities) {
+        const d = (a.start_date_local ?? "").slice(0, 10);
+        if (weekStatus[d] === "bonus") {
+          bonusActivities[d] = {
+            durationMin: a.moving_time ? Math.round(a.moving_time / 60) : undefined,
+            avgPower: a.average_watts ?? undefined,
+            normalizedPower: a.normalized_power ?? undefined,
+            avgHr: a.average_heartrate ?? undefined,
+            tss: a.icu_training_load ?? undefined,
+            distanceKm: a.distance ? Math.round(a.distance / 100) / 10 : undefined,
+            sport: a.type ?? undefined,
+          };
+        }
+      }
 
       const todayAct = activities.find(a => (a.start_date_local ?? "").slice(0, 10) === today);
       if (todayAct) {
@@ -181,6 +196,7 @@ export default async function TabletWeekPage({
             today={today}
             summary={plan?.summary ?? null}
             weekStatus={weekStatus}
+            bonusActivities={bonusActivities}
             prevWeekHref={prevWeekHref}
             nextWeekHref={nextWeekHref}
             isCurrentWeek={isCurrentWeek}
@@ -194,6 +210,7 @@ export default async function TabletWeekPage({
           weekDisplayNum={weekDisplayNum}
           workouts={workoutsWithDates}
           weekStatus={weekStatus}
+          bonusActivities={bonusActivities}
           todayStr={today}
           planSummary={plan?.summary ?? null}
           weekWorkoutCount={weekWorkoutCount}
