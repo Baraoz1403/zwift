@@ -165,13 +165,13 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
           const isToday = w?.date === today;
           const zone = w ? detectZone(w) : "rest";
           const colors = ZONE_COLOR[zone] ?? ZONE_COLOR.rest;
+          const dayStatus = w?.date ? weekStatus[w.date] : undefined;
           const isBonus = dayStatus === "bonus";
           const bonusInfo: BonusActivityInfo | undefined = isBonus
             ? (bonusActivities[w?.date ?? ""] ?? undefined)
             : undefined;
           const isRest = !isBonus && (zone === "rest" || !w);
           const label = formatDayLabel(w?.date, dayName);
-          const dayStatus = w?.date ? weekStatus[w.date] : undefined;
           const isOpen = expanded === dayName;
 
           const statusMeta =
