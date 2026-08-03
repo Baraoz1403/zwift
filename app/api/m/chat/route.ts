@@ -155,7 +155,9 @@ async function pushUpdatedWorkoutToIcu(
 
     return { pushed: result.ok, error: result.error };
   } catch (e) {
-    return { pushed: false, error: e instanceof Error ? e.message : String(e) };
+    const errMsg = e instanceof Error ? e.message : String(e);
+    // Surface 401 so the caller can set icu_invalid flag
+    return { pushed: false, error: errMsg, status401: errMsg.includes("401") || errMsg.toLowerCase().includes("unauthorized") };
   }
 }
 
@@ -349,6 +351,13 @@ export async function POST(req: NextRequest) {
   let trainingLoad: Record<string, unknown> | null = null;
   try { if (loadRaw) trainingLoad = JSON.parse(loadRaw); } catch { /* */ }
 
+  // Force-refresh ICU perf context if icu_invalid is set — ensures 401 detection runs
+  const icuInvalidFlag = await kvGet(`zwift:${athleteId}:icu_invalid`);
+  if (icuInvalidFlag === "1") {
+    // Clear cached perf context so fetchIcuActivities runs and re-confirms the 401
+    kvSet(`zwift:${athleteId}:icu_perf_ctx`, "", 1).catch(() => {});
+  }
+
   // Auto-clear history after 30 minutes of inactivity
   const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
   const rawMessages: StoredMessage[] = storedHistoryRaw
@@ -435,11 +444,14 @@ export async function POST(req: NextRequest) {
     "IMPORTANT: The ICU connection status above reflects the CURRENT real-time state. If earlier messages in this conversation mentioned communication errors or ICU issues, those are now resolved — do not repeat them or reference them unless a NEW error occurs.\n" +
     "Your name is Marco. When introducing yourself or when asked your name, say 'Marco'.\n\n" +
     "CRITICAL RULES:\n" +
-    "- When the athlete asks to change ANY workout, ALWAYS call the update_workout tool — do not just describe the change.\n" +
+    "- When the athlete asks to change ANY workout, ALWAYS call the update_workout tool immediately — do not describe the change, just DO it.\n" +
+    "- When the athlete asks to rebuild or regenerate the whole week, call update_workout for EACH riding day one by one — do not ask for details you already have in the profile.\n" +
+    "- NEVER ask the athlete to repeat information already in the Athlete Context below (FTP, goals, training phase, session length, event date). Use it.\n" +
+    "- NEVER say 'I will do it' or 'Building now' — just call the tool immediately and confirm after.\n" +
     "- When the athlete shares something important (injury, fatigue, goal change), ALWAYS call add_coach_note — then acknowledge.\n" +
     "- After calling a tool, give a brief, direct confirmation (1-2 sentences). Don't repeat the full plan.\n" +
     "- Be direct and practical. 2-4 sentences max unless the athlete asks for a detailed explanation.\n" +
-    "- Always respect the rider's wishes. If they want to swap or drop a workout, do it — don't argue.\n\n" +
+    "- Always respect the rider's wishes. If they want swapped or harder workouts, do it without argument.\n\n" +
     "WORKOUT UPDATE RULE — NON-NEGOTIABLE:\n" +
     "- ALWAYS provide 'description' when calling update_workout. NEVER omit it.\n" +
     "- The description must include the full block structure: warmup → intervals → cooldown.\n" +
@@ -524,8 +536,11 @@ export async function POST(req: NextRequest) {
                 result.message += " Also pushed to Intervals.icu (Zwift will sync automatically).";
                 result.toolAction = (result.toolAction ?? "") + " → pushed to ICU";
               } else {
-                // Surface the failure to the AI so it can report it to the athlete
-                result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen.`;
+                // If 401, mark ICU token as invalid so the layout shows reconnect screen
+                if ((icuPush as { status401?: boolean }).status401) {
+                  kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+                }
+                result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen. Please reconnect Intervals.icu in Settings.`;
                 console.warn("ICU push failed after workout update:", icuPush.error);
               }
             }
