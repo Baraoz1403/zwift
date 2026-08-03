@@ -437,6 +437,10 @@ async function execAddCoachNote(
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
+export async function GET() {
+  return NextResponse.json({ ok: true, version: "c41ea9b", ts: Date.now() });
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
