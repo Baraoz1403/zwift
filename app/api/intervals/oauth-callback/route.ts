@@ -155,6 +155,18 @@ export async function GET(req: NextRequest) {
       // take 30–60 s. The nightly cron and next app load both retry if needed.
       void ensurePlanProvisioned(resolvedAthleteId, session.accessToken).catch(() => {});
 
+      // Also re-push current week's plan to ICU immediately after reconnect,
+      // so workouts appear in Zwift without waiting for next Monday's cron.
+      import("@/lib/headless-sync").then(async ({ syncPlanToIcuAndMark }) => {
+        const { getCachedPlan } = await import("@/lib/kv-plan-state");
+        const { mondayOfCurrentWeek } = await import("@/lib/periodization");
+        const weekOf = mondayOfCurrentWeek();
+        const plan = await getCachedPlan(resolvedAthleteId!, weekOf).catch(() => null);
+        if (plan) {
+          await syncPlanToIcuAndMark(resolvedAthleteId!, weekOf, plan, new Set()).catch(() => {});
+        }
+      }).catch(() => {});
+
       // Auto-register ICU webhook for real-time WhatsApp feedback after rides
       const webhookUrl = `${req.nextUrl.origin}/api/webhooks/intervals`;
       void ensureIcuWebhookRegistered(accessTokenValue, athleteId, webhookUrl).catch(() => {});

@@ -67,7 +67,12 @@ export default async function TabletSettingsPage() {
               </div>
             </div>
             {icuConnected ? (
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <a href="/api/intervals/oauth-start?from=tablet" style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textDecoration: "none", padding: "6px 12px", background: "var(--m-btn-muted)", borderRadius: 8 }}>
+                  Reconnect
+                </a>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
+              </div>
             ) : (
               <a href="/api/intervals/oauth-start?from=tablet" style={{ fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>
                 Connect
