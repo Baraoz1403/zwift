@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getCachedIdentity } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getRiderIdentity as getCachedIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
@@ -438,7 +438,7 @@ async function execAddCoachNote(
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function GET() {
-  return NextResponse.json({ ok: true, version: "outerTryCatch", ts: Date.now() });
+  return NextResponse.json({ ok: true, version: "fixGetIdentity", ts: Date.now() });
 }
 
 export async function POST(req: NextRequest) {
