@@ -797,7 +797,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, reply, planUpdated, toolAction });
 
   } catch (err) {
-    console.error("Coach chat error:", err);
-    return NextResponse.json({ ok: false, error: "Internal error." }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? (err.stack ?? "") : "";
+    console.error("Coach chat error:", msg, stack);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
