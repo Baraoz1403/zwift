@@ -49,6 +49,30 @@ export default async function TabletLayout({ children }: { children: React.React
   const weekOf    = mondayOfCurrentWeek();
   const cookieKey = cookieStore.get("zwift_intervals_key")?.value;
 
+  // Check ICU token expiry before the main data fetch
+  const { kvGet } = await import("@/lib/kv");
+  const icuKvExpires = await kvGet(`zwift:${athleteId}:icu_expires`);
+  const icuTokenExpired = icuKvExpires ? Number(icuKvExpires) < Date.now() : false;
+
+  // If token is expired, redirect to re-auth immediately (before expensive data fetches)
+  if (icuTokenExpired) {
+    const storedKey = await kvGet(`zwift:${athleteId}:icu_key`);
+    if (storedKey?.startsWith("Bearer ") || cookieKey) {
+      redirect(`/api/intervals/oauth-start?from=tablet`);
+    }
+    // No stored key at all — show first-time connect screen
+    const theme  = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
+    const bodyBg = theme === "light" ? "#f5f7fa" : "#0a0f1a";
+    return (
+      <>
+        <style>{`html,body{background-color:${bodyBg}!important;margin:0;overflow:hidden!important;position:fixed!important;width:100%!important;height:100%!important;overscroll-behavior:none!important}`}</style>
+        <div data-mobile-shell data-mobile-theme={theme} style={{ minHeight:"100dvh", background:"var(--m-bg)", fontFamily:"-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif" }}>
+          <MobileIcuConnect />
+        </div>
+      </>
+    );
+  }
+
   // Parallel data fetch for the top bar
   let firstName: string | null = null;
   let ftp: number | null = null;
@@ -101,8 +125,12 @@ export default async function TabletLayout({ children }: { children: React.React
 
     // ICU gate — show connect screen if not set up
     if (!icuConnected) {
+      const storedKey = await kvGet(`zwift:${athleteId}:icu_key`);
       const theme   = cookieStore.get("mobileTheme")?.value === "dark" ? "dark" : "light";
       const bodyBg  = theme === "light" ? "#f5f7fa" : "#0a0f1a";
+      if (storedKey?.startsWith("Bearer ")) {
+        redirect(`/api/intervals/oauth-start?from=tablet`);
+      }
       return (
         <>
           <style>{`html,body{background-color:${bodyBg}!important;margin:0;overflow:hidden!important;position:fixed!important;width:100%!important;height:100%!important;overscroll-behavior:none!important}`}</style>

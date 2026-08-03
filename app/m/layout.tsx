@@ -43,22 +43,24 @@ export default async function MobileLayout({ children }: { children: React.React
 
   // ── Intervals.icu gate ───────────────────────────────────────────────────
   const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
-  const icuConnected = icuFromCookie
-    ? true
-    : !!(await getIntervalsCredentials(String(session.athleteId)));
 
-  if (!icuConnected) {
-    // Check if there is a stored (but possibly expired) Bearer token in KV.
-    // If so, try a silent re-auth (prompt=none) so the athlete never sees a
-    // connect screen after the initial setup. This works when the athlete is
-    // already logged into intervals.icu and has previously approved this client.
-    // If silent re-auth fails (not logged in / consent revoked), intervals.icu
-    // redirects back with ?error=... and the ICU connect screen shows instead.
-    const { kvGet } = await import("@/lib/kv");
+  // Check ICU token expiry from KV — detect stale tokens even when KV key exists
+  const { kvGet } = await import("@/lib/kv");
+  const icuKvExpires = await kvGet(`zwift:${session.athleteId}:icu_expires`);
+  // Expired when icu_expires is recorded and the timestamp has passed
+  const icuTokenExpired = icuKvExpires ? Number(icuKvExpires) < Date.now() : false;
+
+  const icuConnected = !icuTokenExpired && (icuFromCookie
+    ? true
+    : !!(await getIntervalsCredentials(String(session.athleteId))));
+
+  if (!icuConnected || icuTokenExpired) {
+    // Either never connected, or token is expired — redirect to re-auth if we
+    // have a stored key (so athlete never sees the first-time connect screen
+    // again after a token rotation). Otherwise show the first-time connect screen.
     const storedKey = await kvGet(`zwift:${session.athleteId}:icu_key`);
-    if (storedKey?.startsWith("Bearer ")) {
-      // Had a Bearer token before — attempt silent re-auth before showing screen
-      redirect(`/api/intervals/oauth-start?from=m&prompt=none`);
+    if (storedKey?.startsWith("Bearer ") || icuFromCookie) {
+      redirect(`/api/intervals/oauth-start?from=m`);
     }
     return <MobileIcuConnect />;
   }
