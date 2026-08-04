@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { kvGet } from "@/lib/kv";
+import { kvGet, kvSet } from "@/lib/kv";
 import { buildAuthHeader } from "@/lib/intervals";
 
 export async function GET() {
@@ -8,19 +8,25 @@ export async function GET() {
   const results: Record<string, unknown> = {};
 
   for (const id of ids) {
-    const icuKey = await kvGet(`zwift:${id}:icu_key`);
-    if (!icuKey) { results[id] = { status: "no_key" }; continue; }
+    const [icuKey, icuId] = await Promise.all([
+      kvGet(`zwift:${id}:icu_key`),
+      kvGet(`zwift:${id}:icu_id`),
+    ]);
+    if (!icuKey || !icuId) { results[id] = { status: "no_key" }; continue; }
 
-    try {
-      const res = await fetch(`https://intervals.icu/api/v1/athlete/me/profile`, {
-        headers: { Authorization: buildAuthHeader(icuKey) },
-      });
-      const text = await res.text();
-      // Return first 300 chars of the profile JSON to see structure
-      results[id] = { status: res.status, profileSnippet: text.slice(0, 300) };
-    } catch (e) {
-      results[id] = { error: String(e) };
-    }
+    const numericId = icuId.startsWith("i") ? icuId.slice(1) : icuId;
+    const prefixedId = icuId.startsWith("i") ? icuId : `i${icuId}`;
+    const auth = buildAuthHeader(icuKey);
+
+    const [withPrefix, withNumeric, withMe] = await Promise.all([
+      fetch(`https://intervals.icu/api/v1/athlete/${prefixedId}/events?oldest=2026-08-03&newest=2026-08-09`, { headers: { Authorization: auth } }).then(r => r.status),
+      fetch(`https://intervals.icu/api/v1/athlete/${numericId}/events?oldest=2026-08-03&newest=2026-08-09`, { headers: { Authorization: auth } }).then(r => r.status),
+      fetch(`https://intervals.icu/api/v1/athlete/me/events?oldest=2026-08-03&newest=2026-08-09`, { headers: { Authorization: auth } }).then(r => r.status),
+    ]);
+
+    results[id] = { icuId, withPrefix, withNumeric, withMe };
+
+    // If "me" works but numeric doesn't — push via "me" path works, flag it
   }
   return NextResponse.json({ athletes: ids, results });
 }
