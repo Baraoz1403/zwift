@@ -504,7 +504,9 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   // it's allowed and physiologically appropriate for an experienced rider.
   // Adding the 3rd family gives the AI: Z2 + Tempo + Sweet Spot as options,
   // which is exactly right for a 235W FTP athlete in a Base week.
-  const familySlot = (effectiveWPerKg != null && effectiveWPerKg >= 3.0) ? 3 : 2;
+  // Threshold lowered from 3.0 to 2.5: Novice riders (2.5-3.0 W/kg) also
+  // need Sweet Spot in their eligible list.
+  const familySlot = (effectiveWPerKg != null && effectiveWPerKg >= 2.5) ? 3 : 2;
   const familiesForSelection = maxIntensitySessions > 0
     ? ranked.slice(0, Math.min(familySlot, ranked.length))
     : [];
@@ -540,6 +542,11 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
       ineligibleWorkouts.push({
         title: `[All ${fam} sessions]`,
         reason: `TSB is very negative (${tsb?.toFixed(0) ?? "unknown"}). No intensity sessions this week.`,
+      });
+    } else {
+      ineligibleWorkouts.push({
+        title: `[All ${fam} sessions]`,
+        reason: `Not a priority stimulus this week — focus on the eligible families above.`,
       });
     }
   }
