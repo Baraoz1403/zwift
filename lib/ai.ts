@@ -582,10 +582,18 @@ Every workout structure block must include explicit cadenceTarget.
   "the raw eventDate string here; " +
   "(5) if notes is present and non-empty, read it for extra rider context " +
   "(injuries, preferences, schedule constraints) and adjust accordingly. " +
-  "The sport field tells you the rider's primary discipline: 'Cycling' " +
-  "means plan only cycling sessions (Zwift rides); 'Running' means plan " +
-  "only running sessions; 'Cycling & Running' means mix both. Never " +
-  "mix sports unless sport is 'Cycling & Running'. " +
+  "SPORT OVERRIDE — this is the highest-priority rule in the plan: " +
+  "The sport field tells you the rider's primary discipline and OVERRIDES " +
+  "all ride history. Even if every ride in the history is a Zwift cycling " +
+  "ride with watts, if sport is 'Running', plan ONLY running sessions — " +
+  "no cycling whatsoever. Ignore avgWatts from ride history for running " +
+  "plans; use only durationMin and distanceKm as load signals. " +
+  "'Cycling' = only cycling sessions; 'Running' = only running sessions; " +
+  "'Cycling & Running' = mix both. Never mix sports unless sport is " +
+  "'Cycling & Running'. If you output a cycling session type (Foundation, " +
+  "Endurance, Threshold, Sweet Spot, etc.) when sport is 'Running', " +
+  "that is a critical error — output Easy Run, Long Run, Tempo Run, " +
+  "Interval Run, Walk/Run, or Recovery Run instead. " +
   "The input may also include a trainingEnvironment field on riderProfile: " +
   "'indoor' means the rider only trains on Zwift/a trainer - every single " +
   "session must be fully executable indoors on Zwift (never prescribe " +
