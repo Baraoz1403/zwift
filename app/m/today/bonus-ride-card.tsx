@@ -40,7 +40,7 @@ export default function BonusRideCard({
   const dayNum   = d.toLocaleDateString("en-US", { day: "numeric" });
 
   const displayName = activityName ?? "Bonus ride";
-  const AMBER = "#f59e0b";
+  const ZO = "#FF5A1F"; // VOLT orange — single accent color
 
   // Effort bar: use NP over avg power (more meaningful), cap at 130% FTP
   const effortWatts = normalizedPower ?? avgPower;
@@ -48,16 +48,12 @@ export default function BonusRideCard({
     ? Math.min(Math.round((effortWatts / ftp) * 100), 130)
     : null;
 
-  // Pick effort color by zone
+  // Monochromatic effort color — VOLT orange gradient, red only at all-out
   const effortColor =
-    effortPct == null ? "#64748b" :
-    effortPct < 56    ? "#22d3ee" :  // Z1 recovery
-    effortPct < 76    ? "#22c55e" :  // Z2 endurance
-    effortPct < 88    ? "#84cc16" :  // Z3 tempo
-    effortPct < 95    ? "#eab308" :  // Z4 sweet spot
-    effortPct < 106   ? "#f97316" :  // Z5 threshold
-    effortPct < 120   ? "#ef4444" :  // Z6 VO2max
-                        "#a855f7";   // Z7 neuromuscular
+    effortPct == null ? "var(--m-muted)" :
+    effortPct >= 120  ? "#ef4444" :
+    effortPct >= 76   ? ZO :        // any meaningful intensity = VOLT orange
+                        "var(--m-muted)"; // Z1/Z2 = neutral
 
   const effortLabel =
     effortPct == null ? null :
@@ -75,9 +71,9 @@ export default function BonusRideCard({
         role="button"
         onClick={() => setExpanded(e => !e)}
         style={{
-          background: "rgba(245,158,11,0.06)",
+          background: "rgba(255,90,31,0.06)",
           borderRadius: expanded ? "4px 4px 0 0" : 4,
-          border: "1px solid rgba(245,158,11,0.25)",
+          border: "1px solid rgba(255,90,31,0.25)",
           borderBottom: expanded ? "none" : undefined,
           padding: "16px 14px",
           cursor: "pointer",
@@ -89,14 +85,14 @@ export default function BonusRideCard({
           {/* Date bubble */}
           <div style={{
             width: 52, height: 52, borderRadius: 4, flexShrink: 0,
-            background: `${AMBER}18`, border: `1px solid ${AMBER}44`,
+            background: `${ZO}18`, border: `1px solid ${ZO}44`,
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", gap: 1,
           }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: AMBER, letterSpacing: ".3px" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: ZO, letterSpacing: ".3px" }}>
               {dayShort.toUpperCase()}
             </span>
-            <span style={{ fontSize: 20, fontWeight: 800, color: AMBER }}>{dayNum}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: ZO }}>{dayNum}</span>
           </div>
 
           {/* Ride info */}
@@ -111,8 +107,8 @@ export default function BonusRideCard({
                 {displayName}
               </span>
               <span style={{
-                fontSize: 13, fontWeight: 700, color: AMBER,
-                background: "rgba(245,158,11,0.12)", padding: "3px 9px", borderRadius: 3, flexShrink: 0,
+                fontSize: 13, fontWeight: 700, color: ZO,
+                background: "rgba(255,90,31,0.12)", padding: "3px 9px", borderRadius: 3, flexShrink: 0,
               }}>Bonus</span>
             </div>
 
@@ -156,7 +152,7 @@ export default function BonusRideCard({
       {expanded && (
         <div style={{
           background: "var(--m-card)",
-          border: "1px solid rgba(245,158,11,0.25)",
+          border: "1px solid rgba(255,90,31,0.25)",
           borderTop: "1px solid var(--m-border)",
           borderRadius: "0 0 4px 4px",
           padding: "14px 16px 18px",
@@ -200,7 +196,7 @@ export default function BonusRideCard({
                   ? `${Math.floor(durationMin / 60)}h${durationMin % 60 > 0 ? ` ${durationMin % 60}m` : ""}`
                   : `${durationMin} min`}
                 label="Duration"
-                color={AMBER}
+                color={ZO}
               />
             )}
             {distanceKm != null && distanceKm > 0 && (

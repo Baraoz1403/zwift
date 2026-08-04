@@ -81,14 +81,16 @@ function detectZoneLabel(w: WeeklyWorkout): string {
 }
 
 // Monochromatic power bar: VOLT orange gradient, red only at all-out max effort.
+// Rule: rgba(255,90,31,X) below 0.70 opacity on dark bg renders as brown — forbidden.
+// Solution: low zones use neutral white-alpha; intensity zones use opacity ≥ 0.72.
 function blockColor(pct: number): string {
-  if (pct >= 120) return "#ef4444";           // all-out / neuromuscular — red as danger signal
-  if (pct >= 106) return "#FF5A1F";            // VO2max — full VOLT orange
-  if (pct >= 95)  return "rgba(255,90,31,0.80)"; // threshold
-  if (pct >= 88)  return "rgba(255,90,31,0.60)"; // sweet spot
-  if (pct >= 76)  return "rgba(255,90,31,0.40)"; // tempo
-  if (pct >= 56)  return "rgba(255,90,31,0.22)"; // endurance
-  return "rgba(255,255,255,0.10)";            // recovery / Z1
+  if (pct >= 120) return "#ef4444";              // all-out / neuromuscular — red
+  if (pct >= 106) return "#FF5A1F";              // VO2max — full VOLT orange
+  if (pct >= 95)  return "rgba(255,90,31,0.88)"; // threshold — clearly orange
+  if (pct >= 88)  return "rgba(255,90,31,0.75)"; // sweet spot — clearly orange
+  if (pct >= 76)  return "rgba(255,90,31,0.72)"; // tempo — clearly orange (≥0.70 stays orange)
+  if (pct >= 56)  return "rgba(255,255,255,0.16)"; // endurance — neutral gray (no brown)
+  return "rgba(255,255,255,0.08)";              // recovery / warmup / cooldown
 }
 
 export default async function TabletTodayPage({
@@ -227,8 +229,8 @@ export default async function TabletTodayPage({
   const isRest     = !isBonus && (!todayWorkout || ["rest","recovery"].some(k => (todayWorkout.type ?? "").toLowerCase().includes(k)));
   const zoneColor  = !isRest && todayWorkout ? ZO : isBonus ? ZO : "var(--m-border)";
   const zoneLabel  = !isRest && !isBonus && todayWorkout ? detectZoneLabel(todayWorkout) : isBonus ? "Bonus Ride" : "";
-  const statusLabel = todayStatus === "completed" ? "Done ✓" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus 🚴" : "Planned";
-  const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : "#94a3b8";
+  const statusLabel = todayStatus === "completed" ? "Done" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus" : "Planned";
+  const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#FF5A1F" : "#94a3b8";
   const weekWorkoutCount = workouts.filter(
     w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
   ).length;
@@ -350,10 +352,10 @@ export default async function TabletTodayPage({
                   Today&apos;s session
                 </div>
                 <span style={{
-                  fontSize: 13, fontWeight: 800, color: "#92400e",
-                  background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.35)",
+                  fontSize: 13, fontWeight: 800, color: "#FF5A1F",
+                  background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)",
                   borderRadius: 4, padding: "3px 10px",
-                }}>🚴 Bonus ride</span>
+                }}>Bonus ride</span>
                 <span style={{ fontSize: 13, color: "var(--m-muted)", fontWeight: 500 }}>Rest day planned</span>
               </div>
 
@@ -611,7 +613,7 @@ export default async function TabletTodayPage({
         }}>
           {/* FITNESS METRICS — sticky, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
           <div style={{
-            padding: "24px 20px", borderBottom: "1px solid var(--m-border)",
+            padding: "36px 20px 24px", borderBottom: "1px solid var(--m-border)",
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--m-card)",
           }}>
@@ -645,11 +647,11 @@ export default async function TabletTodayPage({
             {isBonus && (
               <div style={{
                 marginTop: 10,
-                background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+                background: "rgba(255,90,31,0.06)", border: "1px solid rgba(255,90,31,0.22)",
                 borderRadius: 8, padding: "12px 14px",
               }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
-                  🚴 Bonus ride today
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#FF5A1F", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+                  Bonus ride today
                 </div>
                 {todayActivityName && (
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginBottom: 6, lineHeight: 1.3 }}>
@@ -658,7 +660,7 @@ export default async function TabletTodayPage({
                 )}
                 <div style={{ display: "flex", gap: 8 }}>
                   {todayActivityDurationMin && (
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{todayActivityDurationMin} min</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#FF5A1F" }}>{todayActivityDurationMin} min</span>
                   )}
                   {todayAvgHr && (
                     <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{Math.round(todayAvgHr)} bpm</span>

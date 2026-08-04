@@ -53,14 +53,15 @@ function summaryBullets(summary: string): string[] {
 }
 
 // Monochromatic power bar — VOLT orange gradient, red only at all-out effort.
+// rgba(255,90,31,X) below 0.70 opacity on dark bg renders as brown — forbidden.
 function blockBarColor(pct: number): string {
   if (pct >= 120) return "#ef4444";
   if (pct >= 106) return "#FF5A1F";
-  if (pct >= 95)  return "rgba(255,90,31,0.80)";
-  if (pct >= 88)  return "rgba(255,90,31,0.60)";
-  if (pct >= 76)  return "rgba(255,90,31,0.40)";
-  if (pct >= 56)  return "rgba(255,90,31,0.22)";
-  return "rgba(255,255,255,0.10)";
+  if (pct >= 95)  return "rgba(255,90,31,0.88)";
+  if (pct >= 88)  return "rgba(255,90,31,0.75)";
+  if (pct >= 76)  return "rgba(255,90,31,0.72)";
+  if (pct >= 56)  return "rgba(255,255,255,0.16)";
+  return "rgba(255,255,255,0.08)";
 }
 
 const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -163,7 +164,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
           const statusMeta =
             dayStatus === "completed" ? { text: "Done",   color: "#22c55e", bg: "rgba(34,197,94,0.12)" } :
             dayStatus === "missed"    ? { text: "Missed", color: "#ef4444", bg: "rgba(239,68,68,0.10)" } :
-            dayStatus === "bonus"     ? { text: "Bonus",  color: "#f59e0b", bg: "rgba(245,158,11,0.12)" } :
+            dayStatus === "bonus"     ? { text: "Bonus",  color: "#FF5A1F", bg: "rgba(255,90,31,0.10)" } :
             null;
 
           return (
@@ -177,13 +178,13 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                   background:
                     dayStatus === "completed" ? "rgba(34,197,94,0.05)" :
                     dayStatus === "missed"    ? "rgba(239,68,68,0.05)" :
-                    dayStatus === "bonus"     ? "rgba(245,158,11,0.06)" :
+                    dayStatus === "bonus"     ? "rgba(255,90,31,0.06)" :
                     isToday ? `${colors.accent}0d` : "var(--m-card)",
                   borderRadius: isOpen ? "4px 4px 0 0" : 4,
                   border:
                     dayStatus === "completed" ? "1px solid rgba(34,197,94,0.25)" :
                     dayStatus === "missed"    ? "1px solid rgba(239,68,68,0.20)" :
-                    dayStatus === "bonus"     ? "1px solid rgba(245,158,11,0.25)" :
+                    dayStatus === "bonus"     ? "1px solid rgba(255,90,31,0.25)" :
                     isToday ? `1.5px solid ${colors.accent}55` : "1px solid var(--m-border)",
                   borderBottom: isOpen ? "none" : undefined,
                   padding: "16px 14px",

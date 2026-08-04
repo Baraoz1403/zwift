@@ -6,14 +6,15 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
+// Monochromatic: VOLT orange for all active zones, neutral for rest
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
-  sweetSpot:     { accent: "#10b981", label: "Sweet Spot" },
+  sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
   threshold:     { accent: "#FF5A1F", label: "Threshold"  },
-  vo2max:        { accent: "#ef4444", label: "VO2 Max"    },
-  tempo:         { accent: "#f59e0b", label: "Tempo"      },
-  endurance:     { accent: "#3b82f6", label: "Endurance"  },
-  neuromuscular: { accent: "#a855f7", label: "Neuro"      },
-  rest:          { accent: "#64748b", label: "Rest"       },
+  vo2max:        { accent: "#FF5A1F", label: "VO2 Max"    },
+  tempo:         { accent: "#FF5A1F", label: "Tempo"      },
+  endurance:     { accent: "#FF5A1F", label: "Endurance"  },
+  neuromuscular: { accent: "#FF5A1F", label: "Neuro"      },
+  rest:          { accent: "var(--m-muted)", label: "Rest" },
 };
 
 function detectZone(w: WeeklyWorkout): string {
@@ -161,7 +162,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
               {workout.structure.map((block, i) => {
                 const pct = Math.round((block.powerFtp ?? 0) * 100);
-                const barColor = pct>=120?"#ef4444":pct>=106?"#f97316":pct>=95?"#f59e0b":pct>=88?"#10b981":pct>=76?"#22d3ee":pct>=56?"#3b82f6":"#64748b";
+                const barColor = pct>=120?"#ef4444":pct>=106?"#FF5A1F":pct>=95?"rgba(255,90,31,0.88)":pct>=88?"rgba(255,90,31,0.75)":pct>=76?"rgba(255,90,31,0.72)":pct>=56?"rgba(255,255,255,0.16)":"rgba(255,255,255,0.08)";
                 const dur = block.durationMin ?? 0;
                 const label = block.label || block.type;
                 const reps = block.type==="intervals" && block.repeats ? `${block.repeats}×` : "";

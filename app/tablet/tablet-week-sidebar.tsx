@@ -148,11 +148,11 @@ export function TabletWeekSidebar({
           <div style={{
             marginTop: 10,
             background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-            borderLeft: "3px solid #f59e0b",
+            borderLeft: "3px solid #FF5A1F",
             borderRadius: 6, padding: "12px 14px",
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
-              🚴 Bonus ride today
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#FF5A1F", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+              Bonus ride today
             </div>
             {todayActivityName && (
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginBottom: 6, lineHeight: 1.3 }}>
@@ -230,7 +230,7 @@ export function TabletWeekSidebar({
                 {/* Status dots — these ARE meaningful color signals, keep them */}
                 {dayStatus === "completed" && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
                 {dayStatus === "missed"    && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
-                {dayStatus === "bonus"     && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />}
+                {dayStatus === "bonus"     && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0 }} />}
               </div>
             );
           })}

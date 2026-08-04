@@ -84,7 +84,7 @@ export function TabletTopBar({
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", marginTop: 2 }}>Connected</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>Connected</div>
               </div>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
@@ -102,7 +102,7 @@ export function TabletTopBar({
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: icuConnected ? "#22c55e" : "#64748b", marginTop: 2 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>
                   {icuConnected ? "Connected" : "Not linked"}
                 </div>
               </div>

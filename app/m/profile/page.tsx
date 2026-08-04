@@ -64,7 +64,7 @@ export default async function MobileProfilePage() {
 
   const hasWellness = wellness !== null;
   const tsbLabel = !hasWellness ? "—" : tsb > 5 ? "Fresh" : tsb < -5 ? "Fatigued" : "Neutral";
-  const tsbColor = !hasWellness ? "#475569" : tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "#f59e0b";
+  const tsbColor = !hasWellness ? "#475569" : tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "var(--m-muted)";
   // TSB = Form = CTL − ATL. Positive = rested, negative = accumulated fatigue.
   const tsbDescText = tsb > 10 ? "Peak form — race ready" :
                       tsb > 5  ? "Rested, ready to train hard" :
@@ -139,7 +139,7 @@ export default async function MobileProfilePage() {
               {/* CTL = how fit you are right now (42-day average of training stress) */}
               <MetricCard value={ctl.toFixed(1)} label="Fitness" color="#818cf8" desc={`CTL — 42-day load${ctl >= 60 ? " · High fitness" : ctl >= 40 ? " · Good base" : " · Building"}`} />
               {/* ATL = how fatigued you are from recent training (7-day average) */}
-              <MetricCard value={atl.toFixed(1)} label="Fatigue" color="#f59e0b" desc={`ATL — 7-day load${atl > ctl ? " · Accumulating" : " · Manageable"}`} />
+              <MetricCard value={atl.toFixed(1)} label="Fatigue" color="#FF5A1F" desc={`ATL — 7-day load${atl > ctl ? " · Accumulating" : " · Manageable"}`} />
             </>
           ) : !icuConnected ? (
             <div style={{
@@ -163,7 +163,7 @@ export default async function MobileProfilePage() {
             <MetricCard
               value={currentPhase}
               label="Training phase"
-              color={currentPhase === "Recovery" ? "#f59e0b" : currentPhase === "Build" ? "#ef4444" : "#818cf8"}
+              color={currentPhase === "Recovery" ? "var(--m-muted)" : currentPhase === "Build" ? "#FF5A1F" : "#818cf8"}
               desc={`Week ${(macro?.weekIndex ?? 0) + 1}`}
             />
           )}

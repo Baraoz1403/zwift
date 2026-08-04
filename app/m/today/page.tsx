@@ -206,7 +206,7 @@ export default async function MobileTodayPage() {
                 <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
                   Today&apos;s session
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#FF5A1F", background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)", borderRadius: 3, padding: "2px 8px" }}>
                   Bonus
                 </span>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>

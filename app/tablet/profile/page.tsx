@@ -60,7 +60,7 @@ export default async function TabletProfilePage() {
   }
 
   const tsbLabel = tsb > 5 ? "Fresh" : tsb < -5 ? "Fatigued" : "Neutral";
-  const tsbColor = tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "#f59e0b";
+  const tsbColor = tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "var(--m-muted)";
   const workoutsThisWeek = currentPlan?.workouts.filter(w => {
     const t = (w.title + " " + (w.type ?? "")).toLowerCase();
     return !t.includes("rest") && !t.includes("recovery") && !t.includes("off");
@@ -81,7 +81,7 @@ export default async function TabletProfilePage() {
         <SectionLabel>Fitness metrics</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
           {ftpWatts ? (
-            <MetricCard value={`${ftpWatts}W`} label="FTP" color="#00C2FF" desc={ftpSource} />
+            <MetricCard value={`${ftpWatts}W`} label="FTP" color="var(--m-text)" desc={ftpSource} />
           ) : (
             <MetricCard value="—" label="FTP" color="#475569" desc="Set FTP in Zwift app" />
           )}
@@ -89,7 +89,7 @@ export default async function TabletProfilePage() {
           {ctl > 0 ? (
             <>
               <MetricCard value={ctl.toFixed(1)} label="CTL (Fitness)" color="#818cf8" desc="42-day avg" />
-              <MetricCard value={atl.toFixed(1)} label="ATL (Fatigue)" color="#f59e0b" desc="7-day avg" />
+              <MetricCard value={atl.toFixed(1)} label="ATL (Fatigue)" color="#FF5A1F" desc="7-day avg" />
             </>
           ) : (
             <div style={{ gridColumn: "1/-1", padding: "16px 18px", background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6 }}>
@@ -104,7 +104,7 @@ export default async function TabletProfilePage() {
           <MetricCard value={String(workoutsThisWeek)} label="Workouts planned" color="#FF5A1F" />
           {currentPhase && (
             <MetricCard value={currentPhase} label="Training phase"
-              color={currentPhase === "Recovery" ? "#f59e0b" : currentPhase === "Build" ? "#ef4444" : "#818cf8"}
+              color={currentPhase === "Recovery" ? "var(--m-muted)" : currentPhase === "Build" ? "#FF5A1F" : "#818cf8"}
               desc={`Week ${(macro?.weekIndex ?? 0) + 1}`} />
           )}
         </div>
