@@ -31,20 +31,26 @@ const INTERVALS_OAUTH_TOKEN_URL = "https://intervals.icu/api/oauth/token";
  * Resolve an ICU athlete ID for use in URL paths.
  *
  * Intervals.icu athlete IDs returned by their API can be:
- *   - A pure numeric string: "12345"   → use as-is
- *   - A prefixed string:     "i12345"  → numeric part works in URLs
+ *   - A prefixed string:     "i12345"  → keep as-is (ICU API requires the "i" prefix)
+ *   - A pure numeric string: "12345"   → add "i" prefix → "i12345"
  *   - A non-standard string: "a600"    → API rejects; use "me" instead
  *   - "0" or absent               → use "me"
+ *
+ * IMPORTANT: The ICU REST API requires the "i" prefix in URL paths.
+ * e.g. /athlete/i633912/events returns 200; /athlete/633912/events returns 403.
+ * Stripping the "i" was the root cause of all ICU sync failures.
  *
  * "me" always resolves correctly when using a personal API key.
  * This function is the single point of truth for ID → URL resolution.
  */
 function resolveIcuId(athleteId: string | undefined): string {
   if (!athleteId || athleteId === "0" || athleteId === "me") return "me";
-  // "i12345" → strip the known "i" prefix only → numeric part works in ICU API URLs
-  // "a600" and other non-"i" prefixed strings are non-standard; ICU rejects them → use "me"
-  const stripped = athleteId.startsWith("i") ? athleteId.slice(1) : athleteId;
-  return /^\d+$/.test(stripped) ? stripped : "me";
+  // "i12345" → keep the "i" prefix — ICU API requires it in URL paths
+  if (athleteId.startsWith("i") && /^\d+$/.test(athleteId.slice(1))) return athleteId;
+  // plain numeric "12345" → add "i" prefix
+  if (/^\d+$/.test(athleteId)) return `i${athleteId}`;
+  // "a600" and other non-standard strings → use "me"
+  return "me";
 }
 
 /**
