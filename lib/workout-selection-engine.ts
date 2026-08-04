@@ -70,7 +70,9 @@ const PHASE_ALLOWED_FAMILIES: Record<string, StimulusFamily[]> = {
   // threshold work. Excluding it from Base produces plans that are stuck at
   // pure Z2/tempo for an entire 4-week block — too conservative for a rider
   // with a tested FTP who wants to progress.
-  Base:       ["endurance", "tempo", "sweetSpot", "neuromuscular"],
+  // Base phase: aerobic foundation only — Z2, Tempo, Sweet Spot.
+  // Neuromuscular/sprint work belongs in Build phase (power on top of base).
+  Base:       ["endurance", "tempo", "sweetSpot"],
   Build:      ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
   Build1:     ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
   Build2:     ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
