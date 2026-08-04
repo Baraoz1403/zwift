@@ -38,6 +38,7 @@ import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals }
 import { generateZwoXml, isRestDay } from "./zwo";
 import { workoutDateLabel, ensureWorkoutDates, normalizeToSix } from "./plan-shape";
 import { getIntervalsCredentials, markIntervalsSynced } from "./kv-plan-state";
+import { kvSet } from "./kv";
 import type { WeeklyPlan, WeeklyWorkout } from "./ai";
 
 export interface HeadlessSyncResult {
@@ -308,16 +309,23 @@ export async function syncPlanToIcuAndMark(
   const wide = await cleanupIcuDuplicates(creds.icuKey, effectiveIcuId, oldest, newest);
 
   // Only mark synced when at least one workout was actually pushed.
-  // If the push failed (expired OAuth token, ICU unreachable, 0 workouts
-  // pushed), we intentionally leave the flag unset so the next plan load
-  // retries automatically — fixing the root cause of "runs once, never again".
   if (narrow.pushed > 0) {
     await markIntervalsSynced(athleteId, weekOf);
+  }
+
+  // If every push attempt failed with 401/403, the ICU token is expired.
+  // Mark icu_invalid so the UI shows a reconnect screen on next open.
+  // Without this, the cron fails silently forever and the athlete never knows.
+  const allErrors = [...narrow.errors, ...wide.errors];
+  const pushErrors = allErrors.filter(e => e.startsWith("push"));
+  const authFailures = pushErrors.filter(e => e.includes("403") || e.includes("401")).length;
+  if (narrow.pushed === 0 && pushErrors.length > 0 && authFailures === pushErrors.length) {
+    await kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
   }
 
   return {
     pushed: narrow.pushed,
     deleted: narrow.deleted + wide.deleted,
-    errors: [...narrow.errors, ...wide.errors],
+    errors: allErrors,
   };
 }

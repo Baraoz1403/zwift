@@ -18,6 +18,21 @@ import type { WeeklyWorkout } from "./ai";
 import type { MacroCycleState } from "./periodization";
 import type { RiderTrainingProfile } from "./rider-profile";
 
+/**
+ * Fallback profile for athletes who haven't completed onboarding.
+ * Ensures the AI always has at least a minimal signal rather than
+ * falling back to ride-history guessing.
+ */
+const DEFAULT_RIDER_PROFILE: RiderTrainingProfile = {
+  goals: ["fitness"],
+  daysRange: "2-3",
+  sessionLength: "60",
+  sports: ["cycling"],
+  environment: "indoor",
+  gender: "male",
+  ageYears: 55,
+};
+
 export interface StoredZwiftAuth {
   refreshToken: string;
   /** Not used to skip a refresh call (Zwift access tokens are short-lived
@@ -243,7 +258,7 @@ export async function getStoredAthleteState(athleteId: string): Promise<StoredAt
     kvGet(`zwift:${athleteId}:icu_id`),
   ]);
   return {
-    riderProfile: profileRaw ? (JSON.parse(profileRaw) as RiderTrainingProfile) : undefined,
+    riderProfile: profileRaw ? (JSON.parse(profileRaw) as RiderTrainingProfile) : DEFAULT_RIDER_PROFILE,
     macroCycle: macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null,
     previousPlan: planRaw ? (JSON.parse(planRaw) as { weekOf: string; workouts: WeeklyWorkout[] }) : null,
     icuKey,
