@@ -8,32 +8,38 @@ export async function GET() {
   const results: Record<string, unknown> = {};
 
   for (const id of ids) {
-    const [icuKey, icuId] = await Promise.all([
+    const [icuKey, oldIcuId] = await Promise.all([
       kvGet(`zwift:${id}:icu_key`),
       kvGet(`zwift:${id}:icu_id`),
     ]);
 
-    let icuStatus = "no_key";
-    if (icuKey && icuId) {
-      // Test with "me" (always valid for any key) AND with the stored ID
-      const resolvedId = icuId.startsWith("i") ? icuId.slice(1) : icuId;
-      const [meRes, idRes] = await Promise.all([
-        fetch(`https://intervals.icu/api/v1/athlete/me/profile`, {
-          headers: { Authorization: buildAuthHeader(icuKey) },
-        }).then(r => `me:${r.status}`).catch(e => `me:error:${e}`),
-        fetch(`https://intervals.icu/api/v1/athlete/${resolvedId}/profile`, {
-          headers: { Authorization: buildAuthHeader(icuKey) },
-        }).then(r => `id:${r.status}`).catch(e => `id:error:${e}`),
-      ]);
-      icuStatus = `${meRes} | ${idRes}`;
+    if (!icuKey) { results[id] = { status: "no_key" }; continue; }
 
-      // If both fail with 401/403 → mark icu_invalid so reconnect screen appears
-      if (meRes.includes(":401") || meRes.includes(":403")) {
-        await kvSet(`zwift:${id}:icu_invalid`, "1", 7 * 24 * 60 * 60).catch(() => {});
-        icuStatus += " → marked icu_invalid";
+    // Fetch real athlete profile using "me" — always resolves correctly for any valid key
+    let realId: string | null = null;
+    let profileStatus = "";
+    try {
+      const res = await fetch(`https://intervals.icu/api/v1/athlete/me/profile`, {
+        headers: { Authorization: buildAuthHeader(icuKey) },
+      });
+      profileStatus = `${res.status}`;
+      if (res.ok) {
+        const profile = await res.json() as Record<string, unknown>;
+        realId = profile.id as string ?? null;
       }
+    } catch (e) {
+      profileStatus = `error: ${e}`;
     }
-    results[id] = { icuId, icuKeyType: icuKey ? (icuKey.startsWith("Bearer ") ? "Bearer/OAuth" : "API_KEY") : null, icuStatus };
+
+    let action = "no_change";
+    if (realId && realId !== oldIcuId) {
+      await kvSet(`zwift:${id}:icu_id`, realId).catch(() => {});
+      action = `updated: ${oldIcuId} → ${realId}`;
+    } else if (realId === oldIcuId) {
+      action = "already_correct";
+    }
+
+    results[id] = { oldIcuId, realId, profileStatus, action };
   }
   return NextResponse.json({ athletes: ids, results });
 }
