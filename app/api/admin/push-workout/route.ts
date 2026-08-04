@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
     durationMin: number;
     targetPowerPctFtp: string;
     description: string;
+    /** Optional: WorkoutStructureBlock[] — if provided, used directly (structureToBlocks).
+     *  cooldown blocks are automatically capped at 5 min by structureToBlocks. */
+    structure?: import("@/lib/zwo").WorkoutStructureBlock[];
   };
 
   try {
@@ -81,7 +84,9 @@ export async function POST(req: NextRequest) {
     const dateLabel = workoutDateLabel(body.date);
     const titledWorkout = dateLabel ? `${dateLabel} · ${body.title}` : body.title;
 
-    // Generate ZWO — uses the fixed generateDefaultBlocks (interval-only, cooldown ≤5 min)
+    // Generate ZWO — cooldown ≤5 min enforced in both paths:
+    //   · with structure: structureToBlocks caps cooldown blocks at 300s
+    //   · without structure: generateDefaultBlocks caps cooldown at 300s
     const zwoXml = generateZwoXml(
       {
         title: body.title,
@@ -89,6 +94,7 @@ export async function POST(req: NextRequest) {
         durationMin: body.durationMin,
         description: body.description,
         targetPowerPctFtp: body.targetPowerPctFtp,
+        structure: body.structure,
       },
       undefined,
       "Zwift Dashboard AI",
