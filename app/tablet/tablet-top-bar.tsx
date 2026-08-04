@@ -10,7 +10,7 @@
  * integrates with Zwift and Intervals.icu only.
  *
  * Position: fixed top:0 left:0 right:0 z-index:70
- * Height:   94px inner + env(safe-area-inset-top)  → CSS var(--tablet-bar-h)
+ * Height:   100px inner + env(safe-area-inset-top) → CSS var(--tablet-bar-h)
  */
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
@@ -44,7 +44,7 @@ export function TabletTopBar({
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <div style={{ padding: "12px 32px 14px" }}>
+      <div style={{ padding: "12px 32px 20px" }}>
         {/* Row 1: greeting + date on left, theme toggle on right */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{

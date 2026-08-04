@@ -63,52 +63,15 @@ export function TabletWeekSidebar({
 
       {/* ── Stats — sticky so always visible ──────────────────────────── */}
       <div style={{
-        padding: "20px 16px", borderBottom: "1px solid var(--m-border)",
+        padding: "36px 16px 20px", borderBottom: "1px solid var(--m-border)",
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 14 }}>
           Fitness metrics
         </div>
 
-        {/* FTP — prominent, VOLT orange left-accent, no color fill */}
-        {ftp && (
-          <div style={{
-            background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-            borderLeft: "3px solid #FF5A1F",
-            borderRadius: 6, padding: "12px 14px", marginBottom: 8,
-            display: "flex", alignItems: "baseline", gap: 8,
-          }}>
-            <div style={{ fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
-          </div>
-        )}
-
-        {/* Phase + Sessions — monochrome cards */}
-        <div style={{ display: "flex", gap: 8 }}>
-          {currentPhase && (
-            <div style={{
-              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-              borderRadius: 6, padding: "10px 12px",
-            }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
-              <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
-                {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
-              </div>
-            </div>
-          )}
-          {weekWorkoutCount != null && weekWorkoutCount > 0 && (
-            <div style={{
-              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-              borderRadius: 6, padding: "10px 12px",
-            }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
-              <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
-            </div>
-          )}
-        </div>
-
-        {/* CTL / ATL / TSB — monochrome, TSB keeps red/green as meaningful signal */}
+        {/* CTL / ATL / TSB only — FTP/Phase/Sessions are in the top bar, no need to repeat */}
         {(ctl != null || atl != null || tsb != null) && (
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
             {ctl != null && (

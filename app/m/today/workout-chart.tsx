@@ -16,15 +16,16 @@ import type { WorkoutStructureBlock } from "@/lib/zwo";
 
 // ── Zone system ─────────────────────────────────────────────────────────────
 
-// Monochromatic VOLT orange gradient — no rainbow, no brown (<0.70 opacity is replaced by neutral)
+// Zone colors — standard cycling zone palette (matches Zwift / intervals.icu)
+// Z1/Z2 are data-viz colors (not UI chrome), so meaningful zone colors apply here.
 const ZONES = [
-  { maxPct: 0.55, color: "rgba(255,255,255,0.08)", glow: "rgba(255,255,255,0.15)", label: "Z1 Recovery" },
-  { maxPct: 0.75, color: "rgba(255,255,255,0.16)", glow: "rgba(255,255,255,0.24)", label: "Z2 Endurance" },
-  { maxPct: 0.88, color: "rgba(255,90,31,0.72)",   glow: "rgba(255,90,31,0.40)",   label: "Z3 Tempo" },
-  { maxPct: 0.94, color: "rgba(255,90,31,0.82)",   glow: "rgba(255,90,31,0.50)",   label: "Z4 Sweet Spot" },
-  { maxPct: 1.05, color: "rgba(255,90,31,0.92)",   glow: "rgba(255,90,31,0.60)",   label: "Z5 Threshold" },
-  { maxPct: 1.20, color: "#FF5A1F",                glow: "rgba(255,90,31,0.70)",   label: "Z6 VO2 Max" },
-  { maxPct: Infinity, color: "#ef4444",            glow: "#f87171",                label: "Z7 Sprint" },
+  { maxPct: 0.55, color: "#6b7280",   glow: "#9ca3af",   label: "Z1 Recovery"  },
+  { maxPct: 0.75, color: "#3b82f6",   glow: "#60a5fa",   label: "Z2 Endurance" },
+  { maxPct: 0.88, color: "#22c55e",   glow: "#4ade80",   label: "Z3 Tempo"     },
+  { maxPct: 0.94, color: "#eab308",   glow: "#facc15",   label: "Z4 Sweet Spot"},
+  { maxPct: 1.05, color: "#f97316",   glow: "#fb923c",   label: "Z5 Threshold" },
+  { maxPct: 1.20, color: "#ef4444",   glow: "#f87171",   label: "Z6 VO2 Max"   },
+  { maxPct: Infinity, color: "#9333ea", glow: "#a855f7", label: "Z7 Sprint"    },
 ];
 
 function zoneFor(frac: number) {
