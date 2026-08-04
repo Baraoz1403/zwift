@@ -95,10 +95,12 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         {days.map(day => {
-          const { dayName, date, dateNum, isToday, isRest, workoutTitle, zoneLabel, zoneColor, durationMin, status, ride } = day;
-          const rowColor = isRest ? "var(--m-border)" : (zoneColor ?? "#FF5A1F");
+          const { dayName, dateNum, isToday, isRest, workoutTitle, zoneLabel, durationMin, status, ride } = day;
+          // Monochromatic: VOLT orange left-accent only for today's workout (matches left nav style).
+          // Zone colors removed — no rainbow in the sidebar.
+          const accentColor = "#FF5A1F";
           const isCompleted = status === "completed";
           const isClickable = isCompleted && !!ride;
 
@@ -107,27 +109,27 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
               key={dayName}
               onClick={isClickable ? () => setSelectedRide(ride!) : undefined}
               style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 12px", borderRadius: 4,
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 14px", borderRadius: 6,
                 background: isToday ? "var(--m-card-inner)" : "transparent",
                 border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
-                borderLeft: `3px solid ${isToday ? (isRest ? "var(--m-border)" : rowColor) : "transparent"}`,
+                borderLeft: `3px solid ${isToday && !isRest ? accentColor : "transparent"}`,
                 cursor: isClickable ? "pointer" : "default",
                 transition: "background 0.12s",
               }}
               onMouseEnter={e => { if (isClickable) (e.currentTarget as HTMLElement).style.background = "var(--m-card-inner)"; }}
               onMouseLeave={e => { if (isClickable && !isToday) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
-              {/* Day bubble */}
+              {/* Day bubble — uniform dark, no zone tinting */}
               <div style={{
-                width: 36, height: 36, borderRadius: 4, flexShrink: 0,
-                background: isToday ? (isRest ? "rgba(100,116,139,0.08)" : `${rowColor}14`) : "var(--m-card-inner)",
-                border: `1px solid ${isToday ? (isRest ? "rgba(100,116,139,0.15)" : `${rowColor}25`) : "var(--m-border)"}`,
+                width: 38, height: 38, borderRadius: 6, flexShrink: 0,
+                background: "var(--m-card-inner)",
+                border: `1px solid ${isToday ? "rgba(255,255,255,0.12)" : "var(--m-border)"}`,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               }}>
                 <div style={{
                   fontSize: 11, fontWeight: 700,
-                  color: isToday ? (isRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)",
+                  color: isToday ? "var(--m-text)" : "var(--m-muted)",
                   textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1,
                 }}>
                   {dayName.slice(0, 3)}
@@ -135,7 +137,7 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
                 {dateNum != null && (
                   <div style={{
                     fontSize: 16, fontWeight: 900, lineHeight: 1, marginTop: 1,
-                    color: isToday ? (isRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)",
+                    color: isToday ? "var(--m-text)" : "var(--m-muted)",
                   }}>
                     {dateNum}
                   </div>
@@ -152,7 +154,7 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
                   {isRest ? "Rest" : workoutTitle}
                 </div>
                 {!isRest && zoneLabel && (
-                  <div style={{ fontSize: 13, color: rowColor, marginTop: 2, fontWeight: 600 }}>
+                  <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 3, fontWeight: 500 }}>
                     {zoneLabel}{durationMin && durationMin > 0 ? ` · ${durationMin}m` : ""}
                   </div>
                 )}

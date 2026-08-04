@@ -614,69 +614,34 @@ export default async function TabletTodayPage({
           overscrollBehavior: "contain",
           display: "flex", flexDirection: "column",
         }}>
-          {/* Metrics — sticky so the watt box is always visible */}
+          {/* FITNESS METRICS — sticky, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
           <div style={{
-            padding: "20px 16px", borderBottom: "1px solid var(--m-border)",
+            padding: "24px 20px", borderBottom: "1px solid var(--m-border)",
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--m-card)",
           }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 14 }}>
               Fitness metrics
             </div>
-            {/* FTP — cyan, full width */}
-            {ftp && (
-              <div style={{
-                background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)",
-                borderRadius: 8, padding: "14px 16px", marginBottom: 8,
-                display: "flex", alignItems: "baseline", gap: 6,
-              }}>
-                <div style={{ fontSize: 38, fontWeight: 900, color: "#22d3ee", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 8 }}>
-              {/* Phase — orange */}
-              {currentPhase && (
-                <div style={{
-                  flex: 1, background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.2)",
-                  borderRadius: 8, padding: "10px 12px",
-                }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{currentPhase}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
-                    {weekDisplayNum ? `Week ${weekDisplayNum}` : "Phase"}
-                  </div>
-                </div>
-              )}
-              {/* Sessions this week — purple */}
-              {weekWorkoutCount > 0 && (
-                <div style={{
-                  flex: 1, background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
-                  borderRadius: 8, padding: "10px 12px",
-                }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
-                </div>
-              )}
-            </div>
-            {/* CTL / ATL / TSB */}
+            {/* CTL / ATL / TSB — monochromatic cards, only TSB keeps red/green as a meaningful signal */}
             {(ctl != null || atl != null || tsb != null) && (
-              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 8 }}>
                 {ctl != null && (
-                  <div style={{ flex: 1, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "8px 10px" }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#3b82f6", lineHeight: 1 }}>{ctl}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
+                  <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{ctl}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>CTL</div>
                   </div>
                 )}
                 {atl != null && (
-                  <div style={{ flex: 1, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: "8px 10px" }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{atl}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
+                  <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{atl}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>ATL</div>
                   </div>
                 )}
                 {tsb != null && (
-                  <div style={{ flex: 1, background: tsb >= 0 ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)", border: `1px solid ${tsb >= 0 ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`, borderRadius: 8, padding: "8px 10px" }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{tsb > 0 ? "+" : ""}{tsb}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: tsb >= 0 ? "rgba(34,197,94,0.6)" : "rgba(239,68,68,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
+                  <div style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)", borderRadius: 8, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{tsb > 0 ? "+" : ""}{tsb}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>TSB</div>
                   </div>
                 )}
               </div>
@@ -709,22 +674,22 @@ export default async function TabletTodayPage({
           </div>
 
           {/* Week list */}
-          <div style={{ padding: "16px 16px 0", flex: 1 }}>
+          <div style={{ padding: "20px 20px 0", flex: 1 }}>
             <WeekDayListClient days={dayRows} weekNav={weekNav} />
           </div>
 
           {/* Plan summary */}
           {plan?.summary && (
-            <div style={{ padding: "0 16px 20px" }}>
+            <div style={{ padding: "0 20px 24px" }}>
               <div style={{
                 background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-                borderRadius: 4, padding: "14px 16px",
+                borderRadius: 6, padding: "14px 16px",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 8 }}>
                   Week plan
                 </div>
-                <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65 }}>
-                  {plan.summary.slice(0, 140)}{plan.summary.length > 140 ? "…" : ""}
+                <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.7 }}>
+                  {plan.summary.slice(0, 160)}{plan.summary.length > 160 ? "…" : ""}
                 </div>
               </div>
             </div>
