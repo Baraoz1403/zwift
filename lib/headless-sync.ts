@@ -297,10 +297,15 @@ export async function syncPlanToIcuAndMark(
   if (!creds) return null;
 
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
-  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates, riderName);
+  // For Bearer OAuth tokens always use undefined (→ "me") as athlete ID.
+  // A stored athlete ID causes 403 "Bearer token is for a different athlete"
+  // when the stored ID doesn't match the token's actual owner.
+  const effectiveIcuId = creds.icuKey.startsWith("Bearer ") ? undefined : (creds.icuId ?? undefined);
+
+  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, effectiveIcuId, normalizedPlan, riddenDates, riderName);
 
   const { oldest, newest } = wideCleanupRange();
-  const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
+  const wide = await cleanupIcuDuplicates(creds.icuKey, effectiveIcuId, oldest, newest);
 
   // Only mark synced when at least one workout was actually pushed.
   // If the push failed (expired OAuth token, ICU unreachable, 0 workouts

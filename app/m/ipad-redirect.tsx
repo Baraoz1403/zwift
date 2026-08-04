@@ -12,8 +12,13 @@ export default function IpadRedirect() {
     const isIpad =
       /iPad/.test(navigator.userAgent) ||
       (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+    // Desktop browsers (no touch) should also use the tablet interface
+    const isDesktop =
+      !isIpad &&
+      navigator.maxTouchPoints === 0 &&
+      !(/Android|iPhone|iPod/.test(navigator.userAgent));
 
-    if (isIpad) {
+    if (isIpad || isDesktop) {
       document.cookie =
         "device_hint=tablet; path=/; max-age=31536000; SameSite=Lax";
       window.location.replace("/tablet/today");

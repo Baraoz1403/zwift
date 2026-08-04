@@ -24,14 +24,17 @@ export function middleware(req: NextRequest) {
     const deviceHint = req.cookies.get("device_hint")?.value;
     let dest: string;
 
+    const ua = req.headers.get("user-agent") ?? "";
+    const isPhone = /Mobile/.test(ua) && !/iPad/.test(ua);
+
     if (deviceHint === "tablet") {
       dest = "/tablet/today";
-    } else if (deviceHint === "mobile") {
+    } else if (deviceHint === "mobile" && isPhone) {
+      // Respect mobile hint only for actual phones — if the user is now on
+      // a desktop/tablet, the UA overrides the stale cookie
       dest = "/m/today";
     } else {
-      // Auto-detect: phones have "Mobile" in UA (iPads and desktops don't)
-      const ua = req.headers.get("user-agent") ?? "";
-      const isPhone = /Mobile/.test(ua) && !/iPad/.test(ua);
+      // Auto-detect by UA (phones have "Mobile", iPads/desktops don't)
       dest = isPhone ? "/m/today" : "/tablet/today";
     }
 

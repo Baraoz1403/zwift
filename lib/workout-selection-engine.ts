@@ -150,9 +150,11 @@ function coldStartRung(wPerKg: number | null, ftpFallback?: number | null): numb
   const level = wPerKg ?? impliedLevelFromFtp(ftpFallback);
   if (level == null || level < 2.5) return 0;   // Beginner → rung 0 (most basic)
   if (level < 3.0) return 1;                    // Novice → rung 1
-  if (level < 3.5) return 2;                    // Intermediate → rung 2
-  if (level < 4.0) return 3;                    // Trained (3.5-4.0 W/kg) → rung 3 (e.g. "4×4 Two-Set" for vo2max)
-  return 4;                                      // Advanced (4.0+ W/kg) → rung 4 (e.g. "Norwegian 4×4" for vo2max)
+  if (level < 3.5) return 1;                    // Intermediate → rung 1 (not 2 — first exposure needs one dose before advancing)
+  return 2;                                      // Advanced → rung 2
+  // Rung 1 for Intermediate: e.g. sweetSpot = "Sweet Spot Classic",
+  // threshold = "Threshold Development". Rung 2 would jump straight to
+  // "3×15 Sweet Spot" with no prior session — too aggressive for a cold start.
 }
 
 // ── TSB signal ────────────────────────────────────────────────────────────────

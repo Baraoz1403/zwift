@@ -43,24 +43,53 @@ export default async function MobileLayout({ children }: { children: React.React
 
   // ── Intervals.icu gate ───────────────────────────────────────────────────
   const icuFromCookie = cookieStore.get("zwift_intervals_key")?.value;
-  const icuConnected = icuFromCookie
-    ? true
-    : !!(await getIntervalsCredentials(String(session.athleteId)));
 
-  if (!icuConnected) {
-    // Check if there is a stored (but possibly expired) Bearer token in KV.
-    // If so, try a silent re-auth (prompt=none) so the athlete never sees a
-    // connect screen after the initial setup. This works when the athlete is
-    // already logged into intervals.icu and has previously approved this client.
-    // If silent re-auth fails (not logged in / consent revoked), intervals.icu
-    // redirects back with ?error=... and the ICU connect screen shows instead.
-    const { kvGet } = await import("@/lib/kv");
-    const storedKey = await kvGet(`zwift:${session.athleteId}:icu_key`);
-    if (storedKey?.startsWith("Bearer ")) {
-      // Had a Bearer token before — attempt silent re-auth before showing screen
-      redirect(`/api/intervals/oauth-start?from=m&prompt=none`);
+  // Check ICU token validity: expiry timestamp + 401-detected invalid flag
+  const { kvGet, kvSet } = await import("@/lib/kv");
+  const [icuKvExpires, icuInvalid] = await Promise.all([
+    kvGet(`zwift:${session.athleteId}:icu_expires`),
+    kvGet(`zwift:${session.athleteId}:icu_invalid`),
+  ]);
+  // If the key is a Bearer OAuth token and we have no stored expiry,
+  // it was set before expiry tracking was added — probe ICU to verify it's still valid
+  // AND that the token belongs to the stored athlete ID (not a different account).
+  // API keys (non-Bearer) never expire so skip the probe for those.
+  let icuProbeExpired = false;
+  const icuKeyKv = icuFromCookie ?? null;
+  const icuStoredId = cookieStore.get("zwift_intervals_id")?.value ?? null;
+  if (icuKeyKv?.startsWith("Bearer ")) {
+    try {
+      const { fetchIntervalsAthlete } = await import("@/lib/intervals");
+      const probeAthlete = await fetchIntervalsAthlete(icuKeyKv);
+      // Also check that the token belongs to the same ICU athlete as stored
+      const probeId = probeAthlete.id != null ? String(probeAthlete.id).trim() : null;
+      if (icuStoredId && probeId && probeId !== icuStoredId && icuStoredId !== "me") {
+        // Token is for a different ICU account — must reconnect
+        icuProbeExpired = true;
+        kvSet(`zwift:${session.athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+      }
+    } catch {
+      // 401 or network error — treat as expired/invalid
+      icuProbeExpired = true;
+      kvSet(`zwift:${session.athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
     }
-    return <MobileIcuConnect />;
+  }
+
+  const icuTokenExpired =
+    (icuKvExpires ? Number(icuKvExpires) < Date.now() : false) ||
+    icuInvalid === "1" ||
+    icuProbeExpired;
+
+  const icuConnected = !icuTokenExpired && (icuFromCookie
+    ? true
+    : !!(await getIntervalsCredentials(String(session.athleteId))));
+
+  if (!icuConnected || icuTokenExpired) {
+    // Token expired or invalidated by a 401 — show reconnect screen if we have
+    // a stored key, otherwise show first-time connect screen.
+    const storedKey = await kvGet(`zwift:${session.athleteId}:icu_key`);
+    const hasHadIcu = storedKey?.startsWith("Bearer ") || !!icuFromCookie;
+    return hasHadIcu ? <MobileIcuConnect reconnect /> : <MobileIcuConnect />;
   }
 
   // Read persisted theme preference (cookie set by ThemeToggleButton client component)

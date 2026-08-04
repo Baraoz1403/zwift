@@ -162,7 +162,7 @@ export function flagHeartRateAnomalies(
   return flags;
 }
 
-export function selectChartActivities(activities: ZwiftActivity[], count = 15): ZwiftActivity[] {
+export function selectChartActivities(activities: ZwiftActivity[], count = 30): ZwiftActivity[] {
   return [...activities]
     .filter((a) => a.startDate)
     .sort((a, b) => new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime())

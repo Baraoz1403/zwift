@@ -9,6 +9,7 @@ import MobileWorkoutCard from "./workout-card";
 import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
 import BonusRideCard from "./bonus-ride-card";
+import ActualActivityCard from "./actual-activity-card";
 import { ThemeToggleButton } from "../theme-toggle-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
@@ -89,7 +90,14 @@ export default async function MobileTodayPage() {
         ? Promise.race([
             fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
             new Promise<never>((_, rej) => setTimeout(() => rej(new Error("icu_timeout")), 4000)),
-          ]).catch(() => [])
+          ]).catch(async (e: unknown) => {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
+              const { kvSet } = await import("@/lib/kv");
+              kvSet(`zwift:${session.athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
+            }
+            return [];
+          })
         : Promise.resolve([]),
       Promise.race([
         fetchActivities(session.accessToken, session.athleteId!, 50),
@@ -214,8 +222,7 @@ export default async function MobileTodayPage() {
                 </span>
               </div>
 
-              {/* Tap to expand ride card — Week page day card style */}
-              <BonusRideCard
+                  <ActualActivityCard
                 activityName={todayActivityName}
                 durationMin={todayActivityDurationMin}
                 avgHr={todayAvgHr}
@@ -224,7 +231,6 @@ export default async function MobileTodayPage() {
                 distanceKm={todayDistanceKm}
                 tss={todayTss}
                 ftp={ftp}
-                date={todayStr}
               />
 
               {/* Feedback — server-side KV gate ensures it shows once across all devices */}
@@ -267,7 +273,7 @@ export default async function MobileTodayPage() {
       <div style={SCROLL_STYLE}>
         {/* Feedback — shown after ride, cross-device KV sync (won't show twice) */}
         {/* Feedback — server-side gate prevents re-showing after submit on any device */}
-        {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus") && (
+        {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus" || todayStatus === "extra") && (
           <FeedbackBanner
             workoutTitle={todayWorkout.title}
             workoutCategory={todayWorkout.type ?? ""}
@@ -280,14 +286,59 @@ export default async function MobileTodayPage() {
           />
         )}
 
-        {/* Main workout card */}
-        <MobileWorkoutCard
-          workout={todayWorkout}
-          weekWorkouts={workouts}
-          today={todayStr}
-          todayStatus={todayStatus}
-          weekStatus={weekStatus}
-        />
+        {todayStatus === "extra" && todayActivityName ? (
+          /* Extra: different sport than planned — actual ride is the story */
+          <div style={{ padding: "16px 16px 0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+                Today&apos;s session
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px" }}>
+                Different sport
+              </span>
+            </div>
+
+            {/* Actual ride — rich card matching planned workout card style */}
+            <ActualActivityCard
+              activityName={todayActivityName}
+              durationMin={todayActivityDurationMin}
+              avgHr={todayAvgHr}
+              avgPower={todayAvgPower}
+              normalizedPower={todayNormalizedPower}
+              distanceKm={todayDistanceKm}
+              tss={todayTss}
+              ftp={ftp}
+            />
+
+            {/* What was planned — compact footnote */}
+            <div style={{
+              background: "var(--m-card-inner)", borderRadius: 4,
+              border: "1px solid var(--m-border)", padding: "12px 14px",
+              marginBottom: 10,
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 6 }}>
+                What was planned
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-text)" }}>
+                {todayWorkout.title}
+              </div>
+              {todayWorkout.durationMin > 0 && (
+                <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 4 }}>
+                  {todayWorkout.durationMin} min{todayWorkout.type ? ` · ${todayWorkout.type}` : ""}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Normal: planned / completed / missed workout card */
+          <MobileWorkoutCard
+            workout={todayWorkout}
+            weekWorkouts={workouts}
+            today={todayStr}
+            todayStatus={todayStatus}
+            weekStatus={weekStatus}
+          />
+        )}
 
       </div>
     </div>

@@ -103,6 +103,13 @@ export default function CoachChat({ firstName }: { firstName?: string | null }) 
     }
   }
 
+  async function clearHistory() {
+    try {
+      await fetch("/api/m/chat/history", { method: "DELETE" });
+      setMessages([]);
+    } catch { /* ignore */ }
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -123,8 +130,18 @@ export default function CoachChat({ firstName }: { firstName?: string | null }) 
         <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
           {firstName ?? "Athlete"}
         </div>
-        <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 2 }}>
-          Ask me anything — I can also modify your training plan directly
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: "var(--m-muted)" }}>
+            Ask me anything — I can also modify your training plan directly
+          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={clearHistory}
+              style={{ fontSize: 11, color: "var(--m-muted)", background: "none", border: "1px solid var(--m-border)", borderRadius: 6, padding: "4px 10px", cursor: "pointer", flexShrink: 0, marginLeft: 8 }}
+            >
+              נקה שיחה
+            </button>
+          )}
         </div>
       </div>
 

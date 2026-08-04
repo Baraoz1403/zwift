@@ -12,6 +12,7 @@ import {
   setCachedPlan,
   wasIntervalsSynced,
   updateStoredRiderProfile,
+  getStoredAthleteState,
 } from "@/lib/kv-plan-state";
 import { kvGet } from "@/lib/kv";
 import { syncPlanToIcuAndMark, type IntervalsSyncResult } from "@/lib/headless-sync";
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
   let riderProfile: RiderTrainingProfile | undefined;
   let riderNote: string | undefined;
   let targetWeekOf: string | undefined;
+  let forceRegenerate = false;
   try {
     const body = await req.json();
     if (typeof body?.ageYears === "number" && body.ageYears > 0) {
@@ -73,6 +75,9 @@ export async function POST(req: NextRequest) {
     if (typeof body?.targetWeekOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.targetWeekOf)) {
       targetWeekOf = body.targetWeekOf;
     }
+    if (body?.force === true) {
+      forceRegenerate = true;
+    }
   } catch {
     // No/invalid JSON body - fine, these all just stay unset.
   }
@@ -100,8 +105,20 @@ export async function POST(req: NextRequest) {
   // Bypass conditions — always regenerate when:
   //   1. riderNote is set: the rider explicitly typed a change request (surgical edit).
   //   2. No athleteId in session: can't key the cache, just generate.
+  // ── Profile fallback from KV ─────────────────────────────────────────────
+  // Mobile and tablet "Generate plan" requests send only { weekOf } with no
+  // riderProfile in the body. Without this fallback, every plan generated from
+  // those surfaces is missing the rider's goals, session length, days/week —
+  // producing a generic plan that ignores the profile entirely.
+  if (!riderProfile && session.athleteId) {
+    try {
+      const stored = await getStoredAthleteState(session.athleteId);
+      if (stored.riderProfile) riderProfile = stored.riderProfile;
+    } catch { /* best-effort */ }
+  }
+
   const effectiveWeekOf = targetWeekOf ?? mondayOfCurrentWeek();
-  if (session.athleteId && !riderNote) {
+  if (session.athleteId && !riderNote && !forceRegenerate) {
     // Wrap in try-catch: a transient KV failure must never crash the handler
     // with a non-JSON 500 response. On error we fall through to live generation.
     let cached: Awaited<ReturnType<typeof getCachedPlan>> | null = null;
