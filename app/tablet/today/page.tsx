@@ -64,15 +64,9 @@ function weekDatesFrom(weekOf: string): string[] {
   });
 }
 
-function detectZoneColor(w: WeeklyWorkout): string {
-  const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-  if (t.includes("sweet spot") || t.includes("sweetspot")) return "#10b981";
-  if (t.includes("threshold") || t.includes("ftp"))         return "#FF5A1F";
-  if (t.includes("vo2") || t.includes("norwegian"))         return "#ef4444";
-  if (t.includes("tempo"))                                   return "#3b82f6";
-  if (t.includes("sprint") || t.includes("neuromuscular"))  return "#a855f7";
-  if (t.includes("endurance") || t.includes("z2"))          return "#22d3ee";
-  return ZO;
+// Zone colors removed — single VOLT accent throughout (matches left nav composition).
+function detectZoneColor(_w: WeeklyWorkout): string {
+  return ZO; // #FF5A1F for all active workouts
 }
 
 function detectZoneLabel(w: WeeklyWorkout): string {
@@ -230,7 +224,7 @@ export default async function TabletTodayPage({
 
   const isBonus    = todayStatus === "bonus";
   const isRest     = !isBonus && (!todayWorkout || ["rest","recovery"].some(k => (todayWorkout.type ?? "").toLowerCase().includes(k)));
-  const zoneColor  = !isRest && !isBonus && todayWorkout ? detectZoneColor(todayWorkout) : isBonus ? "#f59e0b" : "#64748b";
+  const zoneColor  = !isRest && todayWorkout ? ZO : isBonus ? ZO : "var(--m-border)";
   const zoneLabel  = !isRest && !isBonus && todayWorkout ? detectZoneLabel(todayWorkout) : isBonus ? "Bonus Ride" : "";
   const statusLabel = todayStatus === "completed" ? "Done ✓" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus 🚴" : "Planned";
   const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#f59e0b" : "#94a3b8";
@@ -518,19 +512,19 @@ export default async function TabletTodayPage({
                       <ActualRideChip label="Duration" value={`${todayActualRide.durationMin} min`} />
                     )}
                     {todayActualRide.avgWatts != null && todayActualRide.avgWatts > 0 && (
-                      <ActualRideChip label="Avg Power" value={`${Math.round(todayActualRide.avgWatts)}W`} color="#22d3ee" />
+                      <ActualRideChip label="Avg Power" value={`${Math.round(todayActualRide.avgWatts)}W`} />
                     )}
                     {todayActualRide.normalizedPower != null && todayActualRide.normalizedPower > 0 && (
-                      <ActualRideChip label="NP" value={`${Math.round(todayActualRide.normalizedPower)}W`} color="#60a5fa" />
+                      <ActualRideChip label="NP" value={`${Math.round(todayActualRide.normalizedPower)}W`} />
                     )}
                     {todayActualRide.avgHr != null && todayActualRide.avgHr > 0 && (
                       <ActualRideChip label="Avg HR" value={`${Math.round(todayActualRide.avgHr)} bpm`} color="#ef4444" />
                     )}
                     {todayActualRide.tss != null && todayActualRide.tss > 0 && (
-                      <ActualRideChip label="TSS" value={Math.round(todayActualRide.tss).toString()} color="#a78bfa" />
+                      <ActualRideChip label="TSS" value={Math.round(todayActualRide.tss).toString()} />
                     )}
                     {todayActualRide.distanceKm != null && todayActualRide.distanceKm > 0 && (
-                      <ActualRideChip label="Distance" value={`${todayActualRide.distanceKm.toFixed(1)} km`} color="#34d399" />
+                      <ActualRideChip label="Distance" value={`${todayActualRide.distanceKm.toFixed(1)} km`} />
                     )}
                   </div>
                   {todayStatus === "extra" && (

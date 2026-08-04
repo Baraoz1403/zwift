@@ -334,16 +334,8 @@ function TodayHero({
     ? (workout.title.length > 26 ? workout.title.slice(0, 24) + "…" : workout.title)
     : "Rest Day";
 
-  // Detect workout zone color for the session chip
-  const workoutType = (workout?.title ?? "").toLowerCase();
-  const sessionColor =
-    workoutType.includes("sweet") ? "#10b981" :
-    workoutType.includes("threshold") || workoutType.includes("ftp") ? "#FF5A1F" :
-    workoutType.includes("vo2") ? "#ef4444" :
-    workoutType.includes("tempo") ? "#3b82f6" :
-    workoutType.includes("sprint") ? "#a855f7" :
-    workoutType.includes("endurance") || workoutType.includes("z2") ? "#22d3ee" :
-    "var(--m-muted)";
+  // Single VOLT accent — zone colors removed (monochromatic design).
+  const sessionColor = isRestOrBonus ? "var(--m-muted)" : "#FF5A1F";
 
   return (
     <div style={{
