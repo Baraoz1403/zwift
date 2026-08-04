@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getRiderIdentity as getCachedIdentity } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getCachedIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
@@ -15,9 +15,8 @@ import type { WorkoutStructureBlock } from "@/lib/zwo";
  * POST /api/m/chat
  *
  * Mobile + tablet coach chat. The coach has REAL capabilities:
- *   1. update_workout  — modifies a single day's workout in the KV plan
- *   2. rebuild_week    — replaces the ENTIRE week's plan in one call (preferred for full rebuilds)
- *   3. add_coach_note  — saves a coaching note to the rider fingerprint
+ *   1. update_workout  — modifies a day's workout in the KV plan (persisted immediately)
+ *   2. add_coach_note  — saves a coaching note to the rider fingerprint
  *
  * Context fed to every request:
  *   - Full rider fingerprint summary (30+ ride history, feel scores, FTP trend)
@@ -94,29 +93,6 @@ const TOOLS = [
       required: ["note"],
     },
   },
-  {
-    name: "rebuild_week",
-    description:
-      "Replace the ENTIRE week's training plan in a single call. " +
-      "Use this when the athlete asks to: rebuild the week, generate a new plan, make the week more interesting, add more intervals, change the training focus, or when they say the current plan doesn't match their preferences. " +
-      "DO NOT use update_workout repeatedly — call rebuild_week ONCE instead. " +
-      "You provide a focus style and any specific notes; the system builds all workouts from the athlete's profile automatically.",
-    input_schema: {
-      type: "object",
-      properties: {
-        focus: {
-          type: "string",
-          enum: ["intervals", "endurance", "sweet-spot", "mixed", "recovery", "race-prep"],
-          description: "Overall training focus for the week",
-        },
-        notes: {
-          type: "string",
-          description: "Any specific athlete requests or constraints (e.g., 'athlete wants VO2max intervals, 75min sessions, no Tuesday ride'). Leave empty if no special requests.",
-        },
-      },
-      required: ["focus"],
-    },
-  },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -179,18 +155,16 @@ async function pushUpdatedWorkoutToIcu(
 
     return { pushed: result.ok, error: result.error };
   } catch (e) {
-    const errMsg = e instanceof Error ? e.message : String(e);
-    // Surface 401 so the caller can set icu_invalid flag
-    return { pushed: false, error: errMsg, status401: errMsg.includes("401") || errMsg.toLowerCase().includes("unauthorized") };
+    return { pushed: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
 // ── Tool execution ────────────────────────────────────────────────────────────
 
 /**
- * Regenerate WorkoutStructureBlock[] from coach update inputs.
- * Rebuilds the power graph and session-structure panel after a coach edit.
- * Replaces clearing structure (which left just a 🚴 placeholder).
+ * Regenerate a WorkoutStructureBlock[] from the coach's update inputs.
+ * Used to rebuild the power graph and session-structure panel after a coach edit.
+ * Better than clearing structure entirely (which left just a 🚴 placeholder).
  */
 function inferStructure(type: string, durationMin: number, targetPowerPctFtp?: string): WorkoutStructureBlock[] {
   const nums = (targetPowerPctFtp ?? "").match(/\d+/g)?.map(Number) ?? [];
@@ -207,9 +181,9 @@ function inferStructure(type: string, durationMin: number, targetPowerPctFtp?: s
     const offMin = Math.max(2, Math.round(onMin * 0.5));
     const repeats = Math.max(2, Math.round(mainMin / (onMin + offMin)));
     return [
-      { type: "warmup",    durationMin: warmMin,                   powerFtp: 0.60, label: "Warm up" },
+      { type: "warmup",    durationMin: warmMin,              powerFtp: 0.60, label: "Warm up" },
       { type: "intervals", durationMin: repeats * (onMin + offMin), powerFtp: mainPower, recoveryPowerFtp: 0.50, repeats, onSec: onMin * 60, offSec: offMin * 60, label: "Main set" },
-      { type: "cooldown",  durationMin: coolMin,                   powerFtp: 0.50, label: "Cool down" },
+      { type: "cooldown",  durationMin: coolMin,              powerFtp: 0.50, label: "Cool down" },
     ];
   }
   if (t.includes("recover")) {
@@ -219,6 +193,7 @@ function inferStructure(type: string, durationMin: number, targetPowerPctFtp?: s
       { type: "cooldown",    durationMin: coolMin, powerFtp: 0.45,      label: "Cool down" },
     ];
   }
+  // Endurance / Tempo / default
   return [
     { type: "warmup",      durationMin: warmMin, powerFtp: mainPower, label: "Warm up" },
     { type: "steadystate", durationMin: mainMin, powerFtp: mainPower, label: "Main effort" },
@@ -236,142 +211,6 @@ interface UpdateWorkoutInput {
   reason?: string;
 }
 
-interface RebuildWeekInput {
-  focus: "intervals" | "endurance" | "sweet-spot" | "mixed" | "recovery" | "race-prep";
-  notes?: string;
-}
-
-/** Build a full week of workouts from the athlete profile + requested focus. */
-async function execRebuildWeek(
-  athleteId: string,
-  weekOf: string,
-  input: RebuildWeekInput,
-  profile: { daysRange?: string; sessionLength?: string; goals?: string[] } | null | undefined,
-  ftpW: number | null,
-): Promise<{ ok: boolean; message: string; toolAction?: string }> {
-  try {
-    const plan = await getCachedPlan(athleteId, weekOf);
-    if (!plan) return { ok: false, message: "No plan found for this week. A base plan must exist first." };
-
-    const sessionMin = parseInt(profile?.sessionLength ?? "75", 10) || 75;
-
-    // Determine riding days from daysRange (e.g. "5-6" → pick 5 or 6 days)
-    const rangeParts = (profile?.daysRange ?? "5").split("-").map(Number);
-    const targetDays = rangeParts[rangeParts.length - 1] || 5;
-
-    // Canonical day order — spread riding days intelligently
-    const ALL_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-    // Pick days evenly distributed across the week, preserving rest days
-    const ridingDayPool = ["Monday","Tuesday","Wednesday","Thursday","Saturday","Sunday","Friday"];
-    const ridingDays = ridingDayPool.slice(0, Math.min(targetDays, 6));
-    const restDays = ALL_DAYS.filter(d => !ridingDays.includes(d));
-
-    const focus = input.focus;
-    const notes = input.notes ?? "";
-
-    type WorkoutTemplate = { title: string; type: string; powerPct: string; descFn: (min: number) => string };
-    // Workout templates per focus
-    const templates: Record<string, WorkoutTemplate[]> = {
-      intervals: [
-        { title: "VO2max Intervals", type: "vo2max", powerPct: "110-120%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 5×3min @110-120% FTP / 3min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Threshold Intervals", type: "threshold", powerPct: "88-95%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×8min @88-95% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Sweet Spot Intervals", type: "sweet-spot", powerPct: "85-92%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 2×15min @85-92% FTP / 5min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Sprint & Power Intervals", type: "sprint", powerPct: "120-150%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @60-70% FTP. Main: 8×30sec @130-150% FTP / 2.5min @50% FTP. Endurance filler @65-70% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Over-Under Intervals", type: "threshold", powerPct: "88-105%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×(4min @105% / 4min @88%) FTP × 2 sets / 5min rest. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "VO2max Long Intervals", type: "vo2max", powerPct: "108-115%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×5min @108-115% FTP / 5min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-      ],
-      endurance: [
-        { title: "Aerobic Base Ride", type: "endurance", powerPct: "60-75%",
-          descFn: (m) => `Steady aerobic effort. Warmup 10min @55% FTP. Main: ${m-20}min @62-72% FTP with cadence variations every 10min. Cooldown 10min @50% FTP.` },
-        { title: "Tempo Endurance", type: "endurance", powerPct: "72-82%",
-          descFn: (m) => `Warmup 10min @55-65% FTP. Main: ${m-20}min @72-80% FTP steady tempo. Cooldown 10min @50% FTP.` },
-        { title: "Long Steady Effort", type: "endurance", powerPct: "62-70%",
-          descFn: (m) => `Pure zone-2 ride. Warmup 10min @55% FTP. Main: ${m-20}min @62-70% FTP. Cooldown 10min @50% FTP.` },
-        { title: "Cadence Drill Ride", type: "endurance", powerPct: "60-70%",
-          descFn: (m) => `Warmup 10min @55% FTP. Main: alternating 5min @95-100rpm / 5min @75-80rpm @63-70% FTP for ${m-20}min. Cooldown 10min @50% FTP.` },
-      ],
-      "sweet-spot": [
-        { title: "Sweet Spot Block", type: "sweet-spot", powerPct: "85-92%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×12min @85-92% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Extended Sweet Spot", type: "sweet-spot", powerPct: "83-90%",
-          descFn: (m) => `Warmup 10min @55-65% FTP. Main: 2×20min @83-90% FTP / 5min @55% FTP. Cooldown 10min @50% FTP.` },
-        { title: "Sweet Spot + Tempo", type: "sweet-spot", powerPct: "82-92%",
-          descFn: (m) => `Warmup 10min @55-65% FTP. Tempo block: 10min @78-83% FTP. Sweet spot: 3×8min @88-92% FTP / 3min @55% FTP. Cooldown 10min @50% FTP.` },
-      ],
-      mixed: [
-        { title: "Threshold Intervals", type: "threshold", powerPct: "88-95%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×8min @88-95% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Aerobic Endurance", type: "endurance", powerPct: "62-72%",
-          descFn: (m) => `Steady aerobic effort. Warmup 10min @55% FTP. Main: ${m-20}min @62-72% FTP. Cooldown 10min @50% FTP.` },
-        { title: "Sweet Spot Block", type: "sweet-spot", powerPct: "85-92%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 3×12min @85-92% FTP / 4min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "VO2max Intervals", type: "vo2max", powerPct: "110-120%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 5×3min @110-120% FTP / 3min @50% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Sprint Power", type: "sprint", powerPct: "120-150%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @60-70% FTP. Main: 8×30sec @130-150% FTP / 2.5min @50% FTP. Filler @65-70% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-      ],
-      recovery: [
-        { title: "Easy Recovery Spin", type: "recovery", powerPct: "45-55%",
-          descFn: (m) => `Very easy spin. All effort @45-55% FTP. High cadence 90-100rpm. Duration: ${m}min. No pressure — just flush the legs.` },
-        { title: "Active Recovery Ride", type: "recovery", powerPct: "50-60%",
-          descFn: (m) => `Easy aerobic. Warmup 10min @50% FTP. Main: ${m-15}min @50-60% FTP. Cooldown 5min @45% FTP.` },
-      ],
-      "race-prep": [
-        { title: "Race-Pace Efforts", type: "threshold", powerPct: "92-100%",
-          descFn: (m) => `Warmup ${Math.round(m*0.15)}min @55-65% FTP. Main: 4×5min @92-100% FTP / 5min @55% FTP. Cooldown ${Math.round(m*0.1)}min @50% FTP.` },
-        { title: "Sprint Activation", type: "sprint", powerPct: "120-150%",
-          descFn: (m) => `Warmup 15min @55-70% FTP. Main: 6×20sec max sprint / 3min easy. Openers: 3×1min @90-95% FTP / 3min easy. Cooldown 10min @50% FTP.` },
-        { title: "Threshold Block", type: "threshold", powerPct: "90-97%",
-          descFn: (m) => `Warmup 10min @55-65% FTP. Main: 3×10min @90-97% FTP / 5min @55% FTP. Cooldown 10min @50% FTP.` },
-      ],
-    };
-
-    const tpl = templates[focus] ?? templates["mixed"];
-    const updatedWorkouts: WeeklyWorkout[] = [];
-
-    // Build riding days
-    ridingDays.forEach((day, i) => {
-      const t = tpl[i % tpl.length];
-      const workout: WeeklyWorkout = {
-        day,
-        title: t.title,
-        durationMin: sessionMin,
-        type: t.type as WeeklyWorkout["type"],
-        description: t.descFn(sessionMin),
-        targetPowerPctFtp: t.powerPct,
-        structure: inferStructure(t.type, sessionMin, t.powerPct),
-      };
-      updatedWorkouts.push(workout);
-    });
-
-    // Add rest days
-    restDays.forEach(day => {
-      updatedWorkouts.push({ day, title: "Rest Day", durationMin: 0, type: "rest", description: "Full rest — recovery and adaptation." });
-    });
-
-    // Sort by canonical day order
-    updatedWorkouts.sort((a, b) => ALL_DAYS.indexOf(a.day) - ALL_DAYS.indexOf(b.day));
-
-    const summary = `${targetDays}-day ${focus} week, ${sessionMin}min sessions. ${notes ? "Notes: " + notes : ""}`;
-    await setCachedPlan(athleteId, { ...plan, workouts: updatedWorkouts, summary });
-
-    const dayList = ridingDays.map((d, i) => `${d}: ${updatedWorkouts.find(w=>w.day===d)?.title}`).join(", ");
-    return {
-      ok: true,
-      message: `Week rebuilt with ${targetDays} ${focus}-focused workouts (${sessionMin}min each). Days: ${dayList}.`,
-      toolAction: `Rebuilt week: ${targetDays}×${sessionMin}min ${focus} focus`,
-    };
-  } catch (e) {
-    return { ok: false, message: `Failed to rebuild week: ${String(e)}` };
-  }
-}
-
 async function execUpdateWorkout(
   athleteId: string,
   weekOf: string,
@@ -385,8 +224,10 @@ async function execUpdateWorkout(
       w => w.day?.toLowerCase() === input.day.toLowerCase(),
     );
 
-    // Destructure away old structure blocks — Marco's description replaces them.
-    // Keeping old structure would show an outdated power chart after the update.
+    // Destructure away old structure — Marco's update replaces it with a freshly
+    // inferred structure so the power graph and Session structure panel reflect
+    // the NEW workout (not the old one). Without this, the card showed 🚴 and
+    // the old blocks after every coach edit.
     const { structure: _cleared, ...oldWorkout } = (idx >= 0 ? plan.workouts[idx] : {}) as Partial<WeeklyWorkout>;
     const effectivePowerPct = input.targetPowerPctFtp ?? (oldWorkout as WeeklyWorkout).targetPowerPctFtp;
     const updatedWorkout: WeeklyWorkout = {
@@ -397,8 +238,8 @@ async function execUpdateWorkout(
       type: input.type,
       ...(input.description ? { description: input.description } : {}),
       ...(effectivePowerPct ? { targetPowerPctFtp: effectivePowerPct } : {}),
-      // Regenerate structure from updated type/duration/power so the graph and
-      // session-structure panel show the new workout (not 🚴 placeholder).
+      // Regenerate structure from the updated type/duration/power so the graph
+      // is immediately visible and the session-structure panel shows correct blocks.
       structure: inferStructure(input.type, input.durationMin, effectivePowerPct),
     };
 
@@ -437,10 +278,6 @@ async function execAddCoachNote(
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
-export async function GET() {
-  return NextResponse.json({ ok: true, version: "debugAnthropic", ts: Date.now() });
-}
-
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -461,15 +298,11 @@ export async function POST(req: NextRequest) {
   const athleteId = String(session.athleteId);
   const weekOf = mondayOfCurrentWeek();
 
-  // Outer try-catch wraps all business logic so any uncaught error returns JSON (not empty 500)
-  try {
-
   // ── ICU credentials (needed for auto-push after workout update) ───────────
   const cookieIcuKey = cookieStore.get("zwift_intervals_key")?.value ?? null;
   const cookieIcuId  = cookieStore.get("zwift_intervals_id")?.value ?? null;
   // Fall back to KV-stored creds if cookies aren't set (other device connected ICU)
-  let kvIcuCreds: { icuKey?: string; icuId?: string } | null = null;
-  try { kvIcuCreds = cookieIcuKey ? null : await getIntervalsCredentials(athleteId); } catch { kvIcuCreds = null; }
+  const kvIcuCreds = cookieIcuKey ? null : await getIntervalsCredentials(athleteId).catch(() => null);
   const icuKey    = cookieIcuKey ?? kvIcuCreds?.icuKey ?? null;
   const icuAthleteId = cookieIcuId ?? kvIcuCreds?.icuId ?? null;
 
@@ -491,34 +324,19 @@ export async function POST(req: NextRequest) {
   const riderFirstName = cachedIdentity?.firstName ?? undefined;
 
   // Build ICU performance context on-demand if not yet cached.
-  // Skip if icu_invalid is set — avoids hanging on a known-bad token.
+  // This ensures Marco always has 30-ride history even before a plan is generated.
   let icuPerfCtxRaw = storedPerfCtxRaw;
-  const preCheckInvalid = await kvGet(`zwift:${athleteId}:icu_invalid`).catch(() => null);
-  if (!icuPerfCtxRaw && icuKey && icuAthleteId && preCheckInvalid !== "1") {
+  if (!icuPerfCtxRaw && icuKey && icuAthleteId) {
     try {
       const todayD = new Date().toISOString().slice(0, 10);
       const since  = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-      // 5-second timeout to prevent Vercel function timeout.
-      // Assign to variable first so we can suppress the unhandled rejection if timeout wins.
-      const actsPromise = fetchIcuActivities(icuKey, icuAthleteId, since, todayD);
-      actsPromise.catch(() => {}); // prevent unhandled rejection if timeout fires first
-      const acts = await Promise.race([
-        actsPromise,
-        new Promise<never>((_, r) => setTimeout(() => r(new Error("ICU fetch timeout")), 5000)),
-      ]);
-      const built = buildIcuPerformanceContext(acts);
+      const acts   = await fetchIcuActivities(icuKey, icuAthleteId, since, todayD);
+      const built  = buildIcuPerformanceContext(acts);
       if (built) {
         icuPerfCtxRaw = built;
         kvSet(`zwift:${athleteId}:icu_perf_ctx`, built, 7 * 24 * 60 * 60).catch(() => {});
       }
-    } catch (e: unknown) {
-      // If ICU returns 401, mark token as invalid so the layout shows reconnect screen
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
-        kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
-      }
-      /* best-effort — never fail the chat request */
-    }
+    } catch { /* best-effort — never fail the chat request */ }
   }
 
   const profile = state?.riderProfile;
@@ -527,29 +345,9 @@ export async function POST(req: NextRequest) {
   let trainingLoad: Record<string, unknown> | null = null;
   try { if (loadRaw) trainingLoad = JSON.parse(loadRaw); } catch { /* */ }
 
-  // icu_invalid check already done above (preCheckInvalid) — reuse it here
-  const icuInvalidFlag = preCheckInvalid;
-
-  // Auto-clear history after 30 minutes of inactivity
-  const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
-  let rawMessages: StoredMessage[] = [];
-  try { rawMessages = storedHistoryRaw ? (JSON.parse(storedHistoryRaw) as StoredMessage[]) : []; } catch { rawMessages = []; }
-  const lastTs = rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].ts : 0;
-  const sessionExpired = lastTs > 0 && Date.now() - lastTs > SESSION_TIMEOUT_MS;
-  if (sessionExpired) {
-    // Clear stale history silently — athlete starts a fresh session
-    kvSet(CHAT_HISTORY_KEY(athleteId), "[]", 1).catch(() => {});
-  }
-  // Filter out coach messages that contain error indicators — these are stale
-  // "communication error" messages that would mislead Marco into continuing
-  // the error narrative even after the underlying issue is resolved.
-  const ERROR_PATTERNS = ["בעיית תקשורת", "communication error", "network error", "couldn't get a response", "AI service error"];
-  const cleanedMessages = sessionExpired ? [] : rawMessages.filter(m => {
-    if (m.role !== "coach") return true;
-    const lower = (m.text ?? "").toLowerCase();
-    return !ERROR_PATTERNS.some(p => lower.includes(p.toLowerCase()));
-  });
-  const chatHistory: StoredMessage[] = cleanedMessages;
+  const chatHistory: StoredMessage[] = storedHistoryRaw
+    ? (JSON.parse(storedHistoryRaw) as StoredMessage[])
+    : [];
 
   // ── Build system prompt ───────────────────────────────────────────────────
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -620,17 +418,13 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt =
     "You are Marco, a knowledgeable, direct AI cycling coach with REAL authority to modify the athlete's training plan.\n" +
-    "IMPORTANT: The ICU connection status above reflects the CURRENT real-time state. If earlier messages in this conversation mentioned communication errors or ICU issues, those are now resolved — do not repeat them or reference them unless a NEW error occurs.\n" +
     "Your name is Marco. When introducing yourself or when asked your name, say 'Marco'.\n\n" +
     "CRITICAL RULES:\n" +
-    "- When the athlete asks to change a SINGLE workout, call update_workout immediately. Do not describe — just DO it.\n" +
-    "- When the athlete asks to rebuild the week, add more intervals, change the training focus, or says the plan is boring/wrong — call rebuild_week ONCE. Never call update_workout multiple times for a full rebuild.\n" +
-    "- NEVER ask the athlete to repeat information already in the Athlete Context (FTP, goals, training phase, session length, event date, rides/week). Use it. If they said '5-6 rides' in their profile, rebuild_week will use it automatically.\n" +
-    "- NEVER say 'I will do it', 'Building now', or 'Let me...' — just call the tool immediately and confirm with 1-2 sentences after.\n" +
+    "- When the athlete asks to change ANY workout, ALWAYS call the update_workout tool — do not just describe the change.\n" +
     "- When the athlete shares something important (injury, fatigue, goal change), ALWAYS call add_coach_note — then acknowledge.\n" +
     "- After calling a tool, give a brief, direct confirmation (1-2 sentences). Don't repeat the full plan.\n" +
     "- Be direct and practical. 2-4 sentences max unless the athlete asks for a detailed explanation.\n" +
-    "- Always respect the rider's wishes. If they want swapped or harder workouts, do it without argument.\n\n" +
+    "- Always respect the rider's wishes. If they want to swap or drop a workout, do it — don't argue.\n\n" +
     "WORKOUT UPDATE RULE — NON-NEGOTIABLE:\n" +
     "- ALWAYS provide 'description' when calling update_workout. NEVER omit it.\n" +
     "- The description must include the full block structure: warmup → intervals → cooldown.\n" +
@@ -685,9 +479,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!aiRes1.ok) {
-      const errBody = await aiRes1.text();
-      console.error("Anthropic error:", aiRes1.status, errBody);
-      return NextResponse.json({ ok: false, error: `Anthropic ${aiRes1.status}: ${errBody.slice(0, 200)}` }, { status: 502 });
+      const err = await aiRes1.text();
+      console.error("Anthropic error:", aiRes1.status, err);
+      return NextResponse.json({ ok: false, error: "AI service error." }, { status: 502 });
     }
 
     const data1 = await aiRes1.json();
@@ -715,38 +509,9 @@ export async function POST(req: NextRequest) {
                 result.message += " Also pushed to Intervals.icu (Zwift will sync automatically).";
                 result.toolAction = (result.toolAction ?? "") + " → pushed to ICU";
               } else {
-                // If 401, mark ICU token as invalid so the layout shows reconnect screen
-                if ((icuPush as { status401?: boolean }).status401) {
-                  kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
-                }
-                result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen. Please reconnect Intervals.icu in Settings.`;
+                // Surface the failure to the AI so it can report it to the athlete
+                result.message += ` ICU push failed (${icuPush.error ?? "unknown error"}) — plan saved in KV, but Zwift sync did not happen.`;
                 console.warn("ICU push failed after workout update:", icuPush.error);
-              }
-            }
-          }
-        } else if (block.name === "rebuild_week") {
-          const rebuildInput = block.input as RebuildWeekInput;
-          result = await execRebuildWeek(athleteId, weekOf, rebuildInput, profile, ftpEntry?.ftp ?? null);
-          if (result.ok) {
-            planUpdated = true;
-            // Auto-push all workouts to ICU after a full week rebuild
-            if (icuKey && icuAthleteId) {
-              const rebuiltPlan = await getCachedPlan(athleteId, weekOf).catch(() => null);
-              if (rebuiltPlan) {
-                let icuPushCount = 0;
-                for (const w of rebuiltPlan.workouts) {
-                  if (w.type === "rest") continue;
-                  const icuPush = await pushUpdatedWorkoutToIcu(icuKey, icuAthleteId, weekOf, w, riderFirstName);
-                  if (icuPush.pushed) icuPushCount++;
-                  else if ((icuPush as { status401?: boolean }).status401) {
-                    kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
-                    break;
-                  }
-                }
-                if (icuPushCount > 0) {
-                  result.message += ` Pushed ${icuPushCount} workouts to Intervals.icu — Zwift will sync automatically.`;
-                  result.toolAction = (result.toolAction ?? "") + ` → pushed ${icuPushCount} to ICU`;
-                }
               }
             }
           }
@@ -815,16 +580,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, reply, planUpdated, toolAction });
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? (err.stack ?? "") : "";
-    console.error("Coach chat error:", msg, stack);
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
-  }
-  } catch (outerErr) {
-    // Catches any error thrown before the Anthropic section (KV reads, fingerprint, prompt building, etc.)
-    const msg = outerErr instanceof Error ? outerErr.message : String(outerErr);
-    const stack = outerErr instanceof Error ? (outerErr.stack ?? "") : "";
-    console.error("Coach chat outer error:", msg, stack);
-    return NextResponse.json({ ok: false, error: `Handler error: ${msg}` }, { status: 500 });
+    console.error("Coach chat error:", err);
+    return NextResponse.json({ ok: false, error: "Internal error." }, { status: 500 });
   }
 }

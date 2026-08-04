@@ -21,12 +21,13 @@ import type { RiderTrainingProfile } from "./rider-profile";
 /**
  * Fallback profile for athletes who haven't completed onboarding.
  * Ensures the AI always has at least a minimal signal rather than
- * falling back to ride-history guessing.
+ * falling back to ride-history guessing. The athlete can override
+ * any field by completing their profile in the VOLT settings.
  */
 const DEFAULT_RIDER_PROFILE: RiderTrainingProfile = {
   goals: ["fitness"],
-  daysRange: "2-3",
-  sessionLength: "60",
+  daysRange: "2-3",       // conservative: 2–3 rides/week until athlete sets their own
+  sessionLength: "60",    // 60-minute sessions
   sports: ["cycling"],
   environment: "indoor",
   gender: "male",
@@ -258,6 +259,9 @@ export async function getStoredAthleteState(athleteId: string): Promise<StoredAt
     kvGet(`zwift:${athleteId}:icu_id`),
   ]);
   return {
+    // Fall back to DEFAULT_RIDER_PROFILE when the athlete hasn't set one yet.
+    // This ensures the AI always receives a minimum set of constraints
+    // (session count, duration) rather than guessing from ride history alone.
     riderProfile: profileRaw ? (JSON.parse(profileRaw) as RiderTrainingProfile) : DEFAULT_RIDER_PROFILE,
     macroCycle: macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null,
     previousPlan: planRaw ? (JSON.parse(planRaw) as { weekOf: string; workouts: WeeklyWorkout[] }) : null,

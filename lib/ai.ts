@@ -780,10 +780,9 @@ Every workout structure block must include explicit cadenceTarget.
   "a Foundation or Recovery session between hard efforts. " +
   "(3) Weekly sequence: hard day -> easy day -> hard day -> easy day. " +
   "(4) Workout type progression by goal: " +
-  "FTP goal — intensity by phase (ignore week-number restrictions; use phase and TSB gates instead): " +
-  "Base phase: Sweet Spot Classic + one VO2max session (Micro Intervals or 60/60) + bookend Foundation rides. " +
-  "Build phase: Threshold Development + Norwegian 4×4 or higher rung VO2max + Sweet Spot. " +
-  "Recovery phase: Foundation + Z2 only, no hard sessions. " +
+  "FTP goal beginner (weeks 1-3): Foundation + Strength + Tempo only. " +
+  "FTP goal weeks 4+: add Intermittent (30s on/off). " +
+  "FTP goal weeks 5+: add Threshold Development (4-8min Z4 intervals). " +
   "Weight/fitness goal: prioritize long Z2 Foundation blocks for sustainable " +
   "energy expenditure; include intensity sessions according to the " +
   "INTENSITY SESSION GUIDELINES matrix (level and phase determine the count, " +
@@ -1299,16 +1298,73 @@ export async function generateWeeklyPlan(params: {
   // corrective message. This is code-level — it cannot be bypassed by prompt drift.
   const isRecoveryWeek = params.cycle?.phase === "Recovery";
 
-  // Quality gate check (log only — retry removed to stay within Vercel 60s limit.
-  // A second Claude call adds 20-30s and reliably causes the function to be killed,
-  // leaving the user with no plan at all. Better to return the first plan even if
-  // imperfect than to time out and return nothing.)
   if (!isRecoveryWeek) {
     const normalized1 = normalizeWeeklyPlan(finalWorkouts);
     const intervalCount = countIntervalSessions(normalized1);
     const boringCount = normalized1.filter(isBoringSteadyState).length;
+
+    // Retry if fewer than 2 interval sessions OR more than 1 Foundation/LongEndurance
     if (intervalCount < 2 || boringCount > 1) {
-      console.warn(`[quality-gate] plan below threshold: intervalCount=${intervalCount}, boringCount=${boringCount} — returning as-is (retry disabled for timeout safety)`);
+      // Build retry prompt with explicit failure diagnosis
+      const failures: string[] = [];
+      if (intervalCount < 2) failures.push(`only ${intervalCount} session(s) contain defined interval blocks (minimum required: 2)`);
+      if (boringCount > 1) failures.push(`${boringCount} Foundation Ride or Long Endurance sessions appear as non-recovery filler (maximum allowed as non-recovery filler: 1)`);
+
+      const retrySystemPrompt =
+        `⛔ QUALITY GATE FAILURE — PLAN REJECTED ⛔\n` +
+        `The plan you just returned was rejected for the following reason(s):\n` +
+        failures.map(f => `  • ${f}`).join("\n") + "\n\n" +
+        `MANDATORY CORRECTIONS before returning a new plan:\n` +
+        `1. Every non-rest, non-recovery day MUST have a structure[] that includes at least one block with type="intervals".\n` +
+        `2. Foundation Ride and Long Endurance are BANNED as primary sessions except for the single active-recovery day immediately after a hard session.\n` +
+        `3. Replace any Foundation/Endurance day that is NOT immediately post-hard-session with: Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, or Sub-Threshold Blocks.\n` +
+        `4. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
+        systemPrompt;
+
+      let resp2: Response;
+      try {
+        resp2 = await fetch(ANTHROPIC_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 8000,
+            system: retrySystemPrompt,
+            messages: [
+              { role: "user", content: userContent },
+              { role: "assistant", content: cleaned },
+              { role: "user", content: "The plan above was rejected. Return a corrected plan now that passes the quality gate." },
+            ],
+          }),
+        });
+      } catch (e) {
+        // If retry fails at network level, fall back to original (degraded but better than crash)
+        resp2 = { ok: false } as Response;
+      }
+
+      if (resp2.ok) {
+        const data2 = await resp2.json();
+        const text2 = data2?.content?.[0]?.text;
+        if (typeof text2 === "string") {
+          const s2 = text2.indexOf("{");
+          const e2 = text2.lastIndexOf("}");
+          if (s2 !== -1 && e2 > s2) {
+            try {
+              const obj2 = JSON.parse(text2.slice(s2, e2 + 1)) as Partial<WeeklyPlan>;
+              if (Array.isArray(obj2.workouts) && obj2.workouts.length > 0) {
+                finalWorkouts = obj2.workouts as WeeklyWorkout[];
+                planSummary = typeof obj2.summary === "string" ? obj2.summary : planSummary;
+              }
+            } catch {
+              // Retry JSON parse failed — keep original plan
+            }
+          }
+        }
+      }
     }
   }
   // ────────────────────────────────────────────────────────────────────────

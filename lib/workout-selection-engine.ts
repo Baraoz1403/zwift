@@ -72,6 +72,8 @@ const PHASE_ALLOWED_FAMILIES: Record<string, StimulusFamily[]> = {
   // with a tested FTP who wants to progress.
   // Base phase: aerobic foundation only — Z2, Tempo, Sweet Spot.
   // Neuromuscular/sprint work belongs in Build phase (power on top of base).
+  // Removing it here ensures the AI can never prescribe sprint sessions during
+  // a Base block, and they appear explicitly in the ineligible list.
   Base:       ["endurance", "tempo", "sweetSpot"],
   Build:      ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
   Build1:     ["endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular"],
@@ -79,7 +81,7 @@ const PHASE_ALLOWED_FAMILIES: Record<string, StimulusFamily[]> = {
   Specialty:  ["sweetSpot", "threshold", "vo2max", "neuromuscular", "anaerobic"],
   Taper:      ["endurance", "tempo", "sweetSpot"],
   RaceWeek:   ["endurance", "neuromuscular"],
-  Recovery:   ["endurance", "sweetSpot"],  // Active recovery: reduced volume but one short SS block is physiologically sound
+  Recovery:   ["endurance"],
 };
 
 function getAllowedFamilies(phase: string): StimulusFamily[] {
@@ -155,9 +157,6 @@ function coldStartRung(wPerKg: number | null, ftpFallback?: number | null): numb
   if (level < 3.5) return 2;                    // Intermediate → rung 2
   if (level < 4.0) return 3;                    // Trained (3.5-4.0 W/kg) → rung 3 (e.g. "4×4 Two-Set" for vo2max)
   return 4;                                      // Advanced (4.0+ W/kg) → rung 4 (e.g. "Norwegian 4×4" for vo2max)
-  // Rung 1 for Intermediate: e.g. sweetSpot = "Sweet Spot Classic",
-  // threshold = "Threshold Development". Rung 2 would jump straight to
-  // "3×15 Sweet Spot" with no prior session — too aggressive for a cold start.
 }
 
 // ── TSB signal ────────────────────────────────────────────────────────────────
@@ -506,8 +505,11 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
   // it's allowed and physiologically appropriate for an experienced rider.
   // Adding the 3rd family gives the AI: Z2 + Tempo + Sweet Spot as options,
   // which is exactly right for a 235W FTP athlete in a Base week.
-  // Threshold lowered from 3.0 to 2.5: Novice riders (2.5-3.0 W/kg) also
-  // need Sweet Spot in their eligible list.
+  //
+  // Threshold lowered from 3.0 to 2.5: Novice riders (2.5–3.0 W/kg) also
+  // need Sweet Spot in their eligible list — at 2.6 W/kg with an FTP goal,
+  // the previous threshold permanently excluded sweetSpot from eligible
+  // workouts, producing plans that were 100% endurance with no intensity.
   const familySlot = (effectiveWPerKg != null && effectiveWPerKg >= 2.5) ? 3 : 2;
   const familiesForSelection = maxIntensitySessions > 0
     ? ranked.slice(0, Math.min(familySlot, ranked.length))
@@ -524,7 +526,12 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
     eligibleWorkouts.push(...workouts);
   }
 
-  // Mark excluded families as ineligible with reasons
+  // Mark excluded families as ineligible with reasons.
+  // IMPORTANT: every family NOT in familiesForSelection must appear in the
+  // ineligible list so the AI cannot silently pick sessions from those families.
+  // Previously, families that were merely ranked below the slot cutoff were
+  // omitted from both lists — the AI saw no explicit block and freely chose
+  // neuromuscular / anaerobic workouts even when they weren't priority.
   const allFamilies: StimulusFamily[] = [
     "endurance", "tempo", "sweetSpot", "threshold", "vo2max", "neuromuscular", "anaerobic"
   ];
@@ -546,6 +553,8 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
         reason: `TSB is very negative (${tsb?.toFixed(0) ?? "unknown"}). No intensity sessions this week.`,
       });
     } else {
+      // Family is allowed by phase and level but ranked below the slot cutoff —
+      // explicitly block it so the AI doesn't quietly prescribe it.
       ineligibleWorkouts.push({
         title: `[All ${fam} sessions]`,
         reason: `Not a priority stimulus this week — focus on the eligible families above.`,

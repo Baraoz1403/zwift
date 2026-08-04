@@ -6,17 +6,6 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
 import { isRunWorkout } from "@/lib/zwo";
 
-// ── Bonus activity helpers ───────────────────────────────────────────────────
-export interface BonusActivityInfo {
-  durationMin?: number;
-  avgPower?: number;
-  normalizedPower?: number;
-  avgHr?: number;
-  tss?: number;
-  distanceKm?: number;
-  sport?: string;
-}
-
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
   threshold:     { accent: "#ef4444", label: "Threshold"  },
@@ -81,7 +70,6 @@ interface Props {
   today: string;
   summary: string | null;
   weekStatus?: Record<string, string>;
-  bonusActivities?: Record<string, BonusActivityInfo>;
   prevWeekHref: string | null;
   nextWeekHref: string | null;
   isCurrentWeek: boolean;
@@ -89,7 +77,7 @@ interface Props {
   hideNav?: boolean;
 }
 
-export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, bonusActivities = {} as Record<string, BonusActivityInfo>, prevWeekHref, nextWeekHref, isCurrentWeek, hideNav = false }: Props) {
+export default function WeekView({ workouts, weekOf, weekRange, today, summary, weekStatus = {}, prevWeekHref, nextWeekHref, isCurrentWeek, hideNav = false }: Props) {
   const pathname = usePathname();
   // "View full workout" links to the correct layout based on route
   const todayHref = pathname.startsWith("/tablet") ? "/tablet/today" : "/m";
@@ -165,13 +153,9 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
           const isToday = w?.date === today;
           const zone = w ? detectZone(w) : "rest";
           const colors = ZONE_COLOR[zone] ?? ZONE_COLOR.rest;
-          const dayStatus = w?.date ? weekStatus[w.date] : undefined;
-          const isBonus = dayStatus === "bonus";
-          const bonusInfo: BonusActivityInfo | undefined = isBonus
-            ? (bonusActivities[w?.date ?? ""] ?? undefined)
-            : undefined;
-          const isRest = !isBonus && (zone === "rest" || !w);
+          const isRest = zone === "rest" || !w;
           const label = formatDayLabel(w?.date, dayName);
+          const dayStatus = w?.date ? weekStatus[w.date] : undefined;
           const isOpen = expanded === dayName;
 
           const statusMeta =
@@ -185,8 +169,8 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
               {/* Row — tappable */}
               <div
                 role="button"
-                tabIndex={(isRest && !isBonus) ? undefined : 0}
-                onClick={() => { if (!isRest || isBonus) setExpanded(isOpen ? null : dayName); }}
+                tabIndex={isRest ? undefined : 0}
+                onClick={() => { if (!isRest) setExpanded(isOpen ? null : dayName); }}
                 style={{
                   background:
                     dayStatus === "completed" ? "rgba(34,197,94,0.05)" :
@@ -201,7 +185,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                     isToday ? `1.5px solid ${colors.accent}55` : "1px solid var(--m-border)",
                   borderBottom: isOpen ? "none" : undefined,
                   padding: "16px 14px",
-                  cursor: (isRest && !isBonus) ? "default" : "pointer",
+                  cursor: isRest ? "default" : "pointer",
                   position: "relative",
                   overflow: "hidden",
                   WebkitTapHighlightColor: "transparent",
@@ -244,7 +228,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         flex: 1, minWidth: 0,
                       }}>
-                        {isBonus ? "Bonus ride" : isRest ? "Rest" : w!.title}
+                        {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
                       </span>
                       {isToday && !statusMeta && (
                         <span style={{
@@ -260,17 +244,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                       )}
                     </div>
 
-                    {isBonus && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: "#f59e0b", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 3, padding: "2px 8px", flexShrink: 0 }}>
-                          {bonusInfo?.sport?.toLowerCase().includes("run") ? "RUN" : "RIDE"}
-                        </span>
-                        {bonusInfo?.durationMin ? <span style={{ fontSize: 16, color: "#64748b" }}>{bonusInfo.durationMin} min</span> : null}
-                        {bonusInfo?.avgPower ? <span style={{ fontSize: 15, fontWeight: 600, color: "#f59e0b" }}>{Math.round(bonusInfo.avgPower)}W avg</span> : null}
-                        <span style={{ marginLeft: "auto", fontSize: 14, color: "var(--m-muted)", display: "inline-block", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }}>&#8964;</span>
-                      </div>
-                    )}
-                    {!isRest && !isBonus && w && (
+                    {!isRest && w && (
                       <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
                         {/* RIDE / RUN mode badge */}
                         <span style={{
@@ -313,24 +287,8 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 </div>
               </div>
 
-              {/* Bonus activity expanded panel */}
-              {isOpen && isBonus && (
-                <div style={{ background: "var(--m-card)", border: "1px solid rgba(245,158,11,0.3)", borderTop: "none", borderRadius: "0 0 4px 4px", padding: "14px 16px 16px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 10 }}>Bonus — rode on rest day</div>
-                  {bonusInfo ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {bonusInfo.durationMin ? <div style={{ background: "var(--m-card-inner)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "8px 12px", textAlign: "center", minWidth: 64 }}><div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>Duration</div><div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", marginTop: 2 }}>{bonusInfo.durationMin}<span style={{ fontSize: 11, color: "var(--m-muted)", marginLeft: 2 }}>min</span></div></div> : null}
-                      {(bonusInfo.normalizedPower ?? bonusInfo.avgPower) ? <div style={{ background: "var(--m-card-inner)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "8px 12px", textAlign: "center", minWidth: 64 }}><div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>{bonusInfo.normalizedPower ? "NP" : "Avg W"}</div><div style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b", marginTop: 2 }}>{Math.round(bonusInfo.normalizedPower ?? bonusInfo.avgPower ?? 0)}<span style={{ fontSize: 11, color: "var(--m-muted)", marginLeft: 2 }}>W</span></div></div> : null}
-                      {bonusInfo.avgHr ? <div style={{ background: "var(--m-card-inner)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "8px 12px", textAlign: "center", minWidth: 64 }}><div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>HR</div><div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>{Math.round(bonusInfo.avgHr)}<span style={{ fontSize: 11, color: "var(--m-muted)", marginLeft: 2 }}>bpm</span></div></div> : null}
-                      {bonusInfo.tss ? <div style={{ background: "var(--m-card-inner)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "8px 12px", textAlign: "center", minWidth: 64 }}><div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>TSS</div><div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", marginTop: 2 }}>{Math.round(bonusInfo.tss)}</div></div> : null}
-                      {bonusInfo.distanceKm && bonusInfo.distanceKm > 0 ? <div style={{ background: "var(--m-card-inner)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "8px 12px", textAlign: "center", minWidth: 64 }}><div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em" }}>Distance</div><div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", marginTop: 2 }}>{bonusInfo.distanceKm.toFixed(1)}<span style={{ fontSize: 11, color: "var(--m-muted)", marginLeft: 2 }}>km</span></div></div> : null}
-                    </div>
-                  ) : <div style={{ fontSize: 14, color: "var(--m-muted)" }}>Rode on rest day — no data.</div>}
-                </div>
-              )}
-
-              {/* Planned workout expanded detail panel */}
-              {isOpen && !isRest && !isBonus && w && (
+              {/* Expanded detail panel */}
+              {isOpen && !isRest && w && (
                 <div style={{
                   background: "var(--m-card)",
                   border: "1px solid var(--m-border)", borderTop: "1px solid var(--m-border)",

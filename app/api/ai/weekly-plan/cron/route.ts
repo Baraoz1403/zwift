@@ -4,7 +4,6 @@ import { runWeeklyPlanGeneration, AiInsightsError } from "@/lib/plan-runner";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { ensureWorkoutDates, normalizeToSix } from "@/lib/plan-shape";
 import { syncPlanToIntervalsHeadless, cleanupIcuDuplicates, wideCleanupRange } from "@/lib/headless-sync";
-import { kvSet } from "@/lib/kv";
 import {
   getKnownAthletes,
   getStoredZwiftRefreshToken,
@@ -112,21 +111,14 @@ export async function GET(req: NextRequest) {
 
   const athleteIds = await getKnownAthletes();
 
-  // WeekOf target: on Sunday, plan the upcoming week (starts tomorrow Monday).
-  // On Mon–Sat, ensure the CURRENT week has a plan (retry safety net).
-  // This cron now runs daily so a Sunday failure is caught the next day.
-  const now = new Date();
-  const dow = now.getUTCDay(); // 0=Sun, 1=Mon … 6=Sat
-  let weekOf: string;
-  if (dow === 0) {
-    // Sunday: target next Monday (tomorrow)
-    const nextMon = new Date(now);
-    nextMon.setUTCDate(now.getUTCDate() + 1);
-    weekOf = nextMon.toISOString().slice(0, 10);
-  } else {
-    // Mon–Sat: target this week's Monday
-    weekOf = mondayOfCurrentWeek();
-  }
+  // The COMING week's Monday - this job runs Sunday night specifically to
+  // generate for the week that's about to start, not the one that's ending.
+  // mondayOfCurrentWeek() on a Sunday returns THIS week's Monday (already
+  // passed); +7 days gives the Monday that starts tomorrow.
+  const thisWeekMonday = mondayOfCurrentWeek();
+  const comingMondayDate = new Date(thisWeekMonday + "T00:00:00Z");
+  comingMondayDate.setUTCDate(comingMondayDate.getUTCDate() + 7);
+  const weekOf = comingMondayDate.toISOString().slice(0, 10);
 
   const results: AthleteRunResult[] = [];
 
@@ -213,13 +205,6 @@ export async function GET(req: NextRequest) {
         );
         pushed = syncResult.pushed;
         deleted = syncResult.deleted;
-        // Mark icu_invalid when all pushes fail with 401/403 — expired token.
-        // Without this the athlete never sees a reconnect prompt.
-        const pushErrs = syncResult.errors.filter(e => e.startsWith("push"));
-        const authFails = pushErrs.filter(e => e.includes("403") || e.includes("401")).length;
-        if (pushed === 0 && pushErrs.length > 0 && authFails === pushErrs.length) {
-          await kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
-        }
         // Also sweep the wider window - the narrow sync above only cleans
         // THIS plan's own week; orphaned events from other weeks (a stale
         // "next week" prefetch, or leftovers from before sync worked) need

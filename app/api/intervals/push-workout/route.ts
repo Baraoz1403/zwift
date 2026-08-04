@@ -46,13 +46,10 @@ export async function POST(req: NextRequest) {
     }, { status: 403 });
   }
 
-  // For Bearer OAuth tokens always use "me" — the token identifies its own owner.
-  // Using a stored athlete ID causes 403 "Bearer token is for a different athlete"
-  // when the cookie/KV are out of sync or the user switched ICU accounts.
-  // For API keys (Basic auth), use the stored ID (personal keys need explicit athlete).
-  const athleteId = apiKey.startsWith("Bearer ")
-    ? undefined  // → resolveIcuId(undefined) returns "me"
-    : cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+  // Use the stored athlete ID (set at connect time). Falls back to "me" inside
+  // pushWorkoutToIntervals if this is "0" or missing — "me" is the correct
+  // self-referential shortcut for the Intervals.icu API.
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
 
   const body = await req.json() as {
     workoutDay?: string;
@@ -127,12 +124,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Intervals.icu not connected." }, { status: 403 });
   }
 
-  // For Bearer OAuth tokens always use "me" — the token identifies its own owner.
-  // Using a stored athlete ID causes 403 "Bearer token is for a different athlete"
-  // when the cookie and KV are out of sync or the user switched ICU accounts.
-  const athleteId = apiKey.startsWith("Bearer ")
-    ? undefined  // → resolveIcuId(undefined) returns "me"
-    : cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
 
   const { searchParams } = new URL(req.url);
   const oldest = searchParams.get("oldest");
@@ -168,12 +160,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Intervals.icu not connected." }, { status: 403 });
   }
 
-  // For Bearer OAuth tokens always use "me" — the token identifies its own owner.
-  // Using a stored athlete ID causes 403 "Bearer token is for a different athlete"
-  // when the cookie and KV are out of sync or the user switched ICU accounts.
-  const athleteId = apiKey.startsWith("Bearer ")
-    ? undefined  // → resolveIcuId(undefined) returns "me"
-    : cookieStore.get("zwift_intervals_id")?.value ?? undefined;
+  const athleteId = cookieStore.get("zwift_intervals_id")?.value ?? undefined;
 
   const body = await req.json() as { eventId?: string | number };
   if (!body.eventId) {

@@ -142,10 +142,6 @@ export async function GET(req: NextRequest) {
         // Always store expiry so the layout can detect when to trigger silent re-auth.
         // Also store refresh token if provided (intervals.icu currently doesn't provide one).
         kvSet(`zwift:${resolvedAthleteId}:icu_expires`, String(expiresAt)),
-        // Clear the invalid flag set by the chat route when it detects a 401
-        kvSet(`zwift:${resolvedAthleteId}:icu_invalid`, "0", 1),
-        // Clear stale ICU performance context so Marco rebuilds from fresh data
-        kvSet(`zwift:${resolvedAthleteId}:icu_perf_ctx`, "", 1),
         ...(tokens.refresh_token ? [
           kvSet(`zwift:${resolvedAthleteId}:icu_refresh`, tokens.refresh_token),
         ] : []),
@@ -154,24 +150,6 @@ export async function GET(req: NextRequest) {
       // Fire-and-forget — do NOT await. Plan generation calls OpenAI and can
       // take 30–60 s. The nightly cron and next app load both retry if needed.
       void ensurePlanProvisioned(resolvedAthleteId, session.accessToken).catch(() => {});
-
-      // Also re-push current week's plan to ICU immediately after reconnect,
-      // so workouts appear in Zwift without waiting for next Monday's cron.
-      // IMPORTANT: clear icu_synced first so syncPlanToIcuAndMark actually
-      // runs even if a previous (now-stale) sync had marked this week as done.
-      // Without this, reconnect after a failed push silently skips re-sync.
-      import("@/lib/headless-sync").then(async ({ syncPlanToIcuAndMark }) => {
-        const { getCachedPlan } = await import("@/lib/kv-plan-state");
-        const { mondayOfCurrentWeek } = await import("@/lib/periodization");
-        const { kvSet: kvSetInner } = await import("@/lib/kv");
-        const weekOf = mondayOfCurrentWeek();
-        // Clear synced flag — forces re-push regardless of prior state
-        await kvSetInner(`zwift:${resolvedAthleteId}:plan:${weekOf}:icu_synced`, "0", 1).catch(() => {});
-        const plan = await getCachedPlan(resolvedAthleteId!, weekOf).catch(() => null);
-        if (plan) {
-          await syncPlanToIcuAndMark(resolvedAthleteId!, weekOf, plan, new Set()).catch(() => {});
-        }
-      }).catch(() => {});
 
       // Auto-register ICU webhook for real-time WhatsApp feedback after rides
       const webhookUrl = `${req.nextUrl.origin}/api/webhooks/intervals`;

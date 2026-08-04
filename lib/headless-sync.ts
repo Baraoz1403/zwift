@@ -298,28 +298,26 @@ export async function syncPlanToIcuAndMark(
   if (!creds) return null;
 
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
-  // For Bearer OAuth tokens always use undefined (→ "me") as athlete ID.
-  // A stored athlete ID causes 403 "Bearer token is for a different athlete"
-  // when the stored ID doesn't match the token's actual owner.
-  const effectiveIcuId = creds.icuKey.startsWith("Bearer ") ? undefined : (creds.icuId ?? undefined);
-
-  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, effectiveIcuId, normalizedPlan, riddenDates, riderName);
+  const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates, riderName);
 
   const { oldest, newest } = wideCleanupRange();
-  const wide = await cleanupIcuDuplicates(creds.icuKey, effectiveIcuId, oldest, newest);
+  const wide = await cleanupIcuDuplicates(creds.icuKey, creds.icuId ?? undefined, oldest, newest);
 
   // Only mark synced when at least one workout was actually pushed.
+  // If the push failed (expired OAuth token, ICU unreachable, 0 workouts
+  // pushed), we intentionally leave the flag unset so the next plan load
+  // retries automatically — fixing the root cause of "runs once, never again".
   if (narrow.pushed > 0) {
     await markIntervalsSynced(athleteId, weekOf);
   }
 
-  // If every push attempt failed with 401/403, the ICU token is expired.
-  // Mark icu_invalid so the UI shows a reconnect screen on next open.
+  // If every push failed with 401/403, the ICU token is expired.
+  // Mark icu_invalid so the UI shows a reconnect screen on next load.
   // Without this, the cron fails silently forever and the athlete never knows.
   const allErrors = [...narrow.errors, ...wide.errors];
-  const pushErrors = allErrors.filter(e => e.startsWith("push"));
-  const authFailures = pushErrors.filter(e => e.includes("403") || e.includes("401")).length;
-  if (narrow.pushed === 0 && pushErrors.length > 0 && authFailures === pushErrors.length) {
+  const authFailures = allErrors.filter(e => e.includes("403") || e.includes("401")).length;
+  const totalPushAttempts = narrow.pushed + allErrors.filter(e => e.startsWith("push")).length;
+  if (narrow.pushed === 0 && totalPushAttempts > 0 && authFailures > 0) {
     await kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
   }
 
