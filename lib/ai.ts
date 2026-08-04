@@ -821,11 +821,11 @@ Every workout structure block must include explicit cadenceTarget.
   "FTP test data feeds every power target for the next 4 weeks — it is the single highest-leverage session in the plan. " +
 
   "TSB SESSION GATES — enforce these as hard rules, not hints: " +
-  "VO2max sessions require TSB ≥ -5 (substitute Sweet Spot Classic if below). " +
-  "Threshold sessions require TSB ≥ -12 (substitute Sweet Spot Classic if below). " +
-  "Sweet Spot sessions require TSB ≥ -20 (substitute Tempo Cruise if below). " +
+  "VO2max sessions require TSB ≥ -10 (substitute Sweet Spot Classic if below). " +
+  "Threshold sessions require TSB ≥ -20 (substitute Sweet Spot Classic if below). " +
+  "Sweet Spot sessions require TSB ≥ -25 (substitute Tempo Cruise if below). " +
   "Neuromuscular sessions require TSB ≥ -15 (substitute Sprint Builder if below). " +
-  "Intermittent/Over-Under sessions require TSB ≥ -8 (substitute Tempo Cruise if below). " +
+  "Intermittent/Over-Under sessions require TSB ≥ -12 (substitute Tempo Cruise if below). " +
   "Tempo and Endurance sessions have no TSB floor. Recovery/Rest have no floor. " +
   "When a substitution fires, note it briefly in the description: 'Scheduled as [original], downgraded to [actual] because TSB is [value].' " +
   "RIDER FINGERPRINT → BINDING ACTION RULES: When the '## Rider Learning Profile' block " +
