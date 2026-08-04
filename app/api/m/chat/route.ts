@@ -580,7 +580,12 @@ export async function POST(req: NextRequest) {
     if (profile.eventDate) contextLines.push(`Target event: ${profile.eventDate}`);
   }
 
-  if (macro?.currentPhase) contextLines.push(`Training phase: ${macro.currentPhase}`);
+  // Compute training phase from weekIndex (MacroCycleState has weekIndex, not currentPhase)
+  if (macro != null) {
+    const wi = macro.weekIndex;
+    const phase = wi % 4 === 3 ? "Recovery" : wi < 4 ? "Base" : "Build";
+    contextLines.push(`Training phase: ${phase} (macro cycle week ${wi + 1})`);
+  }
 
   if (currentPlan) {
     const workoutList = currentPlan.workouts
@@ -590,8 +595,11 @@ export async function POST(req: NextRequest) {
         return `  ${w.day}: ${w.title} (${w.durationMin}min, ${w.type ?? "?"})${marker}`;
       })
       .join("\n");
-    contextLines.push(`\nThis week's plan:\n${workoutList}`);
+    contextLines.push(`\nThis week's plan (YOU generated this — take full ownership):\n${workoutList}`);
     if (currentPlan.summary) contextLines.push(`\nWeek summary: ${currentPlan.summary.slice(0, 400)}`);
+    contextLines.push("\nYou are the sole coach. Every workout above was prescribed by you. When asked about any session, own it and explain your physiological reasoning. Never suggest another coach created it.");
+  } else {
+    contextLines.push("\nNo plan generated for this week yet. Tell the athlete to open the Week view (tap the calendar icon) to generate one — do NOT say another coach may have created a plan.");
   }
 
   // Full 30-ride fingerprint — feel scores + FTP trajectory from submitted feedback
