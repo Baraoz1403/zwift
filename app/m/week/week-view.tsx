@@ -6,14 +6,15 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
 import { isRunWorkout } from "@/lib/zwo";
 
+// Monochromatic — single VOLT orange accent for all workout types.
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
-  sweetSpot:     { accent: "#3b82f6", label: "Sweet Spot" },
-  threshold:     { accent: "#ef4444", label: "Threshold"  },
-  vo2max:        { accent: "#22c55e", label: "VO2 Max"    },
-  tempo:         { accent: "#f59e0b", label: "Tempo"      },
-  endurance:     { accent: "#818cf8", label: "Endurance"  },
-  neuromuscular: { accent: "#a855f7", label: "Neuro"      },
-  rest:          { accent: "#475569", label: "Rest"       },
+  sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
+  threshold:     { accent: "#FF5A1F", label: "Threshold"  },
+  vo2max:        { accent: "#FF5A1F", label: "VO2 Max"    },
+  tempo:         { accent: "#FF5A1F", label: "Tempo"      },
+  endurance:     { accent: "#FF5A1F", label: "Endurance"  },
+  neuromuscular: { accent: "#FF5A1F", label: "Neuro"      },
+  rest:          { accent: "var(--m-muted)", label: "Rest" },
 };
 
 function detectZone(w: WeeklyWorkout): string {
@@ -51,14 +52,15 @@ function summaryBullets(summary: string): string[] {
   return sentences.slice(0, 2).map(s => s.length > 55 ? s.slice(0, 53) + "…" : s);
 }
 
+// Monochromatic power bar — VOLT orange gradient, red only at all-out effort.
 function blockBarColor(pct: number): string {
   if (pct >= 120) return "#ef4444";
-  if (pct >= 106) return "#f97316";
-  if (pct >= 95)  return "#f59e0b";
-  if (pct >= 88)  return "#10b981";
-  if (pct >= 76)  return "#22d3ee";
-  if (pct >= 56)  return "#3b82f6";
-  return "#64748b";
+  if (pct >= 106) return "#FF5A1F";
+  if (pct >= 95)  return "rgba(255,90,31,0.80)";
+  if (pct >= 88)  return "rgba(255,90,31,0.60)";
+  if (pct >= 76)  return "rgba(255,90,31,0.40)";
+  if (pct >= 56)  return "rgba(255,90,31,0.22)";
+  return "rgba(255,255,255,0.10)";
 }
 
 const ALL_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];

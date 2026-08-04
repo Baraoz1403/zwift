@@ -80,14 +80,15 @@ function detectZoneLabel(w: WeeklyWorkout): string {
   return "Structured";
 }
 
+// Monochromatic power bar: VOLT orange gradient, red only at all-out max effort.
 function blockColor(pct: number): string {
-  if (pct >= 120) return "#ef4444";
-  if (pct >= 106) return "#f97316";
-  if (pct >= 95)  return "#f59e0b";
-  if (pct >= 88)  return "#10b981";
-  if (pct >= 76)  return "#22d3ee";
-  if (pct >= 56)  return "#3b82f6";
-  return "#64748b";
+  if (pct >= 120) return "#ef4444";           // all-out / neuromuscular — red as danger signal
+  if (pct >= 106) return "#FF5A1F";            // VO2max — full VOLT orange
+  if (pct >= 95)  return "rgba(255,90,31,0.80)"; // threshold
+  if (pct >= 88)  return "rgba(255,90,31,0.60)"; // sweet spot
+  if (pct >= 76)  return "rgba(255,90,31,0.40)"; // tempo
+  if (pct >= 56)  return "rgba(255,90,31,0.22)"; // endurance
+  return "rgba(255,255,255,0.10)";            // recovery / Z1
 }
 
 export default async function TabletTodayPage({
@@ -312,7 +313,7 @@ export default async function TabletTodayPage({
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
         {/* LEFT: Today workout */}
-        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "32px 40px" }}>
+        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "44px 52px" }}>
 
           {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
           {isRest || (!todayWorkout && !isBonus) ? (
@@ -359,16 +360,16 @@ export default async function TabletTodayPage({
               {/* Bonus ride card */}
               <div style={{
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
-                borderLeft: "4px solid #f59e0b",
-                borderRadius: 4, padding: "28px 32px", marginBottom: 16,
+                borderLeft: "4px solid #FF5A1F",
+                borderRadius: 8, padding: "36px 40px", marginBottom: 24,
               }}>
                 <div style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)",
+                  background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.25)",
                   borderRadius: 3, padding: "3px 10px", marginBottom: 14,
                 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#f59e0b" }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em" }}>Bonus Ride</span>
+                  <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#FF5A1F" }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#FF5A1F", textTransform: "uppercase", letterSpacing: ".1em" }}>Bonus Ride</span>
                 </div>
 
                 <h1 style={{ margin: "0 0 16px", fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1.1 }}>
@@ -414,7 +415,7 @@ export default async function TabletTodayPage({
             /* ── WORKOUT ──────────────────────────────────────────────── */
             <div>
               {/* Section label + status */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
                   Today&apos;s session
                 </div>
@@ -431,7 +432,7 @@ export default async function TabletTodayPage({
               <div style={{
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderLeft: `4px solid ${zoneColor}`,
-                borderRadius: 4, padding: "28px 32px", marginBottom: 16,
+                borderRadius: 8, padding: "36px 40px", marginBottom: 24,
               }}>
                 {/* Zone badge */}
                 {zoneLabel && (
@@ -480,7 +481,7 @@ export default async function TabletTodayPage({
               {todayWorkout.description && (
                 <div style={{
                   background: "var(--m-card)", border: "1px solid var(--m-border)",
-                  borderRadius: 4, padding: "20px 24px", marginBottom: 16,
+                  borderRadius: 8, padding: "28px 32px", marginBottom: 24,
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
                     Coach note
@@ -496,7 +497,7 @@ export default async function TabletTodayPage({
                 <div style={{
                   background: "var(--m-card)", border: "1px solid var(--m-border)",
                   borderLeft: "4px solid #22c55e",
-                  borderRadius: 4, padding: "20px 24px", marginBottom: 16,
+                  borderRadius: 8, padding: "28px 32px", marginBottom: 24,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                     <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
