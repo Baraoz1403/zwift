@@ -482,7 +482,7 @@ function GeneratePlanButton({ weekOf }: { weekOf?: string }) {
       const res = await fetch("/api/ai/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(weekOf ? { weekOf } : {}),
+        body: JSON.stringify(weekOf ? { targetWeekOf: weekOf } : {}),
         credentials: "include",
       });
       const data = await res.json();
