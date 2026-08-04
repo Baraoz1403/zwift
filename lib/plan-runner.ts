@@ -34,7 +34,7 @@ import {
   getIntervalsCredentials,
   wasIntervalsSynced,
 } from "@/lib/kv-plan-state";
-import { kvSet } from "@/lib/kv";
+import { kvSet, kvGet } from "@/lib/kv";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
@@ -290,6 +290,16 @@ export async function runWeeklyPlanGeneration(
           .filter(Boolean)
       : undefined;
 
+  // ── Month-based workout deduplication ─────────────────────────────────────
+  // Load all workout titles prescribed this calendar month. The selection
+  // engine hard-blocks these so no title repeats within a month.
+  const currentMonth = new Date(weekOf + "T00:00:00Z").toISOString().slice(0, 7); // "YYYY-MM"
+  let usedThisMonth: string[] | undefined;
+  try {
+    const monthRaw = await kvGet(`zwift:${athleteId}:month_workouts:${currentMonth}`);
+    if (monthRaw) usedThisMonth = JSON.parse(monthRaw) as string[];
+  } catch { /* best-effort */ }
+
   const fingerprint = await getFingerprint(athleteId);
   const riderFingerprint = fingerprintToPromptSummary(fingerprint);
 
@@ -315,6 +325,7 @@ export async function runWeeklyPlanGeneration(
     ftp: effectiveFtp,
     weightKg,
     previousWeekTitles,
+    usedThisMonth,
   });
   const selectionContextPrompt = selectionContextToPrompt(selectionCtx);
 
@@ -390,6 +401,23 @@ export async function runWeeklyPlanGeneration(
   if (trainingLoad) {
     kvSet(`zwift:${athleteId}:training_load`, JSON.stringify(trainingLoad), 14 * 24 * 60 * 60).catch(() => {});
   }
+
+  // ── Persist this week's workout titles for month-based deduplication ──────
+  // Merges new titles into the rolling set for this calendar month so the
+  // next weekly generation knows which sessions are already exhausted.
+  // TTL = 45 days (a month + buffer). Best-effort — never blocks the return.
+  try {
+    const newTitles = plan.workouts
+      .filter(w => w.type !== "Rest" && !w.type.toLowerCase().includes("rest"))
+      .map(w => w.title)
+      .filter(Boolean);
+    if (newTitles.length > 0) {
+      const monthKey = `zwift:${athleteId}:month_workouts:${currentMonth}`;
+      const existing: string[] = usedThisMonth ? [...usedThisMonth] : [];
+      const merged = Array.from(new Set([...existing, ...newTitles]));
+      kvSet(monthKey, JSON.stringify(merged), 45 * 24 * 60 * 60).catch(() => {});
+    }
+  } catch { /* best-effort */ }
 
   // ── Save updated coaching state ───────────────────────────────────────────
   // Best-effort — never blocks the return of the plan.

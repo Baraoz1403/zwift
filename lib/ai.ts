@@ -680,7 +680,7 @@ Every workout structure block must include explicit cadenceTarget.
 "Threshold Cruise Intervals; Norwegian 4×4 → 5×5 VO2max) when the rider's TSB/history shows they're " +
 "ready for more, or repeat the same session with a small bump when consolidation is the right call - " +
 "either is valid coaching, and either beats swapping categories just to look varied. " +
-"(2) Foundation/Recovery/Endurance sessions may repeat freely (Foundation Ride twice in a row is fine). " +
+"(2) ⛔ NO NAMED WORKOUT TITLE MAY REPEAT WITHIN THE SAME CALENDAR MONTH. The selection engine's INELIGIBLE list marks sessions already prescribed this month — these are HARD-BLOCKED, not suggestions. If a title appears in the INELIGIBLE list as 'Already prescribed this month', do NOT prescribe it. This applies to every session type including Foundation Ride, Spin & Recover, and recovery sessions. Every month, every workout title appears at most once. " +
 "(3) If previousWeekTitles shows the same session title appearing 2+ consecutive weeks, the DEFAULT is to step up — " +
 "either increase reps/duration by one unit (e.g. 4×8 → 5×8 or 4×8 → 4×10) OR move to the next rung of the ladder. " +
 "Consolidation (holding the same load) is valid ONLY when TSB is negative or adherence was below 80% — otherwise, step up and say so in the summary. " +

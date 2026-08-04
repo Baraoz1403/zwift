@@ -412,10 +412,16 @@ export interface SelectionEngineInput {
    * primary recommendation.
    */
   previousWeekTitles?: string[];
+  /**
+   * All workout titles prescribed anywhere in the current calendar month.
+   * Any title in this list is HARD-BLOCKED from being eligible this week —
+   * workouts must not repeat within the same month.
+   */
+  usedThisMonth?: string[];
 }
 
 export function runSelectionEngine(input: SelectionEngineInput): SelectionContext {
-  const { coachingState, trainingLoad, phase, cyclingLevel, ftp, weightKg, riderProfile, previousWeekTitles } = input;
+  const { coachingState, trainingLoad, phase, cyclingLevel, ftp, weightKg, riderProfile, previousWeekTitles, usedThisMonth } = input;
 
   // ── 1. Compute W/kg ─────────────────────────────────────────────────────────
   // ftp and weightKg come from the Zwift profile (plan-runner.ts), not from
@@ -570,12 +576,26 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
     return true;
   });
 
+  // ── Month-based hard block ────────────────────────────────────────────────────
+  // Any workout already prescribed in the CURRENT CALENDAR MONTH is hard-blocked
+  // (removed from eligible list entirely, added to ineligible). This enforces
+  // the rule that no workout title repeats within the same month.
+  const monthUsedSet = new Set((usedThisMonth ?? []).map(t => t.toLowerCase()));
+  const monthFiltered = deduped.filter(w => {
+    if (!monthUsedSet.has(w.title.toLowerCase())) return true;
+    ineligibleWorkouts.push({
+      title: w.title,
+      reason: `Already prescribed this month. Must choose a different session — workout titles cannot repeat within the same calendar month.`,
+    });
+    return false;
+  });
+
   // Mark previous-week titles as ineligible so the AI knows not to repeat them.
   // A title that appeared last week should not be the primary recommendation
   // this week — the rider deserves a different stimulus even if the progression
   // ladder would normally suggest the same rung.
   const prevTitleSet = new Set(previousWeekTitles ?? []);
-  const finalEligible = deduped.map(w => {
+  const finalEligible = monthFiltered.map(w => {
     if (!prevTitleSet.has(w.title)) return w;
     // Don't remove — just flag it so the AI deprioritizes it.
     return {
@@ -584,10 +604,10 @@ export function runSelectionEngine(input: SelectionEngineInput): SelectionContex
     };
   });
 
-  // Add previously-used titles to ineligible list so the engine's constraint
-  // block is explicit in the AI prompt.
+  // Add previously-used (last-week) titles to ineligible list so the engine's
+  // constraint block is explicit in the AI prompt (month-used already handled above).
   for (const title of prevTitleSet) {
-    if (!deduped.some(w => w.title === title)) continue; // only if it was eligible
+    if (!monthFiltered.some(w => w.title === title)) continue; // already blocked by month rule
     ineligibleWorkouts.push({
       title,
       reason: "Prescribed last week. Prescribe a different session to provide stimulus variety.",
