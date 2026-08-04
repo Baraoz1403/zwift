@@ -34,7 +34,7 @@ import {
   getIntervalsCredentials,
   wasIntervalsSynced,
 } from "@/lib/kv-plan-state";
-import { kvSet } from "@/lib/kv";
+import { kvSet, kvGet } from "@/lib/kv";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
@@ -272,7 +272,18 @@ export async function runWeeklyPlanGeneration(
   const icuPerformanceContext = buildIcuPerformanceContext(icuActivities);
 
   const weekOf = opts.targetWeekOf ?? mondayOfCurrentWeek();
-  const macroCycle = advanceMacroCycle(opts.incomingCycle ?? null, weekOf);
+  // Prefer the server-side KV macro cycle over the client-sent incomingCycle.
+  // The client's localStorage can be stale or advanced from a future-week
+  // prefetch: when next week's plan is pre-generated, weekIndex advances in
+  // localStorage but NOT in KV (mirrorStateToKv only writes for current week).
+  // So if current week is then (re)generated, the client sends weekIndex+1 →
+  // the phase is wrongly computed as Recovery. Reading from KV avoids this.
+  let resolvedIncomingCycle: MacroCycleState | null = opts.incomingCycle ?? null;
+  try {
+    const kvMacroRaw = await kvGet(`zwift:${athleteId}:macro_cycle`);
+    if (kvMacroRaw) resolvedIncomingCycle = JSON.parse(kvMacroRaw) as MacroCycleState;
+  } catch { /* fall through to client value */ }
+  const macroCycle = advanceMacroCycle(resolvedIncomingCycle, weekOf);
   const cycle = resolvePhase(macroCycle.weekIndex, weekOf, opts.riderProfile?.eventDate ?? null);
 
   const lastWeekAdherence =

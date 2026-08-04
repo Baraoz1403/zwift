@@ -77,7 +77,7 @@ const PHASE_ALLOWED_FAMILIES: Record<string, StimulusFamily[]> = {
   Specialty:  ["sweetSpot", "threshold", "vo2max", "neuromuscular", "anaerobic"],
   Taper:      ["endurance", "tempo", "sweetSpot"],
   RaceWeek:   ["endurance", "neuromuscular"],
-  Recovery:   ["endurance"],
+  Recovery:   ["endurance", "sweetSpot"],  // Active recovery: reduced volume but one short SS block is physiologically sound
 };
 
 function getAllowedFamilies(phase: string): StimulusFamily[] {
