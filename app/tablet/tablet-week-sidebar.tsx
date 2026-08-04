@@ -77,88 +77,91 @@ export function TabletWeekSidebar({
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 12 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 10 }}>
           Fitness metrics
         </div>
-        {/* FTP — cyan, full width */}
+
+        {/* FTP — prominent, VOLT orange left-accent, no color fill */}
         {ftp && (
           <div style={{
-            background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.2)",
-            borderRadius: 8, padding: "14px 16px", marginBottom: 8,
-            display: "flex", alignItems: "baseline", gap: 6,
+            background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+            borderLeft: "3px solid #FF5A1F",
+            borderRadius: 6, padding: "12px 14px", marginBottom: 8,
+            display: "flex", alignItems: "baseline", gap: 8,
           }}>
-            <div style={{ fontSize: 38, fontWeight: 900, color: "#22d3ee", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(34,211,238,0.55)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{ftp}W</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>FTP</div>
           </div>
         )}
+
+        {/* Phase + Sessions — monochrome cards */}
         <div style={{ display: "flex", gap: 8 }}>
-          {/* Phase — orange */}
           {currentPhase && (
             <div style={{
-              flex: 1, background: "rgba(255,90,31,0.07)", border: "1px solid rgba(255,90,31,0.2)",
-              borderRadius: 8, padding: "10px 12px",
+              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+              borderRadius: 6, padding: "10px 12px",
             }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#FF5A1F", lineHeight: 1 }}>{currentPhase}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,90,31,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>
                 {weekDisplayNum != null ? `Week ${weekDisplayNum}` : "Phase"}
               </div>
             </div>
           )}
-          {/* Sessions this week — purple */}
           {weekWorkoutCount != null && weekWorkoutCount > 0 && (
             <div style={{
-              flex: 1, background: "rgba(139,92,246,0.07)", border: "1px solid rgba(139,92,246,0.2)",
-              borderRadius: 8, padding: "10px 12px",
+              flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+              borderRadius: 6, padding: "10px 12px",
             }}>
-              <div style={{ fontSize: 20, fontWeight: 900, color: "#8b5cf6", lineHeight: 1 }}>{weekWorkoutCount}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(139,92,246,0.55)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 4 }}>Sessions</div>
             </div>
           )}
         </div>
-        {/* CTL / ATL / TSB — training load row */}
+
+        {/* CTL / ATL / TSB — monochrome, TSB keeps red/green as meaningful signal */}
         {(ctl != null || atl != null || tsb != null) && (
           <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
             {ctl != null && (
               <div style={{
-                flex: 1, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)",
-                borderRadius: 8, padding: "8px 10px",
+                flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+                borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#3b82f6", lineHeight: 1 }}>{Math.round(ctl)}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(ctl)}</div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
               </div>
             )}
             {atl != null && (
               <div style={{
-                flex: 1, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: 8, padding: "8px 10px",
+                flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+                borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{Math.round(atl)}</div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(atl)}</div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
               </div>
             )}
             {tsb != null && (
               <div style={{
-                flex: 1,
-                background: tsb >= 0 ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)",
-                border: `1px solid ${tsb >= 0 ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
-                borderRadius: 8, padding: "8px 10px",
+                flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+                borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
                   {tsb > 0 ? "+" : ""}{Math.round(tsb)}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: tsb >= 0 ? "rgba(34,197,94,0.6)" : "rgba(239,68,68,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
               </div>
             )}
           </div>
         )}
+
         {/* Bonus ride highlight */}
         {isBonus && (
           <div style={{
             marginTop: 10,
-            background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
-            borderRadius: 8, padding: "12px 14px",
+            background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
+            borderLeft: "3px solid #f59e0b",
+            borderRadius: 6, padding: "12px 14px",
           }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
               🚴 Bonus ride today
             </div>
             {todayActivityName && (
@@ -168,10 +171,10 @@ export function TabletWeekSidebar({
             )}
             <div style={{ display: "flex", gap: 8 }}>
               {todayActivityDurationMin != null && (
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{todayActivityDurationMin} min</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>{todayActivityDurationMin} min</span>
               )}
               {todayAvgHr != null && (
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444" }}>{Math.round(todayAvgHr)} bpm</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>{Math.round(todayAvgHr)} bpm</span>
               )}
             </div>
           </div>

@@ -28,6 +28,10 @@ import type { WorkoutStructureBlock } from "@/lib/zwo";
  * conversation is identical on every device.
  */
 
+// Anthropic API calls can take 10-20s on large contexts — without this,
+// Vercel's default 10s limit fires and the athlete sees "communication error".
+export const maxDuration = 30;
+
 const CHAT_HISTORY_KEY = (id: string) => `zwift:${id}:chat_history`;
 const CHAT_HISTORY_TTL = 30 * 24 * 60 * 60; // 30 days
 const MAX_HISTORY = 40; // messages stored (20 exchanges)
@@ -479,9 +483,17 @@ export async function POST(req: NextRequest) {
     });
 
     if (!aiRes1.ok) {
-      const err = await aiRes1.text();
-      console.error("Anthropic error:", aiRes1.status, err);
-      return NextResponse.json({ ok: false, error: "AI service error." }, { status: 502 });
+      const errText = await aiRes1.text();
+      console.error("Anthropic error:", aiRes1.status, errText);
+      // Surface a specific message based on status code so the rider knows what happened
+      const humanErr = aiRes1.status === 529
+        ? "Anthropic API is overloaded right now — please try again in a moment."
+        : aiRes1.status === 401
+        ? "AI API key is invalid or expired — please contact the admin."
+        : aiRes1.status === 413 || errText.includes("too large") || errText.includes("context_length")
+        ? "Conversation context is too long. Please clear the chat history and try again."
+        : `AI service returned an error (${aiRes1.status}). Please try again.`;
+      return NextResponse.json({ ok: false, error: humanErr }, { status: 502 });
     }
 
     const data1 = await aiRes1.json();
