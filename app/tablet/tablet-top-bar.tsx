@@ -71,8 +71,8 @@ export function TabletTopBar({
           {/* Right: connection chips + metric chips */}
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
 
-            {/* ── Connection chips — neutral card bg, colored icon box (matches /m/today card style) ── */}
-            {/* Zwift */}
+            {/* ── Connection chips — same style as /m/today and Settings page ── */}
+            {/* Zwift — blue icon, always connected */}
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
               background: "var(--m-card)", border: "1px solid var(--m-border)",
@@ -90,7 +90,7 @@ export function TabletTopBar({
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
 
-            {/* ICU */}
+            {/* ICU — green icon when connected, gray when not */}
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
               background: "var(--m-card)", border: "1px solid var(--m-border)",
