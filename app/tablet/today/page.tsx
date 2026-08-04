@@ -8,6 +8,7 @@ import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/ac
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
+import FeedbackBanner from "../../m/today/feedback-banner";
 
 const ZO = "#FF5A1F";
 
@@ -411,6 +412,18 @@ export default async function TabletTodayPage({
                   Great work getting an extra session in on your rest day. Your coach will factor this into next week&apos;s load.
                 </div>
               </div>
+              {/* Post-workout feedback for bonus rides */}
+              <div style={{ marginTop: 16 }}>
+                <FeedbackBanner
+                  workoutTitle={todayActivityName ?? "Bonus ride"}
+                  workoutCategory="bonus"
+                  date={todayStr}
+                  avgHr={todayAvgHr}
+                  actualActivityName={todayActivityName}
+                  actualDurationMin={todayActivityDurationMin}
+                  isBonus={true}
+                />
+              </div>
             </div>
           ) : (
             /* ── WORKOUT ──────────────────────────────────────────────── */
@@ -534,6 +547,21 @@ export default async function TabletTodayPage({
                       Different sport than planned — great cross-training!
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Post-workout feedback (RPE 1-5) */}
+              {(todayStatus === "completed" || todayStatus === "extra") && (
+                <div style={{ marginTop: 16 }}>
+                  <FeedbackBanner
+                    workoutTitle={todayWorkout.title}
+                    workoutCategory={todayWorkout.type ?? "Structured"}
+                    date={todayStr}
+                    avgHr={todayActualRide?.avgHr ?? null}
+                    plannedDurationMin={todayWorkout.durationMin}
+                    actualActivityName={todayActualRide?.name ?? null}
+                    actualDurationMin={todayActualRide?.durationMin ?? null}
+                  />
                 </div>
               )}
 
