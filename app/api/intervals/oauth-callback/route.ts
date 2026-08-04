@@ -157,10 +157,16 @@ export async function GET(req: NextRequest) {
 
       // Also re-push current week's plan to ICU immediately after reconnect,
       // so workouts appear in Zwift without waiting for next Monday's cron.
+      // IMPORTANT: clear icu_synced first so syncPlanToIcuAndMark actually
+      // runs even if a previous (now-stale) sync had marked this week as done.
+      // Without this, reconnect after a failed push silently skips re-sync.
       import("@/lib/headless-sync").then(async ({ syncPlanToIcuAndMark }) => {
         const { getCachedPlan } = await import("@/lib/kv-plan-state");
         const { mondayOfCurrentWeek } = await import("@/lib/periodization");
+        const { kvSet: kvSetInner } = await import("@/lib/kv");
         const weekOf = mondayOfCurrentWeek();
+        // Clear synced flag — forces re-push regardless of prior state
+        await kvSetInner(`zwift:${resolvedAthleteId}:plan:${weekOf}:icu_synced`, "0", 1).catch(() => {});
         const plan = await getCachedPlan(resolvedAthleteId!, weekOf).catch(() => null);
         if (plan) {
           await syncPlanToIcuAndMark(resolvedAthleteId!, weekOf, plan, new Set()).catch(() => {});
