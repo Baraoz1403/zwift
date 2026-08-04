@@ -164,18 +164,35 @@ export async function runWeeklyPlanGeneration(
   const activities = await fetchActivities(opts.accessToken, athleteId);
   const recentActivities = selectChartActivities(activities);
 
-  const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
-    const buf = await fetchActivityFit(a);
-    const fitRecords = parseFitRecords(buf);
-    const hrVals = fitRecords
-      .filter((r) => r.heartRate != null && r.heartRate > 0)
-      .map((r) => r.heartRate as number);
-    const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
-    const normalizedPower = computeNormalizedPower(fitRecords);
-    return { avgHeartRate, normalizedPower };
-  });
-  const avgHeartRates = fitResults.map((r) => (r.status === "fulfilled" ? r.value.avgHeartRate : null));
-  const normalizedPowers = fitResults.map((r) => (r.status === "fulfilled" ? r.value.normalizedPower : null));
+  // FIT downloads are skipped when ICU credentials exist — ICU already provides
+  // richer training-load data (rTSS, hrTSS) and the FIT downloads add 5-15s to
+  // the pipeline, reliably pushing plan generation past Vercel's 60s limit.
+  // We compute avgHeartRate and normalizedPower from the Zwift activity metadata
+  // instead (less precise but sufficient for the AI prompt context).
+  const icuCredsEarly = await getIntervalsCredentials(athleteId);
+  const skipFitDownloads = !!(icuCredsEarly?.icuId && icuCredsEarly?.icuKey);
+
+  let avgHeartRates: (number | null)[];
+  let normalizedPowers: (number | null)[];
+
+  if (skipFitDownloads) {
+    // Use metadata from Zwift activity objects directly — already available, no downloads needed
+    avgHeartRates = recentActivities.map(a => (a.avgHeartRate as number | null | undefined) ?? null);
+    normalizedPowers = recentActivities.map(() => null); // NP not in metadata; omit from prompt
+  } else {
+    const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
+      const buf = await fetchActivityFit(a);
+      const fitRecords = parseFitRecords(buf);
+      const hrVals = fitRecords
+        .filter((r) => r.heartRate != null && r.heartRate > 0)
+        .map((r) => r.heartRate as number);
+      const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+      const normalizedPower = computeNormalizedPower(fitRecords);
+      return { avgHeartRate, normalizedPower };
+    });
+    avgHeartRates = fitResults.map((r) => (r.status === "fulfilled" ? r.value.avgHeartRate : null));
+    normalizedPowers = fitResults.map((r) => (r.status === "fulfilled" ? r.value.normalizedPower : null));
+  }
 
   const rides: RideSummary[] = recentActivities.map((a, i) => ({
     date: a.startDate as string,
@@ -235,7 +252,7 @@ export async function runWeeklyPlanGeneration(
   // Use ICU-computed TSS when available — covers ALL sports (running, gym, outdoor
   // rides) with proper rTSS / hrTSS, not just Zwift power rides. Falls back to
   // the Zwift FIT proxy automatically when ICU isn't connected or returns nothing.
-  const icuCreds = await getIntervalsCredentials(athleteId);
+  const icuCreds = icuCredsEarly; // reuse the early fetch — no second KV lookup needed
   // Fetch 90 days so we reliably capture 30 training activities even for athletes
   // training 3x/week. The extra range costs nothing (ICU paginates on their side).
   const icuActivities =
