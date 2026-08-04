@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getCachedIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
+import { workoutDateLabel } from "@/lib/plan-shape";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getFingerprint, fingerprintToPromptSummary, saveCoachingNote } from "@/lib/rider-fingerprint";
 import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals, fetchIcuActivities } from "@/lib/intervals";
@@ -146,11 +147,15 @@ async function pushUpdatedWorkoutToIcu(
       riderName,
     );
 
+    // Add date prefix to title ("Wed Aug 6 · Tempo Intervals") — same as headless-sync
+    const dateLabel = workoutDateLabel(workoutDate);
+    const titledWorkout = dateLabel ? `${dateLabel} · ${workout.title}` : workout.title;
+
     const result = await pushWorkoutToIntervals({
       apiKey: icuKey,
       athleteId: icuAthleteId,
       workoutDay: workoutDate,
-      title: workout.title,
+      title: titledWorkout,
       description: workout.description ?? workout.title,
       durationMin: workout.durationMin,
       type: workout.type,
