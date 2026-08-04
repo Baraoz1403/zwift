@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
+import { kvGet } from "@/lib/kv";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
 import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
@@ -8,7 +9,6 @@ import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/ac
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
-import FeedbackBanner from "../../m/today/feedback-banner";
 
 const ZO = "#FF5A1F";
 
@@ -123,14 +123,24 @@ export default async function TabletTodayPage({
   // todayWorkout + todayStatus always use currentWeekOf for the main panel.
   const weekOf = sidebarWeekOf;
 
-  const [sidebarPlan, currentPlan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity] = await Promise.all([
+  const [sidebarPlan, currentPlan, earlyKvCreds, zwiftProfile, athleteState, cachedIdentity, trainingLoadRaw] = await Promise.all([
     getCachedPlan(athleteId, sidebarWeekOf),
     isCurrentWeek ? Promise.resolve(null) : getCachedPlan(athleteId, currentWeekOf),
     cookieKey ? Promise.resolve(null) : getIntervalsCredentials(athleteId),
     fetchOwnProfile(session.accessToken).catch(() => null),
     getStoredAthleteState(athleteId).catch(() => null),
     getRiderIdentity(athleteId).catch(() => null),
+    kvGet(`zwift:${athleteId}:training_load`).catch(() => null),
   ]);
+  let ctl: number | null = null, atl: number | null = null, tsb: number | null = null;
+  try {
+    if (trainingLoadRaw) {
+      const tl = JSON.parse(trainingLoadRaw) as Record<string, unknown>;
+      ctl = typeof tl.ctl === "number" ? Math.round(tl.ctl) : null;
+      atl = typeof tl.atl === "number" ? Math.round(tl.atl) : null;
+      tsb = typeof tl.tsb === "number" ? Math.round(tl.tsb) : null;
+    }
+  } catch { /* best-effort */ }
   // plan = the sidebar week's plan; todayPlan = current week's plan for the main panel
   const plan = sidebarPlan;
   const todayPlan = isCurrentWeek ? sidebarPlan : currentPlan;
@@ -166,14 +176,7 @@ export default async function TabletTodayPage({
         ? Promise.race([
             fetchIcuActivities(icuKey, icuId, weekDates[0], weekDates[6]),
             new Promise<never>((_, r) => setTimeout(() => r(new Error("timeout")), 4000)),
-          ]).catch(async (e: unknown) => {
-            const msg = e instanceof Error ? e.message : String(e);
-            if (msg.includes("401") || msg.toLowerCase().includes("unauthorized")) {
-              const { kvSet } = await import("@/lib/kv");
-              kvSet(`zwift:${athleteId}:icu_invalid`, "1", 24 * 60 * 60).catch(() => {});
-            }
-            return [];
-          })
+          ]).catch(() => [])
         : Promise.resolve([]),
       Promise.race([
         fetchActivities(session.accessToken, session.athleteId!, 50),
@@ -412,18 +415,6 @@ export default async function TabletTodayPage({
                   Great work getting an extra session in on your rest day. Your coach will factor this into next week&apos;s load.
                 </div>
               </div>
-              {/* Post-workout feedback for bonus rides */}
-              <div style={{ marginTop: 16 }}>
-                <FeedbackBanner
-                  workoutTitle={todayActivityName ?? "Bonus ride"}
-                  workoutCategory="bonus"
-                  date={todayStr}
-                  avgHr={todayAvgHr}
-                  actualActivityName={todayActivityName}
-                  actualDurationMin={todayActivityDurationMin}
-                  isBonus={true}
-                />
-              </div>
             </div>
           ) : (
             /* ── WORKOUT ──────────────────────────────────────────────── */
@@ -550,21 +541,6 @@ export default async function TabletTodayPage({
                 </div>
               )}
 
-              {/* Post-workout feedback (RPE 1-5) */}
-              {(todayStatus === "completed" || todayStatus === "extra") && (
-                <div style={{ marginTop: 16 }}>
-                  <FeedbackBanner
-                    workoutTitle={todayWorkout.title}
-                    workoutCategory={todayWorkout.type ?? "Structured"}
-                    date={todayStr}
-                    avgHr={todayActualRide?.avgHr ?? null}
-                    plannedDurationMin={todayWorkout.durationMin}
-                    actualActivityName={todayActualRide?.name ?? null}
-                    actualDurationMin={todayActualRide?.durationMin ?? null}
-                  />
-                </div>
-              )}
-
               {/* Session structure */}
               {todayWorkout.structure && todayWorkout.structure.length > 0 && (
                 <div style={{
@@ -682,6 +658,29 @@ export default async function TabletTodayPage({
                 </div>
               )}
             </div>
+            {/* CTL / ATL / TSB */}
+            {(ctl != null || atl != null || tsb != null) && (
+              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                {ctl != null && (
+                  <div style={{ flex: 1, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#3b82f6", lineHeight: 1 }}>{ctl}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
+                  </div>
+                )}
+                {atl != null && (
+                  <div style={{ flex: 1, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{atl}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
+                  </div>
+                )}
+                {tsb != null && (
+                  <div style={{ flex: 1, background: tsb >= 0 ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)", border: `1px solid ${tsb >= 0 ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`, borderRadius: 8, padding: "8px 10px" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>{tsb > 0 ? "+" : ""}{tsb}</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: tsb >= 0 ? "rgba(34,197,94,0.6)" : "rgba(239,68,68,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
+                  </div>
+                )}
+              </div>
+            )}
             {/* Bonus ride highlight — shown when athlete rode on a rest day */}
             {isBonus && (
               <div style={{

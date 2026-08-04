@@ -49,11 +49,17 @@ interface Props {
   todayActivityName?: string | null;
   todayActivityDurationMin?: number | null;
   todayAvgHr?: number | null;
+  /** Training load metrics */
+  ctl?: number | null;
+  atl?: number | null;
+  tsb?: number | null;
+  freshness?: string | null;
 }
 
 export function TabletWeekSidebar({
   ftp, currentPhase, weekDisplayNum, workouts, weekStatus, todayStr, planSummary,
   weekWorkoutCount, isBonus, todayActivityName, todayActivityDurationMin, todayAvgHr,
+  ctl, atl, tsb, freshness,
 }: Props) {
   return (
     <div style={{
@@ -109,6 +115,42 @@ export function TabletWeekSidebar({
             </div>
           )}
         </div>
+        {/* CTL / ATL / TSB — training load row */}
+        {(ctl != null || atl != null || tsb != null) && (
+          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+            {ctl != null && (
+              <div style={{
+                flex: 1, background: "rgba(59,130,246,0.07)", border: "1px solid rgba(59,130,246,0.2)",
+                borderRadius: 8, padding: "8px 10px",
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#3b82f6", lineHeight: 1 }}>{Math.round(ctl)}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(59,130,246,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
+              </div>
+            )}
+            {atl != null && (
+              <div style={{
+                flex: 1, background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.2)",
+                borderRadius: 8, padding: "8px 10px",
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}>{Math.round(atl)}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(245,158,11,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
+              </div>
+            )}
+            {tsb != null && (
+              <div style={{
+                flex: 1,
+                background: tsb >= 0 ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)",
+                border: `1px solid ${tsb >= 0 ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+                borderRadius: 8, padding: "8px 10px",
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
+                  {tsb > 0 ? "+" : ""}{Math.round(tsb)}
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: tsb >= 0 ? "rgba(34,197,94,0.6)" : "rgba(239,68,68,0.6)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
+              </div>
+            )}
+          </div>
+        )}
         {/* Bonus ride highlight */}
         {isBonus && (
           <div style={{
