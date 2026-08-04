@@ -780,9 +780,10 @@ Every workout structure block must include explicit cadenceTarget.
   "a Foundation or Recovery session between hard efforts. " +
   "(3) Weekly sequence: hard day -> easy day -> hard day -> easy day. " +
   "(4) Workout type progression by goal: " +
-  "FTP goal beginner (weeks 1-3): Foundation + Strength + Tempo only. " +
-  "FTP goal weeks 4+: add Intermittent (30s on/off). " +
-  "FTP goal weeks 5+: add Threshold Development (4-8min Z4 intervals). " +
+  "FTP goal — intensity by phase (ignore week-number restrictions; use phase and TSB gates instead): " +
+  "Base phase: Sweet Spot Classic + one VO2max session (Micro Intervals or 60/60) + bookend Foundation rides. " +
+  "Build phase: Threshold Development + Norwegian 4×4 or higher rung VO2max + Sweet Spot. " +
+  "Recovery phase: Foundation + Z2 only, no hard sessions. " +
   "Weight/fitness goal: prioritize long Z2 Foundation blocks for sustainable " +
   "energy expenditure; include intensity sessions according to the " +
   "INTENSITY SESSION GUIDELINES matrix (level and phase determine the count, " +
