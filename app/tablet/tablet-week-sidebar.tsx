@@ -12,16 +12,6 @@ import type { DayStatus } from "@/lib/activity-sync";
 const ZO = "#FF5A1F";
 const ALL_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
-function detectZoneColor(w: WeeklyWorkout): string {
-  const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-  if (t.includes("sweet spot") || t.includes("sweetspot")) return "#10b981";
-  if (t.includes("threshold") || t.includes("ftp"))         return "#FF5A1F";
-  if (t.includes("vo2") || t.includes("norwegian"))         return "#ef4444";
-  if (t.includes("tempo"))                                   return "#3b82f6";
-  if (t.includes("sprint") || t.includes("neuromuscular"))  return "#a855f7";
-  if (t.includes("endurance") || t.includes("z2"))          return "#22d3ee";
-  return ZO;
-}
 
 function detectZoneLabel(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
@@ -192,7 +182,6 @@ export function TabletWeekSidebar({
             const isToday   = w?.date === todayStr;
             const dayIsRest = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
             const dayStatus: DayStatus | undefined = w?.date ? weekStatus[w.date] : undefined;
-            const rowColor  = dayIsRest ? "var(--m-border)" : (w ? detectZoneColor(w) : ZO);
             const dateNum   = w?.date ? new Date(w.date + "T12:00:00").getDate() : null;
 
             return (
@@ -201,20 +190,22 @@ export function TabletWeekSidebar({
                 padding: "10px 12px", borderRadius: 4,
                 background: isToday ? "var(--m-card-inner)" : "transparent",
                 border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
-                borderLeft: `3px solid ${isToday ? (dayIsRest ? "var(--m-border)" : rowColor) : "transparent"}`,
+                // VOLT orange left-accent for today's workout (matches left nav active style);
+                // rest day or non-today rows get no accent.
+                borderLeft: `3px solid ${isToday && !dayIsRest ? ZO : "transparent"}`,
               }}>
-                {/* Day bubble */}
+                {/* Day bubble — uniform dark, no zone tinting */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 4, flexShrink: 0,
-                  background: isToday ? (dayIsRest ? "rgba(100,116,139,0.08)" : `${rowColor}14`) : "var(--m-card-inner)",
-                  border: `1px solid ${isToday ? (dayIsRest ? "rgba(100,116,139,0.15)" : `${rowColor}25`) : "var(--m-border)"}`,
+                  background: "var(--m-card-inner)",
+                  border: `1px solid ${isToday ? "rgba(255,255,255,0.12)" : "var(--m-border)"}`,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? "var(--m-text)" : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
                     {dayName.slice(0, 3)}
                   </div>
                   {dateNum && (
-                    <div style={{ fontSize: 16, fontWeight: 900, color: isToday ? (dayIsRest ? "var(--m-muted)" : rowColor) : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: isToday ? "var(--m-text)" : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
                       {dateNum}
                     </div>
                   )}
@@ -230,13 +221,13 @@ export function TabletWeekSidebar({
                     {dayIsRest ? (isToday && isBonus ? "Rest + Bonus 🚴" : "Rest") : w!.title}
                   </div>
                   {!dayIsRest && w && (
-                    <div style={{ fontSize: 13, color: rowColor as string, marginTop: 2, fontWeight: 600 }}>
+                    <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>
                       {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
                     </div>
                   )}
                 </div>
 
-                {/* Status dot */}
+                {/* Status dots — these ARE meaningful color signals, keep them */}
                 {dayStatus === "completed" && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />}
                 {dayStatus === "missed"    && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />}
                 {dayStatus === "bonus"     && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />}

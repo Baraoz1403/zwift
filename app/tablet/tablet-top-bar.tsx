@@ -14,7 +14,6 @@
  */
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
-const ZO = "#FF5A1F";
 
 interface TabletTopBarProps {
   firstName: string | null;
@@ -120,33 +119,27 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 58,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
               </div>
             )}
-            {currentPhase && (() => {
-              const phaseColor =
-                currentPhase === "Recovery" ? "#f59e0b" :
-                currentPhase === "Build"    ? "#ef4444" :
-                                              "#818cf8";
-              return (
-                <div style={{
-                  background: "var(--m-card)", border: "1px solid var(--m-border)",
-                  borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
-                }}>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: phaseColor, lineHeight: 1 }}>{currentPhase}</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
-                    {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
-                  </div>
+            {currentPhase && (
+              <div style={{
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
+                  {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
                 </div>
-              );
-            })()}
+              </div>
+            )}
             {weekWorkoutCount > 0 && (
               <div style={{
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 48,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: ZO, lineHeight: 1 }}>{weekWorkoutCount}</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
               </div>
             )}
