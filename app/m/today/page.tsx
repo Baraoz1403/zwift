@@ -426,19 +426,18 @@ function TodayHero({
             background: "var(--m-card)", border: "1px solid var(--m-border)",
             borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
           }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#00C2FF", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>FTP</div>
           </div>
         )}
-        {/* Phase — Build=red, Recovery=amber, Base=purple */}
+        {/* Phase */}
         {phase && (() => {
-          const phaseColor = phase === "Recovery" ? "#f59e0b" : phase === "Build" ? "#ef4444" : "#818cf8";
           return (
             <div style={{
               background: "var(--m-card)", border: "1px solid var(--m-border)",
               borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
             }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: phaseColor, lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{phase}</div>
               <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>
                 {weekIndex !== null ? `Wk ${weekIndex + 1}` : "Phase"}
               </div>
@@ -451,7 +450,7 @@ function TodayHero({
             background: "var(--m-card)", border: "1px solid var(--m-border)",
             borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
           }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#FF5A1F", lineHeight: 1 }}>{weekWorkoutCount}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
             <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>Sessions</div>
           </div>
         )}
