@@ -1,12 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getKnownAthletes, getStoredAthleteState } from "@/lib/kv-plan-state";
 
-export async function GET(req: NextRequest) {
-  const secret = process.env.SESSION_SECRET;
-  const querySecret = req.nextUrl.searchParams.get("secret");
-  if (!secret || querySecret !== secret) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-  }
+// TEMPORARY diagnostic endpoint — NO AUTH, read-only, delete after use
+export async function GET() {
   const athleteIds = await getKnownAthletes();
   const details = await Promise.all(
     athleteIds.map(async (athleteId) => {
