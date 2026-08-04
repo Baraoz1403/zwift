@@ -191,7 +191,8 @@ export function structureToBlocks(structure: WorkoutStructureBlock[]): ZwoBlock[
         blocks.push({ kind: "Warmup", durationSec, powerLow: 0.45, powerHigh: b.powerFtp });
         break;
       case "cooldown":
-        blocks.push({ kind: "Cooldown", durationSec, powerLow: b.powerFtp, powerHigh: 0.40 });
+        // Hard cap: cooldown ≤ 5 minutes (300 s). System rule.
+        blocks.push({ kind: "Cooldown", durationSec: Math.min(durationSec, 300), powerLow: b.powerFtp, powerHigh: 0.40 });
         break;
       case "steadystate":
         blocks.push({ kind: "SteadyState", durationSec, power: b.powerFtp });
@@ -472,7 +473,8 @@ export function generateDefaultBlocks(w: ZwoWorkoutInput): ZwoBlock[] {
   // needs its own short on / long off cycle instead of a longer interval.
   if (t.includes("strength") || t.includes("sprint") || t.includes("neuromuscular")) {
     const warm = Math.round(totalSec * 0.25);
-    const cool = Math.round(totalSec * 0.25);
+    // Cooldown hard cap: 5 minutes (300 s). System rule.
+    const cool = Math.min(Math.round(totalSec * 0.25), 300);
     const mainSec = Math.max(60, totalSec - warm - cool);
     const onDuration = 15;
     const offDuration = 105;
@@ -489,7 +491,8 @@ export function generateDefaultBlocks(w: ZwoWorkoutInput): ZwoBlock[] {
   // cycle than a sweet-spot/threshold/VO2 block, e.g. 30s on / 30s off.
   if (t.includes("intermittent") || t.includes("micro")) {
     const warm = Math.round(totalSec * 0.15);
-    const cool = Math.round(totalSec * 0.15);
+    // Cooldown hard cap: 5 minutes (300 s). System rule.
+    const cool = Math.min(Math.round(totalSec * 0.15), 300);
     const mainSec = Math.max(60, totalSec - warm - cool);
     const onDuration = 30;
     const offDuration = 30;
@@ -503,34 +506,43 @@ export function generateDefaultBlocks(w: ZwoWorkoutInput): ZwoBlock[] {
     ];
   }
 
-  if (t.includes("interval") || t.includes("sweet") || t.includes("threshold") || t.includes("vo2")) {
+  // ALL other workout types — interval-structured. This enforces the system rule:
+  // "every workout uses interval structure, no steady-state slabs."
+  // Block duration tuned by flavor; cooldown hard-capped at 5 min (300 s).
+  {
     const warm = Math.round(totalSec * 0.15);
-    const cool = Math.round(totalSec * 0.15);
+    // Cooldown hard cap: 5 minutes (300 s). System rule.
+    const cool = Math.min(Math.round(totalSec * 0.15), 300);
     const mainSec = Math.max(60, totalSec - warm - cool);
-    // Block length depends on flavor: short/sharp for VO2, longer/steadier
-    // for threshold and sweet spot.
-    const onDuration = t.includes("vo2") ? 180 : t.includes("threshold") ? 480 : 300;
-    const offDuration = Math.round(onDuration * 0.5);
+
+    // Interval duration tuned by effort type:
+    //   VO2max         → 3 min (short, sharp)
+    //   Threshold/FTP  → 8 min (sustained)
+    //   Tempo / cruise → 10 min (longer aerobic blocks)
+    //   Surge / cadence → 1 min (punchy short efforts)
+    //   Z2 / endurance / foundation → 8 min at lower power
+    //   Sweet spot / default → 5 min
+    const onDuration =
+      t.includes("vo2")                              ? 180 :
+      t.includes("threshold") || t.includes("ftp")  ? 480 :
+      t.includes("tempo") || t.includes("cruise")   ? 600 :
+      t.includes("surge") || t.includes("cadence")  ? 60  :
+      t.includes("endurance") || t.includes("z2") ||
+        t.includes("foundation") || t.includes("aerobic") ||
+        t.includes("base") || t.includes("muscle")  ? 480 :
+                                                       300;
+
+    const offDuration = Math.min(300, Math.round(onDuration * 0.4));
     const repeat = Math.max(2, Math.round(mainSec / (onDuration + offDuration)));
-    const onPower = high || mid || 0.9;
-    const offPower = Math.max(0.45, (low || mid || 0.6) - 0.15);
+    const onPower = high || mid || 0.82;
+    const offPower = Math.max(0.45, (low || mid || 0.65) - 0.15);
+
     return [
-      { kind: "Warmup", durationSec: warm, powerLow: 0.45, powerHigh: 0.7 },
+      { kind: "Warmup", durationSec: warm, powerLow: 0.45, powerHigh: 0.70 },
       { kind: "IntervalsT", repeat, onDuration, offDuration, onPower, offPower },
-      { kind: "Cooldown", durationSec: cool, powerLow: 0.65, powerHigh: 0.4 },
+      { kind: "Cooldown", durationSec: cool, powerLow: 0.65, powerHigh: 0.40 },
     ];
   }
-
-  // Endurance / Tempo / Foundation / default: warmup, one long steady block,
-  // cooldown.
-  const warm = Math.round(totalSec * 0.1);
-  const cool = Math.round(totalSec * 0.1);
-  const main = totalSec - warm - cool;
-  return [
-    { kind: "Warmup", durationSec: warm, powerLow: 0.45, powerHigh: mid },
-    { kind: "SteadyState", durationSec: main, power: mid },
-    { kind: "Cooldown", durationSec: cool, powerLow: mid, powerHigh: 0.45 },
-  ];
 }
 
 /**
