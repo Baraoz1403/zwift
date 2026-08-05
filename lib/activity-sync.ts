@@ -91,9 +91,11 @@ const RUNNING_TYPES = new Set(["Run", "VirtualRun", "TrailRun", "Walk", "Hike"])
 function isCycling(type: string) { return CYCLING_TYPES.has(type); }
 function isRunning(type: string) { return RUNNING_TYPES.has(type); }
 
-/** Whether a plan workout type implies cycling. Defaults to cycling. */
-function planIsCycling(workoutType: string): boolean {
-  const t = workoutType.toLowerCase();
+/** Whether a plan workout type implies cycling. Defaults to cycling.
+ *  Checks BOTH type AND title — e.g. "Easy Run" with type "Endurance"
+ *  must still be recognised as a run workout. */
+function planIsCycling(workoutType: string, workoutTitle?: string): boolean {
+  const t = (workoutType + " " + (workoutTitle ?? "")).toLowerCase();
   return !t.includes("run") && !t.includes("walk") && !t.includes("hike");
 }
 
@@ -154,7 +156,7 @@ export function computeWeekStatus(
     }
 
     // Check if any activity matches the planned sport
-    const planCycling = planIsCycling(workout.type);
+    const planCycling = planIsCycling(workout.type, workout.title);
     const sportMatch = dayActs.some(a =>
       planCycling ? isCycling(a.type) : isRunning(a.type)
     );

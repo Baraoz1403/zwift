@@ -55,7 +55,15 @@ export default function IOSScrollFix() {
         el = el.parentElement;
       }
 
-      // No scrollable ancestor → prevent default to stop viewport bounce
+      // No scrollable ancestor found in DOM.
+      // Check if the PAGE itself is scrollable (page-scroll layout).
+      // If the document can scroll, let iOS handle it naturally.
+      const pageCanScroll = document.documentElement.scrollHeight > window.innerHeight + 2;
+      if (pageCanScroll) {
+        // Page-scroll layout: allow scroll, CSS overscroll-behavior handles bounce
+        return;
+      }
+      // Truly no-scroll context → prevent rubber-band
       e.preventDefault();
     };
 
