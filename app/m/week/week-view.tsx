@@ -144,7 +144,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
       {bullets.length > 0 && (
         <div style={{
           margin: "16px 0 0",
-          background: "var(--m-card-inner)", borderRadius: 6, padding: "14px 16px",
+          background: "var(--m-card-inner)", borderRadius: 6, padding: "20px 18px",
           border: "1px solid var(--m-border)",
           display: "flex", flexDirection: "column", gap: 10,
         }}>
@@ -261,7 +261,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                   background: "var(--m-card-inner)",
                   borderLeft: `3px solid ${colors.accent}`,
                   borderBottom: "1px solid var(--m-border)",
-                  padding: "14px 16px 18px 16px",
+                  padding: "20px 16px 22px 16px",
                 }}>
                   {/* Power chart */}
                   {w.structure && w.structure.length > 0 && (

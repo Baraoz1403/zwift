@@ -327,7 +327,7 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-      gap: 14, padding: "15px 0",
+      gap: 14, padding: "18px 0",
       borderBottom: "1px solid var(--m-border)",
     }}>
       <span style={{ fontSize: 20, color: "var(--m-muted)", flexShrink: 0 }}>{label}</span>

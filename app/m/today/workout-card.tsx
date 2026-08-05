@@ -313,7 +313,7 @@ function StatCell({ value, label, divider, accent }: {
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
-      padding: "20px 8px",
+      padding: "24px 10px",
       borderLeft: divider ? "1px solid var(--m-border)" : "none",
     }}>
       <div style={{

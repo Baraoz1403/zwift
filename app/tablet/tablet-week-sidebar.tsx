@@ -158,7 +158,7 @@ export function TabletWeekSidebar({
             return (
               <div key={dayName} style={{
                 display: "flex", alignItems: "center", gap: 12,
-                padding: "16px 16px", borderRadius: 6,
+                padding: "18px 18px", borderRadius: 6,
                 background: isToday ? "var(--m-card-inner)" : "transparent",
                 border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
                 // VOLT orange left-accent for today's workout (matches left nav active style);

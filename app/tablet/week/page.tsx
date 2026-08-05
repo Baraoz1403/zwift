@@ -134,7 +134,7 @@ export default async function TabletWeekPage() {
       </div>
       {/* Body: week view on left, sidebar on right */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "28px" }}>
+        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "32px 36px" }}>
           <WeekView
             workouts={workoutsWithDates}
             weekOf={weekOf}

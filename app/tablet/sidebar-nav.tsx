@@ -41,7 +41,7 @@ export default function TabletSidebar() {
       overflow: "hidden",
     }}>
       {/* Nav — no brand section (top bar handles branding) */}
-      <nav style={{ flex: 1, padding: "32px 14px 24px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
+      <nav style={{ flex: 1, padding: "12px 14px 24px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
           return (
