@@ -126,7 +126,7 @@ export default async function TabletWeekPage() {
   const isBonus = weekStatus[today] === "bonus";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", background: "var(--m-bg)", height: "100%", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", background: "var(--m-bg)", flex: 1, overflow: "hidden" }}>
       {/* No per-page header — TabletTopBar handles branding. Same structure as Today page. */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
         <div style={{ flex: 1, padding: "28px", overflowY: "auto" }}>

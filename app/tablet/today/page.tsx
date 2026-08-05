@@ -307,7 +307,7 @@ export default async function TabletTodayPage({
       display: "flex", flexDirection: "column",
       background: "var(--m-bg)", color: "var(--m-text)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-      height: "100%", overflow: "hidden",
+      flex: 1, overflow: "hidden",
     }}>
 
       {/* ── BODY ────────────────────────────────────────────────────────── */}

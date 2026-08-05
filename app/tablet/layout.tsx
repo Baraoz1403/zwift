@@ -173,6 +173,11 @@ export default async function TabletLayout({ children }: { children: React.React
             - left: 220px — clears the sidebar.
             - display:flex column so children can fill 100% height.
           */}
+          {/*
+            Main content: position:fixed fills the space between top-bar and
+            bottom-nav, to the right of the sidebar. Pages passed as {children}
+            must use flex:1 (not height:100%) to fill this flex column.
+          */}
           <div
             className="tablet-main"
             style={{
@@ -186,12 +191,7 @@ export default async function TabletLayout({ children }: { children: React.React
               flexDirection: "column",
             }}
           >
-            <div
-              className="tablet-scroll-area"
-              style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}
-            >
-              {children}
-            </div>
+            {children}
           </div>
         </div>
       </>
