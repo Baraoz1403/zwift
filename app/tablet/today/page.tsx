@@ -307,15 +307,15 @@ export default async function TabletTodayPage({
       display: "flex", flexDirection: "column",
       background: "var(--m-bg)", color: "var(--m-text)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      height: "100%", overflow: "hidden",
     }}>
 
       {/* ── BODY ────────────────────────────────────────────────────────── */}
-      {/* No per-page header — the full-width TabletTopBar in layout.tsx shows
-          greeting, name, connection icons, and fitness chips for all tablet pages. */}
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
+      {/* Each column scrolls independently — no page-level scroll. */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
 
-        {/* LEFT: Today workout */}
-        <div style={{ flex: 1,  padding: "44px 52px" }}>
+        {/* LEFT: Today workout — scrolls independently */}
+        <div style={{ flex: 1, padding: "44px 52px", overflowY: "auto" }}>
 
           {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
           {isRest || (!todayWorkout && !isBonus) ? (
@@ -417,19 +417,11 @@ export default async function TabletTodayPage({
             /* ── WORKOUT ──────────────────────────────────────────────── */
             <div>
               {/* Section label + status */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-                <div style={{
-                  fontSize: 13, fontWeight: 800, color: "#FF5A1F",
-                  background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.30)",
-                  borderRadius: 4, padding: "5px 12px", letterSpacing: ".08em",
-                  textTransform: "uppercase",
-                }}>
-                  Today
-                </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
                   Today&apos;s session
                 </div>
-                <div style={{ marginLeft: "auto",
+                <div style={{
                   fontSize: 14, fontWeight: 700, color: statusColor,
                   background: `${statusColor}14`, border: `1px solid ${statusColor}30`,
                   borderRadius: 3, padding: "4px 10px",
@@ -606,16 +598,13 @@ export default async function TabletTodayPage({
           </div>
         </div>
 
-        {/* RIGHT: Week panel ─────────────────────────────────────────── */}
+        {/* RIGHT: Week panel — independent scroll column ──────────────── */}
         <div style={{
           width: 280, flexShrink: 0,
           borderLeft: "1px solid var(--m-border)",
           background: "var(--m-card)",
-          position: "sticky",
-          top: "var(--tablet-bar-h)",
-          alignSelf: "flex-start",
-          minHeight: "calc(100vh - var(--tablet-bar-h) - var(--tablet-footer-h))",
           display: "flex", flexDirection: "column",
+          overflowY: "auto",
         }}>
           {/* FITNESS METRICS — sticky, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
           <div style={{
@@ -702,4 +691,3 @@ export default async function TabletTodayPage({
     </div>
   );
 }
-

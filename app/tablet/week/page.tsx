@@ -126,15 +126,15 @@ export default async function TabletWeekPage() {
   const isBonus = weekStatus[today] === "bonus";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", background: "var(--m-bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", background: "var(--m-bg)", height: "100%", overflow: "hidden" }}>
       {/* Small in-content week title (main header is in layout TabletTopBar) */}
-      <div style={{ padding:"14px 28px 10px", borderBottom:"1px solid var(--m-border)", background:"var(--m-card)" }}>
+      <div style={{ padding:"14px 28px 10px", borderBottom:"1px solid var(--m-border)", background:"var(--m-card)", flexShrink: 0 }}>
         <div style={{ fontSize:11, fontWeight:700, color:"var(--m-muted)", textTransform:"uppercase", letterSpacing:".12em" }}>This week</div>
         <div style={{ fontSize:14, color:"var(--m-muted)", marginTop:2, fontWeight:500 }}>{formatWeekRange(weekOf)}</div>
       </div>
-      {/* Body: week view on left, sidebar on right */}
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
-        <div style={{ flex: 1, padding: "32px 36px" }}>
+      {/* Body: left col scrolls independently, right sidebar scrolls independently */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
+        <div style={{ flex: 1, padding: "28px", overflowY: "auto" }}>
           <WeekView
             workouts={workoutsWithDates}
             weekOf={weekOf}

@@ -76,7 +76,6 @@ export default async function TabletLayout({ children }: { children: React.React
       ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
       : null;
     const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
-    const weekCyclePos = macro ? (macro.weekIndex % 4) + 1 : null;
 
     // Session count from plan
     const workouts = plan?.workouts ?? [];
@@ -123,8 +122,11 @@ export default async function TabletLayout({ children }: { children: React.React
           html, body {
             background-color: ${bodyBg} !important;
             margin: 0;
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
             overscroll-behavior: none !important;
-            -webkit-overflow-scrolling: touch !important;
           }
         `}</style>
 
@@ -132,7 +134,10 @@ export default async function TabletLayout({ children }: { children: React.React
           data-mobile-shell
           data-mobile-theme={theme}
           style={{
-            minHeight: "100dvh",
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
             background: "var(--m-bg)",
             fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
             WebkitFontSmoothing: "antialiased",
@@ -140,38 +145,51 @@ export default async function TabletLayout({ children }: { children: React.React
         >
           <IOSScrollFix />
 
-          {/* ── Full-width top bar (landscape + portrait) ───────────────── */}
+          {/* ── Fixed top bar ─────────────────────────────────────────────── */}
           <TabletTopBar
             firstName={firstName}
             ftp={ftp}
             currentPhase={currentPhase}
             weekDisplayNum={weekDisplayNum}
-            weekCyclePos={weekCyclePos}
             weekWorkoutCount={weekWorkoutCount}
             icuConnected={icuConnected}
-
             greeting={greeting}
             dateLabel={dateLabel}
           />
 
-          {/* ── Left sidebar (landscape only — hidden in portrait via CSS) ─ */}
+          {/* ── Left nav sidebar (landscape only) ────────────────────────── */}
           <TabletSidebar />
 
           {/*
+            Content area: sits between top bar and bottom nav.
+            marginLeft = sidebar width.
+            Each page provides its own two-column layout where each column
+            has overflow-y: auto so they scroll independently.
+          */}
+          {/*
             Main content area.
-            paddingTop = var(--tablet-bar-h) pushes content below the fixed top bar.
-            marginLeft = 220 offsets from the sidebar (portrait CSS overrides to 0).
-            overflow:hidden so each page manages its own scrolling.
+            - position:fixed so it sits exactly between the fixed top-bar
+              and the fixed bottom-nav, independent of both.
+            - left: 220px — clears the sidebar.
+            - display:flex column so children can fill 100% height.
           */}
           <div
             className="tablet-main"
             style={{
-              paddingTop: "var(--tablet-bar-h)",
-              paddingBottom: "var(--tablet-footer-h)",
-              marginLeft: 220,
+              position: "fixed",
+              top: "var(--tablet-bar-h)",
+              bottom: "var(--tablet-footer-h)",
+              left: 220,
+              right: 0,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <div className="tablet-scroll-area">
+            <div
+              className="tablet-scroll-area"
+              style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}
+            >
               {children}
             </div>
           </div>
