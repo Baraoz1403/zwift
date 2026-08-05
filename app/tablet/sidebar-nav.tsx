@@ -41,13 +41,13 @@ export default function TabletSidebar() {
       overflow: "hidden",
     }}>
       {/* Nav — no brand section (top bar handles branding) */}
-      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+      <nav style={{ flex: 1, padding: "28px 14px", display: "flex", flexDirection: "column", gap: 6, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
           return (
             <Link key={href} href={href} style={{
               display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 14px", borderRadius: 4,
+              padding: "14px 16px", borderRadius: 6,
               background: active ? `${ZO}12` : "transparent",
               border: `1px solid ${active ? ZO + "35" : "transparent"}`,
               textDecoration: "none",

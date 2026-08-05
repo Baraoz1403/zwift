@@ -44,7 +44,7 @@ export function TabletTopBar({
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <div style={{ padding: "12px 32px 20px" }}>
+      <div style={{ padding: "16px 36px 26px" }}>
         {/* Row 1: greeting + date on left, theme toggle on right */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{

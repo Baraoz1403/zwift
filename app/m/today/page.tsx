@@ -356,38 +356,40 @@ function TodayHero({
         </div>
       </div>
 
-      {/* Row 3: status dots (Zwift · ICU) + phase info */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        {/* Zwift */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      {/* Row 3: live connection status chips */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        {/* Zwift chip */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="12" height="12" viewBox="0 0 20 20" fill="#FF5A1F" style={{ flexShrink: 0 }}>
             <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", letterSpacing: ".1px" }}>Connected</span>
         </div>
-        <div style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--m-border)", flexShrink: 0 }} />
-        {/* ICU */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+
+        {/* divider */}
+        <div style={{ width: 1, height: 12, background: "var(--m-border)", flexShrink: 0 }} />
+
+        {/* ICU chip */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#e11d48" : "#4b5563"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
+          {icuConnected
+            ? <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", letterSpacing: ".1px" }}>Connected</span>
+            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 10, fontWeight: 700, color: "#e11d48", textDecoration: "none", letterSpacing: ".1px" }}>Not connected</a>
+          }
         </div>
-        {!icuConnected && (
-          <a href="/api/intervals/oauth-start?from=m" style={{
-            fontSize: 10, fontWeight: 700, color: "var(--m-btn-muted-txt)", textDecoration: "none",
-            padding: "3px 8px", background: "var(--m-btn-muted)", borderRadius: 4, marginLeft: 2,
-          }}>
-            Connect
-          </a>
-        )}
+
         <div style={{ flex: 1 }} />
-        {/* Phase + week + session count */}
+
+        {/* Phase + week */}
         {phase && (
           <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>
             {phase}
-            {weekIndex != null ? ` \u00b7 Wk ${weekIndex + 1}` : ""}
-            {weekWorkoutCount > 0 ? ` \u00b7 ${weekWorkoutCount}\u00d7` : ""}
+            {weekIndex != null ? ` · Wk ${weekIndex + 1}` : ""}
+            {weekWorkoutCount > 0 ? ` · ${weekWorkoutCount}×` : ""}
           </span>
         )}
       </div>

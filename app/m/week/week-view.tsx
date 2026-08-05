@@ -138,7 +138,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
 
       {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
 
-      <div style={{ padding: "0 16px" }}>
+      <div style={{ padding: "0 18px" }}>
 
       {/* Header */}
       <div style={{ marginBottom: 14 }}>
@@ -166,7 +166,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
       </div>
 
       {/* Day cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8, paddingBottom: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 12, paddingBottom: 12 }}>
         {ALL_DAYS.map(dayName => {
           const w = workouts.find(x => x.day === dayName);
           const isToday = w?.date === today;
