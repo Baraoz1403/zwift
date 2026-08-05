@@ -313,7 +313,7 @@ function TodayHero({
   icuConnected: boolean;
   icuName?: string | null;
 }) {
-  void ftp; void icuName; // not displayed in the minimal header
+  void icuName; // not displayed in the minimal header
 
   const statusDone = todayStatus === "completed";
 
@@ -357,19 +357,16 @@ function TodayHero({
       </div>
 
       {/* Row 3: live connection status chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
         {/* Zwift chip */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="12" height="12" viewBox="0 0 20 20" fill="#FF5A1F" style={{ flexShrink: 0 }}>
             <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
           </svg>
           <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", letterSpacing: ".1px" }}>Connected</span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e" }}>Connected</span>
         </div>
-
-        {/* divider */}
         <div style={{ width: 1, height: 12, background: "var(--m-border)", flexShrink: 0 }} />
-
         {/* ICU chip */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
@@ -377,22 +374,43 @@ function TodayHero({
           </svg>
           <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
           {icuConnected
-            ? <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e", letterSpacing: ".1px" }}>Connected</span>
-            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 10, fontWeight: 700, color: "#e11d48", textDecoration: "none", letterSpacing: ".1px" }}>Not connected</a>
+            ? <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e" }}>Connected</span>
+            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 10, fontWeight: 700, color: "#e11d48", textDecoration: "none" }}>Not connected</a>
           }
         </div>
-
-        <div style={{ flex: 1 }} />
-
-        {/* Phase + week */}
-        {phase && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>
-            {phase}
-            {weekIndex != null ? ` · Wk ${weekIndex + 1}` : ""}
-            {weekWorkoutCount > 0 ? ` · ${weekWorkoutCount}×` : ""}
-          </span>
-        )}
       </div>
+
+      {/* Row 4: FTP / Phase / Week / Sessions — Whoop-style metric strip */}
+      {(ftp || phase) && (
+        <div style={{ display: "flex", marginBottom: 20 }}>
+          {ftp != null && (
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
+                {ftp}<span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0 }}>W</span>
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>FTP</div>
+            </div>
+          )}
+          {phase && (
+            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Phase</div>
+            </div>
+          )}
+          {weekIndex != null && (
+            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>Wk {weekIndex + 1}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Week</div>
+            </div>
+          )}
+          {weekWorkoutCount > 0 && (
+            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{weekWorkoutCount}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Sessions</div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Divider + today's workout label (clean row, no card) */}
       <div style={{

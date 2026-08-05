@@ -93,7 +93,7 @@ export default async function MobileProfilePage() {
       {/* Pinned header — outside scroll, never moves */}
       <div style={{
         flexShrink: 0,
-        padding: "16px 16px 14px",
+        padding: "20px 20px 16px",
         background: "var(--m-card)",
         borderBottom: "1px solid var(--m-border)",
       }}>
@@ -110,7 +110,7 @@ export default async function MobileProfilePage() {
       overflowY: "auto",
       overscrollBehavior: "contain",
     }}>
-    <div style={{ padding: "16px 16px 0" }}>
+    <div style={{ padding: "20px 20px 0" }}>
 
       <div style={{ marginBottom: 20 }} />
 
@@ -144,7 +144,7 @@ export default async function MobileProfilePage() {
           ) : !icuConnected ? (
             <div style={{
               gridColumn: "1/-1",
-              padding: "16px 18px",
+              padding: "20px 20px",
               background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
               fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6,
             }}>
@@ -250,7 +250,7 @@ export default async function MobileProfilePage() {
             href="profile/edit"
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 18px", textDecoration: "none",
+              padding: "20px 20px", textDecoration: "none",
             }}
           >
             <div>
@@ -286,7 +286,7 @@ function MetricCard({ value, label, color, desc }: {
   return (
     <div style={{
       background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
-      padding: "16px 18px",
+      padding: "20px 20px",
     }}>
       <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
         {value}

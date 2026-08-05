@@ -134,7 +134,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
   const bullets = summary ? summaryBullets(summary) : [];
 
   return (
-    <div style={{ padding: "0 0 0" }}>
+    <div style={{ padding: "8px 0 0" }}>
 
       {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
 

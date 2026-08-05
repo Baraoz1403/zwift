@@ -65,7 +65,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
   const DAY_ABBR  = ["M","T","W","T","F","S","S"];
 
   return (
-    <div style={{ padding: "16px 16px 0" }}>
+    <div style={{ padding: "20px 20px 0" }}>
 
       {/* Section label */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -119,7 +119,7 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
           <div style={{ height: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--m-card-inner)", fontSize: 36 }}>🛌</div>
         )}
 
-        <div style={{ padding: "14px 16px 16px" }}>
+        <div style={{ padding: "18px 20px 20px" }}>
           {!isRest && (
             <div style={{ fontSize: 10, fontWeight: 800, color: colors.accent, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 5 }}>
               {colors.label}

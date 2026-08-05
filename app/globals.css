@@ -1456,6 +1456,7 @@ tbody tr:hover {
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   align-items: stretch; /* equal heights by default */
+  margin-bottom: 48px;
 }
 
 /* Card 1 is a wrapper div around the inner stat-card — make the wrapper a
