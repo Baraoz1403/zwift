@@ -8,33 +8,17 @@ import { isRunWorkout } from "@/lib/zwo";
 
 // Monochromatic — single VOLT orange accent for all workout types.
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
-  // Cycling
   sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
   threshold:     { accent: "#FF5A1F", label: "Threshold"  },
   vo2max:        { accent: "#FF5A1F", label: "VO2 Max"    },
   tempo:         { accent: "#FF5A1F", label: "Tempo"      },
   endurance:     { accent: "#FF5A1F", label: "Endurance"  },
   neuromuscular: { accent: "#FF5A1F", label: "Neuro"      },
-  // Running
-  easyRun:       { accent: "#FF5A1F", label: "Easy Run"   },
-  tempoRun:      { accent: "#FF5A1F", label: "Tempo Run"  },
-  intervalRun:   { accent: "#FF5A1F", label: "Intervals"  },
-  longRun:       { accent: "#FF5A1F", label: "Long Run"   },
-  walkRun:       { accent: "var(--m-muted)", label: "Walk/Run" },
-  recoveryRun:   { accent: "var(--m-muted)", label: "Recovery" },
   rest:          { accent: "var(--m-muted)", label: "Rest" },
 };
 
 function detectZone(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-  // Running — check title first (resilient to old cached plans with cycling type)
-  if (t.includes("long run"))     return "longRun";
-  if (t.includes("tempo run") || (t.includes("tempo") && t.includes("run"))) return "tempoRun";
-  if (t.includes("interval run")) return "intervalRun";
-  if (t.includes("walk/run") || t.includes("walk run")) return "walkRun";
-  if (t.includes("recovery run")) return "recoveryRun";
-  if (t.includes("easy run"))     return "easyRun";
-  // Cycling
   if (t.includes("sweet spot") || t.includes("sweetspot")) return "sweetSpot";
   if (t.includes("threshold") || t.includes("ftp")) return "threshold";
   if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "vo2max";
@@ -117,11 +101,11 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
       <div style={{ padding: "0 0 24px" }}>
         {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
         <div style={{ padding: "40px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>📋</div>
-          <div style={{ fontSize: 23, fontWeight: 700, color: "var(--m-text)", marginBottom: 10 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--m-text)", marginBottom: 8 }}>
             {isCurrentWeek ? "No plan yet" : "No plan for this week"}
           </div>
-          <div style={{ fontSize: 17, color: "var(--m-muted)", lineHeight: 1.6, marginBottom: 28 }}>
+          <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.6, marginBottom: 28 }}>
             {isCurrentWeek
               ? "Your weekly training plan hasn't been generated yet."
               : "No training plan has been generated for this week yet."}
@@ -135,51 +119,58 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
   const bullets = summary ? summaryBullets(summary) : [];
 
   return (
-    <div style={{ padding: "0" }}>
+    <div style={{ padding: "0 0 0" }}>
 
       {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
 
-      <div style={{ padding: "0 18px 32px" }}>
+      <div style={{ padding: "0 16px" }}>
 
-      {/* Coach note — tap to expand full summary */}
-      {(bullets.length > 0 || summary) && (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setCoachExpanded(p => !p)}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setCoachExpanded(p => !p); }}
-          style={{
-            margin: "16px 0 0",
-            background: "var(--m-card-inner)", borderRadius: 6, padding: "20px 18px",
-            border: "1px solid var(--m-border)",
-            display: "flex", flexDirection: "column", gap: 10,
-            cursor: "pointer",
-            WebkitTapHighlightColor: "transparent",
-            userSelect: "none",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em" }}>Coach note</div>
-            <div style={{ fontSize: 13, color: "#FF5A1F", fontWeight: 700 }}>{coachExpanded ? "▲" : "▼"}</div>
-          </div>
-          {!coachExpanded
-            ? bullets.map((line, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 8 }} />
-                <span style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6 }}>{line}</span>
-              </div>
-            ))
-            : (
-              <div style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.65, whiteSpace: "pre-line" }}>
-                {summary}
-              </div>
-            )
-          }
+      {/* Header */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px", marginTop: 0 }}>
+          {isCurrentWeek ? "This Week" : "Next Week"}
         </div>
-      )}
 
-      {/* Day cards — sidebar style */}
-      <div style={{ borderTop: "1px solid var(--m-border)" }}>
+        {/* Coach note — tap to expand full summary */}
+        {(bullets.length > 0 || summary) && (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setCoachExpanded(p => !p)}
+            onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setCoachExpanded(p => !p); }}
+            style={{
+              marginTop: 10,
+              background: "var(--m-card-inner)", borderRadius: 4, padding: "12px 14px",
+              border: "1px solid var(--m-border)",
+              display: "flex", flexDirection: "column", gap: 6,
+              cursor: "pointer",
+              WebkitTapHighlightColor: "transparent",
+              userSelect: "none",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em" }}>Coach note</div>
+              <div style={{ fontSize: 11, color: "#FF5A1F", fontWeight: 700 }}>{coachExpanded ? "▲" : "▼"}</div>
+            </div>
+            {!coachExpanded
+              ? bullets.map((line, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 6 }} />
+                  <span style={{ fontSize: 13, color: "var(--m-muted)", lineHeight: 1.55 }}>{line}</span>
+                </div>
+              ))
+              : (
+                <div style={{ fontSize: 13, color: "var(--m-muted)", lineHeight: 1.65, whiteSpace: "pre-line" }}>
+                  {summary}
+                </div>
+              )
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Day cards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8, paddingBottom: 8 }}>
         {ALL_DAYS.map(dayName => {
           const w = workouts.find(x => x.day === dayName);
           const isToday = w?.date === today;
@@ -204,102 +195,146 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 tabIndex={isRest ? undefined : 0}
                 onClick={() => { if (!isRest) setExpanded(isOpen ? null : dayName); }}
                 style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "20px 20px",
-                  background: isToday ? `${colors.accent}0a` : "transparent",
-                  borderLeft: `3px solid ${isToday ? colors.accent : "transparent"}`,
-                  borderBottom: "1px solid var(--m-border)",
+                  background:
+                    dayStatus === "completed" ? "rgba(34,197,94,0.05)" :
+                    dayStatus === "missed"    ? "rgba(239,68,68,0.05)" :
+                    dayStatus === "bonus"     ? "rgba(255,90,31,0.06)" :
+                    isToday ? `${colors.accent}0d` : "var(--m-card)",
+                  borderRadius: isOpen ? "4px 4px 0 0" : 4,
+                  border:
+                    dayStatus === "completed" ? "1px solid rgba(34,197,94,0.25)" :
+                    dayStatus === "missed"    ? "1px solid rgba(239,68,68,0.20)" :
+                    dayStatus === "bonus"     ? "1px solid rgba(255,90,31,0.25)" :
+                    isToday ? `1.5px solid ${colors.accent}55` : "1px solid var(--m-border)",
+                  borderBottom: isOpen ? "none" : undefined,
+                  padding: "16px 14px",
                   cursor: isRest ? "default" : "pointer",
+                  position: "relative",
+                  overflow: "hidden",
                   WebkitTapHighlightColor: "transparent",
                   userSelect: "none",
-                  position: "relative",
                 }}
               >
-                {/* Day chip — neutral */}
-                <div style={{
-                  width: 56, height: 56, borderRadius: 6, flexShrink: 0,
-                  background: "var(--m-card-inner)",
-                  border: "1px solid var(--m-border)",
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", gap: 1,
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".3px" }}>
-                    {label.short.toUpperCase()}
-                  </span>
-                  {label.dateNum && (
-                    <span style={{ fontSize: 24, fontWeight: 800, color: isToday ? colors.accent : "var(--m-text)", lineHeight: 1.1 }}>
-                      {label.dateNum}
-                    </span>
-                  )}
-                </div>
-
-                {/* Title + subtitle */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Today accent bar */}
+                {isToday && (
                   <div style={{
-                    fontSize: 21, fontWeight: 700,
-                    color: isRest ? "var(--m-muted)" : "var(--m-text)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
-                  </div>
-                  {!isRest && w && (
-                    <div style={{ fontSize: 17, color: "var(--m-muted)", marginTop: 4 }}>
-                      {colors.label}{w.durationMin > 0 ? ` · ${w.durationMin} min` : ""}
-                    </div>
-                  )}
-                </div>
+                    position: "absolute", top: 0, left: 0, bottom: 0, width: 4,
+                    background: colors.accent, borderRadius: "4px 0 0 4px",
+                  }} />
+                )}
 
-                {/* Status + chevron */}
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                  {isToday && !statusMeta && (
-                    <span style={{
-                      fontSize: 16, fontWeight: 800, color: colors.accent,
-                      background: `${colors.accent}22`, padding: "4px 10px", borderRadius: 4,
-                      letterSpacing: ".5px",
-                    }}>TODAY</span>
-                  )}
-                  {statusMeta && (
-                    <span style={{
-                      fontSize: 16, fontWeight: 800, color: statusMeta.color,
-                      background: statusMeta.bg, padding: "4px 10px", borderRadius: 4,
-                    }}>{statusMeta.text}</span>
-                  )}
-                  {!isRest && (
-                    <span style={{
-                      fontSize: 21, color: "var(--m-muted)",
-                      display: "inline-block",
-                      transform: isOpen ? "rotate(180deg)" : "none",
-                      transition: "transform .2s",
-                    }}>⌄</span>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: isToday ? 8 : 0 }}>
+                  {/* Day bubble */}
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 4, flexShrink: 0,
+                    background: isRest ? "var(--m-card-inner)" : `${colors.accent}18`,
+                    border: `1px solid ${isRest ? "var(--m-border)" : colors.accent + "44"}`,
+                    display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", gap: 1,
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: isRest ? "var(--m-muted)" : colors.accent, letterSpacing: ".3px" }}>
+                      {label.short.toUpperCase()}
+                    </span>
+                    {label.dateNum && (
+                      <span style={{ fontSize: 20, fontWeight: 800, color: isRest ? "var(--m-muted)" : colors.accent }}>
+                        {label.dateNum}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Workout info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{
+                        fontSize: 20, fontWeight: 700,
+                        color: isRest ? "var(--m-muted)" : "var(--m-text)",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        flex: 1, minWidth: 0,
+                      }}>
+                        {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
+                      </span>
+                      {isToday && !statusMeta && (
+                        <span style={{
+                          fontSize: 12, fontWeight: 700, color: colors.accent,
+                          background: `${colors.accent}22`, padding: "3px 8px", borderRadius: 3, flexShrink: 0,
+                        }}>TODAY</span>
+                      )}
+                      {statusMeta && (
+                        <span style={{
+                          fontSize: 13, fontWeight: 700, color: statusMeta.color,
+                          background: statusMeta.bg, padding: "3px 9px", borderRadius: 3, flexShrink: 0,
+                        }}>{statusMeta.text}</span>
+                      )}
+                    </div>
+
+                    {!isRest && w && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+                        {/* RIDE / RUN mode badge */}
+                        <span style={{
+                          fontSize: 12, fontWeight: 800,
+                          color: isRunWorkout(w.type) ? "#f97316" : "#3b82f6",
+                          background: isRunWorkout(w.type) ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
+                          border: `1px solid ${isRunWorkout(w.type) ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
+                          borderRadius: 3, padding: "2px 8px", flexShrink: 0,
+                        }}>
+                          {isRunWorkout(w.type) ? "RUN" : "RIDE"}
+                        </span>
+                        {w.durationMin > 0 && (
+                          <span style={{ fontSize: 16, color: "#64748b" }}>{w.durationMin} min</span>
+                        )}
+                        <span style={{ fontSize: 15, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
+                          {colors.label}
+                        </span>
+                        {/* Dot indicators for structure */}
+                        {w.structure && w.structure.length > 0 && (
+                          <div style={{ display: "flex", gap: 3 }}>
+                            {w.structure.slice(0, 5).map((block, i) => (
+                              <div key={i} style={{
+                                width: 5, height: 5, borderRadius: "50%",
+                                background: blockBarColor(Math.round((block.powerFtp ?? 0) * 100)),
+                              }} />
+                            ))}
+                          </div>
+                        )}
+                        {/* Expand chevron */}
+                        <span style={{
+                          marginLeft: "auto", fontSize: 14, color: "var(--m-muted)",
+                          display: "inline-block",
+                          transform: isOpen ? "rotate(180deg)" : "none",
+                          transition: "transform .2s",
+                          flexShrink: 0,
+                        }}>⌄</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Expanded detail panel */}
               {isOpen && !isRest && w && (
                 <div style={{
-                  background: "var(--m-card-inner)",
-                  borderLeft: `3px solid ${colors.accent}`,
-                  borderBottom: "1px solid var(--m-border)",
-                  padding: "20px 16px 22px 16px",
+                  background: "var(--m-card)",
+                  border: "1px solid var(--m-border)", borderTop: "1px solid var(--m-border)",
+                  borderRadius: "0 0 4px 4px",
+                  padding: "12px 16px 16px",
                 }}>
                   {/* Power chart */}
                   {w.structure && w.structure.length > 0 && (
-                    <div style={{ borderRadius: 4, overflow: "hidden", marginBottom: 16, height: 180, maxHeight: 180 }}>
+                    <div style={{ borderRadius: 4, overflow: "hidden", marginBottom: 12 }}>
                       <MobileWorkoutChart blocks={w.structure} durationMin={w.durationMin} />
                     </div>
                   )}
 
                   {/* Short description */}
                   {w.description && (
-                    <div style={{ fontSize: 17, color: "var(--m-muted)", lineHeight: 1.5, marginBottom: 12 }}>
+                    <div style={{ fontSize: 14, color: "var(--m-muted)", lineHeight: 1.5, marginBottom: 10 }}>
                       {w.description.slice(0, 110)}{w.description.length > 110 ? "…" : ""}
                     </div>
                   )}
 
                   {/* Interval blocks */}
                   {w.structure && w.structure.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {w.structure.map((block, i) => {
                         const pct = Math.round((block.powerFtp ?? 0) * 100);
                         const barColor = blockBarColor(pct);
@@ -309,15 +344,15 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                           : "";
                         return (
                           <div key={i} style={{
-                            display: "flex", alignItems: "center", gap: 12,
+                            display: "flex", alignItems: "center", gap: 10,
                             background: "var(--m-card-inner)", borderRadius: 4, padding: "10px 12px",
                             border: "1px solid var(--m-border)",
                           }}>
                             <div style={{ width: 3, height: 22, borderRadius: 2, background: barColor, flexShrink: 0 }} />
-                            <div style={{ flex: 1, fontSize: 18, fontWeight: 600, color: "var(--m-text)" }}>
+                            <div style={{ flex: 1, fontSize: 15, fontWeight: 600, color: "var(--m-text)" }}>
                               {reps}{block.label || block.type}{repDetail}
                             </div>
-                            <span style={{ fontSize: 16, color: "var(--m-muted)" }}>
+                            <span style={{ fontSize: 13, color: "var(--m-muted)" }}>
                               {block.durationMin ?? 0} min
                             </span>
                             {pct > 0 && (
@@ -325,7 +360,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                                 width: 42, height: 28, borderRadius: 3,
                                 background: `${barColor}18`, border: `1px solid ${barColor}33`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 16, fontWeight: 700, color: barColor, flexShrink: 0,
+                                fontSize: 13, fontWeight: 700, color: barColor, flexShrink: 0,
                               }}>
                                 {pct}%
                               </div>
@@ -335,7 +370,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                       })}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 17, color: "var(--m-muted)" }}>No detailed structure.</div>
+                    <div style={{ fontSize: 14, color: "var(--m-muted)" }}>No detailed structure.</div>
                   )}
 
                   {/* CTA for today */}
@@ -344,7 +379,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                       display: "block", marginTop: 12, textAlign: "center",
                       padding: "12px", borderRadius: 4,
                       background: colors.accent, color: "#fff",
-                      fontSize: 18, fontWeight: 700, textDecoration: "none",
+                      fontSize: 15, fontWeight: 700, textDecoration: "none",
                     }}>View full workout →</a>
                   )}
                 </div>
@@ -367,7 +402,7 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "18px 16px 18px",
+      padding: "12px 16px 10px",
       borderBottom: "1px solid var(--m-border)",
       background: "var(--m-bg)",
       position: "sticky", top: 0, zIndex: 10,
@@ -375,25 +410,25 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
       {/* Prev week button */}
       {prevWeekHref ? (
         <a href={prevWeekHref} style={{
-          display: "flex", alignItems: "center", gap: 8,
-          fontSize: 19, fontWeight: 700, color: "#FF5A1F",
-          textDecoration: "none", padding: "10px 14px",
-          background: "rgba(255,90,31,0.08)", borderRadius: 6,
+          display: "flex", alignItems: "center", gap: 6,
+          fontSize: 15, fontWeight: 700, color: "#FF5A1F",
+          textDecoration: "none", padding: "8px 12px",
+          background: "rgba(255,90,31,0.08)", borderRadius: 4,
           border: "1px solid rgba(255,90,31,0.2)",
           WebkitTapHighlightColor: "transparent",
         }}>
           ← Now
         </a>
       ) : (
-        <div style={{ width: 88 }} />
+        <div style={{ width: 80 }} />
       )}
 
       {/* Week label */}
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--m-muted)", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 3 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: "1.5px", textTransform: "uppercase" }}>
           {isCurrentWeek ? "Current Week" : "Next Week"}
         </div>
-        <div style={{ fontSize: 19, fontWeight: 700, color: "var(--m-text)" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-text)", marginTop: 1 }}>
           {weekRange}
         </div>
       </div>
@@ -401,17 +436,17 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
       {/* Next week button */}
       {nextWeekHref ? (
         <a href={nextWeekHref} style={{
-          display: "flex", alignItems: "center", gap: 8,
-          fontSize: 19, fontWeight: 700, color: "#FF5A1F",
-          textDecoration: "none", padding: "10px 14px",
-          background: "rgba(255,90,31,0.08)", borderRadius: 6,
+          display: "flex", alignItems: "center", gap: 6,
+          fontSize: 15, fontWeight: 700, color: "#FF5A1F",
+          textDecoration: "none", padding: "8px 12px",
+          background: "rgba(255,90,31,0.08)", borderRadius: 4,
           border: "1px solid rgba(255,90,31,0.2)",
           WebkitTapHighlightColor: "transparent",
         }}>
           Next →
         </a>
       ) : (
-        <div style={{ width: 88 }} />
+        <div style={{ width: 80 }} />
       )}
     </div>
   );
@@ -455,7 +490,7 @@ function GeneratePlanButton({ weekOf }: { weekOf?: string }) {
           padding: "15px 32px",
           background: state === "done" ? "#16a34a" : state === "error" ? "#dc2626" : "#FF5A1F",
           color: "#fff", borderRadius: 4, border: "none",
-          fontSize: 19, fontWeight: 700, cursor: state === "loading" ? "default" : "pointer",
+          fontSize: 16, fontWeight: 700, cursor: state === "loading" ? "default" : "pointer",
           width: "100%", maxWidth: 280,
         }}
       >
@@ -464,7 +499,7 @@ function GeneratePlanButton({ weekOf }: { weekOf?: string }) {
          state === "done"    ? "✓ Done!" : "Try again"}
       </button>
       {msg && (
-        <div style={{ fontSize: 16, color: state === "error" ? "#f87171" : "#4ade80", marginTop: 10 }}>
+        <div style={{ fontSize: 13, color: state === "error" ? "#f87171" : "#4ade80", marginTop: 10 }}>
           {msg}
         </div>
       )}

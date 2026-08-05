@@ -41,48 +41,26 @@ export default function TabletSidebar() {
       overflow: "hidden",
     }}>
       {/* Nav — no brand section (top bar handles branding) */}
-      <nav style={{ flex: 1, padding: "12px 14px 24px", display: "flex", flexDirection: "column", gap: 4, overflowY: "auto" }}>
+      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
           return (
             <Link key={href} href={href} style={{
-              display: "flex", alignItems: "center", gap: 14,
-              padding: "16px 18px",
-              borderBottom: "1px solid var(--m-border)",
-              borderLeft: active ? `3px solid ${ZO}` : "3px solid transparent",
-              background: active ? `${ZO}08` : "transparent",
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "12px 14px", borderRadius: 4,
+              background: active ? `${ZO}12` : "transparent",
+              border: `1px solid ${active ? ZO + "35" : "transparent"}`,
               textDecoration: "none",
-              marginLeft: -14,
-              paddingLeft: active ? 11 : 11,
-              width: "calc(100% + 14px)",
             }}>
               <Icon color={active ? ZO : "var(--m-muted)"} />
               <span style={{
-                fontSize: 18, fontWeight: active ? 700 : 500,
+                fontSize: 16, fontWeight: active ? 700 : 500,
                 color: active ? "var(--m-text)" : "var(--m-muted)",
               }}>{label}</span>
+              {active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: 1, background: ZO }} />}
             </Link>
           );
         })}
-
-        {/* Log out */}
-        <a
-          href="/api/auth/logout"
-          style={{
-            display: "flex", alignItems: "center", gap: 14,
-            padding: "16px 18px",
-            borderBottom: "1px solid var(--m-border)",
-            borderLeft: "3px solid transparent",
-            textDecoration: "none",
-            marginLeft: -14,
-            width: "calc(100% + 14px)",
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span style={{ fontSize: 18, fontWeight: 500, color: "#ef4444" }}>Log out</span>
-        </a>
       </nav>
 
     </div>
@@ -103,7 +81,7 @@ export default function TabletSidebar() {
             WebkitTapHighlightColor: "transparent",
           }}>
             <Icon color={active ? ZO : "var(--m-muted)"} />
-            <span style={{ fontSize: 17, fontWeight: active ? 700 : 500, color: active ? ZO : "var(--m-muted)" }}>
+            <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? ZO : "var(--m-muted)" }}>
               {label}
             </span>
           </Link>

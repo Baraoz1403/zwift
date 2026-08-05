@@ -10,7 +10,6 @@ import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
 import BonusRideCard from "./bonus-ride-card";
 import { ThemeToggleButton } from "../theme-toggle-button";
-import MobileRefreshButton from "@/app/m/refresh-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -203,14 +202,14 @@ export default async function MobileTodayPage() {
           {isBonus ? (
             /* Bonus ride — expandable ride card + feedback */
             <div style={{ padding: "16px 16px 0" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
                   Today&apos;s session
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#FF5A1F", background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)", borderRadius: 3, padding: "2px 8px" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#FF5A1F", background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)", borderRadius: 3, padding: "2px 8px" }}>
                   Bonus
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
                   Rest day planned
                 </span>
               </div>
@@ -242,12 +241,12 @@ export default async function MobileTodayPage() {
           ) : (
             /* Pure rest day — calm, no drama */
             <div style={{ padding: "16px 16px 0" }}>
-              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 16 }}>
-                <div style={{ fontSize: 23, fontWeight: 800, color: "var(--m-text)", marginBottom: 10 }}>Rest day</div>
-                <div style={{ fontSize: 19, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
+              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
+                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
                   No workout scheduled today. Quality rest is as important as the training itself.
                 </div>
-                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 20, fontWeight: 600, textDecoration: "none" }}>
+                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
                   See this week&apos;s plan →
                 </a>
               </div>
@@ -314,9 +313,9 @@ function TodayHero({
   icuConnected: boolean;
   icuName?: string | null;
 }) {
-  void icuName; // not displayed in the minimal header
-
-  const statusDone = todayStatus === "completed";
+  const statusDone   = todayStatus === "completed";
+  const statusBonus  = todayStatus === "bonus";
+  const isRestOrBonus = !workout || statusBonus;
 
   const utcHour = new Date().getUTCHours();
   const localHour = (utcHour + 3) % 24;
@@ -330,92 +329,139 @@ function TodayHero({
     weekday: "long", month: "short", day: "numeric", timeZone: "Asia/Jerusalem",
   });
 
+  // Today's session label — bonus/rest days just say "Rest Day" (no bonus mention in header)
   const sessionLabel = workout
-    ? (workout.title.length > 28 ? workout.title.slice(0, 26) + "\u2026" : workout.title)
+    ? (workout.title.length > 26 ? workout.title.slice(0, 24) + "…" : workout.title)
     : "Rest Day";
 
-  return (
-    <div style={{ flexShrink: 0, background: "var(--m-bg)", padding: "16px 20px 0" }}>
+  // Single VOLT accent — zone colors removed (monochromatic design).
+  const sessionColor = isRestOrBonus ? "var(--m-muted)" : "#FF5A1F";
 
-      {/* Row 1: greeting (left) + date + theme toggle (right) */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".7px", textTransform: "uppercase" }}>
-            {timeGreeting}
-          </div>
-          <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 3, fontWeight: 400 }}>
-            {dateLabel}
-          </div>
+  return (
+    <div style={{
+      flexShrink: 0,
+      background: "var(--m-card)",
+      borderBottom: "1px solid var(--m-border)",
+      padding: "12px 18px 14px",
+    }}>
+      {/* Row 1: greeting + theme toggle */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".5px", textTransform: "uppercase" }}>
+          {timeGreeting} · {dateLabel}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <MobileRefreshButton />
-          <ThemeToggleButton compact />
-        </div>
+        <ThemeToggleButton compact />
       </div>
 
-      {/* Row 2: large athlete name */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 40, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-2px", lineHeight: 1 }}>
+      {/* Row 2: athlete name */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1.5px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
       </div>
 
-      {/* Row 3: live connection status chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        {/* Zwift chip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="12" height="12" viewBox="0 0 20 20" fill="#FF5A1F" style={{ flexShrink: 0 }}>
-            <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
-          </svg>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#22c55e" }}>Connected</span>
+      {/* Row 3: Connection status card — same design as Settings page */}
+      <div style={{
+        background: "var(--m-card)", borderRadius: 14,
+        border: "1px solid var(--m-border)", marginBottom: 12,
+      }}>
+        {/* Zwift row */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "13px 16px", borderBottom: "1px solid var(--m-border)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,90,31,0.13)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* Zwift official logo — orange lightning bolt */}
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="#FF5A1F">
+                <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)" }}>Zwift</div>
+              <div style={{ fontSize: 14, color: "#22c55e", fontWeight: 500, marginTop: 2 }}>Connected</div>
+            </div>
+          </div>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
         </div>
-        <div style={{ width: 1, height: 12, background: "var(--m-border)", flexShrink: 0 }} />
-        {/* ICU chip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#e11d48" : "#4b5563"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
+        {/* intervals.icu row */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "13px 16px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#0d9488" : "var(--m-muted)"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)" }}>Intervals.icu</div>
+              <div style={{ fontSize: 14, color: icuConnected ? "#22c55e" : "var(--m-muted)", fontWeight: 500, marginTop: 2 }}>
+                {icuConnected ? (icuName ?? "Connected") : "Not connected"}
+              </div>
+            </div>
+          </div>
           {icuConnected
-            ? <span style={{ fontSize: 12, fontWeight: 600, color: "#22c55e" }}>Connected</span>
-            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 12, fontWeight: 700, color: "#e11d48", textDecoration: "none" }}>Not connected</a>
+            ? <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
+            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>Connect</a>
           }
         </div>
       </div>
 
-      {/* Row 4: FTP / Phase / Week / Sessions — Whoop-style metric strip */}
-      {(ftp || phase) && (
-        <div style={{ display: "flex", marginBottom: 20 }}>
-          {ftp != null && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
-                {ftp}<span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0 }}>W</span>
+      {/* Row 3: 3 stat cards — MetricCard style (matches Profile page).
+          Background = var(--m-card), border neutral, value = colored, label = muted gray. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        {/* FTP */}
+        {ftp && (
+          <div style={{
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>FTP</div>
+          </div>
+        )}
+        {/* Phase */}
+        {phase && (() => {
+          return (
+            <div style={{
+              background: "var(--m-card)", border: "1px solid var(--m-border)",
+              borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
+            }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>
+                {weekIndex !== null ? `Wk ${weekIndex + 1}` : "Phase"}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>FTP</div>
             </div>
-          )}
-          {phase && (
-            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{phase}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Phase</div>
-            </div>
-          )}
-          {weekIndex != null && (
-            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{(weekIndex % 4) + 1}<span style={{fontSize:18,fontWeight:700}}>/4</span></div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Week</div>
-            </div>
-          )}
-          {weekWorkoutCount > 0 && (
-            <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{weekWorkoutCount}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Sessions</div>
-            </div>
-          )}
-        </div>
-      )}
+          );
+        })()}
+        {/* Sessions this week */}
+        {weekWorkoutCount > 0 && (
+          <div style={{
+            background: "var(--m-card)", border: "1px solid var(--m-border)",
+            borderRadius: 12, padding: "10px 12px", textAlign: "center", flex: 1,
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>Sessions</div>
+          </div>
+        )}
+      </div>
 
+      {/* Row 4: today's session label — full width so it never truncates */}
+      <div style={{
+        background: "var(--m-card)", border: "1px solid var(--m-border)",
+        borderLeft: `3px solid ${isRestOrBonus ? "var(--m-border)" : sessionColor}`,
+        borderRadius: 12, padding: "10px 14px", marginBottom: 10,
+        display: "flex", alignItems: "center",
+      }}>
+        <span style={{
+          fontSize: 13, fontWeight: 700,
+          color: isRestOrBonus ? "var(--m-muted)" : sessionColor,
+        }}>
+          {statusDone && workout ? `✓ ${sessionLabel}` : sessionLabel}
+        </span>
+      </div>
     </div>
   );
 }

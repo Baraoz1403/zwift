@@ -21,14 +21,13 @@ interface TabletTopBarProps {
   currentPhase: string | null;
   weekDisplayNum: number | null;
   weekWorkoutCount: number;
-  weekCyclePos?: number | null;
   icuConnected: boolean;
   greeting: string;
   dateLabel: string;
 }
 
 export function TabletTopBar({
-  firstName, ftp, currentPhase, weekDisplayNum, weekCyclePos, weekWorkoutCount,
+  firstName, ftp, currentPhase, weekDisplayNum, weekWorkoutCount,
   icuConnected, greeting, dateLabel,
 }: TabletTopBarProps) {
   return (
@@ -45,11 +44,11 @@ export function TabletTopBar({
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <div style={{ padding: "20px 40px 30px" }}>
+      <div style={{ padding: "12px 32px 20px" }}>
         {/* Row 1: greeting + date on left, theme toggle on right */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{
-            fontSize: 15, fontWeight: 600, color: "var(--m-muted)",
+            fontSize: 12, fontWeight: 600, color: "var(--m-muted)",
             textTransform: "uppercase", letterSpacing: ".4px",
           }}>
             {greeting} · {dateLabel}
@@ -62,7 +61,7 @@ export function TabletTopBar({
 
           {/* Left: athlete name only */}
           <div style={{
-            fontSize: 36, fontWeight: 900, color: "var(--m-text)",
+            fontSize: 34, fontWeight: 900, color: "var(--m-text)",
             letterSpacing: "-1px", lineHeight: 1,
           }}>
             {firstName ?? "Athlete"}
@@ -78,14 +77,14 @@ export function TabletTopBar({
               background: "var(--m-card)", border: "1px solid var(--m-border)",
               borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(255,90,31,0.13)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="#FF5A1F">
-                  <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#3b82f6"/>
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>Connected</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>Connected</div>
               </div>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
@@ -96,14 +95,14 @@ export function TabletTopBar({
               background: "var(--m-card)", border: "1px solid var(--m-border)",
               borderRadius: 10, padding: "7px 12px",
             }}>
-              <div style={{ width: 28, height: 28, borderRadius: 7, background: icuConnected ? "rgba(225,29,72,0.10)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 7, background: icuConnected ? "rgba(34,197,94,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#e11d48" : "#64748b"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#22c55e" : "#64748b"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>
                   {icuConnected ? "Connected" : "Not linked"}
                 </div>
               </div>
@@ -120,8 +119,8 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 58,
               }}>
-                <div style={{ fontSize: 21, fontWeight: 900, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
               </div>
             )}
             {currentPhase && (
@@ -129,19 +128,10 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
               }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Phase</div>
-              </div>
-            )}
-            {weekDisplayNum != null && (
-              <div style={{
-                background: "var(--m-card)", border: "1px solid var(--m-border)",
-                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 52,
-              }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>
-                  {weekCyclePos ?? weekDisplayNum}<span style={{ fontSize: 13, fontWeight: 700 }}>/4</span>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
+                  {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Week</div>
               </div>
             )}
             {weekWorkoutCount > 0 && (
@@ -149,8 +139,8 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 48,
               }}>
-                <div style={{ fontSize: 21, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
               </div>
             )}
           </div>

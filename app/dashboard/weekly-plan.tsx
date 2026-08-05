@@ -18,7 +18,6 @@ interface WeeklyWorkout {
   title: string;
   durationMin: number;
   targetPowerPctFtp?: string;
-  targetPace?: string;
   description: string;
   structure?: WorkoutStructureBlock[];
 }
@@ -79,9 +78,8 @@ const TP_PUSHED_IDS_KEY = "zwiftTPPushedWorkoutIds";
 function colorForType(type: string): string {
   const t = type.toLowerCase();
   if (t.includes("rest") || t.includes("recover")) return "c-green";
-  if (t.includes("interval") || t.includes("sweet") || t.includes("threshold") || t.includes("tempo")) return "c-orange";
-  if (t.includes("endurance") || t.includes("long run") || t.includes("easy run")) return "c-blue";
-  if (t.includes("walk")) return "c-green";
+  if (t.includes("interval") || t.includes("sweet") || t.includes("threshold")) return "c-orange";
+  if (t.includes("endurance")) return "c-blue";
   return "c-teal";
 }
 
@@ -1902,7 +1900,6 @@ export default function WeeklyPlan() {
                           );
                         })()}
                         {w.targetPowerPctFtp && <span style={{ fontWeight: 700, color: accentColor }}>{w.targetPowerPctFtp}</span>}
-                        {w.targetPace && <span style={{ fontWeight: 700, color: accentColor }}>{w.targetPace}</span>}
                       </div>
                     )}
 

@@ -8,7 +8,6 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import SignOutButton from "@/app/m/profile/sign-out-button";
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
-import MobileRefreshButton from "@/app/m/refresh-button";
 
 export default async function MobileSettingsPage() {
   const cookieStore = await cookies();
@@ -27,19 +26,15 @@ export default async function MobileSettingsPage() {
 
       {/* Pinned header */}
       <div style={{
-        flexShrink: 0, padding: "20px 20px 16px",
+        flexShrink: 0, padding: "16px 16px 14px",
         background: "var(--m-card)", borderBottom: "1px solid var(--m-border)",
-        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       }}>
-        <div>
-          <div style={{ fontSize: 17, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 8 }}>
-            Settings
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
-            App Settings
-          </div>
+        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
+          Settings
         </div>
-        <MobileRefreshButton />
+        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+          App Settings
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
@@ -54,7 +49,7 @@ export default async function MobileSettingsPage() {
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "14px 16px", borderBottom: "1px solid var(--m-border)",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 11, background: "rgba(255,90,31,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {/* Zwift logo — lightning bolt */}
                     <svg width="22" height="22" viewBox="0 0 20 20" fill="#FF5A1F">
@@ -62,15 +57,15 @@ export default async function MobileSettingsPage() {
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 700 }}>Zwift</div>
-                    <div style={{ fontSize: 18, color: "#22c55e", marginTop: 2, fontWeight: 500 }}>Connected</div>
+                    <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Zwift</div>
+                    <div style={{ fontSize: 15, color: "#22c55e", marginTop: 2, fontWeight: 500 }}>Connected</div>
                   </div>
                 </div>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
               </div>
               {/* Intervals.icu */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 11, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -78,8 +73,8 @@ export default async function MobileSettingsPage() {
                     </svg>
                   </div>
                   <div>
-                    <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
-                    <div style={{ fontSize: 18, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>
+                    <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Intervals.icu</div>
+                    <div style={{ fontSize: 15, color: icuConnected ? "#22c55e" : "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>
                       {icuConnected ? "Connected" : "Not connected"}
                     </div>
                   </div>
@@ -87,7 +82,7 @@ export default async function MobileSettingsPage() {
                 {icuConnected ? (
                   <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
                 ) : (
-                  <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 17, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>
+                  <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 14, fontWeight: 600, color: "var(--m-btn-muted-txt)", textDecoration: "none", padding: "7px 14px", background: "var(--m-btn-muted)", borderRadius: 9 }}>
                     Connect
                   </a>
                 )}
@@ -108,15 +103,15 @@ export default async function MobileSettingsPage() {
             <SectionLabel>Legal</SectionLabel>
             <div style={{ background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", padding: "4px 0" }}>
               <a href="/legal/terms" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
-                <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 600 }}>Terms of Service</div>
+                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 600 }}>Terms of Service</div>
                 <ChevronRight />
               </a>
               <a href="/legal/privacy" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
-                <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 600 }}>Privacy Policy</div>
+                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 600 }}>Privacy Policy</div>
                 <ChevronRight />
               </a>
               <a href="/legal/disclaimer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none" }}>
-                <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 600 }}>Disclaimer</div>
+                <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 600 }}>Disclaimer</div>
                 <ChevronRight />
               </a>
             </div>
@@ -139,7 +134,7 @@ export default async function MobileSettingsPage() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 19, fontWeight: 700, color: "var(--m-muted-2)", letterSpacing: ".4px", textTransform: "uppercase", marginBottom: 16 }}>
+    <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted-2)", letterSpacing: ".4px", textTransform: "uppercase", marginBottom: 12 }}>
       {children}
     </div>
   );
