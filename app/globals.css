@@ -337,7 +337,21 @@ textarea {
 .dashboard {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 48px 0;
+  padding: 0 64px 0;
+}
+
+/* iPad (768–1199px): comfortable breathing room */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .dashboard {
+    padding: 0 56px 0;
+  }
+}
+
+/* Large desktop (1400px+): even more generous margins */
+@media (min-width: 1400px) {
+  .dashboard {
+    padding: 0 96px 0;
+  }
 }
 
 .dashboard-header {
@@ -392,7 +406,7 @@ textarea {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.7px;
-  margin: 0 0 32px;
+  margin: 0 0 40px;
   color: #0d1626;
   padding: 0 0 0 20px;
   position: relative;
@@ -451,7 +465,7 @@ textarea {
    out the same way, same convention as .header-cards-grid below. */
 .workout-grid {
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  gap: 40px;
 }
 
 @media (max-width: 900px) {
@@ -1440,7 +1454,7 @@ tbody tr:hover {
 .header-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 32px;
   align-items: stretch; /* equal heights by default */
 }
 
