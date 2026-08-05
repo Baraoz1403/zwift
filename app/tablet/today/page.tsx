@@ -303,19 +303,18 @@ export default async function TabletTodayPage({
 
   return (
     <div style={{
-      height: "100%", display: "flex", flexDirection: "column",
+      display: "flex", flexDirection: "column",
       background: "var(--m-bg)", color: "var(--m-text)",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
-      overflow: "hidden",
     }}>
 
       {/* ── BODY ────────────────────────────────────────────────────────── */}
       {/* No per-page header — the full-width TabletTopBar in layout.tsx shows
           greeting, name, connection icons, and fitness chips for all tablet pages. */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "flex-start" }}>
 
         {/* LEFT: Today workout */}
-        <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: "44px 52px" }}>
+        <div style={{ flex: 1,  padding: "44px 52px" }}>
 
           {/* ── WORKOUT CONTENT ──────────────────────────────────────────── */}
           {isRest || (!todayWorkout && !isBonus) ? (
@@ -615,8 +614,10 @@ export default async function TabletTodayPage({
           width: 280, flexShrink: 0,
           borderLeft: "1px solid var(--m-border)",
           background: "var(--m-card)",
-          overflowY: "auto",
-          overscrollBehavior: "contain",
+          position: "sticky",
+          top: "var(--tablet-bar-h)",
+          alignSelf: "flex-start",
+          minHeight: "calc(100vh - var(--tablet-bar-h) - var(--tablet-footer-h))",
           display: "flex", flexDirection: "column",
         }}>
           {/* FITNESS METRICS — sticky, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}

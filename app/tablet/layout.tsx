@@ -123,12 +123,8 @@ export default async function TabletLayout({ children }: { children: React.React
           html, body {
             background-color: ${bodyBg} !important;
             margin: 0;
-            overflow: hidden !important;
-            position: fixed !important;
-            width: 100% !important;
-            height: 100% !important;
             overscroll-behavior: none !important;
-            -webkit-overflow-scrolling: auto !important;
+            -webkit-overflow-scrolling: touch !important;
           }
         `}</style>
 
@@ -136,12 +132,10 @@ export default async function TabletLayout({ children }: { children: React.React
           data-mobile-shell
           data-mobile-theme={theme}
           style={{
-            position: "fixed",
-            top: 0, left: 0, right: 0, bottom: 0,
+            minHeight: "100dvh",
             background: "var(--m-bg)",
             fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
             WebkitFontSmoothing: "antialiased",
-            overscrollBehavior: "none",
           }}
         >
           <IOSScrollFix />
@@ -172,26 +166,14 @@ export default async function TabletLayout({ children }: { children: React.React
           <div
             className="tablet-main"
             style={{
-              position: "fixed",
-              top: 0, left: 0, right: 0,
-              bottom: "var(--tablet-footer-h)", /* stop above the always-visible footer nav */
               paddingTop: "var(--tablet-bar-h)",
+              paddingBottom: "var(--tablet-footer-h)",
               marginLeft: 220,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
             }}
           >
-            <div
-              className="tablet-scroll-area"
-              style={{ flex: 1, height: 0, overflow: "hidden", position: "relative" }}
-            >
+            <div className="tablet-scroll-area">
               {children}
             </div>
-            {/*
-              No footer here — legal links live in the sidebar (landscape).
-              In portrait, they're accessible via the Profile tab.
-            */}
           </div>
         </div>
       </>

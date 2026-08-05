@@ -59,13 +59,13 @@ function formatDayLabel(dateStr?: string, dayName?: string): { short: string; da
   return { short: SHORTS[dayName ?? ""] ?? (dayName ?? ""), dateNum: "" };
 }
 
-/** Max 2 short bullets from the coach summary (≤55 chars each). */
+/** First 2 sentences from the coach summary, truncated to ~90 chars each for preview. */
 function summaryBullets(summary: string): string[] {
   const sentences = summary
     .split(/(?<=[.!?])\s+/)
     .map(s => s.trim())
     .filter(s => s.length > 10);
-  return sentences.slice(0, 2).map(s => s.length > 55 ? s.slice(0, 53) + "…" : s);
+  return sentences.slice(0, 2).map(s => s.length > 90 ? s.slice(0, 88) + "…" : s);
 }
 
 // Monochromatic power bar — VOLT orange gradient, red only at all-out effort.
@@ -110,6 +110,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
       : null
   );
   const [expanded, setExpanded] = useState<string | null>(autoExpand);
+  const [coachExpanded, setCoachExpanded] = useState(false);
 
   if (workouts.length === 0) {
     return (
@@ -140,21 +141,40 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
 
       <div style={{ padding: "0 18px 32px" }}>
 
-      {/* Coach note (week heading lives in page.tsx pinned header) */}
-      {bullets.length > 0 && (
-        <div style={{
-          margin: "16px 0 0",
-          background: "var(--m-card-inner)", borderRadius: 6, padding: "20px 18px",
-          border: "1px solid var(--m-border)",
-          display: "flex", flexDirection: "column", gap: 10,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em" }}>Coach note</div>
-          {bullets.map((line, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 8 }} />
-              <span style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6 }}>{line}</span>
-            </div>
-          ))}
+      {/* Coach note — tap to expand full summary */}
+      {(bullets.length > 0 || summary) && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setCoachExpanded(p => !p)}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setCoachExpanded(p => !p); }}
+          style={{
+            margin: "16px 0 0",
+            background: "var(--m-card-inner)", borderRadius: 6, padding: "20px 18px",
+            border: "1px solid var(--m-border)",
+            display: "flex", flexDirection: "column", gap: 10,
+            cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
+            userSelect: "none",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em" }}>Coach note</div>
+            <div style={{ fontSize: 13, color: "#FF5A1F", fontWeight: 700 }}>{coachExpanded ? "▲" : "▼"}</div>
+          </div>
+          {!coachExpanded
+            ? bullets.map((line, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 8 }} />
+                <span style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6 }}>{line}</span>
+              </div>
+            ))
+            : (
+              <div style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.65, whiteSpace: "pre-line" }}>
+                {summary}
+              </div>
+            )
+          }
         </div>
       )}
 

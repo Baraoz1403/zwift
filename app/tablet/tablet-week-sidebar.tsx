@@ -64,8 +64,10 @@ export function TabletWeekSidebar({
       width: 280, flexShrink: 0,
       borderLeft: "1px solid var(--m-border)",
       background: "var(--m-card)",
-      overflowY: "auto",
-      overscrollBehavior: "contain",
+      position: "sticky",
+      top: "var(--tablet-bar-h)",
+      alignSelf: "flex-start",
+      minHeight: "calc(100vh - var(--tablet-bar-h) - var(--tablet-footer-h))",
       display: "flex", flexDirection: "column",
     }}>
 
