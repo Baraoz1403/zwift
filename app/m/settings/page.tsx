@@ -9,6 +9,7 @@ import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import SignOutButton from "@/app/m/profile/sign-out-button";
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 import MobileRefreshButton from "@/app/m/refresh-button";
+import IcuSyncButton from "./sync-button";
 
 export default async function MobileSettingsPage() {
   const cookieStore = await cookies();
@@ -69,7 +70,7 @@ export default async function MobileSettingsPage() {
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#22c55e" }}/>
               </div>
               {/* Intervals.icu */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: icuConnected ? "1px solid var(--m-border)" : undefined }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 11, background: icuConnected ? "rgba(13,148,136,0.12)" : "rgba(100,116,139,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {/* intervals.icu logo — ECG/activity line in ICU brand teal */}
@@ -92,6 +93,8 @@ export default async function MobileSettingsPage() {
                   </a>
                 )}
               </div>
+              {/* Force-sync button — only when ICU is connected */}
+              {icuConnected && <IcuSyncButton />}
             </div>
           </div>
 
