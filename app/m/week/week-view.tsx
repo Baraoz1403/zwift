@@ -134,36 +134,29 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
   const bullets = summary ? summaryBullets(summary) : [];
 
   return (
-    <div style={{ padding: "8px 0 0" }}>
+    <div style={{ padding: "0" }}>
 
       {!hideNav && <WeekNav weekRange={weekRange} prevWeekHref={prevWeekHref} nextWeekHref={nextWeekHref} isCurrentWeek={isCurrentWeek} />}
 
-      <div style={{ padding: "0 18px" }}>
+      <div style={{ padding: "0 18px 32px" }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px", marginTop: 0 }}>
-          {isCurrentWeek ? "This Week" : "Next Week"}
+      {/* Coach note (week heading lives in page.tsx pinned header) */}
+      {bullets.length > 0 && (
+        <div style={{
+          margin: "16px 0 0",
+          background: "var(--m-card-inner)", borderRadius: 6, padding: "14px 16px",
+          border: "1px solid var(--m-border)",
+          display: "flex", flexDirection: "column", gap: 8,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em" }}>Coach note</div>
+          {bullets.map((line, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 8 }} />
+              <span style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6 }}>{line}</span>
+            </div>
+          ))}
         </div>
-
-        {/* Coach note */}
-        {bullets.length > 0 && (
-          <div style={{
-            marginTop: 10,
-            background: "var(--m-card-inner)", borderRadius: 4, padding: "12px 14px",
-            border: "1px solid var(--m-border)",
-            display: "flex", flexDirection: "column", gap: 6,
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 2 }}>Coach note</div>
-            {bullets.map((line, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#FF5A1F", flexShrink: 0, marginTop: 6 }} />
-                <span style={{ fontSize: 13, color: "var(--m-muted)", lineHeight: 1.55 }}>{line}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Day cards — sidebar style */}
       <div style={{ borderTop: "1px solid var(--m-border)" }}>
@@ -191,8 +184,8 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 tabIndex={isRest ? undefined : 0}
                 onClick={() => { if (!isRest) setExpanded(isOpen ? null : dayName); }}
                 style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "14px 16px",
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "18px 18px",
                   background: isToday ? `${colors.accent}0a` : "transparent",
                   borderLeft: `3px solid ${isToday ? colors.accent : "transparent"}`,
                   borderBottom: "1px solid var(--m-border)",
@@ -202,19 +195,19 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                   position: "relative",
                 }}
               >
-                {/* Day chip — neutral, small */}
+                {/* Day chip — neutral */}
                 <div style={{
-                  width: 44, height: 44, borderRadius: 4, flexShrink: 0,
+                  width: 52, height: 52, borderRadius: 6, flexShrink: 0,
                   background: "var(--m-card-inner)",
                   border: "1px solid var(--m-border)",
                   display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", gap: 0,
+                  alignItems: "center", justifyContent: "center", gap: 1,
                 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".3px" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".3px" }}>
                     {label.short.toUpperCase()}
                   </span>
                   {label.dateNum && (
-                    <span style={{ fontSize: 18, fontWeight: 800, color: isToday ? colors.accent : "var(--m-text)", lineHeight: 1.1 }}>
+                    <span style={{ fontSize: 21, fontWeight: 800, color: isToday ? colors.accent : "var(--m-text)", lineHeight: 1.1 }}>
                       {label.dateNum}
                     </span>
                   )}
@@ -223,14 +216,14 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 {/* Title + subtitle */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 17, fontWeight: 700,
+                    fontSize: 19, fontWeight: 700,
                     color: isRest ? "var(--m-muted)" : "var(--m-text)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
                   </div>
                   {!isRest && w && (
-                    <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
+                    <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 4 }}>
                       {colors.label}{w.durationMin > 0 ? ` · ${w.durationMin} min` : ""}
                     </div>
                   )}
@@ -240,20 +233,20 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   {isToday && !statusMeta && (
                     <span style={{
-                      fontSize: 11, fontWeight: 800, color: colors.accent,
-                      background: `${colors.accent}22`, padding: "3px 8px", borderRadius: 3,
+                      fontSize: 13, fontWeight: 800, color: colors.accent,
+                      background: `${colors.accent}22`, padding: "4px 10px", borderRadius: 4,
                       letterSpacing: ".5px",
                     }}>TODAY</span>
                   )}
                   {statusMeta && (
                     <span style={{
-                      fontSize: 11, fontWeight: 800, color: statusMeta.color,
-                      background: statusMeta.bg, padding: "3px 8px", borderRadius: 3,
+                      fontSize: 13, fontWeight: 800, color: statusMeta.color,
+                      background: statusMeta.bg, padding: "4px 10px", borderRadius: 4,
                     }}>{statusMeta.text}</span>
                   )}
                   {!isRest && (
                     <span style={{
-                      fontSize: 14, color: "var(--m-muted)",
+                      fontSize: 18, color: "var(--m-muted)",
                       display: "inline-block",
                       transform: isOpen ? "rotate(180deg)" : "none",
                       transition: "transform .2s",
@@ -354,7 +347,7 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "12px 16px 10px",
+      padding: "14px 16px 14px",
       borderBottom: "1px solid var(--m-border)",
       background: "var(--m-bg)",
       position: "sticky", top: 0, zIndex: 10,
@@ -363,24 +356,24 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
       {prevWeekHref ? (
         <a href={prevWeekHref} style={{
           display: "flex", alignItems: "center", gap: 6,
-          fontSize: 15, fontWeight: 700, color: "#FF5A1F",
-          textDecoration: "none", padding: "8px 12px",
-          background: "rgba(255,90,31,0.08)", borderRadius: 4,
+          fontSize: 16, fontWeight: 700, color: "#FF5A1F",
+          textDecoration: "none", padding: "10px 14px",
+          background: "rgba(255,90,31,0.08)", borderRadius: 6,
           border: "1px solid rgba(255,90,31,0.2)",
           WebkitTapHighlightColor: "transparent",
         }}>
           ← Now
         </a>
       ) : (
-        <div style={{ width: 80 }} />
+        <div style={{ width: 88 }} />
       )}
 
       {/* Week label */}
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 3 }}>
           {isCurrentWeek ? "Current Week" : "Next Week"}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-text)", marginTop: 1 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-text)" }}>
           {weekRange}
         </div>
       </div>
@@ -389,16 +382,16 @@ function WeekNav({ weekRange, prevWeekHref, nextWeekHref, isCurrentWeek }: {
       {nextWeekHref ? (
         <a href={nextWeekHref} style={{
           display: "flex", alignItems: "center", gap: 6,
-          fontSize: 15, fontWeight: 700, color: "#FF5A1F",
-          textDecoration: "none", padding: "8px 12px",
-          background: "rgba(255,90,31,0.08)", borderRadius: 4,
+          fontSize: 16, fontWeight: 700, color: "#FF5A1F",
+          textDecoration: "none", padding: "10px 14px",
+          background: "rgba(255,90,31,0.08)", borderRadius: 6,
           border: "1px solid rgba(255,90,31,0.2)",
           WebkitTapHighlightColor: "transparent",
         }}>
           Next →
         </a>
       ) : (
-        <div style={{ width: 80 }} />
+        <div style={{ width: 88 }} />
       )}
     </div>
   );

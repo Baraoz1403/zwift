@@ -6,6 +6,7 @@ import { fetchIcuActivities } from "@/lib/intervals";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import { fetchActivities, fetchOwnProfile } from "@/lib/zwift";
 import WeekView from "./week-view";
+import MobileRefreshButton from "./refresh-button";
 
 function addDays(isoDate: string, days: number): string {
   const d = new Date(isoDate + "T00:00:00Z");
@@ -134,16 +135,20 @@ export default async function MobileWeekPage({
       {/* Pinned name header */}
       <div style={{
         flexShrink: 0,
-        padding: "16px 16px 14px",
+        padding: "20px 20px 16px",
         background: "var(--m-card)",
         borderBottom: "1px solid var(--m-border)",
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       }}>
-        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
-          This week
+        <div>
+          <div style={{ fontSize: 14, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 6 }}>
+            This week
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+            {firstName ?? "Athlete"}
+          </div>
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
-          {firstName ?? "Athlete"}
-        </div>
+        <MobileRefreshButton />
       </div>
 
       {/* Scrollable week view */}
