@@ -9,6 +9,7 @@ import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/ac
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
+import MobileWorkoutChart from "@/app/m/today/workout-chart";
 
 const ZO = "#FF5A1F";
 
@@ -473,16 +474,12 @@ export default async function TabletTodayPage({
                 </div>
               </div>
 
-              {/* Power bar chart */}
+              {/* Power chart — shared MobileWorkoutChart for visual consistency with Week page */}
               {todayWorkout.structure && todayWorkout.structure.length > 0 && (
                 <div style={{
-                  background: "var(--m-card)", border: "1px solid var(--m-border)",
-                  borderRadius: 4, padding: "20px 24px 16px", marginBottom: 16,
+                  borderRadius: 4, overflow: "hidden", marginBottom: 16,
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
-                    Power profile
-                  </div>
-                  <PowerBarChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} />
+                  <MobileWorkoutChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} />
                 </div>
               )}
 
@@ -706,44 +703,3 @@ export default async function TabletTodayPage({
   );
 }
 
-function PowerBarChart({ blocks, durationMin }: {
-  blocks: Array<{ type: string; durationMin?: number; powerFtp?: number; repeats?: number; onSec?: number; offSec?: number }>;
-  durationMin: number;
-}) {
-  const totalMin = blocks.reduce((s, b) => s + (b.durationMin ?? 0), 0) || durationMin || 60;
-  const expanded: Array<{ durationMin: number; powerFtp: number }> = [];
-  for (const b of blocks) {
-    if (b.type === "intervals" && b.repeats && b.onSec && b.offSec) {
-      const onMin = b.onSec / 60, offMin = b.offSec / 60;
-      for (let r = 0; r < b.repeats; r++) {
-        expanded.push({ durationMin: onMin,  powerFtp: b.powerFtp ?? 0.75 });
-        expanded.push({ durationMin: offMin, powerFtp: 0.5 });
-      }
-    } else {
-      expanded.push({ durationMin: b.durationMin ?? 0, powerFtp: b.powerFtp ?? 0.65 });
-    }
-  }
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 64 }}>
-        {expanded.map((seg, i) => {
-          const pct = Math.round((seg.powerFtp ?? 0) * 100);
-          const color = blockColor(pct);
-          const widthPct = (seg.durationMin / totalMin) * 100;
-          const heightPct = Math.min(100, Math.max(8, pct));
-          return (
-            <div key={i} title={`${pct}% FTP · ${seg.durationMin.toFixed(1)} min`} style={{
-              flex: `${widthPct} 0 0`, height: `${heightPct}%`,
-              background: color, borderRadius: 2, opacity: 0.85, minWidth: 2,
-            }} />
-          );
-        })}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-        <span style={{ fontSize: 11, color: "var(--m-muted)" }}>0</span>
-        <span style={{ fontSize: 11, color: "var(--m-muted)", fontWeight: 600 }}>{totalMin} min</span>
-      </div>
-    </div>
-  );
-}
