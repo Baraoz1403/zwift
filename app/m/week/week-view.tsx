@@ -165,8 +165,8 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
         )}
       </div>
 
-      {/* Day cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 12, paddingBottom: 12 }}>
+      {/* Day cards — sidebar style */}
+      <div style={{ borderTop: "1px solid var(--m-border)" }}>
         {ALL_DAYS.map(dayName => {
           const w = workouts.find(x => x.day === dayName);
           const isToday = w?.date === today;
@@ -191,133 +191,84 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 tabIndex={isRest ? undefined : 0}
                 onClick={() => { if (!isRest) setExpanded(isOpen ? null : dayName); }}
                 style={{
-                  background:
-                    dayStatus === "completed" ? "rgba(34,197,94,0.05)" :
-                    dayStatus === "missed"    ? "rgba(239,68,68,0.05)" :
-                    dayStatus === "bonus"     ? "rgba(255,90,31,0.06)" :
-                    isToday ? `${colors.accent}0d` : "var(--m-card)",
-                  borderRadius: isOpen ? "4px 4px 0 0" : 4,
-                  border:
-                    dayStatus === "completed" ? "1px solid rgba(34,197,94,0.25)" :
-                    dayStatus === "missed"    ? "1px solid rgba(239,68,68,0.20)" :
-                    dayStatus === "bonus"     ? "1px solid rgba(255,90,31,0.25)" :
-                    isToday ? `1.5px solid ${colors.accent}55` : "1px solid var(--m-border)",
-                  borderBottom: isOpen ? "none" : undefined,
-                  padding: "16px 14px",
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "14px 16px",
+                  background: isToday ? `${colors.accent}0a` : "transparent",
+                  borderLeft: `3px solid ${isToday ? colors.accent : "transparent"}`,
+                  borderBottom: "1px solid var(--m-border)",
                   cursor: isRest ? "default" : "pointer",
-                  position: "relative",
-                  overflow: "hidden",
                   WebkitTapHighlightColor: "transparent",
                   userSelect: "none",
+                  position: "relative",
                 }}
               >
-                {/* Today accent bar */}
-                {isToday && (
-                  <div style={{
-                    position: "absolute", top: 0, left: 0, bottom: 0, width: 4,
-                    background: colors.accent, borderRadius: "4px 0 0 4px",
-                  }} />
-                )}
-
-                <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: isToday ? 8 : 0 }}>
-                  {/* Day bubble */}
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 4, flexShrink: 0,
-                    background: isRest ? "var(--m-card-inner)" : `${colors.accent}18`,
-                    border: `1px solid ${isRest ? "var(--m-border)" : colors.accent + "44"}`,
-                    display: "flex", flexDirection: "column",
-                    alignItems: "center", justifyContent: "center", gap: 1,
-                  }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: isRest ? "var(--m-muted)" : colors.accent, letterSpacing: ".3px" }}>
-                      {label.short.toUpperCase()}
+                {/* Day chip — neutral, small */}
+                <div style={{
+                  width: 44, height: 44, borderRadius: 4, flexShrink: 0,
+                  background: "var(--m-card-inner)",
+                  border: "1px solid var(--m-border)",
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: 0,
+                }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".3px" }}>
+                    {label.short.toUpperCase()}
+                  </span>
+                  {label.dateNum && (
+                    <span style={{ fontSize: 18, fontWeight: 800, color: isToday ? colors.accent : "var(--m-text)", lineHeight: 1.1 }}>
+                      {label.dateNum}
                     </span>
-                    {label.dateNum && (
-                      <span style={{ fontSize: 20, fontWeight: 800, color: isRest ? "var(--m-muted)" : colors.accent }}>
-                        {label.dateNum}
-                      </span>
-                    )}
-                  </div>
+                  )}
+                </div>
 
-                  {/* Workout info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{
-                        fontSize: 20, fontWeight: 700,
-                        color: isRest ? "var(--m-muted)" : "var(--m-text)",
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        flex: 1, minWidth: 0,
-                      }}>
-                        {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
-                      </span>
-                      {isToday && !statusMeta && (
-                        <span style={{
-                          fontSize: 12, fontWeight: 700, color: colors.accent,
-                          background: `${colors.accent}22`, padding: "3px 8px", borderRadius: 3, flexShrink: 0,
-                        }}>TODAY</span>
-                      )}
-                      {statusMeta && (
-                        <span style={{
-                          fontSize: 13, fontWeight: 700, color: statusMeta.color,
-                          background: statusMeta.bg, padding: "3px 9px", borderRadius: 3, flexShrink: 0,
-                        }}>{statusMeta.text}</span>
-                      )}
+                {/* Title + subtitle */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 17, fontWeight: 700,
+                    color: isRest ? "var(--m-muted)" : "var(--m-text)",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    {isRest && dayStatus === "bonus" ? "Bonus ride" : isRest ? "Rest" : w!.title}
+                  </div>
+                  {!isRest && w && (
+                    <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
+                      {colors.label}{w.durationMin > 0 ? ` · ${w.durationMin} min` : ""}
                     </div>
+                  )}
+                </div>
 
-                    {!isRest && w && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
-                        {/* RIDE / RUN mode badge — check title too for old cached plans */}
-                        {(() => {
-                          const isRun = isRunWorkout(w.type) || isRunWorkout(w.title);
-                          return (
-                            <span style={{
-                              fontSize: 12, fontWeight: 800,
-                              color: isRun ? "#f97316" : "#3b82f6",
-                              background: isRun ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
-                              border: `1px solid ${isRun ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
-                              borderRadius: 3, padding: "2px 8px", flexShrink: 0,
-                            }}>
-                              {isRun ? "RUN" : "RIDE"}
-                            </span>
-                          );
-                        })()}
-                        {w.durationMin > 0 && (
-                          <span style={{ fontSize: 16, color: "#64748b" }}>{w.durationMin} min</span>
-                        )}
-                        <span style={{ fontSize: 15, fontWeight: 600, color: colors.accent, letterSpacing: ".3px", textTransform: "uppercase" }}>
-                          {colors.label}
-                        </span>
-                        {/* Dot indicators for structure */}
-                        {w.structure && w.structure.length > 0 && (
-                          <div style={{ display: "flex", gap: 3 }}>
-                            {w.structure.slice(0, 5).map((block, i) => (
-                              <div key={i} style={{
-                                width: 5, height: 5, borderRadius: "50%",
-                                background: blockBarColor(Math.round((block.powerFtp ?? 0) * 100)),
-                              }} />
-                            ))}
-                          </div>
-                        )}
-                        {/* Expand chevron */}
-                        <span style={{
-                          marginLeft: "auto", fontSize: 14, color: "var(--m-muted)",
-                          display: "inline-block",
-                          transform: isOpen ? "rotate(180deg)" : "none",
-                          transition: "transform .2s",
-                          flexShrink: 0,
-                        }}>⌄</span>
-                      </div>
-                    )}
-                  </div>
+                {/* Status + chevron */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                  {isToday && !statusMeta && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, color: colors.accent,
+                      background: `${colors.accent}22`, padding: "3px 8px", borderRadius: 3,
+                      letterSpacing: ".5px",
+                    }}>TODAY</span>
+                  )}
+                  {statusMeta && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, color: statusMeta.color,
+                      background: statusMeta.bg, padding: "3px 8px", borderRadius: 3,
+                    }}>{statusMeta.text}</span>
+                  )}
+                  {!isRest && (
+                    <span style={{
+                      fontSize: 14, color: "var(--m-muted)",
+                      display: "inline-block",
+                      transform: isOpen ? "rotate(180deg)" : "none",
+                      transition: "transform .2s",
+                    }}>⌄</span>
+                  )}
                 </div>
               </div>
 
               {/* Expanded detail panel */}
               {isOpen && !isRest && w && (
                 <div style={{
-                  background: "var(--m-card)",
-                  border: "1px solid var(--m-border)", borderTop: "1px solid var(--m-border)",
-                  borderRadius: "0 0 4px 4px",
-                  padding: "12px 16px 16px",
+                  background: "var(--m-card-inner)",
+                  borderLeft: `3px solid ${colors.accent}`,
+                  borderBottom: "1px solid var(--m-border)",
+                  padding: "14px 16px 18px 16px",
                 }}>
                   {/* Power chart */}
                   {w.structure && w.structure.length > 0 && (
