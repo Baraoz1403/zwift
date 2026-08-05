@@ -6,27 +6,47 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
-// Monochromatic: VOLT orange for all active zones, neutral for rest
-const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
-  sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
-  threshold:     { accent: "#FF5A1F", label: "Threshold"  },
-  vo2max:        { accent: "#FF5A1F", label: "VO2 Max"    },
-  tempo:         { accent: "#FF5A1F", label: "Tempo"      },
-  endurance:     { accent: "#FF5A1F", label: "Endurance"  },
-  neuromuscular: { accent: "#FF5A1F", label: "Neuro"      },
-  rest:          { accent: "var(--m-muted)", label: "Rest" },
+const ZONE_LABEL: Record<string, string> = {
+  sweetSpot:     "Sweet Spot",
+  threshold:     "Threshold",
+  vo2max:        "VO2 Max",
+  tempo:         "Tempo",
+  endurance:     "Endurance",
+  neuromuscular: "Neuromuscular",
+  easyRun:       "Easy Run",
+  tempoRun:      "Tempo Run",
+  intervalRun:   "Intervals",
+  longRun:       "Long Run",
+  walkRun:       "Walk/Run",
+  recoveryRun:   "Recovery",
+  rest:          "Rest",
 };
 
 function detectZone(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
+  if (t.includes("long run"))      return "longRun";
+  if (t.includes("tempo run") || (t.includes("tempo") && t.includes("run"))) return "tempoRun";
+  if (t.includes("interval run"))  return "intervalRun";
+  if (t.includes("walk/run") || t.includes("walk run")) return "walkRun";
+  if (t.includes("recovery run"))  return "recoveryRun";
+  if (t.includes("easy run"))      return "easyRun";
   if (t.includes("sweet spot") || t.includes("sweetspot")) return "sweetSpot";
   if (t.includes("threshold") || t.includes("ftp")) return "threshold";
-  if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "vo2max";
-  if (t.includes("tempo")) return "tempo";
+  if (t.includes("vo2") || t.includes("norwegian")) return "vo2max";
+  if (t.includes("tempo"))         return "tempo";
   if (t.includes("sprint") || t.includes("neuromuscular")) return "neuromuscular";
   if (t.includes("rest") || t.includes("recovery") || t.includes("off")) return "rest";
   return "endurance";
 }
+
+const BAR_COLOR = (pct: number) =>
+  pct >= 120 ? "#ef4444" :
+  pct >= 106 ? "#FF5A1F" :
+  pct >= 95  ? "rgba(255,90,31,0.88)" :
+  pct >= 88  ? "rgba(255,90,31,0.75)" :
+  pct >= 76  ? "rgba(255,90,31,0.72)" :
+  pct >= 56  ? "rgba(255,255,255,0.16)" :
+               "rgba(255,255,255,0.08)";
 
 interface Props {
   workout: WeeklyWorkout;
@@ -36,17 +56,22 @@ interface Props {
   weekStatus?: Record<string, DayStatus>;
 }
 
-export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayStatus = "planned", weekStatus = {} }: Props) {
-  const [noteState, setNoteState] = useState<"idle" | "sending" | "done">("idle");
+const PLAN_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const DAY_ABBR  = ["M","T","W","T","F","S","S"];
+
+export default function MobileWorkoutCard({
+  workout, weekWorkouts, today, todayStatus = "planned", weekStatus = {},
+}: Props) {
+  const [noteState, setNoteState] = useState<"idle"|"sending"|"done">("idle");
   const [structureOpen, setStructureOpen] = useState(false);
 
-  const zone = detectZone(workout);
-  const colors = ZONE_COLOR[zone] ?? ZONE_COLOR.endurance;
+  const zone   = detectZone(workout);
   const isRest = zone === "rest";
+  const zoneLabel = ZONE_LABEL[zone] ?? "Structured";
+  const isRun  = isRunWorkout(workout.type) || isRunWorkout(workout.title);
 
   const ifTss = workout.structure && workout.structure.length > 0
-    ? computeIfTss(structureToBlocks(workout.structure))
-    : null;
+    ? computeIfTss(structureToBlocks(workout.structure)) : null;
 
   async function sendNote(note: string) {
     if (noteState !== "idle") return;
@@ -61,130 +86,142 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
     } catch { setNoteState("idle"); }
   }
 
-  const PLAN_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-  const DAY_ABBR  = ["M","T","W","T","F","S","S"];
-
   return (
-    <div style={{ padding: "20px 20px 0" }}>
+    <div style={{ padding: "0 0 32px" }}>
 
-      {/* Section label */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
-          Today&apos;s session
+      {/* ── Workout header ──────────────────────────────────────────── */}
+      <div style={{ padding: "28px 24px 24px" }}>
+
+        {/* Meta row: zone · type · status */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{
+            fontSize: 12, fontWeight: 700, color: "var(--m-muted)",
+            textTransform: "uppercase", letterSpacing: "1.2px",
+          }}>
+            {zoneLabel}
+          </span>
+          <span style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--m-muted)", display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".5px" }}>
+            {isRun ? "Run" : "Ride"}
+          </span>
+          {todayStatus === "completed" && (
+            <>
+              <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#22c55e", display: "inline-block", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e" }}>Done</span>
+            </>
+          )}
+          {todayStatus === "missed" && (
+            <>
+              <span style={{ width: 3, height: 3, borderRadius: "50%", background: "#ef4444", display: "inline-block", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#ef4444" }}>Missed</span>
+            </>
+          )}
         </div>
-        <span style={{
-          fontSize: 11, fontWeight: 700, color: "#FF5A1F",
-          background: "rgba(255,90,31,0.1)", border: "1px solid rgba(255,90,31,0.3)",
-          borderRadius: 3, padding: "2px 8px",
+
+        {/* Workout title — dominant */}
+        <div style={{
+          fontSize: 36, fontWeight: 900, color: "var(--m-text)",
+          letterSpacing: "-1px", lineHeight: 1.05, marginBottom: 10,
         }}>
-          {isRunWorkout(workout.type) ? "Run" : "Ride"}
-        </span>
-        {todayStatus === "completed" && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 3, padding: "2px 8px" }}>Done ✓</span>
-        )}
-        {todayStatus === "missed" && (
-          <span style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 3, padding: "2px 8px" }}>Missed</span>
+          {isRest ? "Rest Day" : workout.title}
+        </div>
+
+        {/* Duration — clean, large */}
+        {!isRest && workout.durationMin > 0 && (
+          <div style={{ fontSize: 17, color: "var(--m-muted)", fontWeight: 500 }}>
+            {workout.durationMin} min
+          </div>
         )}
       </div>
 
-      {/* Main workout card */}
-      <div style={{
-        borderRadius: 4, overflow: "hidden",
-        background: "var(--m-card)",
-        border: "1px solid var(--m-border)",
-        borderTop: `3px solid ${colors.accent}`,
-        marginBottom: 10,
-      }}>
-        {!isRest && (
-          <div style={{ position: "relative" }}>
-            <div style={{
-              position: "absolute", zIndex: 10, top: 10, left: 12,
-              background: "var(--m-card)", border: `1px solid ${colors.accent}40`,
-              borderRadius: 3, padding: "3px 9px",
-              fontSize: 11, fontWeight: 700, color: colors.accent,
-              letterSpacing: ".3px", textTransform: "uppercase",
-            }}>
-              {colors.label}
-            </div>
-            {workout.structure && workout.structure.length > 0 ? (
-              <MobileWorkoutChart blocks={workout.structure} durationMin={workout.durationMin} />
-            ) : (
-              <div style={{ height: 100, background: "var(--m-card-inner)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 36 }}>🚴</span>
-              </div>
-            )}
-          </div>
-        )}
-        {isRest && (
-          <div style={{ height: 70, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--m-card-inner)", fontSize: 36 }}>🛌</div>
-        )}
+      {/* ── Chart ───────────────────────────────────────────────────── */}
+      {!isRest && workout.structure && workout.structure.length > 0 && (
+        <div style={{ marginBottom: 0 }}>
+          <MobileWorkoutChart blocks={workout.structure} durationMin={workout.durationMin} />
+        </div>
+      )}
+      {isRest && (
+        <div style={{ height: 80, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>
+          🛌
+        </div>
+      )}
 
-        <div style={{ padding: "18px 20px 20px" }}>
-          {!isRest && (
-            <div style={{ fontSize: 10, fontWeight: 800, color: colors.accent, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 5 }}>
-              {colors.label}
-            </div>
+      {/* ── Stats strip ─────────────────────────────────────────────── */}
+      {!isRest && (ifTss || workout.targetPowerPctFtp) && (
+        <div style={{
+          display: "flex", alignItems: "stretch",
+          borderTop: "1px solid var(--m-border)",
+          borderBottom: "1px solid var(--m-border)",
+          margin: "0",
+        }}>
+          {workout.durationMin > 0 && (
+            <StatCell value={String(workout.durationMin)} label="MIN" />
           )}
-          <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1.15, letterSpacing: "-0.4px", marginBottom: isRest ? 0 : 10 }}>
-            {workout.title}
-          </div>
-          {!isRest && (
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-              {workout.durationMin > 0 && <StatPill value={`${workout.durationMin}`} unit="min" />}
-              {ifTss && <StatPill value={`${Math.round(ifTss.tss)}`} unit="TSS" />}
-              {ifTss && <StatPill value={ifTss.intensityFactor.toFixed(2)} unit="IF" accent={colors.accent} />}
-              {workout.targetPowerPctFtp && <StatPill value={workout.targetPowerPctFtp} unit="% FTP" accent={colors.accent} />}
-            </div>
+          {ifTss && (
+            <>
+              <StatCell value={String(Math.round(ifTss.tss))} label="TSS" divider />
+              <StatCell value={ifTss.intensityFactor.toFixed(2)} label="IF" divider accent />
+            </>
+          )}
+          {workout.targetPowerPctFtp && (
+            <StatCell value={workout.targetPowerPctFtp} label="% FTP" divider accent />
           )}
         </div>
-      </div>
+      )}
 
-      {/* Description intentionally hidden — shown in coach chat on demand */}
-
-      {/* Structure blocks — collapsed by default */}
+      {/* ── Structure accordion ─────────────────────────────────────── */}
       {!isRest && workout.structure && workout.structure.length > 0 && (
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ padding: "0 24px", marginTop: 24 }}>
           <button
             onClick={() => setStructureOpen(o => !o)}
             style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "10px 14px", marginBottom: structureOpen ? 8 : 0,
-              background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4,
-              color: "var(--m-muted)", fontSize: 12, fontWeight: 700, cursor: "pointer",
-              letterSpacing: ".1em", textTransform: "uppercase",
+              padding: "16px 0",
+              background: "none", border: "none", borderBottom: structureOpen ? "none" : "1px solid var(--m-border)",
+              color: "var(--m-muted)", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              letterSpacing: "1px", textTransform: "uppercase",
               WebkitTapHighlightColor: "transparent",
             }}
           >
-            <span>Session structure</span>
-            <span style={{ fontSize: 16, lineHeight: 1 }}>{structureOpen ? "−" : "+"}</span>
+            <span>Session Structure</span>
+            <span style={{
+              fontSize: 20, lineHeight: 1, color: "var(--m-muted)",
+              transform: structureOpen ? "rotate(45deg)" : "none",
+              transition: "transform .2s",
+              display: "inline-block",
+            }}>+</span>
           </button>
           {structureOpen && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <div style={{ display: "flex", flexDirection: "column", borderBottom: "1px solid var(--m-border)", paddingBottom: 8 }}>
               {workout.structure.map((block, i) => {
                 const pct = Math.round((block.powerFtp ?? 0) * 100);
-                const barColor = pct>=120?"#ef4444":pct>=106?"#FF5A1F":pct>=95?"rgba(255,90,31,0.88)":pct>=88?"rgba(255,90,31,0.75)":pct>=76?"rgba(255,90,31,0.72)":pct>=56?"rgba(255,255,255,0.16)":"rgba(255,255,255,0.08)";
+                const barColor = BAR_COLOR(pct);
                 const dur = block.durationMin ?? 0;
                 const label = block.label || block.type;
-                const reps = block.type==="intervals" && block.repeats ? `${block.repeats}×` : "";
-                const repDetail = block.type==="intervals" && block.onSec ? ` (${Math.round(block.onSec/60)}/${Math.round((block.offSec??0)/60)}min)` : "";
+                const reps = block.type === "intervals" && block.repeats ? `${block.repeats}×` : "";
+                const repDetail = block.type === "intervals" && block.onSec
+                  ? ` (${Math.round(block.onSec/60)}/${Math.round((block.offSec??0)/60)} min)` : "";
                 return (
                   <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    background: "var(--m-card)", borderRadius: 4, padding: "11px 14px",
-                    border: "1px solid var(--m-border)", borderLeft: `3px solid ${barColor}`,
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "16px 0",
+                    borderBottom: i < workout.structure!.length - 1 ? "1px solid var(--m-border)" : "none",
                   }}>
+                    <div style={{ width: 3, height: 28, borderRadius: 2, background: barColor, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--m-text)", lineHeight: 1.2 }}>
-                        {reps && <span style={{ color: barColor, marginRight: 3 }}>{reps}</span>}
+                      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--m-text)", lineHeight: 1.2 }}>
+                        {reps && <span style={{ color: barColor, marginRight: 4 }}>{reps}</span>}
                         {label}{repDetail}
                       </div>
-                      <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
-                        {dur} min{pct>0?` · ${pct}% FTP`:""}
-                        {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp*100)}% rec` : ""}
+                      <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3 }}>
+                        {dur} min{pct > 0 ? ` · ${pct}% FTP` : ""}
                       </div>
                     </div>
-                    {pct>0 && (
-                      <div style={{ fontSize: 12, fontWeight: 700, color: barColor, background: `${barColor}14`, border: `1px solid ${barColor}30`, borderRadius: 3, padding: "3px 8px", flexShrink: 0 }}>
+                    {pct > 0 && (
+                      <div style={{
+                        fontSize: 14, fontWeight: 700, color: barColor,
+                        flexShrink: 0, minWidth: 36, textAlign: "right",
+                      }}>
                         {pct}%
                       </div>
                     )}
@@ -196,43 +233,56 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         </div>
       )}
 
-      {/* Actions */}
-      <div style={{ marginBottom: 14 }}>
-        {/* Post-workout: tired signal (only after activity logged) */}
-        {todayStatus === "completed" && (
+      {/* ── Post-workout note ───────────────────────────────────────── */}
+      {todayStatus === "completed" && (
+        <div style={{ padding: "20px 24px 0" }}>
           <button onClick={() => sendNote("Felt tired today — please factor into next week")} style={{
-            width: "100%", padding: "12px",
+            width: "100%", padding: "16px",
             background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
-            borderRadius: 4, color: noteState==="done"?"#16a34a":"var(--m-muted)",
-            fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>{noteState==="done"?"Noted ✓":"That session was tough — let the coach know"}</button>
-        )}
-      </div>
+            borderRadius: 8, color: noteState === "done" ? "#22c55e" : "var(--m-muted)",
+            fontSize: 15, fontWeight: 600, cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
+          }}>
+            {noteState === "done" ? "Noted ✓" : "That session was tough — let the coach know"}
+          </button>
+        </div>
+      )}
 
-      {/* Week strip */}
-      <div style={{ background: "var(--m-card)", borderRadius: 4, padding: "14px", border: "1px solid var(--m-border)", marginBottom: 8 }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--m-muted)", letterSpacing: ".12em", textTransform: "uppercase", marginBottom: 10 }}>
+      {/* ── Week strip ──────────────────────────────────────────────── */}
+      <div style={{ padding: "28px 24px 0" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 14 }}>
           This week
         </div>
-        <div style={{ display: "flex", gap: 4 }}>
+        <div style={{ display: "flex", gap: 6 }}>
           {PLAN_DAYS.map((dayName, i) => {
-            const w = weekWorkouts.find(x => x.day===dayName);
+            const w = weekWorkouts.find(x => x.day === dayName);
+            const isToday = w?.date === today;
             const z = w ? detectZone(w) : "rest";
-            const col = ZONE_COLOR[z] ?? ZONE_COLOR.rest;
-            const isToday = w?.date===today;
-            const isRestDay = z==="rest" || !w;
+            const isRestDay = z === "rest" || !w;
+            const status = w?.date ? weekStatus[w.date] : undefined;
+            const isDone = status === "completed";
+            const isMissed = status === "missed";
             return (
-              <div key={dayName} style={{ flex: 1 }}>
+              <div key={dayName} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                 <div style={{
-                  paddingTop: 8, paddingBottom: 8, borderRadius: 3,
-                  background: isToday ? col.accent : isRestDay ? "var(--m-card-inner)" : `${col.accent}14`,
-                  border: `1px solid ${isToday ? col.accent : isRestDay ? "var(--m-border)" : col.accent+"35"}`,
+                  width: "100%", paddingTop: 10, paddingBottom: 10,
+                  borderRadius: 6,
+                  background: isToday ? "#FF5A1F" : "var(--m-card-inner)",
+                  border: `1px solid ${isToday ? "#FF5A1F" : "var(--m-border)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <span style={{ fontSize: 11, fontWeight: isToday?800:600, color: isToday?"#fff":isRestDay?"var(--m-muted)":col.accent }}>
+                  <span style={{
+                    fontSize: 13, fontWeight: isToday ? 800 : 500,
+                    color: isToday ? "#fff" : isRestDay ? "var(--m-muted)" : "var(--m-text)",
+                  }}>
                     {DAY_ABBR[i]}
                   </span>
                 </div>
+                {/* Status dot */}
+                <div style={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: isDone ? "#22c55e" : isMissed ? "#ef4444" : "transparent",
+                }} />
               </div>
             );
           })}
@@ -243,11 +293,29 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
   );
 }
 
-function StatPill({ value, unit, accent }: { value: string; unit: string; accent?: string }) {
+function StatCell({ value, label, divider, accent }: {
+  value: string; label: string; divider?: boolean; accent?: boolean;
+}) {
   return (
-    <div style={{ background: "var(--m-card-inner)", borderRadius: 3, padding: "8px 12px", textAlign: "center", border: "1px solid var(--m-border)" }}>
-      <div style={{ fontSize: 17, fontWeight: 700, color: accent ?? "var(--m-text)", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>{unit}</div>
+    <div style={{
+      flex: 1, display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      padding: "20px 8px",
+      borderLeft: divider ? "1px solid var(--m-border)" : "none",
+    }}>
+      <div style={{
+        fontSize: 26, fontWeight: 800, lineHeight: 1,
+        color: accent ? "#FF5A1F" : "var(--m-text)",
+        marginBottom: 5,
+      }}>
+        {value}
+      </div>
+      <div style={{
+        fontSize: 11, fontWeight: 700, color: "var(--m-muted)",
+        textTransform: "uppercase", letterSpacing: "1px",
+      }}>
+        {label}
+      </div>
     </div>
   );
 }

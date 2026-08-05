@@ -416,37 +416,6 @@ function TodayHero({
         </div>
       )}
 
-      {/* Divider + today's workout label (clean row, no card) */}
-      <div style={{
-        borderTop: "1px solid var(--m-border)",
-        paddingTop: 13, paddingBottom: 15,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {statusDone && (
-            <div style={{
-              width: 15, height: 15, borderRadius: "50%",
-              border: "1.5px solid #22c55e",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                <path d="M1.5 4L3.2 5.7L6.5 2.3" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
-          <span style={{
-            fontSize: 17, fontWeight: 700, letterSpacing: "-.2px",
-            color: statusDone ? "#22c55e" : workout ? "var(--m-text)" : "var(--m-muted)",
-          }}>
-            {sessionLabel}
-          </span>
-        </div>
-        {workout && (
-          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--m-muted)" }}>
-            {workout.durationMin}min
-          </span>
-        )}
-      </div>
     </div>
   );
 }
