@@ -1647,7 +1647,7 @@ tbody tr:hover {
    Inner content = 94px. Safe-area-inset-top handles the notch.
    --tablet-footer-h: height of the fixed bottom nav bar (always visible, both orientations). */
 :root {
-  --tablet-bar-h:    calc(112px + env(safe-area-inset-top, 0px));
+  --tablet-bar-h:    calc(148px + env(safe-area-inset-top, 0px));
   --tablet-footer-h: calc(60px + env(safe-area-inset-bottom, 0px));
 }
 

@@ -265,7 +265,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                 }}>
                   {/* Power chart */}
                   {w.structure && w.structure.length > 0 && (
-                    <div style={{ borderRadius: 4, overflow: "hidden", marginBottom: 16 }}>
+                    <div style={{ borderRadius: 4, overflow: "hidden", marginBottom: 16, height: 180, maxHeight: 180 }}>
                       <MobileWorkoutChart blocks={w.structure} durationMin={w.durationMin} />
                     </div>
                   )}
