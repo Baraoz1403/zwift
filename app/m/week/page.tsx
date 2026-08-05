@@ -6,7 +6,7 @@ import { fetchIcuActivities } from "@/lib/intervals";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import { fetchActivities, fetchOwnProfile } from "@/lib/zwift";
 import WeekView from "./week-view";
-import MobileRefreshButton from "./refresh-button";
+import MobileRefreshButton from "@/app/m/refresh-button";
 
 function addDays(isoDate: string, days: number): string {
   const d = new Date(isoDate + "T00:00:00Z");

@@ -5,6 +5,7 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { fetchIcuWellness } from "@/lib/intervals";
+import MobileRefreshButton from "@/app/m/refresh-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -96,13 +97,17 @@ export default async function MobileProfilePage() {
         padding: "20px 20px 16px",
         background: "var(--m-card)",
         borderBottom: "1px solid var(--m-border)",
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       }}>
-        <div style={{ fontSize: 14, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 6 }}>
-          Profile
+        <div>
+          <div style={{ fontSize: 14, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 6 }}>
+            Profile
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+            {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
+          </div>
         </div>
-        <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
-          {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
-        </div>
+        <MobileRefreshButton />
       </div>
 
     <div style={{

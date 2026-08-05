@@ -10,6 +10,7 @@ import NoPlanScreen from "./no-plan-screen";
 import FeedbackBanner from "./feedback-banner";
 import BonusRideCard from "./bonus-ride-card";
 import { ThemeToggleButton } from "../theme-toggle-button";
+import MobileRefreshButton from "@/app/m/refresh-button";
 import type { DayStatus } from "@/lib/activity-sync";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -346,7 +347,10 @@ function TodayHero({
             {dateLabel}
           </div>
         </div>
-        <ThemeToggleButton compact />
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <MobileRefreshButton />
+          <ThemeToggleButton compact />
+        </div>
       </div>
 
       {/* Row 2: large athlete name */}

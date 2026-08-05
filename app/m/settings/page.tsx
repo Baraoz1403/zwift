@@ -8,6 +8,7 @@ import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getIntervalsCredentials } from "@/lib/kv-plan-state";
 import SignOutButton from "@/app/m/profile/sign-out-button";
 import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
+import MobileRefreshButton from "@/app/m/refresh-button";
 
 export default async function MobileSettingsPage() {
   const cookieStore = await cookies();
@@ -26,15 +27,19 @@ export default async function MobileSettingsPage() {
 
       {/* Pinned header */}
       <div style={{
-        flexShrink: 0, padding: "16px 16px 14px",
+        flexShrink: 0, padding: "20px 20px 16px",
         background: "var(--m-card)", borderBottom: "1px solid var(--m-border)",
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       }}>
-        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
-          Settings
+        <div>
+          <div style={{ fontSize: 14, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 6 }}>
+            Settings
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+            App Settings
+          </div>
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
-          App Settings
-        </div>
+        <MobileRefreshButton />
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain" }}>
