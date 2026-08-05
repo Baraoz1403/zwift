@@ -44,11 +44,11 @@ export function TabletTopBar({
         WebkitFontSmoothing: "antialiased",
       }}
     >
-      <div style={{ padding: "16px 36px 26px" }}>
+      <div style={{ padding: "20px 40px 30px" }}>
         {/* Row 1: greeting + date on left, theme toggle on right */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <div style={{
-            fontSize: 12, fontWeight: 600, color: "var(--m-muted)",
+            fontSize: 15, fontWeight: 600, color: "var(--m-muted)",
             textTransform: "uppercase", letterSpacing: ".4px",
           }}>
             {greeting} · {dateLabel}
@@ -61,7 +61,7 @@ export function TabletTopBar({
 
           {/* Left: athlete name only */}
           <div style={{
-            fontSize: 34, fontWeight: 900, color: "var(--m-text)",
+            fontSize: 36, fontWeight: 900, color: "var(--m-text)",
             letterSpacing: "-1px", lineHeight: 1,
           }}>
             {firstName ?? "Athlete"}
@@ -83,8 +83,8 @@ export function TabletTopBar({
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>Connected</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>Zwift</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>Connected</div>
               </div>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }}/>
             </div>
@@ -101,8 +101,8 @@ export function TabletTopBar({
                 </svg>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>ICU</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--m-muted)", marginTop: 2 }}>
                   {icuConnected ? "Connected" : "Not linked"}
                 </div>
               </div>
@@ -119,8 +119,8 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 58,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
+                <div style={{ fontSize: 21, fontWeight: 900, color: "var(--m-text)", lineHeight: 1, letterSpacing: "-.5px" }}>{ftp}W</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>FTP</div>
               </div>
             )}
             {currentPhase && (
@@ -128,8 +128,8 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
               }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
                   {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
                 </div>
               </div>
@@ -139,8 +139,8 @@ export function TabletTopBar({
                 background: "var(--m-card)", border: "1px solid var(--m-border)",
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 48,
               }}>
-                <div style={{ fontSize: 19, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
+                <div style={{ fontSize: 21, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{weekWorkoutCount}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Sessions</div>
               </div>
             )}
           </div>

@@ -71,44 +71,44 @@ export function TabletWeekSidebar({
 
       {/* ── Stats — sticky so always visible ──────────────────────────── */}
       <div style={{
-        padding: "36px 16px 20px", borderBottom: "1px solid var(--m-border)",
+        padding: "40px 18px 24px", borderBottom: "1px solid var(--m-border)",
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 20 }}>
           Fitness metrics
         </div>
 
         {/* CTL / ATL / TSB only — FTP/Phase/Sessions are in the top bar, no need to repeat */}
         {(ctl != null || atl != null || tsb != null) && (
-          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             {ctl != null && (
               <div style={{
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-                borderRadius: 6, padding: "8px 10px",
+                borderRadius: 6, padding: "12px 12px",
               }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(ctl)}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>CTL</div>
+                <div style={{ fontSize: 23, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(ctl)}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>CTL</div>
               </div>
             )}
             {atl != null && (
               <div style={{
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-                borderRadius: 6, padding: "8px 10px",
+                borderRadius: 6, padding: "12px 12px",
               }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(atl)}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>ATL</div>
+                <div style={{ fontSize: 23, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(atl)}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>ATL</div>
               </div>
             )}
             {tsb != null && (
               <div style={{
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
-                borderRadius: 6, padding: "8px 10px",
+                borderRadius: 6, padding: "12px 12px",
               }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
+                <div style={{ fontSize: 23, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
                   {tsb > 0 ? "+" : ""}{Math.round(tsb)}
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
               </div>
             )}
           </div>
@@ -122,20 +122,20 @@ export function TabletWeekSidebar({
             borderLeft: "3px solid #FF5A1F",
             borderRadius: 6, padding: "12px 14px",
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#FF5A1F", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#FF5A1F", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
               Bonus ride today
             </div>
             {todayActivityName && (
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-text)", marginBottom: 6, lineHeight: 1.3 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "var(--m-text)", marginBottom: 8, lineHeight: 1.3 }}>
                 {todayActivityName.length > 28 ? todayActivityName.slice(0, 26) + "…" : todayActivityName}
               </div>
             )}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 10 }}>
               {todayActivityDurationMin != null && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>{todayActivityDurationMin} min</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--m-muted)" }}>{todayActivityDurationMin} min</span>
               )}
               {todayAvgHr != null && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>{Math.round(todayAvgHr)} bpm</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--m-muted)" }}>{Math.round(todayAvgHr)} bpm</span>
               )}
             </div>
           </div>
@@ -143,11 +143,11 @@ export function TabletWeekSidebar({
       </div>
 
       {/* ── Week list ─────────────────────────────────────────────────── */}
-      <div style={{ padding: "20px 16px", flex: 1 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
+      <div style={{ padding: "24px 18px", flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 18 }}>
           This week
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {ALL_DAYS.map(dayName => {
             const w         = workouts.find(x => x.day === dayName);
             const isToday   = w?.date === todayStr;
@@ -157,8 +157,8 @@ export function TabletWeekSidebar({
 
             return (
               <div key={dayName} style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "13px 14px", borderRadius: 6,
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "16px 16px", borderRadius: 6,
                 background: isToday ? "var(--m-card-inner)" : "transparent",
                 border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
                 // VOLT orange left-accent for today's workout (matches left nav active style);
@@ -172,11 +172,11 @@ export function TabletWeekSidebar({
                   border: `1px solid ${isToday ? "rgba(255,255,255,0.12)" : "var(--m-border)"}`,
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? "var(--m-text)" : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: isToday ? "var(--m-text)" : "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".04em", lineHeight: 1 }}>
                     {dayName.slice(0, 3)}
                   </div>
                   {dateNum && (
-                    <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "var(--m-text)" : "var(--m-muted)", lineHeight: 1, marginTop: 2 }}>
+                    <div style={{ fontSize: 21, fontWeight: 900, color: isToday ? "var(--m-text)" : "var(--m-muted)", lineHeight: 1, marginTop: 2 }}>
                       {dateNum}
                     </div>
                   )}
@@ -185,14 +185,14 @@ export function TabletWeekSidebar({
                 {/* Workout info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 16, fontWeight: isToday ? 700 : 500,
+                    fontSize: 19, fontWeight: isToday ? 700 : 500,
                     color: dayIsRest ? "var(--m-muted)" : "var(--m-text)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {dayIsRest ? (isToday && isBonus ? "Rest + Bonus 🚴" : "Rest") : w!.title}
                   </div>
                   {!dayIsRest && w && (
-                    <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3, fontWeight: 500 }}>
+                    <div style={{ fontSize: 17, color: "var(--m-muted)", marginTop: 3, fontWeight: 500 }}>
                       {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
                     </div>
                   )}
@@ -215,10 +215,10 @@ export function TabletWeekSidebar({
             background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
             borderRadius: 4, padding: "14px 16px",
           }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
               Week plan
             </div>
-            <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 18, color: "var(--m-muted)", lineHeight: 1.7 }}>
               {planSummary.slice(0, 140)}{planSummary.length > 140 ? "…" : ""}
             </div>
           </div>

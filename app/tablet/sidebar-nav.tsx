@@ -54,7 +54,7 @@ export default function TabletSidebar() {
             }}>
               <Icon color={active ? ZO : "var(--m-muted)"} />
               <span style={{
-                fontSize: 18, fontWeight: active ? 700 : 500,
+                fontSize: 21, fontWeight: active ? 700 : 500,
                 color: active ? "var(--m-text)" : "var(--m-muted)",
               }}>{label}</span>
               {active && <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: 2, background: ZO }} />}
@@ -75,7 +75,7 @@ export default function TabletSidebar() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: 18, fontWeight: 500, color: "#ef4444" }}>Log out</span>
+          <span style={{ fontSize: 21, fontWeight: 500, color: "#ef4444" }}>Log out</span>
         </a>
       </nav>
 
@@ -97,7 +97,7 @@ export default function TabletSidebar() {
             WebkitTapHighlightColor: "transparent",
           }}>
             <Icon color={active ? ZO : "var(--m-muted)"} />
-            <span style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? ZO : "var(--m-muted)" }}>
+            <span style={{ fontSize: 17, fontWeight: active ? 700 : 500, color: active ? ZO : "var(--m-muted)" }}>
               {label}
             </span>
           </Link>

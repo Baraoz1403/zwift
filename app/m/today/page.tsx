@@ -203,14 +203,14 @@ export default async function MobileTodayPage() {
           {isBonus ? (
             /* Bonus ride — expandable ride card + feedback */
             <div style={{ padding: "16px 16px 0" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>
                   Today&apos;s session
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#FF5A1F", background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)", borderRadius: 3, padding: "2px 8px" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#FF5A1F", background: "rgba(255,90,31,0.08)", border: "1px solid rgba(255,90,31,0.28)", borderRadius: 3, padding: "2px 8px" }}>
                   Bonus
                 </span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)" }}>
                   Rest day planned
                 </span>
               </div>
@@ -242,12 +242,12 @@ export default async function MobileTodayPage() {
           ) : (
             /* Pure rest day — calm, no drama */
             <div style={{ padding: "16px 16px 0" }}>
-              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 12 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", marginBottom: 8 }}>Rest day</div>
-                <div style={{ fontSize: 16, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
+              <div style={{ background: "var(--m-card)", border: "1px solid var(--m-border)", borderRadius: 4, padding: "22px 20px", marginBottom: 16 }}>
+                <div style={{ fontSize: 23, fontWeight: 800, color: "var(--m-text)", marginBottom: 10 }}>Rest day</div>
+                <div style={{ fontSize: 19, color: "var(--m-muted)", lineHeight: 1.65, marginBottom: 18 }}>
                   No workout scheduled today. Quality rest is as important as the training itself.
                 </div>
-                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 17, fontWeight: 600, textDecoration: "none" }}>
+                <a href="/m/week" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: 4, background: "var(--m-card-inner)", border: "1px solid var(--m-border)", color: "var(--m-muted)", fontSize: 20, fontWeight: 600, textDecoration: "none" }}>
                   See this week&apos;s plan →
                 </a>
               </div>
@@ -340,14 +340,14 @@ function TodayHero({
       {/* Row 1: greeting (left) + date + theme toggle (right) */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".7px", textTransform: "uppercase" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".7px", textTransform: "uppercase" }}>
             {timeGreeting}
           </div>
-          <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 3, fontWeight: 400 }}>
+          <div style={{ fontSize: 15, color: "var(--m-muted)", marginTop: 3, fontWeight: 400 }}>
             {dateLabel}
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <MobileRefreshButton />
           <ThemeToggleButton compact />
         </div>
@@ -355,31 +355,31 @@ function TodayHero({
 
       {/* Row 2: large athlete name */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 38, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-2px", lineHeight: 1 }}>
+        <div style={{ fontSize: 40, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-2px", lineHeight: 1 }}>
           {firstName ?? "Athlete"}
         </div>
       </div>
 
       {/* Row 3: live connection status chips */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         {/* Zwift chip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <svg width="12" height="12" viewBox="0 0 20 20" fill="#FF5A1F" style={{ flexShrink: 0 }}>
             <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e" }}>Connected</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#22c55e" }}>Connected</span>
         </div>
         <div style={{ width: 1, height: 12, background: "var(--m-border)", flexShrink: 0 }} />
         {/* ICU chip */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#e11d48" : "#4b5563"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
           {icuConnected
-            ? <span style={{ fontSize: 10, fontWeight: 600, color: "#22c55e" }}>Connected</span>
-            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 10, fontWeight: 700, color: "#e11d48", textDecoration: "none" }}>Not connected</a>
+            ? <span style={{ fontSize: 12, fontWeight: 600, color: "#22c55e" }}>Connected</span>
+            : <a href="/api/intervals/oauth-start?from=m" style={{ fontSize: 12, fontWeight: 700, color: "#e11d48", textDecoration: "none" }}>Not connected</a>
           }
         </div>
       </div>
@@ -389,28 +389,28 @@ function TodayHero({
         <div style={{ display: "flex", marginBottom: 20 }}>
           {ftp != null && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
-                {ftp}<span style={{ fontSize: 15, fontWeight: 700, letterSpacing: 0 }}>W</span>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>
+                {ftp}<span style={{ fontSize: 18, fontWeight: 700, letterSpacing: 0 }}>W</span>
               </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>FTP</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>FTP</div>
             </div>
           )}
           {phase && (
             <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{phase}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Phase</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{phase}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Phase</div>
             </div>
           )}
           {weekIndex != null && (
             <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>Wk {weekIndex + 1}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Week</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>Wk {weekIndex + 1}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Week</div>
             </div>
           )}
           {weekWorkoutCount > 0 && (
             <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{weekWorkoutCount}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Sessions</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{weekWorkoutCount}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Sessions</div>
             </div>
           )}
         </div>
@@ -422,7 +422,7 @@ function TodayHero({
         paddingTop: 13, paddingBottom: 15,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {statusDone && (
             <div style={{
               width: 15, height: 15, borderRadius: "50%",
@@ -435,14 +435,14 @@ function TodayHero({
             </div>
           )}
           <span style={{
-            fontSize: 14, fontWeight: 700, letterSpacing: "-.2px",
+            fontSize: 17, fontWeight: 700, letterSpacing: "-.2px",
             color: statusDone ? "#22c55e" : workout ? "var(--m-text)" : "var(--m-muted)",
           }}>
             {sessionLabel}
           </span>
         </div>
         {workout && (
-          <span style={{ fontSize: 11, fontWeight: 500, color: "var(--m-muted)" }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--m-muted)" }}>
             {workout.durationMin}min
           </span>
         )}
