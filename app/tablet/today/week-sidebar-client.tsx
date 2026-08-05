@@ -111,9 +111,9 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
               style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 12px", borderRadius: 6,
-                // Today highlight — neutral white tint + orange border (no brown)
-                background: isToday ? "rgba(255,255,255,0.05)" : "transparent",
-                border: `1px solid ${isToday ? "rgba(255,90,31,0.40)" : "transparent"}`,
+                // Today highlight — dark card-inner box + orange border
+                background: isToday ? "var(--m-card-inner)" : "transparent",
+                border: `1px solid ${isToday ? "rgba(255,90,31,0.50)" : "transparent"}`,
                 cursor: isClickable ? "pointer" : "default",
                 transition: "background 0.12s",
               }}

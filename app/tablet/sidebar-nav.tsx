@@ -34,7 +34,7 @@ export default function TabletSidebar() {
       borderRight: "1px solid var(--m-border)",
       display: "flex", flexDirection: "column", flexShrink: 0,
       position: "fixed",
-      top: "var(--tablet-bar-h)",
+      top: "calc(var(--tablet-bar-h) + 24px)", // dark gap matching content area
       left: 0, bottom: "var(--tablet-footer-h)",
       zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",

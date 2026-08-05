@@ -603,8 +603,8 @@ export default async function TabletTodayPage({
           width: 280, flexShrink: 0,
           borderLeft: "1px solid var(--m-border)",
           background: "var(--m-card)",
-          display: "flex", flexDirection: "column",
           overflowY: "auto",
+          // note: no display:flex — that breaks position:sticky in Safari/WebKit
         }}>
           {/* FITNESS METRICS — sticky at column top, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
           <div style={{
