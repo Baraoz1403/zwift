@@ -75,7 +75,7 @@ export function TabletWeekSidebar({
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".14em", marginBottom: 16 }}>
           Fitness metrics
         </div>
 
@@ -87,8 +87,8 @@ export function TabletWeekSidebar({
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
                 borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(ctl)}</div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>CTL</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(ctl)}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>CTL</div>
               </div>
             )}
             {atl != null && (
@@ -96,8 +96,8 @@ export function TabletWeekSidebar({
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
                 borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(atl)}</div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>ATL</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "var(--m-text)", lineHeight: 1 }}>{Math.round(atl)}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 4 }}>ATL</div>
               </div>
             )}
             {tsb != null && (
@@ -105,7 +105,7 @@ export function TabletWeekSidebar({
                 flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid var(--m-border)",
                 borderRadius: 6, padding: "8px 10px",
               }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: tsb >= 0 ? "#22c55e" : "#ef4444", lineHeight: 1 }}>
                   {tsb > 0 ? "+" : ""}{Math.round(tsb)}
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>TSB</div>
@@ -144,7 +144,7 @@ export function TabletWeekSidebar({
 
       {/* ── Week list ─────────────────────────────────────────────────── */}
       <div style={{ padding: "20px 16px", flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 14 }}>
           This week
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -158,7 +158,7 @@ export function TabletWeekSidebar({
             return (
               <div key={dayName} style={{
                 display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 12px", borderRadius: 4,
+                padding: "13px 14px", borderRadius: 6,
                 background: isToday ? "var(--m-card-inner)" : "transparent",
                 border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
                 // VOLT orange left-accent for today's workout (matches left nav active style);
@@ -176,7 +176,7 @@ export function TabletWeekSidebar({
                     {dayName.slice(0, 3)}
                   </div>
                   {dateNum && (
-                    <div style={{ fontSize: 16, fontWeight: 900, color: isToday ? "var(--m-text)" : "var(--m-muted)", lineHeight: 1, marginTop: 1 }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "var(--m-text)" : "var(--m-muted)", lineHeight: 1, marginTop: 2 }}>
                       {dateNum}
                     </div>
                   )}
@@ -185,14 +185,14 @@ export function TabletWeekSidebar({
                 {/* Workout info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: 15, fontWeight: isToday ? 700 : 500,
+                    fontSize: 16, fontWeight: isToday ? 700 : 500,
                     color: dayIsRest ? "var(--m-muted)" : "var(--m-text)",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                   }}>
                     {dayIsRest ? (isToday && isBonus ? "Rest + Bonus 🚴" : "Rest") : w!.title}
                   </div>
                   {!dayIsRest && w && (
-                    <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 2, fontWeight: 500 }}>
+                    <div style={{ fontSize: 14, color: "var(--m-muted)", marginTop: 3, fontWeight: 500 }}>
                       {detectZoneLabel(w)}{w.durationMin > 0 ? ` · ${w.durationMin}m` : ""}
                     </div>
                   )}
@@ -215,10 +215,10 @@ export function TabletWeekSidebar({
             background: "var(--m-card-inner)", border: "1px solid var(--m-border)",
             borderRadius: 4, padding: "14px 16px",
           }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 10 }}>
               Week plan
             </div>
-            <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.65 }}>
+            <div style={{ fontSize: 15, color: "var(--m-muted)", lineHeight: 1.7 }}>
               {planSummary.slice(0, 140)}{planSummary.length > 140 ? "…" : ""}
             </div>
           </div>

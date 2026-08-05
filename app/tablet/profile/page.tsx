@@ -124,12 +124,18 @@ export default async function TabletProfilePage() {
         {/* Account */}
         <SectionLabel>Account</SectionLabel>
         <div style={{ background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)", padding: "4px 0", marginBottom: 20 }}>
-          <a href="/tablet/profile/edit" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 18px", textDecoration: "none" }}>
+          <a href="/tablet/profile/edit" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 18px", textDecoration: "none", borderBottom: "1px solid var(--m-border)" }}>
             <div>
-              <div style={{ fontSize: 17, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
-              <div style={{ fontSize: 14, color: "var(--m-muted-2)", marginTop: 3 }}>Goals, schedule, session length</div>
+              <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
+              <div style={{ fontSize: 14, color: "var(--m-muted-2)", marginTop: 4 }}>Goals, schedule, session length</div>
             </div>
             <ChevronRight />
+          </a>
+          <a href="/api/auth/logout" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 18px", textDecoration: "none" }}>
+            <div style={{ fontSize: 18, color: "#ef4444", fontWeight: 700 }}>Log out</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </a>
         </div>
 
