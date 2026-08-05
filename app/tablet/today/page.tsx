@@ -417,11 +417,19 @@ export default async function TabletTodayPage({
             /* ── WORKOUT ──────────────────────────────────────────────── */
             <div>
               {/* Section label + status */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 800, color: "#FF5A1F",
+                  background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.30)",
+                  borderRadius: 4, padding: "5px 12px", letterSpacing: ".08em",
+                  textTransform: "uppercase",
+                }}>
+                  Today
+                </div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
                   Today&apos;s session
                 </div>
-                <div style={{
+                <div style={{ marginLeft: "auto",
                   fontSize: 14, fontWeight: 700, color: statusColor,
                   background: `${statusColor}14`, border: `1px solid ${statusColor}30`,
                   borderRadius: 3, padding: "4px 10px",

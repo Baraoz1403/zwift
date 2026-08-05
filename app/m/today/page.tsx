@@ -403,7 +403,7 @@ function TodayHero({
           )}
           {weekIndex != null && (
             <div style={{ flex: 1, borderLeft: "1px solid var(--m-border)", paddingLeft: 16 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>Wk {weekIndex + 1}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-1px", lineHeight: 1 }}>{(weekIndex % 4) + 1}<span style={{fontSize:18,fontWeight:700}}>/4</span></div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".7px", marginTop: 5 }}>Week</div>
             </div>
           )}

@@ -47,17 +47,20 @@ export default function TabletSidebar() {
           return (
             <Link key={href} href={href} style={{
               display: "flex", alignItems: "center", gap: 14,
-              padding: "16px 18px", borderRadius: 8,
-              background: active ? `${ZO}12` : "transparent",
-              border: `1px solid ${active ? ZO + "35" : "transparent"}`,
+              padding: "16px 18px",
+              borderBottom: "1px solid var(--m-border)",
+              borderLeft: active ? `3px solid ${ZO}` : "3px solid transparent",
+              background: active ? `${ZO}08` : "transparent",
               textDecoration: "none",
+              marginLeft: -14,
+              paddingLeft: active ? 11 : 11,
+              width: "calc(100% + 14px)",
             }}>
               <Icon color={active ? ZO : "var(--m-muted)"} />
               <span style={{
-                fontSize: 21, fontWeight: active ? 700 : 500,
+                fontSize: 18, fontWeight: active ? 700 : 500,
                 color: active ? "var(--m-text)" : "var(--m-muted)",
               }}>{label}</span>
-              {active && <div style={{ marginLeft: "auto", width: 6, height: 6, borderRadius: 2, background: ZO }} />}
             </Link>
           );
         })}
@@ -67,15 +70,18 @@ export default function TabletSidebar() {
           href="/api/auth/logout"
           style={{
             display: "flex", alignItems: "center", gap: 14,
-            padding: "16px 18px", borderRadius: 8,
-            textDecoration: "none", marginTop: 8,
-            border: "1px solid transparent",
+            padding: "16px 18px",
+            borderBottom: "1px solid var(--m-border)",
+            borderLeft: "3px solid transparent",
+            textDecoration: "none",
+            marginLeft: -14,
+            width: "calc(100% + 14px)",
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span style={{ fontSize: 21, fontWeight: 500, color: "#ef4444" }}>Log out</span>
+          <span style={{ fontSize: 18, fontWeight: 500, color: "#ef4444" }}>Log out</span>
         </a>
       </nav>
 

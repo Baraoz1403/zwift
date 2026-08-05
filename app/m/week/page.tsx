@@ -7,6 +7,7 @@ import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/ac
 import { fetchActivities, fetchOwnProfile } from "@/lib/zwift";
 import WeekView from "./week-view";
 import MobileRefreshButton from "@/app/m/refresh-button";
+import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
 function addDays(isoDate: string, days: number): string {
   const d = new Date(isoDate + "T00:00:00Z");
@@ -148,7 +149,10 @@ export default async function MobileWeekPage({
             {firstName ?? "Athlete"}
           </div>
         </div>
-        <MobileRefreshButton />
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <MobileRefreshButton />
+          <ThemeToggleButton compact />
+        </div>
       </div>
 
       {/* Scrollable week view */}

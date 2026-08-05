@@ -89,8 +89,21 @@ export default function MobileWorkoutCard({
   return (
     <div style={{ padding: "0 0 32px" }}>
 
+      {/* TODAY badge */}
+      <div style={{ padding: "20px 24px 0" }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center",
+          fontSize: 12, fontWeight: 800, color: "#FF5A1F",
+          background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.28)",
+          borderRadius: 4, padding: "4px 12px", letterSpacing: ".1em",
+          textTransform: "uppercase",
+        }}>
+          Today
+        </div>
+      </div>
+
       {/* ── Workout header ──────────────────────────────────────────── */}
-      <div style={{ padding: "28px 24px 24px" }}>
+      <div style={{ padding: "16px 24px 24px" }}>
 
         {/* Meta row: zone · type · status */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>

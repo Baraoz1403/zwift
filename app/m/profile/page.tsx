@@ -6,6 +6,7 @@ import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { fetchIcuWellness } from "@/lib/intervals";
 import MobileRefreshButton from "@/app/m/refresh-button";
+import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -107,7 +108,10 @@ export default async function MobileProfilePage() {
             {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
           </div>
         </div>
-        <MobileRefreshButton />
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <MobileRefreshButton />
+          <ThemeToggleButton compact />
+        </div>
       </div>
 
     <div style={{

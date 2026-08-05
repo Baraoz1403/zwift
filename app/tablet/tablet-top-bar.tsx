@@ -21,13 +21,14 @@ interface TabletTopBarProps {
   currentPhase: string | null;
   weekDisplayNum: number | null;
   weekWorkoutCount: number;
+  weekCyclePos?: number | null;
   icuConnected: boolean;
   greeting: string;
   dateLabel: string;
 }
 
 export function TabletTopBar({
-  firstName, ftp, currentPhase, weekDisplayNum, weekWorkoutCount,
+  firstName, ftp, currentPhase, weekDisplayNum, weekCyclePos, weekWorkoutCount,
   icuConnected, greeting, dateLabel,
 }: TabletTopBarProps) {
   return (
@@ -129,9 +130,18 @@ export function TabletTopBar({
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
               }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
-                  {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Phase</div>
+              </div>
+            )}
+            {weekDisplayNum != null && (
+              <div style={{
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 52,
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>
+                  {weekCyclePos ?? weekDisplayNum}<span style={{ fontSize: 13, fontWeight: 700 }}>/4</span>
                 </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Week</div>
               </div>
             )}
             {weekWorkoutCount > 0 && (

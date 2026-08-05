@@ -76,6 +76,7 @@ export default async function TabletLayout({ children }: { children: React.React
       ? (macro.weekIndex === 0 ? "Base" : macro.weekIndex % 4 === 3 ? "Recovery" : "Build")
       : null;
     const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
+    const weekCyclePos = macro ? (macro.weekIndex % 4) + 1 : null;
 
     // Session count from plan
     const workouts = plan?.workouts ?? [];
@@ -151,6 +152,7 @@ export default async function TabletLayout({ children }: { children: React.React
             ftp={ftp}
             currentPhase={currentPhase}
             weekDisplayNum={weekDisplayNum}
+            weekCyclePos={weekCyclePos}
             weekWorkoutCount={weekWorkoutCount}
             icuConnected={icuConnected}
 
