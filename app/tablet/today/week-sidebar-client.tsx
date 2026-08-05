@@ -110,10 +110,10 @@ export function WeekDayListClient({ days, weekNav }: { days: DayRowData[]; weekN
               onClick={isClickable ? () => setSelectedRide(ride!) : undefined}
               style={{
                 display: "flex", alignItems: "center", gap: 12,
-                padding: "12px 14px", borderRadius: 6,
-                background: isToday ? "var(--m-card-inner)" : "transparent",
-                border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
-                borderLeft: `3px solid ${isToday && !isRest ? accentColor : "transparent"}`,
+                padding: "10px 12px", borderRadius: 6,
+                // Active "black box" — matches left nav active item style exactly
+                background: isToday ? "rgba(255,90,31,0.07)" : "transparent",
+                border: `1px solid ${isToday ? "rgba(255,90,31,0.22)" : "transparent"}`,
                 cursor: isClickable ? "pointer" : "default",
                 transition: "background 0.12s",
               }}

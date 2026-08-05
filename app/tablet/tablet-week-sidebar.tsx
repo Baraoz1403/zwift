@@ -150,11 +150,9 @@ export function TabletWeekSidebar({
               <div key={dayName} style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "10px 12px", borderRadius: 4,
-                background: isToday ? "var(--m-card-inner)" : "transparent",
-                border: `1px solid ${isToday ? "var(--m-border)" : "transparent"}`,
-                // VOLT orange left-accent for today's workout (matches left nav active style);
-                // rest day or non-today rows get no accent.
-                borderLeft: `3px solid ${isToday && !dayIsRest ? ZO : "transparent"}`,
+                // Active "black box" — matches left nav active item style exactly
+                background: isToday ? "rgba(255,90,31,0.07)" : "transparent",
+                border: `1px solid ${isToday ? "rgba(255,90,31,0.22)" : "transparent"}`,
               }}>
                 {/* Day bubble — uniform dark, no zone tinting */}
                 <div style={{
