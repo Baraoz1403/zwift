@@ -8,17 +8,33 @@ import { isRunWorkout } from "@/lib/zwo";
 
 // Monochromatic — single VOLT orange accent for all workout types.
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
+  // Cycling
   sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
   threshold:     { accent: "#FF5A1F", label: "Threshold"  },
   vo2max:        { accent: "#FF5A1F", label: "VO2 Max"    },
   tempo:         { accent: "#FF5A1F", label: "Tempo"      },
   endurance:     { accent: "#FF5A1F", label: "Endurance"  },
   neuromuscular: { accent: "#FF5A1F", label: "Neuro"      },
+  // Running
+  easyRun:       { accent: "#FF5A1F", label: "Easy Run"   },
+  tempoRun:      { accent: "#FF5A1F", label: "Tempo Run"  },
+  intervalRun:   { accent: "#FF5A1F", label: "Intervals"  },
+  longRun:       { accent: "#FF5A1F", label: "Long Run"   },
+  walkRun:       { accent: "var(--m-muted)", label: "Walk/Run" },
+  recoveryRun:   { accent: "var(--m-muted)", label: "Recovery" },
   rest:          { accent: "var(--m-muted)", label: "Rest" },
 };
 
 function detectZone(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
+  // Running — check title first (resilient to old cached plans with cycling type)
+  if (t.includes("long run"))     return "longRun";
+  if (t.includes("tempo run") || (t.includes("tempo") && t.includes("run"))) return "tempoRun";
+  if (t.includes("interval run")) return "intervalRun";
+  if (t.includes("walk/run") || t.includes("walk run")) return "walkRun";
+  if (t.includes("recovery run")) return "recoveryRun";
+  if (t.includes("easy run"))     return "easyRun";
+  // Cycling
   if (t.includes("sweet spot") || t.includes("sweetspot")) return "sweetSpot";
   if (t.includes("threshold") || t.includes("ftp")) return "threshold";
   if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "vo2max";
@@ -249,16 +265,21 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
 
                     {!isRest && w && (
                       <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
-                        {/* RIDE / RUN mode badge */}
-                        <span style={{
-                          fontSize: 12, fontWeight: 800,
-                          color: isRunWorkout(w.type) ? "#f97316" : "#3b82f6",
-                          background: isRunWorkout(w.type) ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
-                          border: `1px solid ${isRunWorkout(w.type) ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
-                          borderRadius: 3, padding: "2px 8px", flexShrink: 0,
-                        }}>
-                          {isRunWorkout(w.type) ? "RUN" : "RIDE"}
-                        </span>
+                        {/* RIDE / RUN mode badge — check title too for old cached plans */}
+                        {(() => {
+                          const isRun = isRunWorkout(w.type) || isRunWorkout(w.title);
+                          return (
+                            <span style={{
+                              fontSize: 12, fontWeight: 800,
+                              color: isRun ? "#f97316" : "#3b82f6",
+                              background: isRun ? "rgba(249,115,22,0.12)" : "rgba(59,130,246,0.12)",
+                              border: `1px solid ${isRun ? "rgba(249,115,22,0.3)" : "rgba(59,130,246,0.3)"}`,
+                              borderRadius: 3, padding: "2px 8px", flexShrink: 0,
+                            }}>
+                              {isRun ? "RUN" : "RIDE"}
+                            </span>
+                          );
+                        })()}
                         {w.durationMin > 0 && (
                           <span style={{ fontSize: 16, color: "#64748b" }}>{w.durationMin} min</span>
                         )}

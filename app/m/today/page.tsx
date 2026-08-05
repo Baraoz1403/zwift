@@ -360,13 +360,17 @@ function TodayHero({
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         {/* Zwift */}
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#FF5A1F" style={{ flexShrink: 0 }}>
+            <path d="M13 1L3 11h5.5L6 19l11-10h-5.5L13 1Z"/>
+          </svg>
           <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>Zwift</span>
         </div>
         <div style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--m-border)", flexShrink: 0 }} />
         {/* ICU */}
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: icuConnected ? "#22c55e" : "#4b5563", flexShrink: 0 }} />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={icuConnected ? "#e11d48" : "#4b5563"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           <span style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", letterSpacing: ".2px" }}>ICU</span>
         </div>
         {!icuConnected && (

@@ -15,6 +15,14 @@ const ALL_DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",
 
 function detectZoneLabel(w: WeeklyWorkout): string {
   const t = (w.title + " " + (w.type ?? "")).toLowerCase();
+  // Running — check title first for robustness
+  if (t.includes("long run"))     return "Long Run";
+  if (t.includes("tempo run") || (t.includes("tempo") && t.includes("run"))) return "Tempo Run";
+  if (t.includes("interval run")) return "Intervals";
+  if (t.includes("walk/run") || t.includes("walk run")) return "Walk/Run";
+  if (t.includes("recovery run")) return "Recovery";
+  if (t.includes("easy run"))     return "Easy Run";
+  // Cycling
   if (t.includes("sweet spot") || t.includes("sweetspot")) return "Sweet Spot";
   if (t.includes("threshold") || t.includes("ftp"))        return "Threshold";
   if (t.includes("vo2") || t.includes("norwegian"))        return "VO2max";
