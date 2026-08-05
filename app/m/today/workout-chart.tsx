@@ -14,6 +14,19 @@
 
 import type { WorkoutStructureBlock } from "@/lib/zwo";
 
+/**
+ * Running zone label — displayed inside chart bars for running workouts instead of % FTP.
+ * Maps relative effort (powerFtp, 0-1.0) to standard HR training zones used in running.
+ */
+function runningZoneLabel(pct: number): string {
+  if (pct <= 0)  return "";
+  if (pct < 60)  return "Z1";
+  if (pct < 75)  return "Z2";
+  if (pct < 84)  return "Z3";
+  if (pct < 91)  return "Z4";
+  return "Z5";
+}
+
 // ── Zone system ─────────────────────────────────────────────────────────────
 
 // Zone colors — standard cycling zone palette (matches Zwift / intervals.icu)
@@ -252,7 +265,7 @@ export default function MobileWorkoutChart({
         return (
           <g key={i}>
             <path d={path} fill={`url(#${gradId})`} />
-            {/* Power % label inside tall bars */}
+            {/* Power % or running zone label inside tall bars */}
             {h > 55 && pct > 0 && (
               <text
                 x={x + w / 2}
@@ -263,7 +276,7 @@ export default function MobileWorkoutChart({
                 fontWeight="700"
                 fontFamily="system-ui"
               >
-                {pct}%
+                {isRunning ? runningZoneLabel(pct) : `${pct}%`}
               </text>
             )}
           </g>

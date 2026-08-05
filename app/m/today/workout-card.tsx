@@ -6,6 +6,19 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import { structureToBlocks, computeIfTss, isRunWorkout } from "@/lib/zwo";
 import type { DayStatus } from "@/lib/activity-sync";
 
+/**
+ * Running zone label — replaces % FTP in structure blocks for running workouts.
+ * Maps relative effort (powerFtp, 0-1.0) to standard HR training zones.
+ */
+function runningZoneLabel(pct: number): string {
+  if (pct <= 0)  return "";
+  if (pct < 60)  return "Z1";
+  if (pct < 75)  return "Z2";
+  if (pct < 84)  return "Z3";
+  if (pct < 91)  return "Z4";
+  return "Z5";
+}
+
 // Monochromatic: VOLT orange for all active zones, neutral for rest
 const ZONE_COLOR: Record<string, { accent: string; label: string }> = {
   sweetSpot:     { accent: "#FF5A1F", label: "Sweet Spot" },
@@ -181,7 +194,8 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
                     </div>
                     {pct>0 && (
                       <div style={{ fontSize: 12, fontWeight: 700, color: barColor, background: `${barColor}14`, border: `1px solid ${barColor}30`, borderRadius: 3, padding: "3px 8px", flexShrink: 0 }}>
-                        {pct}%
+                        {/* Running: show HR zone (Z1-Z5) — % FTP is not applicable */}
+                        {isRunWorkout(workout.type) ? runningZoneLabel(pct) : `${pct}%`}
                       </div>
                     )}
                   </div>

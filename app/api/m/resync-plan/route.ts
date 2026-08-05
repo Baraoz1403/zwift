@@ -19,6 +19,7 @@ import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { kvDel } from "@/lib/kv";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchActivities } from "@/lib/zwift";
+import { listIntervalsEvents, deleteEventFromIntervals } from "@/lib/intervals";
 
 export const maxDuration = 30;
 
@@ -62,10 +63,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "ICU credentials missing or invalid — please reconnect in Settings." });
   }
 
+  // ── Clean up orphaned next-week ICU events ────────────────────────────────
+  // The wide cleanup in syncPlanToIcuAndMark only DEDUPLICATES future events,
+  // it never deletes them. This means stale events from a previously-synced
+  // next-week plan remain on ICU and appear alongside this week's workouts
+  // in Zwift's custom workout menu — producing the "part from this week,
+  // part from next week" confusion.
+  //
+  // Fix: after syncing this week, check if a next-week plan is cached in KV.
+  // If there IS one, those events are valid — leave them.
+  // If there is NOT one, every WORKOUT event in next week's date range is
+  // an orphan from a previous generation cycle and should be removed.
+  let orphanedDeleted = 0;
+  try {
+    // Compute next Monday (weekOf + 7 days) and next Sunday (+ 13 days)
+    const base = new Date(weekOf + "T00:00:00Z");
+    const nextMondayDate = new Date(base);
+    nextMondayDate.setUTCDate(base.getUTCDate() + 7);
+    const nextSundayDate = new Date(base);
+    nextSundayDate.setUTCDate(base.getUTCDate() + 13);
+    const nextMonday = nextMondayDate.toISOString().slice(0, 10);
+    const nextSunday  = nextSundayDate.toISOString().slice(0, 10);
+
+    const nextWeekPlan = await getCachedPlan(athleteId, nextMonday);
+    if (!nextWeekPlan) {
+      // No valid next-week plan — any WORKOUT events in that range are orphans
+      const nextWeekEvents = await listIntervalsEvents(
+        creds.icuKey, nextMonday, nextSunday, creds.icuId ?? undefined
+      );
+      const orphans = nextWeekEvents.filter(e => e.category === "WORKOUT");
+      const deleteResults = await Promise.all(
+        orphans.map(e => deleteEventFromIntervals(creds.icuKey, e.id, creds.icuId ?? undefined))
+      );
+      orphanedDeleted = deleteResults.filter(r => r.ok).length;
+    }
+  } catch { /* best-effort — never block the response */ }
+
   return NextResponse.json({
     ok: result.pushed > 0 || result.errors.length === 0,
     pushed: result.pushed,
-    deleted: result.deleted,
+    deleted: result.deleted + orphanedDeleted,
     errors: result.errors,
     weekOf,
   });

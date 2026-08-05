@@ -10,6 +10,7 @@ import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
 import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
+import { isRunWorkout } from "@/lib/zwo";
 
 const ZO = "#FF5A1F";
 
@@ -458,7 +459,8 @@ export default async function TabletTodayPage({
                       {todayWorkout.durationMin} min
                     </span>
                   )}
-                  {todayWorkout.targetPowerPctFtp && (
+                  {/* targetPowerPctFtp — hidden for running, FTP not applicable */}
+                  {todayWorkout.targetPowerPctFtp && !isRunWorkout(todayWorkout.type) && (
                     <span style={{ fontSize: 17, fontWeight: 700, color: zoneColor }}>
                       {todayWorkout.targetPowerPctFtp}
                     </span>
@@ -471,7 +473,7 @@ export default async function TabletTodayPage({
                 <div style={{
                   borderRadius: 4, overflow: "hidden", marginBottom: 16,
                 }}>
-                  <MobileWorkoutChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} />
+                  <MobileWorkoutChart blocks={todayWorkout.structure} durationMin={todayWorkout.durationMin} isRunning={isRunWorkout(todayWorkout.type)} />
                 </div>
               )}
 

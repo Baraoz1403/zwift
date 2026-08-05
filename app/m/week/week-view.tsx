@@ -68,6 +68,19 @@ function summaryBullets(summary: string): string[] {
   return sentences.slice(0, 2).map(s => s.length > 90 ? s.slice(0, 88) + "…" : s);
 }
 
+/**
+ * Running zone label (HR/effort zone) — shown instead of % FTP for running workouts.
+ * Maps relative effort (0-1.0 scale) to standard HR training zones used in running coaching.
+ */
+function runningZoneLabel(pct: number): string {
+  if (pct <= 0)  return "";
+  if (pct < 60)  return "Z1";
+  if (pct < 75)  return "Z2";
+  if (pct < 84)  return "Z3";
+  if (pct < 91)  return "Z4";
+  return "Z5";
+}
+
 // Monochromatic power bar — VOLT orange gradient, red only at all-out effort.
 // rgba(255,90,31,X) below 0.70 opacity on dark bg renders as brown — forbidden.
 function blockBarColor(pct: number): string {
@@ -286,7 +299,7 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                   {/* Power chart */}
                   {w.structure && w.structure.length > 0 && (
                     <div style={{ borderRadius: 4, overflow: "hidden", marginBottom: 16, height: 180, maxHeight: 180 }}>
-                      <MobileWorkoutChart blocks={w.structure} durationMin={w.durationMin} />
+                      <MobileWorkoutChart blocks={w.structure} durationMin={w.durationMin} isRunning={isRunWorkout(w.type)} />
                     </div>
                   )}
 
@@ -322,12 +335,13 @@ export default function WeekView({ workouts, weekOf, weekRange, today, summary, 
                             </span>
                             {pct > 0 && (
                               <div style={{
-                                width: 42, height: 28, borderRadius: 3,
+                                borderRadius: 3, padding: "4px 7px",
                                 background: `${barColor}18`, border: `1px solid ${barColor}33`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: 16, fontWeight: 700, color: barColor, flexShrink: 0,
+                                fontSize: 14, fontWeight: 700, color: barColor, flexShrink: 0,
                               }}>
-                                {pct}%
+                                {/* Running: show HR zone (Z1-Z5) — % FTP is not applicable */}
+                                {isRunWorkout(w.type) ? runningZoneLabel(pct) : `${pct}%`}
                               </div>
                             )}
                           </div>
