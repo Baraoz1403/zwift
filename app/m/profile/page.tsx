@@ -5,6 +5,8 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { getFingerprint } from "@/lib/rider-fingerprint";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { fetchIcuWellness } from "@/lib/intervals";
+import MobileRefreshButton from "@/app/m/refresh-button";
+import { ThemeToggleButton } from "@/app/m/theme-toggle-button";
 
 export default async function MobileProfilePage() {
   const cookieStore = await cookies();
@@ -93,15 +95,22 @@ export default async function MobileProfilePage() {
       {/* Pinned header — outside scroll, never moves */}
       <div style={{
         flexShrink: 0,
-        padding: "16px 16px 14px",
+        padding: "20px 20px 16px",
         background: "var(--m-card)",
         borderBottom: "1px solid var(--m-border)",
+        display: "flex", alignItems: "flex-end", justifyContent: "space-between",
       }}>
-        <div style={{ fontSize: 12, color: "var(--m-muted)", fontWeight: 500, letterSpacing: ".3px", textTransform: "uppercase", marginBottom: 4 }}>
-          Profile
+        <div>
+          <div style={{ fontSize: 17, color: "var(--m-muted)", fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", marginBottom: 8 }}>
+            Profile
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
+            {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
+          </div>
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "var(--m-text)", letterSpacing: "-.6px" }}>
-          {zwiftProfile?.firstName ? `${zwiftProfile.firstName} ${zwiftProfile.lastName ?? ""}`.trim() : "Athlete"}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <MobileRefreshButton />
+          <ThemeToggleButton compact />
         </div>
       </div>
 
@@ -110,14 +119,14 @@ export default async function MobileProfilePage() {
       overflowY: "auto",
       overscrollBehavior: "contain",
     }}>
-    <div style={{ padding: "16px 16px 0" }}>
+    <div style={{ padding: "20px 20px 0" }}>
 
-      <div style={{ marginBottom: 20 }} />
+      <div style={{ marginBottom: 24 }} />
 
       {/* Fitness metrics */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24 }}>
         <SectionLabel>Fitness metrics</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {ftpWatts ? (
             <MetricCard
               value={`${ftpWatts}W`}
@@ -144,9 +153,9 @@ export default async function MobileProfilePage() {
           ) : !icuConnected ? (
             <div style={{
               gridColumn: "1/-1",
-              padding: "16px 18px",
+              padding: "20px 20px",
               background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
-              fontSize: 15, color: "var(--m-muted)", lineHeight: 1.6,
+              fontSize: 18, color: "var(--m-muted)", lineHeight: 1.6,
             }}>
               Connect Intervals.icu to see fitness load (CTL), fatigue (ATL), and form (TSB) — fetched automatically.
             </div>
@@ -155,9 +164,9 @@ export default async function MobileProfilePage() {
       </div>
 
       {/* This week */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24 }}>
         <SectionLabel>This week</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <MetricCard value={String(workoutsThisWeek)} label="Workouts planned" color="#FF5A1F" />
           {currentPhase && (
             <MetricCard
@@ -172,7 +181,7 @@ export default async function MobileProfilePage() {
 
       {/* Training profile */}
       {profile && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 24 }}>
           <SectionLabel>Training profile</SectionLabel>
           <div style={{
             background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
@@ -240,7 +249,7 @@ export default async function MobileProfilePage() {
       )}
 
       {/* Account */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24 }}>
         <SectionLabel>Account</SectionLabel>
         <div style={{
           background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
@@ -250,14 +259,27 @@ export default async function MobileProfilePage() {
             href="profile/edit"
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 18px", textDecoration: "none",
+              padding: "22px 20px", textDecoration: "none",
+              borderBottom: "1px solid var(--m-border)",
             }}
           >
             <div>
-              <div style={{ fontSize: 18, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
-              <div style={{ fontSize: 15, color: "var(--m-muted-2)", marginTop: 3 }}>Goals, schedule, session length</div>
+              <div style={{ fontSize: 21, color: "var(--m-text)", fontWeight: 700 }}>Edit training profile</div>
+              <div style={{ fontSize: 18, color: "var(--m-muted)", marginTop: 4 }}>Goals, schedule, session length</div>
             </div>
             <ChevronRight />
+          </a>
+          <a
+            href="/api/auth/logout"
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "22px 20px", textDecoration: "none",
+            }}
+          >
+            <div style={{ fontSize: 21, color: "#ef4444", fontWeight: 700 }}>Log out</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </a>
         </div>
       </div>
@@ -271,9 +293,9 @@ export default async function MobileProfilePage() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 16, fontWeight: 700, color: "var(--m-muted-2)",
-      letterSpacing: ".4px", textTransform: "uppercase",
-      marginBottom: 12,
+      fontSize: 15, fontWeight: 700, color: "var(--m-muted)",
+      letterSpacing: "1.2px", textTransform: "uppercase",
+      marginBottom: 18, marginTop: 4,
     }}>
       {children}
     </div>
@@ -286,16 +308,16 @@ function MetricCard({ value, label, color, desc }: {
   return (
     <div style={{
       background: "var(--m-card)", borderRadius: 14, border: "1px solid var(--m-border)",
-      padding: "16px 18px",
+      padding: "22px 20px",
     }}>
-      <div style={{ fontSize: 32, fontWeight: 800, color, lineHeight: 1, marginBottom: 6 }}>
+      <div style={{ fontSize: 36, fontWeight: 800, color, lineHeight: 1, marginBottom: 10 }}>
         {value}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-label)", marginBottom: 4 }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "var(--m-label)", marginBottom: 5 }}>
         {label}
       </div>
       {desc && (
-        <div style={{ fontSize: 14, color: "var(--m-muted)" }}>{desc}</div>
+        <div style={{ fontSize: 17, color: "var(--m-muted)", lineHeight: 1.5 }}>{desc}</div>
       )}
     </div>
   );
@@ -305,11 +327,11 @@ function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-      gap: 12, padding: "11px 0",
+      gap: 14, padding: "18px 0",
       borderBottom: "1px solid var(--m-border)",
     }}>
-      <span style={{ fontSize: 16, color: "var(--m-muted)", flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: 16, color: "var(--m-text-2)", textAlign: "right", fontWeight: 500 }}>{value}</span>
+      <span style={{ fontSize: 20, color: "var(--m-muted)", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 20, color: "var(--m-text-2)", textAlign: "right", fontWeight: 600 }}>{value}</span>
     </div>
   );
 }

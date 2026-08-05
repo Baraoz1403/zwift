@@ -606,9 +606,9 @@ export default async function TabletTodayPage({
           display: "flex", flexDirection: "column",
           overflowY: "auto",
         }}>
-          {/* FITNESS METRICS — sticky, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
+          {/* FITNESS METRICS — sticky at column top, monochromatic. FTP/Phase/Sessions live in the top bar; only CTL/ATL/TSB here. */}
           <div style={{
-            padding: "36px 20px 24px", borderBottom: "1px solid var(--m-border)",
+            padding: "16px 20px 16px", borderBottom: "1px solid var(--m-border)",
             position: "sticky", top: 0, zIndex: 10,
             background: "var(--m-card)",
           }}>

@@ -60,9 +60,9 @@ export function TabletWeekSidebar({
       overflowY: "auto",
     }}>
 
-      {/* ── Stats — sticky so always visible ──────────────────────────── */}
+      {/* ── Stats — sticky at column top ──────────────────────────────── */}
       <div style={{
-        padding: "36px 16px 20px", borderBottom: "1px solid var(--m-border)",
+        padding: "16px 16px 16px", borderBottom: "1px solid var(--m-border)",
         position: "sticky", top: 0, zIndex: 10,
         background: "var(--m-card)",
       }}>
@@ -150,9 +150,9 @@ export function TabletWeekSidebar({
               <div key={dayName} style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "10px 12px", borderRadius: 4,
-                // Active "black box" — matches left nav active item style exactly
-                background: isToday ? "rgba(255,90,31,0.07)" : "transparent",
-                border: `1px solid ${isToday ? "rgba(255,90,31,0.22)" : "transparent"}`,
+                // Today highlight — neutral white tint + orange border (no brown)
+                background: isToday ? "rgba(255,255,255,0.05)" : "transparent",
+                border: `1px solid ${isToday ? "rgba(255,90,31,0.40)" : "transparent"}`,
               }}>
                 {/* Day bubble — uniform dark, no zone tinting */}
                 <div style={{

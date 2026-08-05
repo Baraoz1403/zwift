@@ -189,6 +189,7 @@ export default async function TabletLayout({ children }: { children: React.React
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
+              paddingTop: 16, // dark-background gap between top bar and column content
             }}
           >
             {children}
