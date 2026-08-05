@@ -161,10 +161,10 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
         overscrollBehavior: "contain",
       }}
     >
-    <div style={{ padding: "16px 16px 40px" }}>
+    <div style={{ padding: "20px 20px 56px" }}>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 40 }}>
         <a href={backHref} style={{
           width: 40, height: 40, borderRadius: 4,
           background: "var(--m-card)", border: "1px solid var(--m-border)",
@@ -209,15 +209,14 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
       {/* Event details */}
       {isEventGoal && (
         <div style={{
-          marginBottom: 22,
-          background: "rgba(245,158,11,0.06)",
-          border: "1px solid rgba(245,158,11,0.2)",
-          borderRadius: 4, padding: "18px 16px",
+          marginBottom: 36,
+          border: "1px solid var(--m-border)",
+          borderRadius: 14, padding: "22px 20px",
         }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "#f59e0b", marginBottom: 4 }}>
-            🏆 Event details
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 4 }}>
+            Event details
           </div>
-          <div style={{ fontSize: 14, color: "var(--m-muted)", marginBottom: 16 }}>
+          <div style={{ fontSize: 14, color: "var(--m-muted)", marginBottom: 20, lineHeight: 1.5 }}>
             Your coach builds the entire periodization backwards from this event.
           </div>
 
@@ -239,25 +238,15 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
                         key={e.value}
                         onClick={() => setEventType(eventType === e.value ? "" : e.value)}
                         style={{
-                          position: "relative",
-                          padding: "10px 12px", textAlign: "left",
-                          background: eventType === e.value ? "rgba(22,163,74,0.12)" : "var(--m-card)",
-                          border: `2px solid ${eventType === e.value ? "#16a34a" : "var(--m-border)"}`,
-                          borderRadius: 4, cursor: "pointer",
-                          fontSize: 13, fontWeight: eventType === e.value ? 700 : 500,
-                          color: eventType === e.value ? "#22c55e" : "var(--m-muted)",
+                          padding: "11px 12px", textAlign: "left",
+                          background: eventType === e.value ? "rgba(255,255,255,0.07)" : "transparent",
+                          border: `1px solid ${eventType === e.value ? "rgba(255,255,255,0.28)" : "var(--m-border)"}`,
+                          borderRadius: 8, cursor: "pointer",
+                          fontSize: 13, fontWeight: eventType === e.value ? 700 : 400,
+                          color: eventType === e.value ? "var(--m-text)" : "var(--m-muted)",
                         }}
                       >
                         {e.emoji} {e.label}
-                        {eventType === e.value && (
-                          <span style={{
-                            position: "absolute", top: 4, right: 4,
-                            width: 16, height: 16, borderRadius: 3,
-                            background: "#16a34a",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 10, color: "#fff", fontWeight: 900,
-                          }}>✓</span>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -334,31 +323,26 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               onClick={() => setEnvironment(e.value)}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "14px 16px",
-                background: environment === e.value ? "rgba(22,163,74,0.10)" : "var(--m-card)",
-                border: `2px solid ${environment === e.value ? "#16a34a" : "var(--m-border)"}`,
-                borderRadius: 4, cursor: "pointer", textAlign: "left",
+                padding: "16px 18px",
+                background: environment === e.value ? "rgba(255,255,255,0.06)" : "transparent",
+                border: `1px solid ${environment === e.value ? "rgba(255,255,255,0.28)" : "var(--m-border)"}`,
+                borderRadius: 10, cursor: "pointer", textAlign: "left",
               }}
             >
               <div>
-                <div style={{ fontSize: 16, fontWeight: 600, color: environment === e.value ? "#22c55e" : "var(--m-text)" }}>
+                <div style={{ fontSize: 16, fontWeight: environment === e.value ? 700 : 500, color: "var(--m-text)" }}>
                   {e.label}
                 </div>
-                <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 2 }}>{e.desc}</div>
+                <div style={{ fontSize: 13, color: "var(--m-muted)", marginTop: 3 }}>{e.desc}</div>
               </div>
-              {environment === e.value ? (
-                <div style={{
-                  width: 24, height: 24, borderRadius: 4, flexShrink: 0,
-                  background: "#16a34a",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, color: "#fff", fontWeight: 900,
-                }}>✓</div>
-              ) : (
-                <div style={{
-                  width: 24, height: 24, borderRadius: 4, flexShrink: 0,
-                  border: "2px solid var(--m-border)",
-                }} />
-              )}
+              <div style={{
+                width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                background: environment === e.value ? "rgba(255,255,255,0.20)" : "transparent",
+                border: `1px solid ${environment === e.value ? "rgba(255,255,255,0.45)" : "var(--m-border)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {environment === e.value && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--m-text)" }} />}
+              </div>
             </button>
           ))}
         </div>
@@ -373,11 +357,11 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
               type="button"
               onClick={() => setGender(prev => prev === g ? "" : g)}
               style={{
-                flex: 1, padding: "15px 10px", borderRadius: 4,
-                fontSize: 16, fontWeight: gender === g ? 700 : 500,
-                background: gender === g ? "rgba(255,90,31,0.1)" : "transparent",
-                border: `1px solid ${gender === g ? "#FF5A1F" : "var(--m-border)"}`,
-                color: gender === g ? "#FF5A1F" : "var(--m-text)",
+                flex: 1, padding: "15px 10px", borderRadius: 10,
+                fontSize: 16, fontWeight: gender === g ? 700 : 400,
+                background: gender === g ? "rgba(255,255,255,0.08)" : "transparent",
+                border: `1px solid ${gender === g ? "rgba(255,255,255,0.28)" : "var(--m-border)"}`,
+                color: gender === g ? "var(--m-text)" : "var(--m-muted)",
                 cursor: "pointer", fontFamily: "inherit",
               }}
             >
@@ -443,9 +427,9 @@ export default function MobileProfileEditor({ initialProfile }: Props) {
 
 function Section({ label, desc, children }: { label: string; desc: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 16, fontWeight: 700, color: "var(--m-text)", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, color: "var(--m-muted)", marginBottom: 12 }}>{desc}</div>
+    <div style={{ marginBottom: 36 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 5 }}>{label}</div>
+      <div style={{ fontSize: 14, color: "var(--m-muted)", marginBottom: 14, lineHeight: 1.5 }}>{desc}</div>
       {children}
     </div>
   );
@@ -459,26 +443,17 @@ function ToggleCard({ selected, onClick, label, flex }: {
       onClick={onClick}
       style={{
         flex: flex ? 1 : undefined,
-        position: "relative",
-        padding: "13px 10px", textAlign: "center",
-        background: selected ? "rgba(22,163,74,0.12)" : "var(--m-card)",
-        border: `2px solid ${selected ? "#16a34a" : "var(--m-border)"}`,
-        borderRadius: 4, cursor: "pointer",
-        fontSize: 14, fontWeight: selected ? 700 : 500,
-        color: selected ? "#22c55e" : "var(--m-muted)",
+        padding: "14px 12px", textAlign: "center",
+        background: selected ? "rgba(255,255,255,0.08)" : "transparent",
+        border: `1px solid ${selected ? "rgba(255,255,255,0.30)" : "var(--m-border)"}`,
+        borderRadius: 10, cursor: "pointer",
+        fontSize: 15, fontWeight: selected ? 700 : 400,
+        color: selected ? "var(--m-text)" : "var(--m-muted)",
         transition: "all .15s",
+        letterSpacing: selected ? "-.1px" : "0",
       }}
     >
       {label}
-      {selected && (
-        <span style={{
-          position: "absolute", top: 4, right: 4,
-          width: 18, height: 18, borderRadius: 3,
-          background: "#16a34a",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, color: "#fff", fontWeight: 900,
-        }}>✓</span>
-      )}
     </button>
   );
 }

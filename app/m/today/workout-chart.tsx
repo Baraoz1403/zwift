@@ -84,9 +84,11 @@ const GAP = 4;          // gap between bars (in viewBox units)
 export default function MobileWorkoutChart({
   blocks,
   durationMin,
+  isRunning = false,
 }: {
   blocks: WorkoutStructureBlock[];
   durationMin: number;
+  isRunning?: boolean;
 }) {
   if (!blocks || blocks.length === 0) return null;
 
@@ -191,14 +193,18 @@ export default function MobileWorkoutChart({
         );
       })}
 
-      {/* ── FTP reference line ───────────────────────────────────────────── */}
-      <line x1="0" y1={ftpY} x2={VW} y2={ftpY}
-        stroke="rgba(255,255,255,0.18)" strokeWidth="1.5"
-        strokeDasharray="12,8" />
-      <text x="6" y={ftpY - 5} fill="rgba(255,255,255,0.35)"
-        fontSize="28" fontWeight="700" fontFamily="system-ui">
-        FTP
-      </text>
+      {/* ── FTP reference line — hidden for running (FTP not applicable) ── */}
+      {!isRunning && (
+        <>
+          <line x1="0" y1={ftpY} x2={VW} y2={ftpY}
+            stroke="rgba(255,255,255,0.18)" strokeWidth="1.5"
+            strokeDasharray="12,8" />
+          <text x="6" y={ftpY - 5} fill="rgba(255,255,255,0.35)"
+            fontSize="28" fontWeight="700" fontFamily="system-ui">
+            FTP
+          </text>
+        </>
+      )}
 
       {/* ── Bars ────────────────────────────────────────────────────────── */}
       {segs.map((seg, i) => {

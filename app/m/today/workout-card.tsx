@@ -73,8 +73,8 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
           Today&apos;s session
         </div>
         <span style={{
-          fontSize: 11, fontWeight: 700, color: "#FF5A1F",
-          background: "rgba(255,90,31,0.1)", border: "1px solid rgba(255,90,31,0.3)",
+          fontSize: 11, fontWeight: 600, color: "var(--m-muted)",
+          background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
           borderRadius: 3, padding: "2px 8px",
         }}>
           {isRunWorkout(workout.type) ? "Run" : "Ride"}
@@ -99,15 +99,15 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
           <div style={{ position: "relative" }}>
             <div style={{
               position: "absolute", zIndex: 10, top: 10, left: 12,
-              background: "var(--m-card)", border: `1px solid ${colors.accent}40`,
+              background: "rgba(0,0,0,0.60)", border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 3, padding: "3px 9px",
-              fontSize: 11, fontWeight: 700, color: colors.accent,
+              fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)",
               letterSpacing: ".3px", textTransform: "uppercase",
             }}>
               {colors.label}
             </div>
             {workout.structure && workout.structure.length > 0 ? (
-              <MobileWorkoutChart blocks={workout.structure} durationMin={workout.durationMin} />
+              <MobileWorkoutChart blocks={workout.structure} durationMin={workout.durationMin} isRunning={isRunWorkout(workout.type)} />
             ) : (
               <div style={{ height: 100, background: "var(--m-card-inner)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontSize: 36 }}>🚴</span>
@@ -120,20 +120,16 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
         )}
 
         <div style={{ padding: "14px 16px 16px" }}>
-          {!isRest && (
-            <div style={{ fontSize: 10, fontWeight: 800, color: colors.accent, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 5 }}>
-              {colors.label}
-            </div>
-          )}
           <div style={{ fontSize: 22, fontWeight: 800, color: "var(--m-text)", lineHeight: 1.15, letterSpacing: "-0.4px", marginBottom: isRest ? 0 : 10 }}>
             {workout.title}
           </div>
           {!isRest && (
             <div style={{ display: "flex", gap: 7, flexWrap: "nowrap" }}>
               {workout.durationMin > 0 && <StatPill value={`${workout.durationMin}`} unit="min" />}
-              {ifTss && <StatPill value={`${Math.round(ifTss.tss)}`} unit="TSS" />}
-              {ifTss && <StatPill value={ifTss.intensityFactor.toFixed(2)} unit="IF" />}
-              {workout.targetPowerPctFtp && <StatPill value={workout.targetPowerPctFtp} unit="% FTP" />}
+              {/* FTP-based metrics hidden for running — not applicable */}
+              {!isRunWorkout(workout.type) && ifTss && <StatPill value={`${Math.round(ifTss.tss)}`} unit="TSS" />}
+              {!isRunWorkout(workout.type) && ifTss && <StatPill value={ifTss.intensityFactor.toFixed(2)} unit="IF" />}
+              {!isRunWorkout(workout.type) && workout.targetPowerPctFtp && <StatPill value={workout.targetPowerPctFtp} unit="% FTP" />}
             </div>
           )}
         </div>
@@ -179,8 +175,8 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
                         {label}{repDetail}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--m-muted)", marginTop: 2 }}>
-                        {dur} min{pct>0?` · ${pct}% FTP`:""}
-                        {block.recoveryPowerFtp ? ` / ${Math.round(block.recoveryPowerFtp*100)}% rec` : ""}
+                        {dur} min{pct>0 && !isRunWorkout(workout.type) ? ` · ${pct}% FTP` : ""}
+                        {block.recoveryPowerFtp && !isRunWorkout(workout.type) ? ` / ${Math.round(block.recoveryPowerFtp*100)}% rec` : ""}
                       </div>
                     </div>
                     {pct>0 && (
@@ -225,11 +221,12 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
               <div key={dayName} style={{ flex: 1 }}>
                 <div style={{
                   paddingTop: 8, paddingBottom: 8, borderRadius: 3,
-                  background: isToday ? col.accent : isRestDay ? "var(--m-card-inner)" : `${col.accent}14`,
-                  border: `1px solid ${isToday ? col.accent : isRestDay ? "var(--m-border)" : col.accent+"35"}`,
+                  // only today gets the orange fill — all other days neutral
+                  background: isToday ? col.accent : "var(--m-card-inner)",
+                  border: `1px solid ${isToday ? col.accent : "var(--m-border)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <span style={{ fontSize: 11, fontWeight: isToday?800:600, color: isToday?"#fff":isRestDay?"var(--m-muted)":col.accent }}>
+                  <span style={{ fontSize: 11, fontWeight: isToday ? 800 : 600, color: isToday ? "#fff" : "var(--m-muted)" }}>
                     {DAY_ABBR[i]}
                   </span>
                 </div>
