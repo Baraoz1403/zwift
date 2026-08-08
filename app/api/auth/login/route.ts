@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
+  const pilot = body?.pilot === true;
 
   if (!email || !password) {
     return NextResponse.json(
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
       const clearOpts = { ...cookieBase, maxAge: 0 };
 
       // Intervals.icu — API keys don't expire, restore directly
-      const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
+      const icuKey = pilot ? null : await kvGet(`zwift:${athleteId}:icu_key`);
       if (icuKey) {
         const icuId   = await kvGet(`zwift:${athleteId}:icu_id`);
         const icuName = await kvGet(`zwift:${athleteId}:icu_name`);
@@ -111,32 +112,13 @@ export async function POST(req: NextRequest) {
         res.cookies.set("zwift_intervals_name", "", { ...clearOpts, httpOnly: false });
       }
 
-      // TrainingPeaks — restore token + refresh token; if the access token
-      // expired, the existing auto-refresh logic will renew it on first push
-      const tpToken = await kvGet(`zwift:${athleteId}:tp_token`);
-      if (tpToken) {
-        const tpId        = await kvGet(`zwift:${athleteId}:tp_id`);
-        const tpRefresh   = await kvGet(`zwift:${athleteId}:tp_refresh`);
-        const tpExpiresIn = await kvGet(`zwift:${athleteId}:tp_expires_in`);
-        res.cookies.set("zwift_tp_token",   tpToken,           { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-        res.cookies.set("zwift_tp_id",      tpId ?? "",        { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-        if (tpRefresh) {
-          res.cookies.set("zwift_tp_refresh", tpRefresh,       { ...cookieBase, maxAge: 60 * 60 * 24 * 30 });
-        }
-        // Record expiry at a point in the past so auto-refresh fires immediately
-        // — safer than assuming the stored token is still valid
-        const staleExpiry = String(Date.now() - 1);
-        res.cookies.set("zwift_tp_expires", staleExpiry, { ...cookieBase, httpOnly: false, maxAge: 60 * 60 * 24 * 30 });
-        // Silence the TypeScript unused-variable warning
-        void tpExpiresIn;
-      } else {
-        res.cookies.set("zwift_tp_token",   "", clearOpts);
-        res.cookies.set("zwift_tp_id",      "", clearOpts);
-        res.cookies.set("zwift_tp_refresh", "", clearOpts);
-        res.cookies.set("zwift_tp_expires", "", { ...clearOpts, httpOnly: false });
-      }
+      // TrainingPeaks is not part of Volt or this pilot.
+      res.cookies.set("zwift_tp_token",   "", clearOpts);
+      res.cookies.set("zwift_tp_id",      "", clearOpts);
+      res.cookies.set("zwift_tp_refresh", "", clearOpts);
+      res.cookies.set("zwift_tp_expires", "", { ...clearOpts, httpOnly: false });
 
-      // ── Auto-provision: first plan + first ICU sync, no button needed ────
+      // Prepare a draft in the background. The pilot never syncs on login.
       // Fire-and-forget — do NOT await. Plan generation calls Zwift + OpenAI
       // and can take 30–90 s. Awaiting it caused the login route to exceed
       // Vercel's 60 s maxDuration, killing the function mid-response and
