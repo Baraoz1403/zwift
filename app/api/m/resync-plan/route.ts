@@ -15,16 +15,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials } from "@/lib/kv-plan-state";
-import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
-import { kvDel } from "@/lib/kv";
+import { syncPlanToIntervalsHeadless } from "@/lib/headless-sync";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchActivities } from "@/lib/zwift";
-import { listIntervalsEvents, deleteEventFromIntervals } from "@/lib/intervals";
+import { withPilotIcuWriteApproval } from "@/lib/pilot-mode";
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  void req;
+  const body = await req.json().catch(() => null);
+  if (body?.confirm !== "APPROVE_ICU_SYNC") {
+    return NextResponse.json(
+      { ok: false, error: "Explicit plan approval is required." },
+      { status: 400 },
+    );
+  }
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
@@ -45,10 +50,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Intervals.icu not connected. Please connect in Settings." });
   }
 
-  // Clear the icu_synced marker so the push runs even if it previously succeeded.
-  // This is the correct thing to do when the user explicitly asks for a resync.
-  await kvDel(`zwift:${athleteId}:plan:${weekOf}:icu_synced`).catch(() => {});
-
   // Build ridden dates so already-completed days don't get re-pushed
   let riddenDates = new Set<string>();
   try {
@@ -58,51 +59,19 @@ export async function POST(req: NextRequest) {
     );
   } catch { /* best-effort */ }
 
-  const result = await syncPlanToIcuAndMark(athleteId, weekOf, plan, riddenDates);
+  const result = await withPilotIcuWriteApproval(() =>
+    // Pilot approval is deliberately limited to the reviewed plan's own week.
+    // Completed activities are a different ICU category and are never touched.
+    syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, plan, riddenDates)
+  );
   if (!result) {
     return NextResponse.json({ ok: false, error: "ICU credentials missing or invalid — please reconnect in Settings." });
   }
 
-  // ── Clean up orphaned next-week ICU events ────────────────────────────────
-  // The wide cleanup in syncPlanToIcuAndMark only DEDUPLICATES future events,
-  // it never deletes them. This means stale events from a previously-synced
-  // next-week plan remain on ICU and appear alongside this week's workouts
-  // in Zwift's custom workout menu — producing the "part from this week,
-  // part from next week" confusion.
-  //
-  // Fix: after syncing this week, check if a next-week plan is cached in KV.
-  // If there IS one, those events are valid — leave them.
-  // If there is NOT one, every WORKOUT event in next week's date range is
-  // an orphan from a previous generation cycle and should be removed.
-  let orphanedDeleted = 0;
-  try {
-    // Compute next Monday (weekOf + 7 days) and next Sunday (+ 13 days)
-    const base = new Date(weekOf + "T00:00:00Z");
-    const nextMondayDate = new Date(base);
-    nextMondayDate.setUTCDate(base.getUTCDate() + 7);
-    const nextSundayDate = new Date(base);
-    nextSundayDate.setUTCDate(base.getUTCDate() + 13);
-    const nextMonday = nextMondayDate.toISOString().slice(0, 10);
-    const nextSunday  = nextSundayDate.toISOString().slice(0, 10);
-
-    const nextWeekPlan = await getCachedPlan(athleteId, nextMonday);
-    if (!nextWeekPlan) {
-      // No valid next-week plan — any WORKOUT events in that range are orphans
-      const nextWeekEvents = await listIntervalsEvents(
-        creds.icuKey, nextMonday, nextSunday, creds.icuId ?? undefined
-      );
-      const orphans = nextWeekEvents.filter(e => e.category === "WORKOUT");
-      const deleteResults = await Promise.all(
-        orphans.map(e => deleteEventFromIntervals(creds.icuKey, e.id, creds.icuId ?? undefined))
-      );
-      orphanedDeleted = deleteResults.filter(r => r.ok).length;
-    }
-  } catch { /* best-effort — never block the response */ }
-
   return NextResponse.json({
     ok: result.pushed > 0 || result.errors.length === 0,
     pushed: result.pushed,
-    deleted: result.deleted + orphanedDeleted,
+    deleted: result.deleted,
     errors: result.errors,
     weekOf,
   });
