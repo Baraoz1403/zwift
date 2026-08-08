@@ -10,12 +10,9 @@ import {
   mirrorZwiftAuthToKv,
   getCachedPlan,
   setCachedPlan,
-  wasIntervalsSynced,
   updateStoredRiderProfile,
 } from "@/lib/kv-plan-state";
 import { kvGet } from "@/lib/kv";
-import { syncPlanToIcuAndMark, type IntervalsSyncResult } from "@/lib/headless-sync";
-import { fetchActivities } from "@/lib/zwift";
 
 // mirrorStateToKv / mirrorZwiftAuthToKv now live in lib/kv-plan-state.ts so
 // app/api/ai/weekly-plan/cron/route.ts can share the exact same KV
@@ -42,6 +39,7 @@ export async function POST(req: NextRequest) {
   let riderProfile: RiderTrainingProfile | undefined;
   let riderNote: string | undefined;
   let targetWeekOf: string | undefined;
+  let forceRegenerate = false;
   try {
     const body = await req.json();
     if (typeof body?.ageYears === "number" && body.ageYears > 0) {
@@ -73,6 +71,7 @@ export async function POST(req: NextRequest) {
     if (typeof body?.targetWeekOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.targetWeekOf)) {
       targetWeekOf = body.targetWeekOf;
     }
+    forceRegenerate = body?.pilot === true && body?.forceRegenerate === true;
   } catch {
     // No/invalid JSON body - fine, these all just stay unset.
   }
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
   //   1. riderNote is set: the rider explicitly typed a change request (surgical edit).
   //   2. No athleteId in session: can't key the cache, just generate.
   const effectiveWeekOf = targetWeekOf ?? mondayOfCurrentWeek();
-  if (session.athleteId && !riderNote) {
+  if (session.athleteId && !riderNote && !forceRegenerate) {
     // Wrap in try-catch: a transient KV failure must never crash the handler
     // with a non-JSON 500 response. On error we fall through to live generation.
     let cached: Awaited<ReturnType<typeof getCachedPlan>> | null = null;
@@ -127,37 +126,7 @@ export async function POST(req: NextRequest) {
         cachedMacroCycle = macroRaw ? (JSON.parse(macroRaw) as MacroCycleState) : null;
       } catch { /* best-effort */ }
 
-      // ── Self-heal: sync to ICU if this cached plan was never confirmed
-      // synced ─────────────────────────────────────────────────────────────
-      // No new generation happened here (that's the whole point of the
-      // cache), so normally there's nothing new to push. But a plan can be
-      // sitting in cache with NO successful sync behind it yet - e.g. it was
-      // cached before the rider connected Intervals.icu, or before automatic
-      // server-side sync existed at all. Without this check such a plan
-      // would sit in cache, unsynced, forever - every future read is a cache
-      // hit that (before this check) skipped sync unconditionally. Checking
-      // wasIntervalsSynced keeps this cheap: once a week is confirmed
-      // synced, every subsequent cache-hit read for it skips straight past
-      // this block.
-      let intervalsSync: IntervalsSyncResult | null = null;
-      try {
-        if (!(await wasIntervalsSynced(session.athleteId, effectiveWeekOf))) {
-          let riddenDates = new Set<string>();
-          try {
-            const activities = await fetchActivities(session.accessToken, session.athleteId);
-            riddenDates = new Set(
-              activities.map((a) => ((a.startDate as string) ?? "").slice(0, 10)).filter(Boolean)
-            );
-          } catch {
-            // best-effort — worst case a already-ridden day gets a redundant planned event
-          }
-          intervalsSync = await syncPlanToIcuAndMark(session.athleteId, effectiveWeekOf, cached, riddenDates, undefined);
-        }
-      } catch {
-        // best-effort — a self-heal failure must never break the cached-plan response
-      }
-
-      return NextResponse.json({ ok: true, plan: cached, macroCycle: cachedMacroCycle, cycle: null, intervalsSync });
+      return NextResponse.json({ ok: true, plan: cached, macroCycle: cachedMacroCycle, cycle: null, draft: true });
     }
   }
 
@@ -200,37 +169,7 @@ export async function POST(req: NextRequest) {
     // access token headlessly later, without ever needing a browser here.
     await mirrorZwiftAuthToKv(result.athleteId, session.refreshToken);
 
-    // ── Automatic Intervals.icu sync (server-side, no rider action) ────────
-    // Every freshly generated plan is pushed to Intervals.icu -> Zwift/Garmin
-    // right here, the moment it's generated - not as a browser-triggered
-    // action after the response comes back. That used to be the client's job
-    // (syncPlanToConnectedPlatforms in weekly-plan.tsx), which caused a real
-    // cross-device bug: two devices opening the dashboard around the same
-    // generation each ran their own push-then-cleanup pass, each blind to the
-    // other's newly-created event ids, so events piled up on the calendar
-    // instead of being replaced. Doing it exactly once, here, server-side,
-    // means there is only ever one sync per generation regardless of how many
-    // browsers/devices are open. See syncPlanToIcuAndMark's doc comment for
-    // why this includes a wide dedup sweep, not just this week's own range -
-    // best-effort: a sync failure here must never break the interactive
-    // response, and the nightly cron reconciles ICU state again regardless.
-    let intervalsSync: IntervalsSyncResult | null = null;
-    try {
-      const riddenDates = new Set(
-        result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
-      );
-      intervalsSync = await syncPlanToIcuAndMark(
-        result.athleteId,
-        result.weekOf,
-        { weekOf: result.weekOf, summary: result.plan.summary, workouts: result.plan.workouts },
-        riddenDates,
-        result.firstName,
-      );
-    } catch {
-      // best-effort — never fail plan generation because ICU sync hiccuped
-    }
-
-    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle, intervalsSync });
+    return NextResponse.json({ ok: true, plan: result.plan, macroCycle: result.macroCycle, cycle: result.cycle, draft: true });
   } catch (e) {
     if (e instanceof AiInsightsError) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 200 });
