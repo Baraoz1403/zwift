@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const password = typeof body?.password === "string" ? body.password : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
-  const pilot = body?.pilot === true;
 
   if (!email || !password) {
     return NextResponse.json(
@@ -99,7 +98,10 @@ export async function POST(req: NextRequest) {
       const clearOpts = { ...cookieBase, maxAge: 0 };
 
       // Intervals.icu — API keys don't expire, restore directly
-      const icuKey = pilot ? null : await kvGet(`zwift:${athleteId}:icu_key`);
+      // Reuse the athlete's existing OAuth connection from the shared rider
+      // record. A new device or the isolated pilot must not force an athlete
+      // who already authorized ICU to repeat onboarding.
+      const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
       if (icuKey) {
         const icuId   = await kvGet(`zwift:${athleteId}:icu_id`);
         const icuName = await kvGet(`zwift:${athleteId}:icu_name`);
