@@ -6,6 +6,6 @@ export async function GET() {
     ...pilotModeStatus(),
     sourceCommit: "309d8f2232c8c1bdf590b2461173f1a6bce9bc1a",
     productionProjectProtected: true,
-    externalWriteScope: "none",
+    externalWriteScope: "explicit_icu_workout_approval_only",
   });
 }
