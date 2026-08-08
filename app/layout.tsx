@@ -32,7 +32,7 @@ export default function RootLayout({
       </head>
       <body>
         <div className="pilot-mode-badge" role="status">
-          PILOT · {pilot.readOnly ? "READ ONLY" : "WRITE ENABLED"}
+          PILOT · {pilot.readOnly ? "SYNC REQUIRES APPROVAL" : "WRITE ENABLED"}
         </div>
         {children}
       </body>
