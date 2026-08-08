@@ -13,10 +13,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { buildAuthHeader } from "@/lib/intervals";
+import { requirePilotExternalWrites } from "@/lib/pilot-mode";
 
 const INTERVALS_API = "https://intervals.icu/api/v1";
 
 export async function POST(req: NextRequest) {
+  requirePilotExternalWrites("intervals.update_ftp");
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!raw) return NextResponse.json({ ok: false, error: "Not logged in." }, { status: 401 });
