@@ -83,12 +83,7 @@ export default function PilotPage() {
       if (!res.ok || !data.ok) throw new Error(data.error || "Zwift sign-in failed.");
       const p = await fetch("/api/zwift/profile", { cache: "no-store" }).then(r => r.json());
       if (p?.profile) setProfile(p.profile);
-      // Claude's working flow persists the athlete's ICU OAuth grant in KV.
-      // Reuse it transparently instead of forcing an already-connected rider
-      // through authorization again on every device or pilot deployment.
-      const icu = await fetch("/api/intervals/status", { cache: "no-store" }).then(r => r.json());
-      if (icu?.connected) await generateDraft();
-      else setStage("icu");
+      setStage("icu");
     } catch (e) { setError(e instanceof Error ? e.message : "Sign-in failed."); }
     finally { setBusy(false); }
   }
