@@ -31,6 +31,7 @@ import { ensurePlanProvisioned } from "@/lib/plan-runner";
 export const INTERVALS_REFRESH_COOKIE = "zwift_intervals_refresh";
 /** Cookie that carries the access token expiry (ms since epoch, as string). */
 export const INTERVALS_EXPIRES_COOKIE = "zwift_intervals_token_exp";
+const PILOT_REDIRECT_URI = "https://zwift-git-agent-volt-e2e-pilot-barak1403-9441s-projects.vercel.app/api/intervals/oauth-callback";
 
 // Token exchange can take a few seconds. Plan generation is now fire-and-forget.
 export const maxDuration = 30;
@@ -71,7 +72,9 @@ export async function GET(req: NextRequest) {
   }
 
   const origin = req.nextUrl.origin;
-  const redirectUri = `${origin}/api/intervals/oauth-callback`;
+  const redirectUri = returnTo === "/pilot"
+    ? PILOT_REDIRECT_URI
+    : `${origin}/api/intervals/oauth-callback`;
 
   // Write a debug log entry to KV so we can inspect it at /api/debug/icu-state
   // even when Vercel function logs aren't accessible. Keyed by athlete so each
