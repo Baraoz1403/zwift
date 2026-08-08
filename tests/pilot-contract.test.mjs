@@ -20,11 +20,17 @@ test("all material external write connectors use the pilot guard", () => {
     ["lib/trainingpeaks.ts", "trainingpeaks.delete_workout"],
     ["lib/whatsapp.ts", "whatsapp.send"],
     ["app/api/intervals/update-ftp/route.ts", "intervals.update_ftp"],
-    ["app/api/zwift/push-workout/route.ts", "zwift.direct_workout_upload"],
   ];
   for (const [path, operation] of expected) {
     assert.match(read(path), new RegExp(`requirePilotExternalWrites\\(\"${operation.replaceAll(".", "\\.")}\"\\)`), path);
   }
+});
+
+test("direct Zwift upload is disabled; pilot writes flow through Intervals.icu", () => {
+  const source = read("app/api/zwift/push-workout/route.ts");
+  assert.match(source, /Direct Zwift upload disabled/);
+  assert.doesNotMatch(source, /fetch\(/);
+  assert.doesNotMatch(source, /accessToken/);
 });
 
 test("the planner selects exactly the latest 30 activities", () => {
@@ -38,8 +44,10 @@ test("the pilot cannot fall back to the production URL or scheduled crons", () =
 
 test("debug endpoint never returns credential prefixes", () => {
   const source = read("app/api/debug/icu-state/route.ts");
+  assert.match(source, /Debug endpoint disabled in pilot/);
   assert.doesNotMatch(source, /starts with/);
   assert.doesNotMatch(source, /\.slice\(0, 20\)/);
+  assert.doesNotMatch(source, /decryptSession|kvGet|cookies/);
 });
 
 test("raw ICU credential read-back is disabled", () => {
