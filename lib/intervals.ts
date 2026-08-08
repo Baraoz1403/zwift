@@ -22,6 +22,8 @@
  *            https://forum.intervals.icu/t/intervals-icu-api-integration-cookbook/80090
  */
 
+import { requirePilotExternalWrites } from "./pilot-mode";
+
 const INTERVALS_API = "https://intervals.icu/api/v1";
 // NOTE: The token endpoint is /api/oauth/token, NOT /oauth/token.
 // /oauth/token is an SPA route — nginx blocks POST there with 405.
@@ -246,6 +248,7 @@ function toIntervalsSportType(type: string): string {
  * relay a rideable structured workout onward to Garmin/Zwift.
  */
 export async function pushWorkoutToIntervals(opts: PushIntervalsOptions): Promise<PushIntervalsResult> {
+  requirePilotExternalWrites("intervals.create_workout");
   const safeName = opts.title.trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "") || "workout";
   const body = {
     category: "WORKOUT",
@@ -490,6 +493,7 @@ export async function ensureIcuWebhookRegistered(
   athleteId: string,
   webhookUrl: string,
 ): Promise<boolean> {
+  requirePilotExternalWrites("intervals.register_webhook");
   const auth = buildAuthHeader(credentialOrBearerToken);
   const id   = resolveIcuId(athleteId);
 
@@ -530,6 +534,7 @@ export async function ensureIcuWebhookRegistered(
 
 /** Delete a planned workout from Intervals.icu by event id. 404 counts as success (already gone). */
 export async function deleteEventFromIntervals(apiKey: string, eventId: string | number, athleteId?: string): Promise<DeleteIntervalsResult> {
+  requirePilotExternalWrites("intervals.delete_workout");
   try {
     const res = await fetch(`${INTERVALS_API}/athlete/${resolveIcuId(athleteId)}/events/${eventId}`, {
       method: "DELETE",
