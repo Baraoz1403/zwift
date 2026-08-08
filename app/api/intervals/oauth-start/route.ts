@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 
 const INTERVALS_AUTH_URL = "https://intervals.icu/oauth/authorize";
+const PILOT_REDIRECT_URI = "https://zwift-git-agent-volt-e2e-pilot-barak1403-9441s-projects.vercel.app/api/intervals/oauth-callback";
 
 export async function GET(req: NextRequest) {
   // Require Zwift session — only logged-in users can connect Intervals.icu
@@ -33,12 +34,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const origin = req.nextUrl.origin;
-  const redirectUri = `${origin}/api/intervals/oauth-callback`;
-
   // Encode the return destination in the OAuth state param so the callback
   // can redirect back to the right place (/m vs /dashboard).
   const from = req.nextUrl.searchParams.get("from") ?? "dashboard";
+  const origin = req.nextUrl.origin;
+  const redirectUri = from === "pilot"
+    ? PILOT_REDIRECT_URI
+    : `${origin}/api/intervals/oauth-callback`;
   // prompt=none triggers a silent re-auth — intervals.icu skips the consent
   // screen if the user is already authenticated and has previously approved
   // this client. Used for automatic token renewal when the Bearer token expires.
