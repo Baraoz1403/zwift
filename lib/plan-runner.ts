@@ -32,10 +32,8 @@ import {
   mirrorStateToKv,
   getStoredAthleteState,
   getIntervalsCredentials,
-  wasIntervalsSynced,
 } from "@/lib/kv-plan-state";
 import { kvSet, kvGet } from "@/lib/kv";
-import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
 import { getCoachingState, saveCoachingState, buildUpdatedCoachingState } from "@/lib/coaching-state";
 import { runSelectionEngine, selectionContextToPrompt } from "@/lib/workout-selection-engine";
 import { fetchIcuActivities } from "@/lib/intervals";
@@ -162,7 +160,9 @@ export async function runWeeklyPlanGeneration(
   }
 
   const activities = await fetchActivities(opts.accessToken, athleteId);
-  const recentActivities = selectChartActivities(activities);
+  // Pilot contract: the planning evidence is the exact latest 30 dated
+  // activities, oldest-to-newest, never the chart component's smaller default.
+  const recentActivities = selectChartActivities(activities, 30);
 
   const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
     const buf = await fetchActivityFit(a);
@@ -213,19 +213,9 @@ export async function runWeeklyPlanGeneration(
   // the FTP Test Protocol before any intensity work is prescribed.
   const effectiveFtp = profile.ftp ?? undefined;
 
-  // Auto-sync Zwift FTP to Intervals.icu — fire-and-forget.
-  // Ensures every ZWO file pushed to ICU uses the same FTP reference as the plan.
-  // Also mirror to the rider fingerprint so the mobile profile always shows
-  // the Zwift value — single source of truth, no divergence possible.
+  // Keep the measured Zwift FTP in the local rider fingerprint. The pilot does
+  // not mutate Intervals.icu while generating a draft.
   if (effectiveFtp && effectiveFtp >= 100) {
-    const appUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "https://zwift-delta.vercel.app";
-    fetch(`${appUrl}/api/intervals/update-ftp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ftp: effectiveFtp }),
-    }).catch(() => {});
     // Mirror to fingerprint — ensures mobile profile reads the Zwift FTP,
     // not a stale estimate. Source = "measured" because Zwift sets ftp only
     // after a real FTP test or a manual entry by the rider.
@@ -442,40 +432,10 @@ export async function runWeeklyPlanGeneration(
 }
 
 /**
- * Best-effort, idempotent auto-provisioning: called on every login and every
- * Intervals.icu connect so a rider never has to press a button to get their
- * first plan or their first ICU sync. Before this existed, an athlete was
- * only added to the cron's known-athletes registry as a SIDE EFFECT of a
- * manual "Generate" click succeeding - so an athlete who connected ICU (and
- * was already getting their completed rides synced in, independent of this
- * app) but never happened to click Generate sat registered nowhere, with no
- * planned workouts ever pushed, indefinitely. Now that the manual button is
- * gone entirely, this is the only remaining path that can create a rider's
- * very first plan.
- *
- * HARD REQUIREMENT: no plan is generated at all for an athlete with no
- * Intervals.icu connection on record. This app hit the same confusion
- * repeatedly - a rider gets a plan, has no idea it can never reach Zwift
- * because they never connected ICU, and the "why isn't this working"
- * debugging always traces back to a missing icu_key. Refusing to spend an
- * AI call producing a plan that has nowhere to sync closes that class of
- * problem at the root instead of chasing each instance of it. The
- * onboarding gate in app/dashboard/layout.tsx enforces the same rule at the
- * UI level (a rider literally cannot reach Today's Note without connecting
- * first) - this is the code-level backstop for the paths that don't go
- * through that UI at all (cron, direct login/connect).
- *
- * Steps: (1) register the athlete so the nightly cron picks them up going
- * forward, (2) bail out here if ICU isn't connected yet, (3) generate a plan
- * for the current week if one doesn't already exist, (4) push it to
- * Intervals.icu if this week hasn't been confirmed synced yet (covers both
- * "just generated it" and "a plan already existed but was never synced,
- * e.g. ICU was connected afterward").
- *
- * Swallows all its own errors - this must never turn a successful login or
- * a successful ICU connect into a failure response just because plan
- * generation or sync hit a snag. The nightly cron and the next login/connect
- * both get another chance.
+ * Best-effort draft provisioning after login/connect. This reads the athlete's
+ * source data, generates the personalized week, and caches it for review. It
+ * deliberately performs no external workout or FTP writes. Synchronization to
+ * Intervals.icu is a separate, explicit athlete-approved action.
  */
 export async function ensurePlanProvisioned(athleteId: string, accessToken: string): Promise<void> {
   try {
@@ -509,27 +469,7 @@ export async function ensurePlanProvisioned(athleteId: string, accessToken: stri
         plan: { weekOf: result.weekOf, workouts: result.plan.workouts },
       });
 
-      const creds = await getIntervalsCredentials(athleteId);
-      if (creds) {
-        const riddenDates = new Set(
-          result.rides.map((r) => (r.date ?? "").slice(0, 10)).filter(Boolean)
-        );
-        await syncPlanToIcuAndMark(athleteId, result.weekOf, cached, riddenDates, result.firstName);
-      }
       return;
-    }
-
-    // A plan already exists for this week - the only thing left to check is
-    // whether it's actually been synced (e.g. ICU was connected AFTER this
-    // plan was generated, or the plan predates automatic sync existing).
-    if (!(await wasIntervalsSynced(athleteId, currentWeek))) {
-      const creds = await getIntervalsCredentials(athleteId);
-      if (creds) {
-        // riderName not available here (no fresh profile fetch) — ZWO messages
-        // will still appear but without the personalized name. The nightly cron
-        // path (which goes through runWeeklyPlanGeneration) always has firstName.
-        await syncPlanToIcuAndMark(athleteId, currentWeek, cached, new Set());
-      }
     }
   } catch {
     // best-effort
