@@ -40,7 +40,6 @@ export default function PilotPage() {
   const [dark, setDark] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [icuApiKey, setIcuApiKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [profile, setProfile] = useState<{ firstName?: string; ftp?: number } | null>(null);
@@ -91,20 +90,6 @@ export default function PilotPage() {
 
   function connectIcu() {
     window.location.href = "/api/intervals/oauth-start?from=pilot";
-  }
-
-  async function connectIcuWithKey(e: FormEvent) {
-    e.preventDefault(); setBusy(true); setError(null);
-    try {
-      const res = await fetch("/api/intervals/connect", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: icuApiKey }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "Intervals.icu connection failed.");
-      await generateDraft();
-    } catch (e) { setError(e instanceof Error ? e.message : "Intervals.icu connection failed."); }
-    finally { setBusy(false); }
   }
 
   async function generateDraft() {
@@ -181,17 +166,14 @@ export default function PilotPage() {
 
     {stage === "icu" && <section className={styles.flowGrid}>
       <div className={styles.flowIntro}><span className={styles.bigNumber}>02</span><div className={styles.eyebrow}><i /> DELIVERY BRIDGE</div><h2>Now connect Intervals.icu.</h2><p>This is the bridge that delivers the approved week to Zwift. Volt will not upload anything until you review the plan.</p>{profile?.firstName && <div className={styles.connectedChip}>✓ Zwift connected · {profile.firstName}{profile.ftp ? ` · ${profile.ftp}W FTP` : ""}</div>}</div>
-      <form className={styles.card} onSubmit={connectIcuWithKey}>
+      <div className={styles.card}>
         <div className={styles.cardHead}><span className={styles.icuIcon}>↗</span><div><strong>Connect Intervals.icu</strong><small>Official authorization flow</small></div></div>
         <div className={styles.permission}><span>READ</span><p>Activities and fitness metrics</p></div>
         <div className={styles.permission}><span>WRITE</span><p>Only the week you explicitly approve</p></div>
         {error && <div className={styles.error}>{error}</div>}
-        <button type="button" className={styles.primary} onClick={connectIcu}>Continue to Intervals.icu →</button>
-        <div className={styles.apiDivider}><span>or use a personal API key</span></div>
-        <label>INTERVALS.ICU API KEY<input type="password" autoComplete="off" value={icuApiKey} onChange={e => setIcuApiKey(e.target.value)} placeholder="Paste your API key" /></label>
-        <button className={styles.secondary} disabled={busy || !icuApiKey.trim()}>{busy ? "Connecting…" : "Connect with API key"}</button>
-        <p className={styles.secure}>OAuth returns here automatically · API key is stored securely</p>
-      </form>
+        <button className={styles.primary} onClick={connectIcu}>Continue to Intervals.icu →</button>
+        <p className={styles.secure}>Approve once in Intervals.icu and return here automatically</p>
+      </div>
     </section>}
 
     {stage === "analyzing" && <section className={styles.analyzing}>
