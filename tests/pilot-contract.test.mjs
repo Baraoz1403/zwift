@@ -30,6 +30,16 @@ test("direct Zwift upload is disabled; pilot writes flow through Intervals.icu",
   assert.doesNotMatch(source, /accessToken/);
 });
 
+test("plan generation is draft-only and ICU sync requires explicit approval", () => {
+  const generation = read("app/api/ai/weekly-plan/route.ts");
+  assert.doesNotMatch(generation, /syncPlanToIcuAndMark/);
+  assert.match(generation, /draft: true/);
+
+  const approval = read("app/api/m/resync-plan/route.ts");
+  assert.match(approval, /APPROVE_ICU_SYNC/);
+  assert.match(approval, /withPilotIcuWriteApproval/);
+});
+
 test("the planner selects exactly the latest 30 activities", () => {
   assert.match(read("lib/plan-runner.ts"), /selectChartActivities\(activities, 30\)/);
 });
