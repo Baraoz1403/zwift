@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loginToZwift, fetchOwnProfile, ZwiftAuthError, ZwiftApiError } from "@/lib/zwift";
 import { encryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { kvGet, kvSet } from "@/lib/kv";
+import { kvSet } from "@/lib/kv";
 import { mirrorZwiftAuthToKv, storeRiderIdentity } from "@/lib/kv-plan-state";
 import { ensurePlanProvisioned } from "@/lib/plan-runner";
 
@@ -98,10 +98,9 @@ export async function POST(req: NextRequest) {
       const clearOpts = { ...cookieBase, maxAge: 0 };
 
       // Intervals.icu — API keys don't expire, restore directly
-      // Reuse the athlete's existing OAuth connection from the shared rider
-      // record. A new device or the isolated pilot must not force an athlete
-      // who already authorized ICU to repeat onboarding.
-      const icuKey = await kvGet(`zwift:${athleteId}:icu_key`);
+      // The isolated pilot must establish and store its own ICU authorization.
+      // Never import a grant created by the Claude-managed application.
+      const icuKey = null;
       if (icuKey) {
         const icuId   = await kvGet(`zwift:${athleteId}:icu_id`);
         const icuName = await kvGet(`zwift:${athleteId}:icu_name`);
