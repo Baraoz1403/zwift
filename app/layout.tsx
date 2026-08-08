@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { pilotModeStatus } from "@/lib/pilot-mode";
 
 export const metadata: Metadata = {
   title: "Volt AI",
@@ -14,6 +15,7 @@ export default function RootLayout({
 }: {
   children: ReactNode;
 }) {
+  const pilot = pilotModeStatus();
   return (
     <html lang="en">
       <head>
@@ -28,7 +30,12 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <div className="pilot-mode-badge" role="status">
+          PILOT · {pilot.readOnly ? "READ ONLY" : "WRITE ENABLED"}
+        </div>
+        {children}
+      </body>
     </html>
   );
 }
