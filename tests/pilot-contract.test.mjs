@@ -64,12 +64,8 @@ test("raw ICU credential read-back is disabled", () => {
   assert.doesNotMatch(source, /icuKey:/);
 });
 
-test("pilot reuses an athlete's existing ICU OAuth grant", () => {
+test("pilot never imports an ICU grant from the Claude-managed application", () => {
   const login = read("app/api/auth/login/route.ts");
-  assert.match(login, /kvGet\(`zwift:\$\{athleteId\}:icu_key`\)/);
-  assert.doesNotMatch(login, /pilot \? null/);
-
-  const page = read("app/pilot/page.tsx");
-  assert.match(page, /fetch\("\/api\/intervals\/status"/);
-  assert.match(page, /if \(icu\?\.connected\) await generateDraft\(\)/);
+  assert.match(login, /const icuKey = null/);
+  assert.doesNotMatch(login, /kvGet\(`zwift:\$\{athleteId\}:icu_key`\)/);
 });
