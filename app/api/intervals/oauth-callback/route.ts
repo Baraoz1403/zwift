@@ -22,7 +22,6 @@ import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import {
   exchangeIntervalsCode,
   fetchIntervalsAthlete,
-  ensureIcuWebhookRegistered,
 } from "@/lib/intervals";
 import { fetchOwnProfile } from "@/lib/zwift";
 import { kvSet } from "@/lib/kv";
@@ -53,6 +52,7 @@ export async function GET(req: NextRequest) {
   try {
     const stateData = JSON.parse(Buffer.from(rawState, "base64url").toString("utf-8"));
     if (stateData?.from === "m") returnTo = "/m";
+    if (stateData?.from === "pilot") returnTo = "/pilot";
   } catch { /* ignore malformed state — fall back to dashboard */ }
 
   // intervals.icu returns ?error=access_denied when user cancels
@@ -76,9 +76,7 @@ export async function GET(req: NextRequest) {
   // Write a debug log entry to KV so we can inspect it at /api/debug/icu-state
   // even when Vercel function logs aren't accessible. Keyed by athlete so each
   // rider's last attempt is stored independently. Removed once flow is stable.
-  const debugKey = `zwift:${session.athleteId ?? "unknown"}:oauth_debug`;
-  const writeDebug = (step: string, detail: string) =>
-    kvSet(debugKey, JSON.stringify({ step, detail, ts: new Date().toISOString() })).catch(() => {});
+  const writeDebug = (_step: string, _detail: string) => Promise.resolve();
 
   try {
     await writeDebug("exchange_start", `code_length=${code.length} redirect_uri=${redirectUri}`);
@@ -151,9 +149,6 @@ export async function GET(req: NextRequest) {
       // take 30–60 s. The nightly cron and next app load both retry if needed.
       void ensurePlanProvisioned(resolvedAthleteId, session.accessToken).catch(() => {});
 
-      // Auto-register ICU webhook for real-time WhatsApp feedback after rides
-      const webhookUrl = `${req.nextUrl.origin}/api/webhooks/intervals`;
-      void ensureIcuWebhookRegistered(accessTokenValue, athleteId, webhookUrl).catch(() => {});
     }
 
     // Build the redirect response, then set ALL cookies on it directly.
