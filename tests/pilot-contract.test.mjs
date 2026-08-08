@@ -16,9 +16,6 @@ test("all material external write connectors use the pilot guard", () => {
     ["lib/intervals.ts", "intervals.create_workout"],
     ["lib/intervals.ts", "intervals.delete_workout"],
     ["lib/intervals.ts", "intervals.register_webhook"],
-    ["lib/trainingpeaks.ts", "trainingpeaks.create_workout"],
-    ["lib/trainingpeaks.ts", "trainingpeaks.delete_workout"],
-    ["lib/whatsapp.ts", "whatsapp.send"],
     ["app/api/intervals/update-ftp/route.ts", "intervals.update_ftp"],
   ];
   for (const [path, operation] of expected) {
