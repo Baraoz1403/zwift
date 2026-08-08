@@ -2,6 +2,22 @@ html {
   scroll-behavior: smooth;
 }
 
+.pilot-mode-badge {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: 10px;
+  z-index: 99999;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 90, 31, 0.5);
+  border-radius: 999px;
+  background: rgba(13, 22, 38, 0.92);
+  color: #fff;
+  font: 800 11px/1 "Inter", sans-serif;
+  letter-spacing: 0.09em;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
 /* ── iOS Safari autofill fix ─────────────────────────────────────────────────
    iOS overrides input text/background colors on autofill with !important.
    The only way to beat it is with -webkit-box-shadow (fake background) and
