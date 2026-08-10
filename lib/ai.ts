@@ -1437,8 +1437,9 @@ export async function generateWeeklyPlan(params: {
     if (w.type === "Rest" || isRestDayType(w.type)) return w;
     const t = w.title.toLowerCase();
     const isForbidden = FORBIDDEN_WORKOUT_PATTERNS.some(p => t.includes(p));
-    const hasIntervals = Array.isArray(w.structure) && w.structure.some(b => b.type === "intervals");
-    if (!isForbidden || hasIntervals) return w;
+    // No hasIntervals exception: title-based ban is unconditional. The AI can add an
+    // intervals block to Foundation Ride and the check still fires — the name is forbidden.
+    if (!isForbidden) return w;
 
     // Replace with Z2 with Cadence Drills — structured, low-intensity, always valid.
     const totalMin = w.durationMin > 0 ? w.durationMin : 50;
