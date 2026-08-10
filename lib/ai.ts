@@ -436,7 +436,7 @@ const WEEKLY_PLAN_SYSTEM_PROMPT =
 1. EVERY TRAINING DAY = STRUCTURED INTERVALS. This is non-negotiable. Every scheduled workout must contain defined on/off interval blocks with specific power targets, not continuous steady-state riding. A beginner gets 5×3min blocks. An intermediate gets 3×10min Sweet Spot. An advanced rider gets Norwegian 4×4. "Foundation Ride" (unstructured steady-state) is ONLY valid as active recovery the day immediately after a hard session — never as a primary training session. A plan where any non-recovery day is a continuous ride with no interval structure is a FAILED plan.
 2. SELECT FROM THE NAMED WORKOUT LIBRARY BELOW — these are curated protocols. The job is choosing the RIGHT one for this rider today. Every session must reference THIS rider's actual TSB, phase, and stated goals.
 3. STRUCTURED INTENSITY SESSIONS per week: the exact cap is provided in the HARD CONSTRAINTS block below (injected by the selection engine, keyed to this rider's TSB, W/kg, and phase). Follow those constraints — do NOT add hard sessions beyond the stated maximum, and do NOT reduce them below the recommended count without a named reason.
-4. FORBIDDEN: unstructured steady-state sessions as primary workouts, sessions without defined interval blocks, generic titles like "Endurance Ride" or "Easy Ride".
+4. FORBIDDEN IN ALL CONTEXTS — no exceptions, not even active recovery or Recovery Week: Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride, Long Endurance. These are the six banned unstructured titles. A rider clicking on these sees nothing to focus on — no cadence target, no power shift, nothing to execute. Replace every one of them with: Z2 with Cadence Drills (cadence variation), Spin & Recover (alternating effort), or Surge Ride (defined surges). "Endurance Ride" or "Easy Ride" as a generic title is equally banned.
 5. INTENSITY COUNT: The selection engine (see HARD CONSTRAINTS below) already computed the correct number of intensity sessions for this rider's exact TSB, level, and phase. Trust it. The engine accounts for fatigue, freshness, and progression history — do not override it with a fixed rule.
 6. ALL SESSIONS — including the "easy" days — must have interval structure. Even a recovery day can be Z2 with Cadence Drills (defined cadence blocks) or Surge Ride (defined surge intervals). A session of continuous unstructured riding tells the athlete nothing and trains nothing specifically.
 
@@ -534,11 +534,17 @@ Every workout structure block must include explicit cadenceTarget.
   "reduce frequency by 1-2 days (e.g. a 5-6 day rider gets 3-4 sessions, " +
   "a 3-4 day rider gets 2-3 sessions). Cut duration to 50-65% of normal " +
   "(e.g. 90-min rider gets 50-60 min sessions, never below 40 min). " +
-  "Intensity ceiling: Z2 and Sweet Spot only " +
-  "(no threshold, no VO2max, no neuromuscular — nothing that creates new fatigue). " +
-  "Every session must still be STRUCTURED with defined interval blocks — " +
-  "Z2 with Cadence Drills, Surge Ride, Tempo Cruise, or Spin & Recover are ideal. " +
-  "This is genuine recovery, not a rest week — movement and light stimulus aid adaptation. " +
+  "Intensity ceiling: Z2 and Tempo only " +
+  "(no Threshold, no VO2max, no Neuromuscular — nothing that creates new fatigue). " +
+  "⛔ Foundation Ride is ABSOLUTELY FORBIDDEN even in Recovery Week — it is flat, " +
+  "unstructured, and gives the rider nothing to focus on. " +
+  "Recovery Week sessions MUST be structured with defined variation blocks: " +
+  "• Z2 with Cadence Drills: warmup → 4-6 cadence blocks alternating 85rpm/100rpm → cooldown " +
+  "• Spin & Recover: alternating 4min easy/2min very easy blocks — at least 4 repeats " +
+  "• Surge Ride: 10×30s soft surges at 80% + 90s easy between — keeps neuromuscular alive " +
+  "• Tempo Cruise: 2-3×10min at 76-90% FTP — valid ceiling for Recovery Week hard days " +
+  "Every block must have cadenceTargetRpm and a specific power % target — no generic steadystate. " +
+  "This is genuine recovery, not a rest week — structured movement at low load aids adaptation. " +
   "State clearly in the summary that this is a scheduled recovery week and " +
   "explain the reduced frequency and duration. " +
   "When phase is 'Taper' (event is 2-3 weeks away): reduce total weekly " +
@@ -1333,35 +1339,43 @@ export async function generateWeeklyPlan(params: {
   let planSummary = typeof obj.summary === "string" ? obj.summary : "";
 
   // ── Quality Gate ────────────────────────────────────────────────────────
-  // Enforce that a non-Recovery week contains at least 2 sessions with defined
-  // interval blocks. If the AI produced a plan dominated by Foundation/Endurance
-  // sessions (no real intervals on most days), retry ONCE with an amplified
-  // corrective message. This is code-level — it cannot be bypassed by prompt drift.
+  // Applied to ALL weeks (including Recovery). Foundation Ride and its
+  // forbidden variants are NEVER allowed — even as active recovery, Z2 with
+  // Cadence Drills or Spin & Recover are mandatory replacements.
+  // Code-level enforcement: cannot be bypassed by prompt drift.
   const isRecoveryWeek = params.cycle?.phase === "Recovery";
 
-  if (!isRecoveryWeek) {
+  {
     const normalized1 = normalizeWeeklyPlan(finalWorkouts);
     const intervalCount = countIntervalSessions(normalized1);
     const boringCount = normalized1.filter(isBoringSteadyState).length;
     const consecutiveViolation = hasConsecutiveTrainingDayViolation(normalized1);
 
-    // Retry if fewer than 2 interval sessions OR more than 1 forbidden steady-state
-    // OR more than 3 consecutive training days (MAX_CONSECUTIVE_TRAINING_DAYS=3)
-    if (intervalCount < 2 || boringCount > 1 || consecutiveViolation) {
-      // Build retry prompt with explicit failure diagnosis
+    // Recovery Week: softer interval minimum (1 structured session), but still
+    // ZERO tolerance for forbidden steady-state titles.
+    // All other weeks: min 2 interval sessions, zero boring sessions.
+    const intervalMin = isRecoveryWeek ? 1 : 2;
+    const boringLimit = 0; // Foundation Ride / Free Ride / etc. NEVER allowed
+
+    if (intervalCount < intervalMin || boringCount > boringLimit || consecutiveViolation) {
       const failures: string[] = [];
-      if (intervalCount < 2) failures.push(`only ${intervalCount} session(s) contain defined interval blocks (minimum required: 2)`);
-      if (boringCount > 1) failures.push(`${boringCount} session(s) use forbidden steady-state titles (Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride) as primary workouts — maximum allowed as non-recovery filler: 1`);
-      if (consecutiveViolation) failures.push(`plan has more than 3 consecutive training days without a rest day — hard cap is 3`);
+      if (intervalCount < intervalMin) failures.push(`only ${intervalCount} structured session(s) with interval blocks (minimum required: ${intervalMin})`);
+      if (boringCount > boringLimit) failures.push(`${boringCount} session(s) use FORBIDDEN unstructured titles: Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride — zero tolerance, even in Recovery Week. Replace EVERY one with: Z2 with Cadence Drills, Spin & Recover, or Surge Ride`);
+      if (consecutiveViolation) failures.push(`more than 3 consecutive training days without a rest day`);
+
+      const recoveryWeekNote = isRecoveryWeek
+        ? `RECOVERY WEEK REMINDER: "structured" means cadence blocks or surge blocks — NOT unbroken steadystate. Z2 with Cadence Drills and Spin & Recover BOTH qualify. Foundation Ride DOES NOT qualify even in Recovery Week.\n\n`
+        : "";
 
       const retrySystemPrompt =
         `⛔ QUALITY GATE FAILURE — PLAN REJECTED ⛔\n` +
         `The plan you just returned was rejected for the following reason(s):\n` +
         failures.map(f => `  • ${f}`).join("\n") + "\n\n" +
-        `MANDATORY CORRECTIONS before returning a new plan:\n` +
-        `1. Every non-rest, non-recovery day MUST have a structure[] that includes at least one block with type="intervals".\n` +
-        `2. FORBIDDEN as primary sessions (except single active-recovery day immediately after a hard session): Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride, Long Endurance. Replace with: Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, or Sub-Threshold Blocks.\n` +
-        `3. Insert a Rest day to ensure no more than 3 consecutive training days in a row.\n` +
+        recoveryWeekNote +
+        `MANDATORY CORRECTIONS:\n` +
+        `1. EVERY non-rest day MUST have structure[] with at least one type="intervals" block (cadence drills count).\n` +
+        `2. FORBIDDEN in ALL contexts (no exceptions, not even Recovery Week): Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride. Replace with: Z2 with Cadence Drills, Spin & Recover, Surge Ride, 30/30 Blitz.\n` +
+        `3. Insert a Rest day to prevent more than 3 consecutive training days.\n` +
         `4. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
         systemPrompt;
 
