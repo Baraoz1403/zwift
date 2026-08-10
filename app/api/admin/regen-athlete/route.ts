@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
 
   let targetAthleteId: string;
   let weekOf: string;
+  let skipSync = false;
   try {
     const body = await req.json();
     if (!body?.athleteId) return NextResponse.json({ error: "athleteId required" }, { status: 400 });
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
     weekOf = typeof body.weekOf === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.weekOf)
       ? body.weekOf
       : mondayOfCurrentWeek();
+    skipSync = body.skipSync === true;
   } catch {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
@@ -111,9 +113,9 @@ export async function POST(req: NextRequest) {
       workouts: cleanedWorkouts,
     });
 
-    // Push to ICU
+    // Push to ICU (skip if skipSync=true — useful to stay under Hobby 60s cap)
     let pushed = 0, deleted = 0;
-    if (state.icuKey) {
+    if (!skipSync && state.icuKey) {
       const riddenDates = new Set(
         result.rides.map(r => (r.date ?? "").slice(0, 10)).filter(Boolean)
       );
