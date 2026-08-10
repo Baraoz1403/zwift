@@ -1309,7 +1309,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 12000, // raised from 8000: 30-activity context yields longer descriptions; 16000 was wasteful but 8000 truncates
+        max_tokens: 16000, // 30-activity context generates verbose descriptions; 12000 still truncates
         // System as an array of content blocks (required for cache_control).
         // The ephemeral cache_control marks this block for caching on the
         // Anthropic side; subsequent calls within 5 min get it for free.
@@ -1426,7 +1426,7 @@ export async function generateWeeklyPlan(params: {
           },
           body: JSON.stringify({
             model: MODEL,
-            max_tokens: 12000,
+            max_tokens: 16000,
             system: retrySystemPrompt,
             messages: [
               { role: "user", content: userContent },
