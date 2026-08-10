@@ -162,9 +162,14 @@ export async function runWeeklyPlanGeneration(
   }
 
   const activities = await fetchActivities(opts.accessToken, athleteId);
-  const recentActivities = selectChartActivities(activities, 8); // cap at 8 to stay within 60s timeout
+  // Pass up to 30 activities to the AI for richer training-history context.
+  // FIT file fetching (HR + Normalized Power) is capped at the 8 most recent
+  // because each file fetch adds ~1-2s; 30 would blow the 60s edge timeout.
+  // Earlier activities still contribute date/duration/watts/elevation context.
+  const allRecentActivities = selectChartActivities(activities, 30);
+  const fitActivities = allRecentActivities.slice(-8); // last 8 only for FIT
 
-  const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
+  const fitResults = await mapWithConcurrency(fitActivities, 4, async (a) => {
     const buf = await fetchActivityFit(a);
     const fitRecords = parseFitRecords(buf);
     const hrVals = fitRecords
@@ -177,16 +182,21 @@ export async function runWeeklyPlanGeneration(
   const avgHeartRates = fitResults.map((r) => (r.status === "fulfilled" ? r.value.avgHeartRate : null));
   const normalizedPowers = fitResults.map((r) => (r.status === "fulfilled" ? r.value.normalizedPower : null));
 
-  const rides: RideSummary[] = recentActivities.map((a, i) => ({
-    date: a.startDate as string,
-    sport: a.sport as string | undefined,
-    distanceKm: Math.round(((a.distanceInMeters ?? 0) as number) / 100) / 10,
-    durationMin: Math.round(((a.movingTimeInMs ?? 0) as number) / 60000),
-    avgWatts: Math.round((a.avgWatts ?? 0) as number),
-    elevationM: Math.round((a.totalElevation ?? 0) as number),
-    avgHeartRate: avgHeartRates[i] != null ? Math.round(avgHeartRates[i] as number) : null,
-    normalizedPower: normalizedPowers[i] ?? null,
-  }));
+  // Build ride summaries: all 30 get basic data; last 8 also get HR/NP from FIT.
+  const rides: RideSummary[] = allRecentActivities.map((a) => {
+    const fitIdx = fitActivities.findIndex((fa) => fa.id === a.id);
+    const hasFit = fitIdx !== -1;
+    return {
+      date: a.startDate as string,
+      sport: a.sport as string | undefined,
+      distanceKm: Math.round(((a.distanceInMeters ?? 0) as number) / 100) / 10,
+      durationMin: Math.round(((a.movingTimeInMs ?? 0) as number) / 60000),
+      avgWatts: Math.round((a.avgWatts ?? 0) as number),
+      elevationM: Math.round((a.totalElevation ?? 0) as number),
+      avgHeartRate: hasFit && avgHeartRates[fitIdx] != null ? Math.round(avgHeartRates[fitIdx] as number) : null,
+      normalizedPower: hasFit ? (normalizedPowers[fitIdx] ?? null) : null,
+    };
+  });
 
   const hrFlags = flagHeartRateAnomalies(rides);
   for (const [index, direction] of hrFlags) {
