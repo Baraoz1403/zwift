@@ -1427,6 +1427,60 @@ export async function generateWeeklyPlan(params: {
   }
   // ────────────────────────────────────────────────────────────────────────
 
+  // ── Hard post-processing: eliminate forbidden workouts that survived retry ──
+  // If the AI STILL returned Foundation Ride / Free Ride / etc. after the retry
+  // (common because of strong active-recovery associations in training data),
+  // replace them in code. This is the last line of defence — cannot be bypassed.
+  finalWorkouts = finalWorkouts.map((w) => {
+    if (w.type === "Rest" || isRestDayType(w.type)) return w;
+    const t = w.title.toLowerCase();
+    const isForbidden = FORBIDDEN_WORKOUT_PATTERNS.some(p => t.includes(p));
+    const hasIntervals = Array.isArray(w.structure) && w.structure.some(b => b.type === "intervals");
+    if (!isForbidden || hasIntervals) return w;
+
+    // Replace with Z2 with Cadence Drills — structured, low-intensity, always valid.
+    const totalMin = w.durationMin > 0 ? w.durationMin : 50;
+    const warmup = 10;
+    const cooldown = 5;
+    const drillsMin = totalMin - warmup - cooldown;
+    // 4 cadence-drill intervals: 8min blocks alternating 85/100 RPM at 65% FTP
+    const repeats = Math.max(2, Math.round(drillsMin / 10));
+    const onSec = Math.round((drillsMin / repeats) * 60 * 0.75);
+    const offSec = Math.round((drillsMin / repeats) * 60 * 0.25);
+    return {
+      ...w,
+      title: "Z2 with Cadence Drills",
+      type: "Endurance",
+      structure: [
+        {
+          type: "warmup" as const,
+          durationMin: warmup,
+          powerFtp: 0.60,
+          label: "Easy warm-up",
+          cadenceTargetRpm: { min: 85, max: 95 },
+        },
+        {
+          type: "intervals" as const,
+          durationMin: drillsMin,
+          powerFtp: 0.65,
+          repeats,
+          onSec,
+          offSec,
+          recoveryPowerFtp: 0.65,
+          label: `${repeats}×${Math.round(onSec/60)}/${Math.round(offSec/60)} min cadence drills — 85 rpm / 100 rpm`,
+          cadenceTargetRpm: { min: 85, max: 100 },
+        },
+        {
+          type: "cooldown" as const,
+          durationMin: cooldown,
+          powerFtp: 0.50,
+          label: "Easy spin-down",
+          cadenceTargetRpm: { min: 85, max: 95 },
+        },
+      ],
+    };
+  });
+
   return {
     weekOf: weekOfMonday,
     summary: planSummary,
