@@ -8,7 +8,7 @@ import { fetchOwnProfile, fetchActivities } from "@/lib/zwift";
 import { computeWeekStatus, zwiftActivityToIcu, mergeActivities } from "@/lib/activity-sync";
 import type { WeeklyWorkout } from "@/lib/ai";
 import type { DayStatus } from "@/lib/activity-sync";
-import { WeekDayListClient, type DayRowData, type RideSummary, type WeekNavData } from "./week-sidebar-client";
+import { WeekDayListClient, type DayRowData, type PlannedWorkout, type RideSummary, type WeekNavData } from "./week-sidebar-client";
 import MobileWorkoutChart from "@/app/m/today/workout-chart";
 import { isRunWorkout } from "@/lib/zwo";
 
@@ -290,6 +290,13 @@ export default async function TabletTodayPage({
       durationMin: !isRest && w ? w.durationMin : undefined,
       status: isCurrentWeek ? dayStatus : (dateStr ? (sidebarWeekDates.includes(dateStr) ? "planned" : undefined) : undefined),
       ride: isCurrentWeek && dayStatus === "completed" && dateStr ? completedRides[dateStr] : undefined,
+      plannedWorkout: !isRest && w ? ({
+        title: w.title,
+        description: w.description,
+        durationMin: w.durationMin,
+        targetPowerPctFtp: w.targetPowerPctFtp,
+        structure: w.structure,
+      } as PlannedWorkout) : undefined,
     };
   });
 
