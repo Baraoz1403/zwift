@@ -405,6 +405,34 @@ const FORBIDDEN_WORKOUT_PATTERNS = [
   "easy ride", "endurance ride", "z2 ride", "long endurance",
 ];
 
+/**
+ * Replaces any workout whose title matches FORBIDDEN_WORKOUT_PATTERNS with
+ * Z2 with Cadence Drills (structured intervals at 65% FTP). Called BEFORE the
+ * quality gate so the gate sees interval blocks and does not trigger a retry.
+ */
+function applyForbiddenReplacement(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
+  return workouts.map((w) => {
+    if (w.type === "Rest" || isRestDayType(w.type)) return w;
+    const t = w.title.toLowerCase();
+    if (!FORBIDDEN_WORKOUT_PATTERNS.some(p => t.includes(p))) return w;
+    console.log("[hard-replace] Replacing forbidden workout:", w.title, "\u2192 Z2 with Cadence Drills");
+    const totalMin = w.durationMin > 0 ? w.durationMin : 50;
+    const warmup = 10; const cooldown = 5; const drillsMin = totalMin - warmup - cooldown;
+    const repeats = Math.max(2, Math.round(drillsMin / 10));
+    const onSec = Math.round((drillsMin / repeats) * 60 * 0.75);
+    const offSec = Math.round((drillsMin / repeats) * 60 * 0.25);
+    return {
+      ...w, title: "Z2 with Cadence Drills", type: "Endurance" as const,
+      structure: [
+        { type: "warmup" as const, durationMin: warmup, powerFtp: 0.60, label: "Easy warm-up" },
+        { type: "intervals" as const, durationMin: drillsMin, powerFtp: 0.65, repeats, onSec, offSec,
+          recoveryPowerFtp: 0.65, label: `${repeats}\u00d7${Math.round(onSec/60)}/${Math.round(offSec/60)} min cadence drills \u2014 alternate 85 rpm / 100 rpm` },
+        { type: "cooldown" as const, durationMin: cooldown, powerFtp: 0.50, label: "Easy spin-down" },
+      ],
+    };
+  });
+}
+
 function isBoringSteadyState(w: WeeklyWorkout): boolean {
   if (w.type === "Rest" || isRestDayType(w.type)) return false;
   if (LEGIT_NO_INTERVAL_TITLES.has(w.title.toLowerCase())) return false;
@@ -1338,6 +1366,12 @@ export async function generateWeeklyPlan(params: {
   let finalWorkouts: WeeklyWorkout[] = obj.workouts as WeeklyWorkout[];
   let planSummary = typeof obj.summary === "string" ? obj.summary : "";
 
+  // ── Pre-gate hard replacement ─────────────────────────────────────────────
+  // Replace forbidden titles (Foundation Ride etc.) BEFORE the quality gate
+  // so the gate sees interval blocks and does not trigger a costly retry.
+  finalWorkouts = applyForbiddenReplacement(finalWorkouts);
+  // ─────────────────────────────────────────────────────────────────────────
+
   // ── Quality Gate ────────────────────────────────────────────────────────
   // Applied to ALL weeks (including Recovery). Foundation Ride and its
   // forbidden variants are NEVER allowed — even as active recovery, Z2 with
@@ -1416,7 +1450,7 @@ export async function generateWeeklyPlan(params: {
             try {
               const obj2 = JSON.parse(text2.slice(s2, e2 + 1)) as Partial<WeeklyPlan>;
               if (Array.isArray(obj2.workouts) && obj2.workouts.length > 0) {
-                finalWorkouts = obj2.workouts as WeeklyWorkout[];
+                finalWorkouts = applyForbiddenReplacement(obj2.workouts as WeeklyWorkout[]);
                 planSummary = typeof obj2.summary === "string" ? obj2.summary : planSummary;
               }
             } catch {
@@ -1429,57 +1463,10 @@ export async function generateWeeklyPlan(params: {
   }
   // ────────────────────────────────────────────────────────────────────────
 
-  // ── Hard post-processing: eliminate forbidden workouts that survived retry ──
-  // If the AI STILL returned Foundation Ride / Free Ride / etc. after the retry
-  // (common because of strong active-recovery associations in training data),
-  // replace them in code. This is the last line of defence — cannot be bypassed.
-  finalWorkouts = finalWorkouts.map((w) => {
-    if (w.type === "Rest" || isRestDayType(w.type)) return w;
-    const t = w.title.toLowerCase();
-    const isForbidden = FORBIDDEN_WORKOUT_PATTERNS.some(p => t.includes(p));
-    // No hasIntervals exception: title-based ban is unconditional.
-    if (!isForbidden) return w;
-    console.log("[hard-replace] Replacing forbidden workout:", w.title, "→ Z2 with Cadence Drills");
-
-    // Replace with Z2 with Cadence Drills — structured, low-intensity, always valid.
-    const totalMin = w.durationMin > 0 ? w.durationMin : 50;
-    const warmup = 10;
-    const cooldown = 5;
-    const drillsMin = totalMin - warmup - cooldown;
-    // 4 cadence-drill intervals: 8min blocks alternating 85/100 RPM at 65% FTP
-    const repeats = Math.max(2, Math.round(drillsMin / 10));
-    const onSec = Math.round((drillsMin / repeats) * 60 * 0.75);
-    const offSec = Math.round((drillsMin / repeats) * 60 * 0.25);
-    return {
-      ...w,
-      title: "Z2 with Cadence Drills",
-      type: "Endurance",
-      structure: [
-        {
-          type: "warmup" as const,
-          durationMin: warmup,
-          powerFtp: 0.60,
-          label: "Easy warm-up",
-        },
-        {
-          type: "intervals" as const,
-          durationMin: drillsMin,
-          powerFtp: 0.65,
-          repeats,
-          onSec,
-          offSec,
-          recoveryPowerFtp: 0.65,
-          label: `${repeats}×${Math.round(onSec/60)}/${Math.round(offSec/60)} min cadence drills — alternate 85 rpm / 100 rpm`,
-        },
-        {
-          type: "cooldown" as const,
-          durationMin: cooldown,
-          powerFtp: 0.50,
-          label: "Easy spin-down",
-        },
-      ],
-    };
-  });
+  // ── Final safety pass: last-resort forbidden replacement ─────────────────
+  // Should be a no-op after pre-gate + post-retry passes above. Kept as
+  // belt-and-suspenders in case a code path above is ever changed.
+  finalWorkouts = applyForbiddenReplacement(finalWorkouts);
 
   return {
     weekOf: weekOfMonday,
