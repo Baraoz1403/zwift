@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity, getFeedbackDone } from "@/lib/kv-plan-state";
-import dynamic from "next/dynamic";
 
-const FeedbackBanner = dynamic(() => import("@/app/m/today/feedback-banner"), { ssr: false });
+
+import FeedbackBanner from "./feedback-banner-client";
 import { kvGet } from "@/lib/kv";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
