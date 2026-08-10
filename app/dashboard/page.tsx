@@ -26,7 +26,15 @@ export default async function CoachPage() {
   const session = await decryptSession(raw);
   if (!session) redirect("/login");
 
-  const athleteId = session.athleteId;
+  let athleteId = session.athleteId;
+  // Fallback: if athleteId was not stored in the session (fetchOwnProfile failed at login),
+  // fetch it now from Zwift so activities are never silently empty for this athlete.
+  if (!athleteId) {
+    try {
+      const profile = await fetchOwnProfile(session.accessToken);
+      athleteId = profile.id != null ? String(profile.id) : undefined;
+    } catch { /* best-effort */ }
+  }
   const todayStr  = new Date().toISOString().slice(0, 10);
   const weekOf    = mondayOfCurrentWeek();
 
