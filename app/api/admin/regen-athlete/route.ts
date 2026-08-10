@@ -27,6 +27,36 @@ export const maxDuration = 300; // Match weekly-plan route — AI generation + I
 
 const ADMIN_ATHLETE_ID = "1040300"; // Barak
 
+// Forbidden workout titles — must never appear in a generated plan.
+// Route-level safety net in case ai.ts hard replacement missed one.
+const FORBIDDEN_TITLES = [
+  "foundation ride", "free ride", "base ride",
+  "easy ride", "endurance ride", "z2 ride", "long endurance",
+];
+
+function replaceIfForbidden(workouts: { day: string; title: string; type: string; durationMin: number; description?: string; structure?: unknown[] }[]) {
+  return workouts.map(w => {
+    if (w.type === "Rest" || w.type?.toLowerCase().includes("rest")) return w;
+    const t = w.title.toLowerCase();
+    if (!FORBIDDEN_TITLES.some(p => t.includes(p))) return w;
+    const totalMin = w.durationMin > 0 ? w.durationMin : 50;
+    const warmup = 10; const cooldown = 5; const drillsMin = totalMin - warmup - cooldown;
+    const repeats = Math.max(2, Math.round(drillsMin / 10));
+    const onSec = Math.round((drillsMin / repeats) * 60 * 0.75);
+    const offSec = Math.round((drillsMin / repeats) * 60 * 0.25);
+    return {
+      ...w,
+      title: "Z2 with Cadence Drills",
+      type: "Endurance" as const,
+      structure: [
+        { type: "warmup" as const, durationMin: warmup, powerFtp: 0.60, label: "Easy warm-up" },
+        { type: "intervals" as const, durationMin: drillsMin, powerFtp: 0.65, repeats, onSec, offSec, recoveryPowerFtp: 0.65, label: `${repeats}x cadence drills — 85/100 rpm` },
+        { type: "cooldown" as const, durationMin: cooldown, powerFtp: 0.50, label: "Easy spin-down" },
+      ],
+    };
+  });
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -68,6 +98,13 @@ export async function POST(req: NextRequest) {
       targetWeekOf: weekOf,
     });
 
+    // Route-level safety net: replace any forbidden workouts that ai.ts may have missed.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cleanedWorkouts = replaceIfForbidden(result.plan.workouts as any) as typeof result.plan.workouts;
+    const forbidden = cleanedWorkouts
+      .filter(w => w.type !== "Rest" && FORBIDDEN_TITLES.some(p => w.title.toLowerCase().includes(p)))
+      .map(w => `${w.day}: ${w.title}`);
+
     await setCachedPlan(targetAthleteId, {
       weekOf: result.weekOf,
       summary: result.plan.summary,
@@ -91,32 +128,6 @@ export async function POST(req: NextRequest) {
       deleted = syncResult?.deleted ?? 0;
     }
 
-    const FORBIDDEN = ["foundation ride", "free ride", "base ride", "easy ride", "endurance ride", "z2 ride", "long endurance"];
-
-    // Route-level safety net: if ai.ts hard replacement missed any forbidden workouts,
-    // replace them here unconditionally before saving to KV and pushing to ICU.
-    const cleanedWorkouts = result.plan.workouts.map(w => {
-      if (w.type === "Rest" || w.type?.toLowerCase().includes("rest")) return w;
-      const t = w.title.toLowerCase();
-      if (!FORBIDDEN.some(p => t.includes(p))) return w;
-      const totalMin = w.durationMin > 0 ? w.durationMin : 50;
-      const warmup = 10; const cooldown = 5; const drillsMin = totalMin - warmup - cooldown;
-      const repeats = Math.max(2, Math.round(drillsMin / 10));
-      const onSec = Math.round((drillsMin / repeats) * 60 * 0.75);
-      const offSec = Math.round((drillsMin / repeats) * 60 * 0.25);
-      return { ...w, title: "Z2 with Cadence Drills", type: "Endurance" as const,
-        structure: [
-          { type: "warmup" as const, durationMin: warmup, powerFtp: 0.60, label: "Easy warm-up" },
-          { type: "intervals" as const, durationMin: drillsMin, powerFtp: 0.65, repeats, onSec, offSec, recoveryPowerFtp: 0.65, label: `${repeats}x cadence drills — 85/100 rpm` },
-          { type: "cooldown" as const, durationMin: cooldown, powerFtp: 0.50, label: "Easy spin-down" },
-        ],
-      };
-    });
-
-    const forbidden = cleanedWorkouts
-      .filter(w => w.type !== "Rest" && FORBIDDEN.some(p => w.title.toLowerCase().includes(p)))
-      .map(w => `${w.day}: ${w.title}`);
-
     return NextResponse.json({
       ok: true,
       athleteId: targetAthleteId,
@@ -124,7 +135,7 @@ export async function POST(req: NextRequest) {
       workouts: cleanedWorkouts.map(w => ({ day: w.day, title: w.title, type: w.type, durationMin: w.durationMin })),
       icu: { pushed, deleted },
       forbidden,
-      _v: "route-v2",
+      _v: "route-v3",
     });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
