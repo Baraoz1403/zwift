@@ -193,11 +193,11 @@ export async function runWeeklyPlanGeneration(
          !cachedRides.some(r => r.date && (a.startDate as string)?.startsWith(r.date.slice(0, 13)))
   );
 
-  // Cold start: cache empty → fetch FIT for last 8 (full initial build).
+  // Cold start: cache empty → fetch FIT for last 3 (saves ~10s vs 8 — HR/NP still meaningful).
   // Warm regen: cache hit → fetch FIT only for 1-2 new activities.
   const isColdStart = cachedRides.length === 0;
-  const fitNewActivities = isColdStart ? newActivities.slice(-8) : newActivities.slice(-2);
-  const fitResults = await mapWithConcurrency(fitNewActivities, isColdStart ? 4 : 2, async (a) => {
+  const fitNewActivities = isColdStart ? newActivities.slice(-3) : newActivities.slice(-2);
+  const fitResults = await mapWithConcurrency(fitNewActivities, 3, async (a) => {
     const buf = await fetchActivityFit(a);
     const fitRecords = parseFitRecords(buf);
     const hrVals = fitRecords
