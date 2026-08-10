@@ -1457,7 +1457,6 @@ export async function generateWeeklyPlan(params: {
           durationMin: warmup,
           powerFtp: 0.60,
           label: "Easy warm-up",
-          cadenceTargetRpm: { min: 85, max: 95 },
         },
         {
           type: "intervals" as const,
@@ -1467,15 +1466,13 @@ export async function generateWeeklyPlan(params: {
           onSec,
           offSec,
           recoveryPowerFtp: 0.65,
-          label: `${repeats}×${Math.round(onSec/60)}/${Math.round(offSec/60)} min cadence drills — 85 rpm / 100 rpm`,
-          cadenceTargetRpm: { min: 85, max: 100 },
+          label: `${repeats}×${Math.round(onSec/60)}/${Math.round(offSec/60)} min cadence drills — alternate 85 rpm / 100 rpm`,
         },
         {
           type: "cooldown" as const,
           durationMin: cooldown,
           powerFtp: 0.50,
           label: "Easy spin-down",
-          cadenceTargetRpm: { min: 85, max: 95 },
         },
       ],
     };
