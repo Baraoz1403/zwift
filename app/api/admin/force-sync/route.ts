@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
 import { kvGet } from "@/lib/kv";
 import { getCachedPlan } from "@/lib/kv-plan-state";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
@@ -15,24 +17,33 @@ import { mondayOfCurrentWeek } from "@/lib/periodization";
  * regenerate anything (no AI call) - if the cached plan itself is wrong,
  * use repair-plan instead.
  *
- * Rewritten from an earlier version of this file that called
- * listIntervalsEvents/deleteEventFromIntervals directly with wrong-order
- * arguments (real signatures are (apiKey, oldest, newest, athleteId) and
- * (apiKey, eventId, athleteId) respectively - this file had icuId and
- * eventId swapped) and manually deleted every event BEFORE pushing
- * replacements. That delete-before-push ordering is exactly the bug
- * lib/headless-sync.ts's own doc comment documents as a real past
- * production incident (an empty-calendar outage when the push step failed
- * after the wipe already succeeded) - syncPlanToIcuAndMark exists
- * specifically to push fresh copies first and only then delete stale ones,
- * matched by date. Reusing it here instead of re-deriving the same logic a
- * second, less-safe way.
- *
- * Protected by CRON_SECRET, same pattern as every other admin/cron route.
+ * Auth: CRON_SECRET header/query OR Barak's session (athleteId 1040300).
  */
+
+const ADMIN_ATHLETE_ID = "1040300";
+
+async function isAuthorized(req: NextRequest): Promise<boolean> {
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const header = req.headers.get("x-secret") ?? req.headers.get("authorization")?.replace("Bearer ", "");
+    const queryParam = req.nextUrl.searchParams.get("secret");
+    if (header === secret || queryParam === secret) return true;
+  }
+  try {
+    const cookieStore = await cookies();
+    const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (!raw) return false;
+    const session = await decryptSession(raw);
+    return Boolean(session?.athleteId && String(session.athleteId) === ADMIN_ATHLETE_ID);
+  } catch {
+    return false;
+  }
+}
+
+export const maxDuration = 120;
+
 export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-secret") ?? new URL(req.url).searchParams.get("secret");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!(await isAuthorized(req))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
