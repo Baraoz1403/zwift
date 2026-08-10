@@ -5,34 +5,42 @@ import { getKnownAthletes, getStoredAthleteState } from "@/lib/kv-plan-state";
 
 /**
  * GET /api/admin/list-athletes
- *
- * Lists every athlete in the zwift:athletes registry.
- * Auth: CRON_SECRET header/query OR logged in as Barak (1040300).
+ * Auth: CRON_SECRET header/query OR Barak session (athleteId 1040300).
  */
 
 const ADMIN_ATHLETE_ID = "1040300";
 
-async function isAuthorized(req: NextRequest): Promise<boolean> {
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
+  let authorized = false;
+
+  // Check CRON_SECRET
   if (secret) {
     const header = req.headers.get("authorization");
     const queryParam = req.nextUrl.searchParams.get("secret");
-    if (header === `Bearer ${secret}` || queryParam === secret) return true;
+    if (header === `Bearer ${secret}` || queryParam === secret) authorized = true;
   }
-  try {
-    const cookieStore = await cookies();
-    const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (!raw) return false;
-    const session = await decryptSession(raw);
-    return Boolean(session?.athleteId && String(session.athleteId) === ADMIN_ATHLETE_ID);
-  } catch {
-    return false;
-  }
-}
 
-export async function GET(req: NextRequest) {
-  if (!(await isAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  // Check Barak's session
+  if (!authorized) {
+    try {
+      const cookieStore = await cookies();
+      const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+      if (raw) {
+        const session = await decryptSession(raw);
+        if (session?.athleteId && String(session.athleteId) === ADMIN_ATHLETE_ID) {
+          authorized = true;
+        }
+      }
+    } catch {
+      // session check failed
+    }
+  }
+
+  if (!authorized) {
+    return NextResponse.json({ ok: false, error: "Unauthorized.", v: 3 }, { status: 401 });
   }
 
   const athleteIds = await getKnownAthletes();
@@ -49,5 +57,5 @@ export async function GET(req: NextRequest) {
     })
   );
 
-  return NextResponse.json({ ok: true, athletes: details });
+  return NextResponse.json({ ok: true, v: 3, athletes: details });
 }
