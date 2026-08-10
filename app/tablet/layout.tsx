@@ -198,8 +198,54 @@ export default async function TabletLayout({ children }: { children: React.React
       </>
     );
   } catch (e) {
-    // If anything above throws unexpectedly, redirect to login
-    console.error("TabletLayout error:", e);
-    redirect("/m");
+    // Non-auth errors (API timeout, transient Zwift failure, etc.) must NOT
+    // redirect to /m — that drops the user into the mobile layout which then
+    // has no IpadRedirect to send them back, so they get stuck on the wrong
+    // version. Reload /tablet/today instead; Next.js will retry the server render.
+    const isZwiftAuth =
+      e != null &&
+      typeof (e as Record<string, unknown>).status === "number" &&
+      (e as Record<string, unknown>).status === 401;
+    console.error("TabletLayout error (isAuth:", isZwiftAuth, "):", e);
+    if (isZwiftAuth && session?.refreshToken) {
+      redirect("/api/auth/refresh?next=/tablet/today");
+    }
+    // For all other errors, return a minimal error state rather than
+    // bouncing to /m. Users can refresh the page.
+    return (
+      <div style={{
+        minHeight: "100dvh",
+        background: "#0a0f1a",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "-apple-system, sans-serif",
+        flexDirection: "column",
+        gap: 16,
+        padding: 24,
+        textAlign: "center",
+      }}>
+        <div style={{ fontSize: 28 }}>⚠️</div>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>Something went wrong</div>
+        <div style={{ fontSize: 14, color: "#888", maxWidth: 300 }}>
+          A server error occurred. Tap below to reload — this is usually a transient issue.
+        </div>
+        <a
+          href="/tablet/today"
+          style={{
+            background: "#FF5A1F",
+            color: "#fff",
+            borderRadius: 8,
+            padding: "10px 24px",
+            textDecoration: "none",
+            fontWeight: 700,
+            fontSize: 15,
+          }}
+        >
+          Reload
+        </a>
+      </div>
+    );
   }
 }

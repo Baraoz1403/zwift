@@ -26,12 +26,12 @@ import type { RiderTrainingProfile } from "./rider-profile";
  */
 const DEFAULT_RIDER_PROFILE: RiderTrainingProfile = {
   goals: ["fitness"],
-  daysRange: "2-3",       // conservative: 2–3 rides/week until athlete sets their own
+  daysRange: "4-5",       // sensible default for an active cyclist — athlete should set their own via profile editor
   sessionLength: "60",    // 60-minute sessions
   sports: ["cycling"],
   environment: "indoor",
   gender: "male",
-  ageYears: 55,
+  ageYears: 40,
 };
 
 export interface StoredZwiftAuth {
