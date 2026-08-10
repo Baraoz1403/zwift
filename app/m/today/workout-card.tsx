@@ -80,6 +80,18 @@ export default function MobileWorkoutCard({ workout, weekWorkouts, today, todayS
   return (
     <div style={{ padding: "16px 16px 0" }}>
 
+      {/* TODAY badge */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <div style={{
+          fontSize: 13, fontWeight: 800, color: "#FF5A1F",
+          background: "rgba(255,90,31,0.10)", border: "1px solid rgba(255,90,31,0.30)",
+          borderRadius: 4, padding: "5px 12px", letterSpacing: ".08em", textTransform: "uppercase",
+        }}>Today</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".1em" }}>
+          Today&apos;s session
+        </div>
+      </div>
+
       {/* Section label */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".14em", color: "var(--m-muted)", textTransform: "uppercase" }}>

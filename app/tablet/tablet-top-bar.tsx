@@ -129,9 +129,18 @@ export function TabletTopBar({
                 borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 60,
               }}>
                 <div style={{ fontSize: 15, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>{currentPhase}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>
-                  {weekDisplayNum != null ? `Wk ${weekDisplayNum}` : "Phase"}
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Phase</div>
+              </div>
+            )}
+            {weekDisplayNum != null && (
+              <div style={{
+                background: "var(--m-card)", border: "1px solid var(--m-border)",
+                borderRadius: 10, padding: "6px 14px", textAlign: "center", minWidth: 52,
+              }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "var(--m-text)", lineHeight: 1 }}>
+                  {weekCyclePos ?? weekDisplayNum}<span style={{ fontSize: 11, fontWeight: 700 }}>/4</span>
                 </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--m-muted)", textTransform: "uppercase", letterSpacing: ".08em", marginTop: 3 }}>Week</div>
               </div>
             )}
             {weekWorkoutCount > 0 && (
