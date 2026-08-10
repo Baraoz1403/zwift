@@ -33,7 +33,7 @@ import { fetchActivities } from "@/lib/zwift";
 
 // AI plan generation takes 30-60 seconds (FIT file downloads + Claude API).
 // Without this, Vercel cuts the function at the default 10s hobby-plan limit.
-export const maxDuration = 60;
+export const maxDuration = 300; // 60s is Hobby ceiling; 300s on Pro
 
 export async function POST(req: NextRequest) {
   let ageYears: number | undefined;

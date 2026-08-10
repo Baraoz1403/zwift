@@ -83,7 +83,7 @@ import {
 // serverless timeout can be too short once more than a couple of athletes
 // are registered. 60s covers Vercel's Hobby-plan ceiling; raise this if the
 // project moves to Pro and this job ever needs more.
-export const maxDuration = 60;
+export const maxDuration = 300; // cron can use up to 5 min on Hobby; 300s on Pro
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -118,7 +118,8 @@ export async function GET(req: NextRequest) {
   const thisWeekMonday = mondayOfCurrentWeek();
   const comingMondayDate = new Date(thisWeekMonday + "T00:00:00Z");
   comingMondayDate.setUTCDate(comingMondayDate.getUTCDate() + 7);
-  const weekOf = comingMondayDate.toISOString().slice(0, 10);
+  const nextWeekOf = comingMondayDate.toISOString().slice(0, 10);
+  // weekOf is determined per-athlete: recover current week if missing, else generate next week proactively
 
   const results: AthleteRunResult[] = [];
 
@@ -140,6 +141,11 @@ export async function GET(req: NextRequest) {
       await mirrorZwiftAuthToKv(athleteId, refreshed.refreshToken);
 
       const state = await getStoredAthleteState(athleteId);
+
+      // Determine which week to generate:
+      // - If current week plan is MISSING → generate it (recovery from failed Sunday cron)
+      // - If current week plan EXISTS → generate next week proactively (normal Sunday flow)
+      const weekOf = state.previousPlan?.weekOf === thisWeekMonday ? nextWeekOf : thisWeekMonday;
 
       // Already have this week's plan — no need to regenerate, but run a
       // dedup pass on ICU to clean up any duplicate events that may have

@@ -162,7 +162,7 @@ export async function runWeeklyPlanGeneration(
   }
 
   const activities = await fetchActivities(opts.accessToken, athleteId);
-  const recentActivities = selectChartActivities(activities);
+  const recentActivities = selectChartActivities(activities, 8); // cap at 8 to stay within 60s timeout
 
   const fitResults = await mapWithConcurrency(recentActivities, 4, async (a) => {
     const buf = await fetchActivityFit(a);
