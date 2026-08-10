@@ -1309,7 +1309,7 @@ export async function generateWeeklyPlan(params: {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8000, // 16000 was overly generous — a 7-workout weekly plan fits well within 8000 tokens and halves API cost
+        max_tokens: 12000, // raised from 8000: 30-activity context yields longer descriptions; 16000 was wasteful but 8000 truncates
         // System as an array of content blocks (required for cache_control).
         // The ephemeral cache_control marks this block for caching on the
         // Anthropic side; subsequent calls within 5 min get it for free.
@@ -1426,7 +1426,7 @@ export async function generateWeeklyPlan(params: {
           },
           body: JSON.stringify({
             model: MODEL,
-            max_tokens: 8000,
+            max_tokens: 12000,
             system: retrySystemPrompt,
             messages: [
               { role: "user", content: userContent },
