@@ -38,7 +38,7 @@ import { pushWorkoutToIntervals, listIntervalsEvents, deleteEventFromIntervals }
 import { generateZwoXml, isRestDay } from "./zwo";
 import { workoutDateLabel, ensureWorkoutDates, normalizeToSix } from "./plan-shape";
 import { getIntervalsCredentials, markIntervalsSynced } from "./kv-plan-state";
-import { kvSet } from "./kv";
+import { kvSet, kvSetNx, kvDel } from "./kv";
 import type { WeeklyPlan, WeeklyWorkout } from "./ai";
 
 export interface HeadlessSyncResult {
@@ -272,6 +272,20 @@ export async function syncPlanToIcuAndMark(
   const creds = await getIntervalsCredentials(athleteId);
   if (!creds) return null;
 
+  // Distributed lock — prevents the fire-and-forget ensurePlanProvisioned
+  // (called from login) and the interactive weekly-plan route (called moments
+  // later when the dashboard loads) from both pushing to ICU simultaneously.
+  // Both callers check wasIntervalsSynced, see false, and race to push — this
+  // lock makes only one win; the other returns early with 0 pushed, which is
+  // the correct outcome (the winner handles the full sync).
+  const lockKey = `zwift:${athleteId}:icu_sync:${weekOf}:lock`;
+  const locked = await kvSetNx(lockKey, "1", 120); // 2-minute TTL as safety net
+  if (!locked) {
+    // Another sync is already in progress for this athlete+week — skip.
+    return { pushed: 0, deleted: 0, errors: [] };
+  }
+  try {
+
   const normalizedPlan = ensureWorkoutDates(normalizeToSix(plan));
   const narrow = await syncPlanToIntervalsHeadless(creds.icuKey, creds.icuId ?? undefined, normalizedPlan, riddenDates, riderName);
 
@@ -301,4 +315,7 @@ export async function syncPlanToIcuAndMark(
     deleted: narrow.deleted + wide.deleted,
     errors: allErrors,
   };
+  } finally {
+    await kvDel(lockKey).catch(() => {});
+  }
 }

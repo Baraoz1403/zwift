@@ -63,6 +63,12 @@ export async function kvSet(key: string, value: string, ttlSeconds?: number): Pr
   }
 }
 
+/** Set a key only if it does not already exist (NX). Returns true if the key was set (lock acquired). */
+export async function kvSetNx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+  const result = await kvCmd<string>("SET", key, value, "EX", ttlSeconds, "NX");
+  return result === "OK";
+}
+
 /** Delete one or more keys. */
 export async function kvDel(...keys: string[]): Promise<void> {
   if (keys.length === 0) return;
