@@ -12,19 +12,30 @@
  * Auth: CRON_SECRET required.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
 import { kvGet, kvSet } from "@/lib/kv";
 import { getKnownAthletes } from "@/lib/kv-plan-state";
 
-function isAuthorized(req: NextRequest): boolean {
+const ADMIN_ATHLETE_ID = "1040300";
+
+async function isAuthorized(req: NextRequest): Promise<boolean> {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
   const header = req.headers.get("authorization");
   const queryParam = req.nextUrl.searchParams.get("secret");
-  return header === `Bearer ${secret}` || queryParam === secret;
+  if (secret && (header === `Bearer ${secret}` || queryParam === secret)) return true;
+  // Also allow Barak's session
+  try {
+    const cookieStore = await cookies();
+    const raw = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    if (!raw) return false;
+    const session = await decryptSession(raw);
+    return !!session?.athleteId && String(session.athleteId) === ADMIN_ATHLETE_ID;
+  } catch { return false; }
 }
 
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAuthorized(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const athleteIds = await getKnownAthletes();
   const rows = await Promise.all(athleteIds.map(async (zwiftId) => {
@@ -45,7 +56,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAuthorized(req))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json() as { zwiftAthleteId?: string; icuAthleteId?: string };
   if (!body.zwiftAthleteId || !body.icuAthleteId) {
