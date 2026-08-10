@@ -1357,26 +1357,28 @@ export async function generateWeeklyPlan(params: {
     const intervalMin = isRecoveryWeek ? 1 : 2;
     const boringLimit = 0; // Foundation Ride / Free Ride / etc. NEVER allowed
 
-    if (intervalCount < intervalMin || boringCount > boringLimit || consecutiveViolation) {
+    // Only retry for failures the hard post-processing cannot fix:
+    // - intervalCount too low: sessions missing structure entirely (replacement gives Z2 Cadence Drills
+    //   which has intervals, but all-rest plans still need a real retry)
+    // - consecutiveViolation: scheduling issue, need AI to reschedule
+    // boringCount violations are intentionally NOT retried — the hard post-processing below
+    // replaces forbidden titles with Z2 Cadence Drills in code. Retrying for boringCount adds
+    // 25-30 seconds and the AI ignores it anyway (Foundation Ride for recovery is baked into
+    // its training data). The hard replacement is both faster and more reliable.
+    const needsRetry = intervalCount < intervalMin || consecutiveViolation;
+    if (needsRetry) {
       const failures: string[] = [];
       if (intervalCount < intervalMin) failures.push(`only ${intervalCount} structured session(s) with interval blocks (minimum required: ${intervalMin})`);
-      if (boringCount > boringLimit) failures.push(`${boringCount} session(s) use FORBIDDEN unstructured titles: Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride — zero tolerance, even in Recovery Week. Replace EVERY one with: Z2 with Cadence Drills, Spin & Recover, or Surge Ride`);
       if (consecutiveViolation) failures.push(`more than 3 consecutive training days without a rest day`);
-
-      const recoveryWeekNote = isRecoveryWeek
-        ? `RECOVERY WEEK REMINDER: "structured" means cadence blocks or surge blocks — NOT unbroken steadystate. Z2 with Cadence Drills and Spin & Recover BOTH qualify. Foundation Ride DOES NOT qualify even in Recovery Week.\n\n`
-        : "";
 
       const retrySystemPrompt =
         `⛔ QUALITY GATE FAILURE — PLAN REJECTED ⛔\n` +
         `The plan you just returned was rejected for the following reason(s):\n` +
         failures.map(f => `  • ${f}`).join("\n") + "\n\n" +
-        recoveryWeekNote +
         `MANDATORY CORRECTIONS:\n` +
-        `1. EVERY non-rest day MUST have structure[] with at least one type="intervals" block (cadence drills count).\n` +
-        `2. FORBIDDEN in ALL contexts (no exceptions, not even Recovery Week): Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride. Replace with: Z2 with Cadence Drills, Spin & Recover, Surge Ride, 30/30 Blitz.\n` +
-        `3. Insert a Rest day to prevent more than 3 consecutive training days.\n` +
-        `4. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
+        `1. EVERY non-rest day MUST have structure[] with at least one type="intervals" block.\n` +
+        `2. Insert a Rest day to prevent more than 3 consecutive training days.\n` +
+        `3. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
         systemPrompt;
 
       let resp2: Response;
