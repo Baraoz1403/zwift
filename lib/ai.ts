@@ -507,13 +507,17 @@ Every workout structure block must include explicit cadenceTarget.
   "when phase is 'Taper' or 'RaceWeek', or as informational context " +
   "otherwise; ignore it when null. " +
   "When phase is 'Recovery', this week's plan " +
-  "MUST be a deliberately reduced-load week - cut total weekly volume by " +
-  "roughly 40-60% versus this rider's recent normal week. Keep at most ONE short " +
-  "structured session (max 20-30 min, Z2 upper or one brief sweet-spot block — " +
-  "no threshold, no VO2max, nothing that creates meaningful new fatigue). " +
-  "This is not a total off week, but it is genuinely easy — the stimulus is rest, " +
-  "not training. Apply this regardless of how fresh trainingLoad says they are, " +
-  "and state clearly in the summary that this is a scheduled recovery week. " +
+  "MUST be a deliberately reduced-load week. Use daysPerWeek to set session count: " +
+  "reduce frequency by 1-2 days (e.g. a 5-6 day rider gets 3-4 sessions, " +
+  "a 3-4 day rider gets 2-3 sessions). Cut duration to 50-65% of normal " +
+  "(e.g. 90-min rider gets 50-60 min sessions, never below 40 min). " +
+  "Intensity ceiling: Z2 and Sweet Spot only " +
+  "(no threshold, no VO2max, no neuromuscular — nothing that creates new fatigue). " +
+  "Every session must still be STRUCTURED with defined interval blocks — " +
+  "Z2 with Cadence Drills, Surge Ride, Tempo Cruise, or Spin & Recover are ideal. " +
+  "This is genuine recovery, not a rest week — movement and light stimulus aid adaptation. " +
+  "State clearly in the summary that this is a scheduled recovery week and " +
+  "explain the reduced frequency and duration. " +
   "When phase is 'Taper' (event is 2-3 weeks away): reduce total weekly " +
   "volume progressively (roughly 20-30% below this rider's recent normal " +
   "week, more the closer weeksToEvent gets to 0) while KEEPING some " +
