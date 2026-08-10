@@ -296,6 +296,7 @@ export default async function TabletTodayPage({
         durationMin: w.durationMin,
         targetPowerPctFtp: w.targetPowerPctFtp,
         structure: w.structure,
+        isRunning: ["run", "easy run", "long run", "tempo run"].includes((w.type ?? "").toLowerCase()),
       } as PlannedWorkout) : undefined,
     };
   });
