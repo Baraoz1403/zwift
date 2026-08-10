@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME, decryptSession } from "@/lib/session";
-import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity } from "@/lib/kv-plan-state";
+import { getCachedPlan, getIntervalsCredentials, getStoredAthleteState, getRiderIdentity, getFeedbackDone } from "@/lib/kv-plan-state";
+import dynamic from "next/dynamic";
+
+const FeedbackBanner = dynamic(() => import("@/app/m/today/feedback-banner"), { ssr: false });
 import { kvGet } from "@/lib/kv";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { fetchIcuActivities } from "@/lib/intervals";
@@ -210,6 +213,10 @@ export default async function TabletTodayPage({
 
   // todayStatus and todayWorkout always use CURRENT WEEK (main panel)
   const todayStatus: DayStatus = weekStatus[todayStr] ?? "planned";
+
+  // Server-side feedback gate — same pattern as /m/today to prevent re-showing after submit
+  const feedbackAlreadyDone = await getFeedbackDone(athleteId, todayStr).catch(() => false);
+
   const todayWorkout =
     todayPlanWorkouts.find(w => w.date === todayStr) ??
     todayPlanWorkouts.find(w => w.day === todayDayName) ??
@@ -591,6 +598,23 @@ export default async function TabletTodayPage({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Feedback banner — same gate as /m/today, cross-device via KV */}
+          {!feedbackAlreadyDone && (todayStatus === "completed" || todayStatus === "bonus") && !isRest && (
+            <div style={{ marginTop: 24 }}>
+              <FeedbackBanner
+                workoutTitle={todayWorkout ? todayWorkout.title : (todayActivityName ?? "Bonus ride")}
+                workoutCategory={todayWorkout ? (todayWorkout.type ?? "") : "bonus"}
+                date={todayStr}
+                avgHr={todayAvgHr}
+                completed={true}
+                plannedDurationMin={todayWorkout?.durationMin}
+                actualActivityName={todayActivityName}
+                actualDurationMin={todayActivityDurationMin}
+                isBonus={todayStatus === "bonus"}
+              />
             </div>
           )}
 

@@ -398,14 +398,37 @@ const LEGIT_NO_INTERVAL_TITLES = new Set([
  * Used to detect plans that the AI generated as a template rather than
  * structured coaching output.
  */
+// Forbidden workout patterns — must not appear as primary training sessions.
+// Based on zwift-ai-app/lib/knowledge/rules.ts FORBIDDEN_WORKOUT_PATTERNS.
+const FORBIDDEN_WORKOUT_PATTERNS = [
+  "foundation ride", "free ride", "base ride",
+  "easy ride", "endurance ride", "z2 ride", "long endurance",
+];
+
 function isBoringSteadyState(w: WeeklyWorkout): boolean {
   if (w.type === "Rest" || isRestDayType(w.type)) return false;
   if (LEGIT_NO_INTERVAL_TITLES.has(w.title.toLowerCase())) return false;
   const hasIntervals = Array.isArray(w.structure) && w.structure.some(b => b.type === "intervals");
   if (hasIntervals) return false;
-  // Foundation Ride and Long Endurance by name are the main offenders
+  // Check against all forbidden pattern strings
   const t = w.title.toLowerCase();
-  return t.includes("foundation") || t.includes("long endurance") || t === "two-hour foundation";
+  return FORBIDDEN_WORKOUT_PATTERNS.some(p => t.includes(p));
+}
+
+// Returns true if the plan has more than MAX_CONSECUTIVE_TRAINING_DAYS training days in a row.
+// Days in the plan are assumed to be in Mon→Sun order.
+function hasConsecutiveTrainingDayViolation(workouts: WeeklyWorkout[]): boolean {
+  const MAX_CONSECUTIVE = 3;
+  let streak = 0;
+  for (const w of workouts) {
+    if (w.type === "Rest" || isRestDayType(w.type)) {
+      streak = 0;
+    } else {
+      streak++;
+      if (streak > MAX_CONSECUTIVE) return true;
+    }
+  }
+  return false;
 }
 
 const WEEKLY_PLAN_SYSTEM_PROMPT =
@@ -619,6 +642,20 @@ Every workout structure block must include explicit cadenceTarget.
   "or intermediate runners. " +
   "(6) Running easy-day sessions are 'Easy Run' type, long run is " +
   "'Long Run' type, tempo/harder runs are 'Tempo Run' type. " +
+  "⛔ RUNNING WORKOUTS — NO FTP/POWER LANGUAGE. This is absolute. " +
+  "Running sessions (type='Run', 'Easy Run', 'Long Run', 'Tempo Run') " +
+  "MUST NOT reference FTP, watts, or power percentages anywhere. " +
+  "targetPowerPctFtp MUST be empty or omitted for every running session. " +
+  "Use pace zones (Easy/Moderate/Tempo/Threshold/Max) and HR zones instead. " +
+  "In descriptions: give pace in min/km (e.g. '5:30-6:00 min/km') or " +
+  "HR zone (e.g. 'Zone 2, 130-145 bpm') — never watts. " +
+  "In structure blocks for running sessions: set powerFtp=0.65 (ignored for " +
+  "running in Zwift) and encode pace intent in the label field only " +
+  "(e.g. label='Easy pace — Zone 2 HR 130-145 bpm', " +
+  "label='Tempo intervals — 5:00 min/km, comfortably hard', " +
+  "label='Long run — conversational 6:00 min/km'). " +
+  "The description coach voice rule still applies — write it as if talking " +
+  "to a runner, not a cyclist: pace cues, effort level, HR zone. " +
   "Absent/null riderProfile means no profile set - proceed normally. " +
   "The input may also include a riderNote field - free text the rider " +
   "typed just before requesting this specific plan. Apply it within the " +
@@ -1306,13 +1343,16 @@ export async function generateWeeklyPlan(params: {
     const normalized1 = normalizeWeeklyPlan(finalWorkouts);
     const intervalCount = countIntervalSessions(normalized1);
     const boringCount = normalized1.filter(isBoringSteadyState).length;
+    const consecutiveViolation = hasConsecutiveTrainingDayViolation(normalized1);
 
-    // Retry if fewer than 2 interval sessions OR more than 1 Foundation/LongEndurance
-    if (intervalCount < 2 || boringCount > 1) {
+    // Retry if fewer than 2 interval sessions OR more than 1 forbidden steady-state
+    // OR more than 3 consecutive training days (MAX_CONSECUTIVE_TRAINING_DAYS=3)
+    if (intervalCount < 2 || boringCount > 1 || consecutiveViolation) {
       // Build retry prompt with explicit failure diagnosis
       const failures: string[] = [];
       if (intervalCount < 2) failures.push(`only ${intervalCount} session(s) contain defined interval blocks (minimum required: 2)`);
-      if (boringCount > 1) failures.push(`${boringCount} Foundation Ride or Long Endurance sessions appear as non-recovery filler (maximum allowed as non-recovery filler: 1)`);
+      if (boringCount > 1) failures.push(`${boringCount} session(s) use forbidden steady-state titles (Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride) as primary workouts — maximum allowed as non-recovery filler: 1`);
+      if (consecutiveViolation) failures.push(`plan has more than 3 consecutive training days without a rest day — hard cap is 3`);
 
       const retrySystemPrompt =
         `⛔ QUALITY GATE FAILURE — PLAN REJECTED ⛔\n` +
@@ -1320,8 +1360,8 @@ export async function generateWeeklyPlan(params: {
         failures.map(f => `  • ${f}`).join("\n") + "\n\n" +
         `MANDATORY CORRECTIONS before returning a new plan:\n` +
         `1. Every non-rest, non-recovery day MUST have a structure[] that includes at least one block with type="intervals".\n` +
-        `2. Foundation Ride and Long Endurance are BANNED as primary sessions except for the single active-recovery day immediately after a hard session.\n` +
-        `3. Replace any Foundation/Endurance day that is NOT immediately post-hard-session with: Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, or Sub-Threshold Blocks.\n` +
+        `2. FORBIDDEN as primary sessions (except single active-recovery day immediately after a hard session): Foundation Ride, Free Ride, Base Ride, Easy Ride, Endurance Ride, Z2 Ride, Long Endurance. Replace with: Z2 with Cadence Drills, Surge Ride, 30/30 Blitz, or Sub-Threshold Blocks.\n` +
+        `3. Insert a Rest day to ensure no more than 3 consecutive training days in a row.\n` +
         `4. Return EXACTLY 7 workouts, correctly structured JSON, no prose.\n\n` +
         systemPrompt;
 

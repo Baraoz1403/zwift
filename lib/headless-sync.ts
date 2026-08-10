@@ -162,13 +162,37 @@ export async function syncPlanToIntervalsHeadless(
   riderName?: string,
 ): Promise<HeadlessSyncResult> {
   const errors: string[] = [];
+  let deleted = 0;
 
-  // 1. Push fresh copies first for every non-rest day that hasn't actually
-  // been completed yet (same rule as the client: an already-ridden day's own
-  // completed-ride data is the source of truth, not the plan).
-  // Run workouts are now included: generateZwoXml emits <sportType>run</sportType>
-  // for run workouts, and pushWorkoutToIntervals maps the type to "Run" via
-  // toIntervalsSportType(), so ICU receives and syncs them to Zwift RUN mode correctly.
+  // Build the full date range for the plan week upfront — used by both steps.
+  const allDates = plan.workouts.map((w) => w.date).filter(Boolean).sort() as string[];
+  if (allDates.length === 0) return { pushed: 0, deleted: 0, errors };
+  const oldest = allDates[0];
+  const newest = allDates[allDates.length - 1];
+
+  // ── Step 1: DELETE all existing WORKOUT events for the plan week FIRST ────
+  // This "delete before push" order eliminates the race condition where Zwift
+  // syncs from ICU between the push and the old-event cleanup, causing a
+  // transient duplicate state that gets cached in Zwift. Previously the code
+  // pushed first then cleaned up — safe in theory (we kept the newly pushed
+  // IDs) but left a window where both old and new events coexisted.
+  try {
+    const preExisting = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
+    const staleWorkouts = preExisting.filter(e => e.category === "WORKOUT");
+    await Promise.all(staleWorkouts.map(async (e) => {
+      const r = await deleteEventFromIntervals(apiKey, e.id, athleteId);
+      if (r.ok) { deleted++; }
+      else if (r.error) { errors.push(`pre-delete ${e.id}: ${r.error}`); }
+    }));
+  } catch (e) {
+    errors.push(`pre-cleanup: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  // ── Step 2: PUSH fresh events for every non-rest unridden day ─────────────
+  // Now that the slate is clean, push new events. No duplicates possible.
+  // Run workouts: generateZwoXml emits <sportType>run</sportType> for run
+  // workouts, and pushWorkoutToIntervals maps the type to "Run" via
+  // toIntervalsSportType(), so ICU receives and syncs them to Zwift RUN mode.
   const daysToPush = plan.workouts.filter(
     (w) => !isRestDay(w.type) && !(w.date && riddenDates.has(w.date))
   );
@@ -193,58 +217,9 @@ export async function syncPlanToIntervalsHeadless(
   };
 
   const pushResults = await Promise.all(daysToPush.map(pushOne));
-  const newlyPushedIds = new Set(
-    pushResults.filter((r) => r.ok && r.eventId != null).map((r) => r.eventId as string | number)
-  );
   const pushedDates = new Set(
     daysToPush.filter((_, i) => pushResults[i].ok).map((w) => w.date).filter(Boolean) as string[]
   );
-
-  // 2. Clean up, matched by date, spanning the FULL plan week (not just the
-  // days we pushed to this cycle) - see the cleanup-range fix in
-  // weekly-plan.tsx for why a narrower range leaves stale entries behind on
-  // days that used to be active and are now Rest.
-  const allDates = plan.workouts.map((w) => w.date).filter(Boolean).sort() as string[];
-  if (allDates.length === 0) return { pushed: pushedDates.size, deleted: 0, errors };
-  const oldest = allDates[0];
-  const newest = allDates[allDates.length - 1];
-
-  let deleted = 0;
-  try {
-    const allEvents = await listIntervalsEvents(apiKey, oldest, newest, athleteId);
-    // Filter to WORKOUT category only — same reason as cleanupIcuDuplicates above.
-    const existingEvents = allEvents.filter(e => e.category === "WORKOUT");
-    const byDate = new Map<string, (string | number)[]>();
-    for (const e of existingEvents) {
-      const day = (e.start_date_local ?? "").slice(0, 10);
-      if (!byDate.has(day)) byDate.set(day, []);
-      byDate.get(day)!.push(e.id);
-    }
-
-    const idsToDelete = new Set<string | number>();
-    for (const [day, ids] of byDate) {
-      if (pushedDates.has(day)) {
-        const known = ids.filter((id) => newlyPushedIds.has(id));
-        const keep = known.length > 0 ? known[0] : ids.reduce((a, b) => (Number(b) > Number(a) ? b : a));
-        for (const id of ids) if (id !== keep) idsToDelete.add(id);
-      } else {
-        // Not a date we pushed this cycle (rest day, or already ridden) -
-        // any existing entry there is stale and safe to remove.
-        for (const id of ids) idsToDelete.add(id);
-      }
-    }
-
-    for (const id of idsToDelete) {
-      const r = await deleteEventFromIntervals(apiKey, id, athleteId);
-      if (r.ok) {
-        deleted++;
-      } else if (r.error) {
-        errors.push(`delete ${id}: ${r.error}`);
-      }
-    }
-  } catch (e) {
-    errors.push(`cleanup: ${e instanceof Error ? e.message : String(e)}`);
-  }
 
   return { pushed: pushedDates.size, deleted, errors };
 }
