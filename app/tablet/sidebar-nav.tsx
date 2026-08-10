@@ -34,33 +34,46 @@ export default function TabletSidebar() {
       borderRight: "1px solid var(--m-border)",
       display: "flex", flexDirection: "column", flexShrink: 0,
       position: "fixed",
-      top: "calc(var(--tablet-bar-h) + 24px)", // dark gap matching content area
+      top: "var(--tablet-bar-h)",
       left: 0, bottom: "var(--tablet-footer-h)",
       zIndex: 50,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
       overflow: "hidden",
     }}>
-      {/* Nav — no brand section (top bar handles branding) */}
-      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+      {/* Nav — matches right sidebar row style exactly */}
+      <nav style={{ flex: 1, padding: "8px 10px 12px", display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href === "/tablet/today" && pathname === "/tablet");
           return (
             <Link key={href} href={href} style={{
-              display: "flex", alignItems: "center", gap: 12,
-              padding: "12px 14px", borderRadius: 4,
-              background: active ? `${ZO}12` : "transparent",
-              border: `1px solid ${active ? ZO + "35" : "transparent"}`,
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px", borderRadius: 4,
+              background: active ? "var(--m-card-inner)" : "transparent",
+              border: `1px solid ${active ? "rgba(255,90,31,0.50)" : "transparent"}`,
               textDecoration: "none",
             }}>
               <Icon color={active ? ZO : "var(--m-muted)"} />
               <span style={{
-                fontSize: 16, fontWeight: active ? 700 : 500,
+                fontSize: 15, fontWeight: active ? 700 : 500,
                 color: active ? "var(--m-text)" : "var(--m-muted)",
               }}>{label}</span>
-              {active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: 1, background: ZO }} />}
             </Link>
           );
         })}
+
+        {/* Log out — same row style */}
+        <a href="/api/auth/logout" style={{
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 12px", borderRadius: 4,
+          background: "transparent", border: "1px solid transparent",
+          textDecoration: "none", marginTop: 4,
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
+              stroke="#ef4444" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: 15, fontWeight: 500, color: "#ef4444" }}>Log out</span>
+        </a>
       </nav>
 
     </div>
