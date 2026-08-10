@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/ai/activity-check/cron",
-      "schedule": "0 15 * * *"
+      "schedule": "*/30 * * * *"
     }
   ]
 }
