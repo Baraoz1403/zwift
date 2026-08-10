@@ -23,7 +23,7 @@ import {
  * Auth: Must be logged in as Barak (athleteId 1040300) — sole admin.
  */
 
-export const maxDuration = 60;
+export const maxDuration = 300; // Match weekly-plan route — AI generation + ICU sync can take 60-120s
 
 const ADMIN_ATHLETE_ID = "1040300"; // Barak
 
