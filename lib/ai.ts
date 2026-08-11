@@ -1367,11 +1367,13 @@ export async function generateWeeklyPlan(params: {
 
   let parsed: unknown = null;
   let lastParseError = "";
+  let cleanedBlock = ""; // successful JSON block — used by quality-gate retry
   for (const block of findJsonBlocks(text)) {
     try {
       const candidate = JSON.parse(block) as Partial<WeeklyPlan>;
       if (candidate && Array.isArray(candidate.workouts) && candidate.workouts.length > 0) {
         parsed = candidate;
+        cleanedBlock = block;
         break;
       }
     } catch {
@@ -1379,11 +1381,47 @@ export async function generateWeeklyPlan(params: {
     }
   }
   if (!parsed) {
-    throw new AiInsightsError(
-      lastParseError
-        ? \`Parse failed. Response tail: \${lastParseError}\`
-        : "Could not parse the AI's weekly plan response."
-    );
+    // Parse-failure retry: Claude sometimes returns a text description instead of
+    // JSON when constraint space is complex. Retry once with an explicit correction.
+    try {
+      const resp3 = await fetch(ANTHROPIC_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 16000,
+          system: systemPrompt,
+          messages: [
+            { role: "user", content: userContent },
+            { role: "assistant", content: text },
+            { role: "user", content: "Your response was not valid JSON. Return ONLY the raw JSON object — no prose, no markdown, no code fences. Start with { and end with }." },
+          ],
+        }),
+      });
+      if (resp3.ok) {
+        const d3 = await resp3.json();
+        const text3: string = d3?.content?.[0]?.text ?? "";
+        for (const block3 of findJsonBlocks(text3)) {
+          try {
+            const candidate3 = JSON.parse(block3) as Partial<WeeklyPlan>;
+            if (candidate3 && Array.isArray(candidate3.workouts) && candidate3.workouts.length > 0) {
+              parsed = candidate3;
+              cleanedBlock = block3;
+              break;
+            }
+          } catch { /* try next block */ }
+        }
+      }
+    } catch { /* network error — fall through to throw */ }
+
+    if (!parsed) {
+      const tail = lastParseError || text.slice(-300);
+      throw new AiInsightsError(`Parse failed. Response tail: ${tail}`);
+    }
   }
 
   const obj = parsed as Partial<WeeklyPlan>;
@@ -1459,7 +1497,7 @@ export async function generateWeeklyPlan(params: {
             system: retrySystemPrompt,
             messages: [
               { role: "user", content: userContent },
-              { role: "assistant", content: cleaned },
+              { role: "assistant", content: cleanedBlock },
               { role: "user", content: "The plan above was rejected. Return a corrected plan now that passes the quality gate." },
             ],
           }),
@@ -1473,15 +1511,21 @@ export async function generateWeeklyPlan(params: {
         const data2 = await resp2.json();
         const text2 = data2?.content?.[0]?.text;
         if (typeof text2 === "string") {
-          const s2 = text2.indexOf("{");
-          const e2 = text2.lastIndexOf("}");
-          if (s2 !== -1 && e2 > s2) {
+          // Use same multi-block extraction as first call
+          let foundRetry = false;
+          for (const block2 of findJsonBlocks(text2)) {
             try {
-              const obj2 = JSON.parse(text2.slice(s2, e2 + 1)) as Partial<WeeklyPlan>;
+              const obj2 = JSON.parse(block2) as Partial<WeeklyPlan>;
               if (Array.isArray(obj2.workouts) && obj2.workouts.length > 0) {
                 finalWorkouts = applyForbiddenReplacement(obj2.workouts as WeeklyWorkout[]);
                 planSummary = typeof obj2.summary === "string" ? obj2.summary : planSummary;
+                foundRetry = true;
+                break;
               }
+            } catch { /* keep original plan */ }
+          }
+          void foundRetry;
+        }
             } catch {
               // Retry JSON parse failed — keep original plan
             }
