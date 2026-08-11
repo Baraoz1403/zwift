@@ -1526,11 +1526,6 @@ export async function generateWeeklyPlan(params: {
           }
           void foundRetry;
         }
-            } catch {
-              // Retry JSON parse failed — keep original plan
-            }
-          }
-        }
       }
     }
   }
