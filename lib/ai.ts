@@ -541,7 +541,11 @@ Every workout structure block must include explicit cadenceTarget.
   "from 2 to 7) on ridesLast7Days/ridesPrior7Days instead, rounded to a " +
   "sensible number - a rider whose ridesLast7Days is around 3 should get " +
   "roughly that, not suddenly 6. Sunday is a valid training day — never " +
-  "default it to rest unless the session count is already reached. In either case: when freshness is " +
+  "default it to rest unless the session count is already reached. " +
+  "⛔ PAST DAYS RULE: Any day whose calendar date has already passed " +
+  "(before today's date in the params) must be set to type='Rest' title='Rest Day' durationMin=0. " +
+  "Never invent 'Completed Ride', 'Aerobic Spin', or any retrospective title for a past day. " +
+  "In either case: when freshness is " +
   "'fatigued' or tsb is clearly negative, build a lighter week (fewer " +
   "and/or easier sessions, more recovery) and say so briefly in the " +
   "summary. When freshness is 'fresh' (clearly positive tsb) and recent " +
@@ -562,8 +566,10 @@ Every workout structure block must include explicit cadenceTarget.
   "reduce frequency by 1-2 days (e.g. a 5-6 day rider gets 3-4 sessions, " +
   "a 3-4 day rider gets 2-3 sessions). Cut duration to 50-65% of normal " +
   "(e.g. 90-min rider gets 50-60 min sessions, never below 40 min). " +
-  "Intensity ceiling: Z2 and Tempo only " +
-  "(no Threshold, no VO2max, no Neuromuscular — nothing that creates new fatigue). " +
+  "Intensity ceiling: Z2 and Tempo only — strictly below 88% FTP. " +
+  "⛔ SWEET SPOT IS FORBIDDEN IN RECOVERY WEEK — 88% FTP creates lactate accumulation " +
+  "and breaks adaptation. The ceiling is 85% FTP maximum. " +
+  "No Threshold, no VO2max, no Neuromuscular, no Sweet Spot — nothing that creates new fatigue. " +
   "⛔ Foundation Ride is ABSOLUTELY FORBIDDEN even in Recovery Week — it is flat, " +
   "unstructured, and gives the rider nothing to focus on. " +
   "Recovery Week sessions MUST be structured with defined variation blocks: " +
@@ -1174,6 +1180,8 @@ export async function generateWeeklyPlan(params: {
    * can actually sustain — not generic textbook numbers.
    */
   icuPerformanceContext?: string | null;
+  /** Workout titles already assigned to OTHER athletes this week — AI must avoid repeating them. */
+  siblingWeekTitles?: string[];
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -1294,7 +1302,12 @@ export async function generateWeeklyPlan(params: {
     WEEKLY_PLAN_SYSTEM_PROMPT +
     (params.selectionContext ? "\n\n" + params.selectionContext : "") +
     (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "") +
-    (params.icuPerformanceContext ? "\n\n" + params.icuPerformanceContext : "");
+    (params.icuPerformanceContext ? "\n\n" + params.icuPerformanceContext : "") +
+    (params.siblingWeekTitles && params.siblingWeekTitles.length > 0
+      ? "\n\n⛔ CROSS-ATHLETE VARIETY — OTHER ATHLETES THIS WEEK ALREADY HAVE:\n" +
+        params.siblingWeekTitles.map(t => `• ${t}`).join("\n") +
+        "\nDo NOT prescribe any of the above titles for this athlete this week — every athlete must receive a unique weekly workout set."
+      : "");
 
   let resp: Response;
   try {
