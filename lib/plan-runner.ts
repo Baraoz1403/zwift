@@ -33,7 +33,6 @@ import {
   getStoredAthleteState,
   getIntervalsCredentials,
   wasIntervalsSynced,
-  getKnownAthletes,
 } from "@/lib/kv-plan-state";
 import { kvSet, kvGet } from "@/lib/kv";
 import { syncPlanToIcuAndMark } from "@/lib/headless-sync";
@@ -400,26 +399,6 @@ export async function runWeeklyPlanGeneration(
     ? seasonContextToPrompt(seasonPlan, currentSeasonWeek, previousSeasonWeek)
     : null;
 
-  // ── Sibling athlete workout deduplication ──────────────────────────────────
-  // Read this week's workout titles for all OTHER athletes so the AI can
-  // avoid prescribing the same named sessions across the entire athlete pool.
-  // Read-only, best-effort — never blocks plan generation.
-  let siblingWeekTitles: string[] | undefined;
-  try {
-    const allAthleteIds = await getKnownAthletes();
-    const sibs = allAthleteIds.filter(id => id !== athleteId);
-    const sibTitles: string[] = [];
-    for (const sibId of sibs) {
-      const sibPlan = await getCachedPlan(sibId, weekOf).catch(() => null);
-      if (sibPlan?.workouts) {
-        sibPlan.workouts
-          .filter(w => w.type !== "Rest" && !w.type?.toLowerCase().includes("rest"))
-          .forEach(w => { if (w.title) sibTitles.push(w.title); });
-      }
-    }
-    if (sibTitles.length > 0) siblingWeekTitles = [...new Set(sibTitles)];
-  } catch { /* best-effort */ }
-
   const plan = await generateWeeklyPlan({
     firstName: profile.firstName,
     ftp: effectiveFtp,
@@ -441,7 +420,6 @@ export async function runWeeklyPlanGeneration(
     selectionContext: selectionContextPrompt,
     seasonContext: seasonContext ?? undefined,
     icuPerformanceContext: icuPerformanceContext || undefined,
-    siblingWeekTitles,
   });
 
   // ── Cache ICU performance context for the coach (Marco) ─────────────────

@@ -1202,7 +1202,6 @@ export async function generateWeeklyPlan(params: {
    */
   icuPerformanceContext?: string | null;
   /** Workout titles already assigned to OTHER athletes this week — AI must avoid repeating them. */
-  siblingWeekTitles?: string[];
 }): Promise<WeeklyPlan> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -1324,11 +1323,7 @@ export async function generateWeeklyPlan(params: {
     (params.selectionContext ? "\n\n" + params.selectionContext : "") +
     (params.riderFingerprint ? "\n\n" + params.riderFingerprint : "") +
     (params.icuPerformanceContext ? "\n\n" + params.icuPerformanceContext : "") +
-    (params.siblingWeekTitles && params.siblingWeekTitles.length > 0
-      ? "\n\n⛔ CROSS-ATHLETE VARIETY — OTHER ATHLETES THIS WEEK ALREADY HAVE:\n" +
-        params.siblingWeekTitles.map(t => `• ${t}`).join("\n") +
-        "\nDo NOT prescribe any of the above titles for this athlete this week — every athlete must receive a unique weekly workout set."
-      : "");
+    "";
 
   let resp: Response;
   try {
