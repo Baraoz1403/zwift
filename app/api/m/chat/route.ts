@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { decryptSession, SESSION_COOKIE_NAME } from "@/lib/session";
-import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getCachedIdentity } from "@/lib/kv-plan-state";
+import { getStoredAthleteState, getCachedPlan, setCachedPlan, getIntervalsCredentials, getRiderIdentity } from "@/lib/kv-plan-state";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { workoutDateLabel } from "@/lib/plan-shape";
 import { kvGet, kvSet } from "@/lib/kv";
@@ -325,7 +325,7 @@ export async function POST(req: NextRequest) {
     // ICU performance context: pre-computed during plan generation, cached for 7 days.
     // Contains 50/30/20-weighted summary of last 30 rides — power, HR, TSS, volume, patterns.
     kvGet(`zwift:${athleteId}:icu_perf_ctx`).catch(() => null),
-    getCachedIdentity(athleteId).catch(() => null),
+    getRiderIdentity(athleteId).catch(() => null),
   ]);
 
   // Rider first name — injected into ZWO TextEvent messages so on-screen prompts
