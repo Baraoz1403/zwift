@@ -1338,40 +1338,52 @@ export async function generateWeeklyPlan(params: {
     throw new AiInsightsError("Unexpected response shape from the Claude API.");
   }
 
-  // Extract the JSON object robustly: find the outermost { ... } block.
-  // This handles code-fence wrappers, preamble text, or any other extra
-  // content the model may add around the JSON object.
-  const start = text.indexOf("{");
-  if (start === -1) {
-    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
-  }
-  // Walk the string counting braces — more robust than lastIndexOf("}") which
-  // breaks when the AI appends trailing text containing "}" after the JSON.
-  let end = -1;
-  {
-    let depth = 0, inString = false, escape = false;
-    for (let i = start; i < text.length; i++) {
-      const ch = text[i];
-      if (escape) { escape = false; continue; }
-      if (ch === "\\" && inString) { escape = true; continue; }
-      if (ch === '"') { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === "{") depth++;
-      else if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+  // Extract the outermost JSON object that contains a valid weekly plan.
+  // Strategy: try each "{...}" block in the text (bracket-counted) in order
+  // until one parses successfully AND has a workouts array. This handles:
+  //   (a) Code-fence wrappers Claude sometimes adds around JSON
+  //   (b) Preamble placeholder blocks like {"summary":"...","workouts":[7 days]}
+  //       that Claude adds before the real plan when it's thinking out loud.
+  //   (c) Trailing commentary after the JSON containing extra "}" characters.
+  function* findJsonBlocks(s: string): Generator<string> {
+    let pos = 0;
+    while (pos < s.length) {
+      const blockStart = s.indexOf("{", pos);
+      if (blockStart === -1) break;
+      let depth = 0, inStr = false, esc = false, i = blockStart;
+      for (; i < s.length; i++) {
+        const c = s[i];
+        if (esc) { esc = false; continue; }
+        if (c === "\\" && inStr) { esc = true; continue; }
+        if (c === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (c === "{") depth++;
+        else if (c === "}") { depth--; if (depth === 0) { break; } }
+      }
+      if (depth === 0) yield s.slice(blockStart, i + 1);
+      pos = blockStart + 1;
     }
   }
-  if (end === -1) {
-    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
-  }
-  const cleaned = text.slice(start, end + 1);
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    // Include the tail of the raw response so we can diagnose truncation vs. malformed JSON.
-    const tail = cleaned.slice(-300);
-    throw new AiInsightsError(`Parse failed. Response tail: ${tail}`);
+  let parsed: unknown = null;
+  let lastParseError = "";
+  for (const block of findJsonBlocks(text)) {
+    try {
+      const candidate = JSON.parse(block) as Partial<WeeklyPlan>;
+      if (candidate && Array.isArray(candidate.workouts) && candidate.workouts.length > 0) {
+        parsed = candidate;
+        break;
+      }
+    } catch {
+      lastParseError = block.slice(-300);
+    }
+  }
+  if (!parsed) {
+    throw new AiInsightsError(
+      lastParseError
+        ? \`Parse failed. Response tail: \${lastParseError}\`
+        : "Could not parse the AI's weekly plan response."
+    );
   }
 
   const obj = parsed as Partial<WeeklyPlan>;
