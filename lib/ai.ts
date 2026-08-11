@@ -1342,8 +1342,25 @@ export async function generateWeeklyPlan(params: {
   // This handles code-fence wrappers, preamble text, or any other extra
   // content the model may add around the JSON object.
   const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
+  if (start === -1) {
+    throw new AiInsightsError("Could not parse the AI's weekly plan response.");
+  }
+  // Walk the string counting braces — more robust than lastIndexOf("}") which
+  // breaks when the AI appends trailing text containing "}" after the JSON.
+  let end = -1;
+  {
+    let depth = 0, inString = false, escape = false;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\" && inString) { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
+  }
+  if (end === -1) {
     throw new AiInsightsError("Could not parse the AI's weekly plan response.");
   }
   const cleaned = text.slice(start, end + 1);
