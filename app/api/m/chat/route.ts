@@ -497,7 +497,7 @@ export async function POST(req: NextRequest) {
         ? "AI API key is invalid or expired — please contact the admin."
         : aiRes1.status === 413 || errText.includes("too large") || errText.includes("context_length")
         ? "Conversation context is too long. Please clear the chat history and try again."
-        : `AI service returned an error (${aiRes1.status}). Please try again.`;
+        : `AI service returned an error (${aiRes1.status}): ${errText.slice(0,400)}`;
       return NextResponse.json({ ok: false, error: humanErr }, { status: 502 });
     }
 
