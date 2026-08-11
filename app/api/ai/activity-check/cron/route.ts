@@ -36,6 +36,7 @@ import {
   getRiderIdentity,
 } from "@/lib/kv-plan-state";
 import { refreshZwiftToken, fetchActivities } from "@/lib/zwift";
+import type { RideSummary } from "@/lib/ai";
 import { mondayOfCurrentWeek } from "@/lib/periodization";
 import { kvGet, kvSet } from "@/lib/kv";
 import { sendWhatsApp, buildFeedbackMessage } from "@/lib/whatsapp";
@@ -166,6 +167,38 @@ export async function GET(req: NextRequest) {
       // Also set the date-level flag so FeedbackTrigger (app open) doesn't
       // double-send on the same day
       await kvSet(`zwift:${athleteId}:fb_sent:${today}`, "1").catch(() => {});
+
+      // ── 7b. Save activity to ride_cache so regen doesn't need Zwift API ──
+      // plan-runner.ts reads from this cache; the cron is the write path.
+      try {
+        const RIDE_CACHE_KEY = `zwift:${athleteId}:ride_cache`;
+        const RIDE_CACHE_TTL = 45 * 24 * 60 * 60;
+        const rawCache = await kvGet(RIDE_CACHE_KEY).catch(() => null);
+        const existingRides: RideSummary[] = rawCache ? JSON.parse(rawCache) : [];
+        // Dedup by date prefix — same logic as plan-runner
+        const actDate = new Date(activities.find(a => a.id === foundActivity!.id)?.startDate as string ?? "").toISOString();
+        const alreadyCached = existingRides.some(r => r.date && actDate.startsWith(r.date.slice(0, 13)));
+        if (!alreadyCached) {
+          const actRaw = activities.find(a => a.id === foundActivity!.id);
+          const newRide: RideSummary = {
+            date: actDate,
+            sport: (actRaw?.sport as string | undefined) ?? "CYCLING",
+            distanceKm: Math.round(((actRaw?.distanceInMeters ?? 0) as number) / 100) / 10,
+            durationMin: Math.round((foundActivity!.movingTimeInMs ?? 0) / 60000),
+            avgWatts: Math.round((actRaw?.avgWatts ?? 0) as number),
+            elevationM: Math.round((actRaw?.totalElevation ?? 0) as number),
+            avgHeartRate: foundActivity!.avgHeartRate != null ? Math.round(foundActivity!.avgHeartRate) : null,
+            normalizedPower: null, // FIT not fetched at cron time — plan-runner will fill on bootstrap
+          };
+          const merged = [...existingRides, newRide]
+            .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
+            .slice(-30);
+          kvSet(RIDE_CACHE_KEY, JSON.stringify(merged), RIDE_CACHE_TTL).catch(() => {});
+          console.log(`[activity-check/cron] saved ride to cache for athlete=${athleteId} date=${actDate.slice(0,10)}`);
+        }
+      } catch (cacheErr) {
+        console.warn(`[activity-check/cron] ride_cache update failed: ${cacheErr}`);
+      }
 
       // ── 8. Send WhatsApp ────────────────────────────────────────────────
       const identity = await getRiderIdentity(athleteId).catch(() => null);

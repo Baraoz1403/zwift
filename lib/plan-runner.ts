@@ -161,13 +161,12 @@ export async function runWeeklyPlanGeneration(
     throw new AiInsightsError("Could not determine your Zwift rider id.");
   }
 
-  // ── Incremental activity cache ────────────────────────────────────────────
-  // First call: fetch 30 activities + FIT for the 8 most recent → cache in KV.
-  // Every subsequent call: fetch only activities newer than the last cached
-  // one (usually 1), fetch FIT only for those new activities, merge into cache.
-  // The AI always receives 30 activities; fitness load (CTL/ATL/TSB) is always
-  // computed from the full 30-activity window. This keeps per-regen time ~3-5s
-  // instead of 8-16s for repeated FIT fetches.
+  // ── Activity cache (webhook/cron-populated) ─────────────────────────────
+  // New rides are saved to KV at ride-completion time by the activity-check
+  // cron (every 30 min). Regen reads from KV only — NO Zwift API call needed.
+  //
+  // Exception: true cold start (cache completely empty) → bootstrap once with
+  // a full 30-activity fetch + FIT×3, then save to KV for all future regens.
   const RIDE_CACHE_KEY = `zwift:${athleteId}:ride_cache`;
   const RIDE_CACHE_TTL = 45 * 24 * 60 * 60; // 45 days
 
@@ -178,77 +177,51 @@ export async function runWeeklyPlanGeneration(
     if (raw) cachedRides = JSON.parse(raw) as RideSummary[];
   } catch { /* treat as cold start */ }
 
-  // Fetch activity list from Zwift (metadata only — one fast API call)
-  const activities = await fetchActivities(opts.accessToken, athleteId);
-  const allRecentActivities = selectChartActivities(activities, 30);
+  let rides: RideSummary[];
 
-  // Determine which activities are truly new (not already in cache)
-  const cachedIds = new Set(
-    cachedRides
-      .map(r => r.date) // date is the unique key we have (IDs not stored in RideSummary)
-  );
-  // Match by date string prefix (YYYY-MM-DDTHH) — close enough for dedup
-  const newActivities = allRecentActivities.filter(
-    a => !cachedIds.has(a.startDate as string) &&
-         !cachedRides.some(r => r.date && (a.startDate as string)?.startsWith(r.date.slice(0, 13)))
-  );
+  if (cachedRides.length > 0) {
+    // ── WARM PATH: cache populated by cron → use directly, no API call ──────
+    rides = cachedRides;
+  } else {
+    // ── COLD START: bootstrap with Zwift API + FIT×3, then cache ────────────
+    // This runs ONCE per athlete. After this, the cron keeps the cache fresh.
+    console.log(`[plan-runner] cold start for athlete=${athleteId} — bootstrapping ride cache`);
+    const activities = await fetchActivities(opts.accessToken, athleteId);
+    const allRecentActivities = selectChartActivities(activities, 30);
 
-  // Cold start: cache empty → fetch FIT for last 3 (saves ~10s vs 8 — HR/NP still meaningful).
-  // Warm regen: cache hit → fetch FIT only for 1-2 new activities.
-  const isColdStart = cachedRides.length === 0;
-  const fitNewActivities = isColdStart ? newActivities.slice(-3) : newActivities.slice(-2);
-  const fitResults = await mapWithConcurrency(fitNewActivities, 3, async (a) => {
-    const buf = await fetchActivityFit(a);
-    const fitRecords = parseFitRecords(buf);
-    const hrVals = fitRecords
-      .filter((r) => r.heartRate != null && r.heartRate > 0)
-      .map((r) => r.heartRate as number);
-    const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
-    const normalizedPower = computeNormalizedPower(fitRecords);
-    return { avgHeartRate, normalizedPower };
-  });
+    const fitNewActivities = allRecentActivities.slice(-3);
+    const fitResults = await mapWithConcurrency(fitNewActivities, 3, async (a) => {
+      const buf = await fetchActivityFit(a);
+      const fitRecords = parseFitRecords(buf);
+      const hrVals = fitRecords
+        .filter((r) => r.heartRate != null && r.heartRate > 0)
+        .map((r) => r.heartRate as number);
+      const avgHeartRate = hrVals.length > 0 ? hrVals.reduce((s, v) => s + v, 0) / hrVals.length : null;
+      const normalizedPower = computeNormalizedPower(fitRecords);
+      return { avgHeartRate, normalizedPower };
+    });
 
-  // Build RideSummary for new activities
-  const newRides: RideSummary[] = newActivities.map((a) => {
-    const fitIdx = fitNewActivities.findIndex((fa) => fa.id === a.id);
-    const hasFit = fitIdx !== -1 && fitResults[fitIdx]?.status === "fulfilled";
-    const fitVal = hasFit ? (fitResults[fitIdx] as PromiseFulfilledResult<{ avgHeartRate: number | null; normalizedPower: number | null }>).value : null;
-    return {
-      date: a.startDate as string,
-      sport: a.sport as string | undefined,
-      distanceKm: Math.round(((a.distanceInMeters ?? 0) as number) / 100) / 10,
-      durationMin: Math.round(((a.movingTimeInMs ?? 0) as number) / 60000),
-      avgWatts: Math.round((a.avgWatts ?? 0) as number),
-      elevationM: Math.round((a.totalElevation ?? 0) as number),
-      avgHeartRate: fitVal?.avgHeartRate != null ? Math.round(fitVal.avgHeartRate) : null,
-      normalizedPower: fitVal?.normalizedPower ?? null,
-    };
-  });
-
-  // Merge: new activities first (most recent last after sort), trim to 30
-  const mergedRides = [...cachedRides, ...newRides]
-    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
-    .slice(-30); // keep latest 30
-
-  // Save updated cache (best-effort, non-blocking)
-  if (newRides.length > 0) {
-    kvSet(RIDE_CACHE_KEY, JSON.stringify(mergedRides), RIDE_CACHE_TTL).catch(() => {});
-  }
-
-  // Cold-start fallback: if cache was empty and no new activities (shouldn't happen), 
-  // build rides from allRecentActivities with no FIT data
-  const rides: RideSummary[] = mergedRides.length > 0
-    ? mergedRides
-    : allRecentActivities.map((a) => ({
+    const bootstrapRides: RideSummary[] = allRecentActivities.map((a) => {
+      const fitIdx = fitNewActivities.findIndex((fa) => fa.id === a.id);
+      const hasFit = fitIdx !== -1 && fitResults[fitIdx]?.status === "fulfilled";
+      const fitVal = hasFit ? (fitResults[fitIdx] as PromiseFulfilledResult<{ avgHeartRate: number | null; normalizedPower: number | null }>).value : null;
+      return {
         date: a.startDate as string,
         sport: a.sport as string | undefined,
         distanceKm: Math.round(((a.distanceInMeters ?? 0) as number) / 100) / 10,
         durationMin: Math.round(((a.movingTimeInMs ?? 0) as number) / 60000),
         avgWatts: Math.round((a.avgWatts ?? 0) as number),
         elevationM: Math.round((a.totalElevation ?? 0) as number),
-        avgHeartRate: null,
-        normalizedPower: null,
-      }));
+        avgHeartRate: fitVal?.avgHeartRate != null ? Math.round(fitVal.avgHeartRate) : null,
+        normalizedPower: fitVal?.normalizedPower ?? null,
+      };
+    });
+
+    rides = bootstrapRides
+      .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
+      .slice(-30);
+    kvSet(RIDE_CACHE_KEY, JSON.stringify(rides), RIDE_CACHE_TTL).catch(() => {});
+  }
 
   const hrFlags = flagHeartRateAnomalies(rides);
   for (const [index, direction] of hrFlags) {
