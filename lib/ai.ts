@@ -433,6 +433,27 @@ function applyForbiddenReplacement(workouts: WeeklyWorkout[]): WeeklyWorkout[] {
   });
 }
 
+
+/**
+ * Code-level enforcement of the PAST DAYS RULE.
+ * Any workout whose calendar date (from weekDates) has already passed
+ * relative to today is forced to Rest Day — no AI instruction needed.
+ */
+function applyPastDaysRule(
+  workouts: WeeklyWorkout[],
+  weekDates: Record<string, string>,
+  today: string,
+): WeeklyWorkout[] {
+  return workouts.map((w) => {
+    const date = weekDates[w.day];
+    if (date && date < today) {
+      console.log(`[past-days] ${w.day} (${date}) is before today (${today}) → Rest Day`);
+      return { ...w, type: "Rest" as const, title: "Rest Day", durationMin: 0, description: "", structure: [] };
+    }
+    return w;
+  });
+}
+
 function isBoringSteadyState(w: WeeklyWorkout): boolean {
   if (w.type === "Rest" || isRestDayType(w.type)) return false;
   if (LEGIT_NO_INTERVAL_TITLES.has(w.title.toLowerCase())) return false;
@@ -1452,7 +1473,9 @@ export async function generateWeeklyPlan(params: {
   // ── Pre-gate hard replacement ─────────────────────────────────────────────
   // Replace forbidden titles (Foundation Ride etc.) BEFORE the quality gate
   // so the gate sees interval blocks and does not trigger a costly retry.
+  // Also enforce past-days rule in code — AI instruction alone is unreliable.
   finalWorkouts = applyForbiddenReplacement(finalWorkouts);
+  finalWorkouts = applyPastDaysRule(finalWorkouts, weekDates, new Date().toISOString().slice(0, 10));
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Quality Gate ────────────────────────────────────────────────────────
@@ -1534,6 +1557,7 @@ export async function generateWeeklyPlan(params: {
               const obj2 = JSON.parse(block2) as Partial<WeeklyPlan>;
               if (Array.isArray(obj2.workouts) && obj2.workouts.length > 0) {
                 finalWorkouts = applyForbiddenReplacement(obj2.workouts as WeeklyWorkout[]);
+                finalWorkouts = applyPastDaysRule(finalWorkouts, weekDates, new Date().toISOString().slice(0, 10));
                 planSummary = typeof obj2.summary === "string" ? obj2.summary : planSummary;
                 foundRetry = true;
                 break;
@@ -1547,10 +1571,11 @@ export async function generateWeeklyPlan(params: {
   }
   // ────────────────────────────────────────────────────────────────────────
 
-  // ── Final safety pass: last-resort forbidden replacement ─────────────────
+  // ── Final safety pass: last-resort forbidden replacement + past-days ────────
   // Should be a no-op after pre-gate + post-retry passes above. Kept as
   // belt-and-suspenders in case a code path above is ever changed.
   finalWorkouts = applyForbiddenReplacement(finalWorkouts);
+  finalWorkouts = applyPastDaysRule(finalWorkouts, weekDates, new Date().toISOString().slice(0, 10));
 
   return {
     weekOf: weekOfMonday,
