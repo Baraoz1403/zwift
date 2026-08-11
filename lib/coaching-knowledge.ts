@@ -1639,8 +1639,8 @@ export function resolveCanonicalStructure(
   const target = targetMin ?? canonical.totalMin;
   const delta = target - canonical.totalMin;
 
-  // Within ±8 min — adjust warmup/cooldown to fit, keep intervals intact
-  if (Math.abs(delta) <= 8) {
+  // Within ±15 min — adjust warmup/cooldown to fit, keep intervals intact
+  if (Math.abs(delta) <= 15) {
     if (delta === 0) return canonical.blocks;
 
     const workBlocks = canonical.blocks.filter(
