@@ -20,6 +20,7 @@ interface TabletTopBarProps {
   ftp: number | null;
   currentPhase: string | null;
   weekDisplayNum: number | null;
+  weekCyclePos: number | null;
   weekWorkoutCount: number;
   icuConnected: boolean;
   greeting: string;
@@ -27,7 +28,7 @@ interface TabletTopBarProps {
 }
 
 export function TabletTopBar({
-  firstName, ftp, currentPhase, weekDisplayNum, weekWorkoutCount,
+  firstName, ftp, currentPhase, weekDisplayNum, weekCyclePos, weekWorkoutCount,
   icuConnected, greeting, dateLabel,
 }: TabletTopBarProps) {
   return (
