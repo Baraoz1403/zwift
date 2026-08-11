@@ -77,7 +77,7 @@ export default async function TabletWeekPage() {
   const workoutsWithDates = workouts.map(w => ({ ...w, date: w.date ?? dateMap[w.day] }));
 
   const weekWorkoutCount = workoutsWithDates.filter(
-    (w: WeeklyWorkout) => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+    (w: WeeklyWorkout) => (w.type ?? "").toLowerCase() !== "rest"  /* "Recovery" = real workout */
   ).length;
 
   let weekStatus: Record<string, DayStatus> = {};

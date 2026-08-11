@@ -81,7 +81,7 @@ export default async function TabletLayout({ children }: { children: React.React
     // Session count from plan
     const workouts = plan?.workouts ?? [];
     const weekWorkoutCount = workouts.filter(
-      (w: { type?: string }) => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+      (w: { type?: string }) => (w.type ?? "").toLowerCase() !== "rest"  /* "Recovery" = real workout */
     ).length;
 
     // Connection status — Zwift is always connected (required), ICU is optional

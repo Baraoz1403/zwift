@@ -164,7 +164,7 @@ export default async function MobileTodayPage() {
 
   // Count planned workouts this week (non-rest)
   const weekWorkoutCount = workouts.filter(
-    w => !["rest", "recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+    w => !["rest"].some(k => (w.type ?? "").toLowerCase() === k)  /* "Recovery" = real workout */
   ).length;
 
   const SCROLL_STYLE: React.CSSProperties = {

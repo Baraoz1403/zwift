@@ -74,7 +74,7 @@ export default async function TabletCoachPage() {
   const workouts: WeeklyWorkout[] = (plan?.workouts ?? []).map(w => ({ ...w, date: w.date ?? dateMap[w.day] ?? undefined }));
 
   const weekWorkoutCount = workouts.filter(
-    w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+    w => (w.type ?? "").toLowerCase() !== "rest"  /* "Recovery" = real workout */
   ).length;
 
   let weekStatus: Record<string, DayStatus> = {};

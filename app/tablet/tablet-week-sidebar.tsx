@@ -142,7 +142,7 @@ export function TabletWeekSidebar({
           {ALL_DAYS.map(dayName => {
             const w         = workouts.find(x => x.day === dayName);
             const isToday   = w?.date === todayStr;
-            const dayIsRest = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
+            const dayIsRest = !w || (w.type ?? "").toLowerCase() === "rest"  /* "Recovery" = real workout */;
             const dayStatus: DayStatus | undefined = w?.date ? weekStatus[w.date] : undefined;
             const dateNum   = w?.date ? new Date(w.date + "T12:00:00").getDate() : null;
 

@@ -78,7 +78,7 @@ export default async function MobileProfilePage() {
 
   const workoutsThisWeek = currentPlan?.workouts.filter(w => {
     const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-    return !t.includes("rest") && !t.includes("recovery") && !t.includes("off");
+    return !t.includes("rest") && !t.includes("off")  /* "Recovery" = real workout */;
   }).length ?? 0;
 
   const GOAL_LABELS: Record<string, string> = {

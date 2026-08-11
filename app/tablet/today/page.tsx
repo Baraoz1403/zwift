@@ -235,13 +235,13 @@ export default async function TabletTodayPage({
   const dateLabel = todayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Jerusalem" });
 
   const isBonus    = todayStatus === "bonus";
-  const isRest     = !isBonus && (!todayWorkout || ["rest","recovery"].some(k => (todayWorkout.type ?? "").toLowerCase().includes(k)));
+  const isRest     = !isBonus && (!todayWorkout || (todayWorkout.type ?? "").toLowerCase() === "rest"  /* "Recovery" = real workout */);
   const zoneColor  = !isRest && todayWorkout ? ZO : isBonus ? ZO : "var(--m-border)";
   const zoneLabel  = !isRest && !isBonus && todayWorkout ? detectZoneLabel(todayWorkout) : isBonus ? "Bonus Ride" : "";
   const statusLabel = todayStatus === "completed" ? "Done" : todayStatus === "missed" ? "Missed" : todayStatus === "bonus" ? "Bonus" : "Planned";
   const statusColor = todayStatus === "completed" ? "#22c55e" : todayStatus === "missed" ? "#ef4444" : todayStatus === "bonus" ? "#FF5A1F" : "#94a3b8";
   const weekWorkoutCount = workouts.filter(
-    w => !["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k))
+    w => !(w.type ?? "").toLowerCase() === "rest"  /* "Recovery" type = real workout */
   ).length;
   const weekDisplayNum = macro ? macro.weekIndex + 1 : null;
 
@@ -276,7 +276,7 @@ export default async function TabletTodayPage({
 
   const dayRows: DayRowData[] = ALL_DAYS.map(dayName => {
     const w        = sidebarWorkoutsWithDates.find(x => x.day === dayName);
-    const isRest   = !w || ["rest","recovery"].some(k => (w.type ?? "").toLowerCase().includes(k));
+    const isRest   = !w || (w.type ?? "").toLowerCase() === "rest"  /* "Recovery" type = real workout */;
     // Use sidebar week's date for the row
     const dateStr  = w?.date ?? sidebarDateMap[dayName];
     const dateNum  = dateStr ? new Date(dateStr + "T12:00:00").getDate() : undefined;

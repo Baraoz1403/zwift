@@ -40,7 +40,7 @@ function detectZone(w: WeeklyWorkout): string {
   if (t.includes("vo2") || t.includes("norwegian") || t.includes("60/60")) return "vo2max";
   if (t.includes("tempo")) return "tempo";
   if (t.includes("sprint") || t.includes("neuromuscular")) return "neuromuscular";
-  if (t.includes("rest") || t.includes("recovery") || t.includes("off")) return "rest";
+  if (t.includes("rest") || t.includes("off")  /* type="Recovery" is a real workout, not a rest day */) return "rest";
   return "endurance";
 }
 

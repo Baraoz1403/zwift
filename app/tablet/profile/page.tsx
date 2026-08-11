@@ -63,7 +63,7 @@ export default async function TabletProfilePage() {
   const tsbColor = tsb > 5 ? "#22c55e" : tsb < -5 ? "#ef4444" : "var(--m-muted)";
   const workoutsThisWeek = currentPlan?.workouts.filter(w => {
     const t = (w.title + " " + (w.type ?? "")).toLowerCase();
-    return !t.includes("rest") && !t.includes("recovery") && !t.includes("off");
+    return !t.includes("rest") && !t.includes("off")  /* "Recovery" = real workout */;
   }).length ?? 0;
 
   return (
