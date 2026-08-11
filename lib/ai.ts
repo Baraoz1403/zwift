@@ -806,14 +806,14 @@ Every workout structure block must include explicit cadenceTarget.
   "you're in the intermediate range — this week introduces Threshold Development.') " +
 
   // ── Duration calibration ──
-  "DURATION CALIBRATION — match prescriptions to what this rider actually completes: " +
+  "DURATION CALIBRATION — ramp toward what the rider has told you they want: " +
   "The ATHLETE PERFORMANCE HISTORY block (injected at the end of this prompt) reports " +
   "'Avg duration: X min' for the most-recent 10 sessions. " +
-  "Use that figure as the session-length anchor for non-rest days. " +
-  "Prescribe sessions within 80-125% of that anchor — not textbook norms. " +
-  "If the anchor is 48 min, prescribe 38-60 min sessions, not 75-90 min. " +
-  "If riderProfile.sessionLengthMinutes is also present, use the SMALLER of the two as the anchor " +
-  "(the rider's actual behavior is the ground truth). " +
+  "If riderProfile.sessionLengthMinutes is present, it is the rider's STATED TARGET — " +
+  "prescribe sessions between max(actual-avg * 0.90, riderProfile.sessionLengthMinutes * 0.75) " +
+  "and riderProfile.sessionLengthMinutes. Do NOT cap sessions below the profile target. " +
+  "Example: avg=48 min, profile=75 min → prescribe 60-75 min sessions (ramping toward 75). " +
+  "If riderProfile.sessionLengthMinutes is absent, use 80-125% of actual avg as the range. " +
   "Exceptions: (a) Long Endurance format is 90 min by definition — only schedule it when " +
   "riderProfile.sessionLengthMinutes ≥ 80 or riderNote explicitly allows it; " +
   "(b) Taper/Recovery phases may mandate shorter sessions regardless of history; " +
@@ -1085,12 +1085,15 @@ Every workout structure block must include explicit cadenceTarget.
   "  No two hard sessions on consecutive days. The same title should not repeat across the week " +
   "where a clear alternative exists.\n" +
   "STEP 6 — DURATION FIT:\n" +
-  "  Every non-Rest session durationMin must be within 80-125% of the ICU recent-10 avg session duration. " +
-  "If any session exceeds this range, verify it has an explicit override reason (phase, riderNote, or profile) " +
-  "and that reason appears in the session description.\n" +
+  "  Every non-Rest session durationMin must be within the range computed in DURATION CALIBRATION above. " +
+  "If riderProfile.sessionLengthMinutes is set, verify no session is capped below " +
+  "0.75 * riderProfile.sessionLengthMinutes (sessions should ramp toward the profile target, not below it).\n" +
   "STEP 7 — ADHERENCE COMPLIANCE:\n" +
-  "  If lastWeekAdherence was < 60%, verify the total session count is 1 fewer than last week " +
-  "and the plan summary explicitly states the adherence figure and the volume reduction applied.\n" +
+  "  If lastWeekAdherence was < 60% AND ridesLast7Days < daysPerWeek * 0.6, " +
+  "verify the total session count is no more than last week's actual session count + 1 " +
+  "and the plan summary explicitly states the adherence figure. " +
+  "EXCEPTION: if ridesLast7Days >= daysPerWeek * 0.6, the rider IS training — " +
+  "they just did not follow the exact VOLT plan. Do NOT reduce session count in this case.\n" +
   "A plan that fails STEP 3, STEP 5, or STEP 6 is a template, not coaching. Fix before responding. " +
   "Riders should feel challenged, engaged, and coached — not like they got a generic template.";
 
