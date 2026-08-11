@@ -9,11 +9,6 @@ function isMobileUA(ua: string): boolean {
   return /Mobile/i.test(ua) && !/iPad|Tablet/i.test(ua);
 }
 
-/** True for iPad/Android tablets. */
-function isTabletUA(ua: string): boolean {
-  return /iPad/i.test(ua) || (/Tablet/i.test(ua) && !/Mobile/i.test(ua));
-}
-
 export default async function Home() {
   const cookieStore = await cookies();
   const headerStore = await headers();
@@ -21,18 +16,10 @@ export default async function Home() {
   const ua = headerStore.get("user-agent") ?? "";
 
   const mobile = isMobileUA(ua);
-  const tablet = isTabletUA(ua);
 
-  // Desktop (laptop/monitor) → full desktop dashboard
-  // iPad / Android tablet → tablet layout
-  // Phone → mobile layout
   if (!hasSession) {
-    if (mobile) redirect("/login?next=/m/today");
-    else if (tablet) redirect("/login?next=/tablet/today");
-    else redirect("/login?next=/dashboard");
+    redirect(mobile ? "/login?next=/m/today" : "/login?next=/tablet/today");
   }
 
-  if (mobile) redirect("/m/today");
-  else if (tablet) redirect("/tablet/today");
-  else redirect("/dashboard");
+  redirect(mobile ? "/m/today" : "/tablet/today");
 }
