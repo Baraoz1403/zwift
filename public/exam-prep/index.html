@@ -367,6 +367,50 @@ async function extractFileDetailed(file,onPage){
   return {text:'',pages:0,ocrPages:0,textPages:0,unsupported:true};
 }
 
+function normalizeCourseName(name){
+  return String(name||'').toLowerCase().replace(/[״"]/g,'').replace(/[^א-תa-z0-9 ]/gi,' ').replace(/\s+/g,' ').trim();
+}
+function detectCourseDomain(name){
+  const n=normalizeCourseName(name);
+  if(/חדו|אינפי|calculus|חשבון אינפיניטסימלי|אנליזה/.test(n)) return 'calculus';
+  if(/אלגברה לינארית|linear algebra/.test(n)) return 'linear-algebra';
+  if(/הסתברות|סטטיסטיקה|probability|statistics/.test(n)) return 'probability';
+  return 'generic';
+}
+function documentRelevance(text,courseName){
+  const domain=detectCourseDomain(courseName);
+  const t=String(text||'').toLowerCase();
+  let score=0,signals=[];
+  const add=(label,re,weight=1)=>{const m=t.match(re);if(m&&m.length){score+=Math.min(m.length,4)*weight;signals.push(label);}};
+  if(domain==='calculus'){
+    add('גבולות',/גבול|lim\b|limit/g,2);
+    add('רציפות',/רציפ|continu/g,2);
+    add('נגזרות',/נגזר|derivative|d\/dx|משיק|קיצון/g,2);
+    add('אינטגרלים',/אינטגרל|integral|∫|פונקציה קדומה/g,2);
+    add('סדרות וטורים',/סדרה|טור|series|sequence|התכנס|מתבדר|טיילור|maclaurin/g,2);
+    add('פונקציות',/פונקציה|function|תחום הגדרה|domain/g,1);
+    add('משפטי חדו״א',/רול|rolle|לגרנז|lagrange|בולצאנו|weierstrass|ערך הממוצע/g,2);
+    add('חקירת פונקציה',/אסימפטוט|קעירות|קמירות|נקודת פיתול|עלייה|ירידה/g,1);
+    add('סימון מתמטי',/[∫Σ√]|\blim\b|→|∞/g,1);
+    const unrelated=((t.match(/גרף\s*\(|קודקוד|צלע|מסלול אוילר|euler|vertex|edge/g)||[]).length)+((t.match(/מאזן|חשבונאות|חוזה|פסיקה|שיווק|ניהול/g)||[]).length);
+    if(unrelated>=5) score-=unrelated;
+    return {relevant:score>=4,score,signals,domain};
+  }
+  if(domain==='linear-algebra'){
+    add('מטריצות',/מטריצ|matrix|דטרמיננט|determinant/g,2);
+    add('מרחבים וקטוריים',/מרחב וקטורי|vector space|בסיס|span|תלות לינארית/g,2);
+    add('ערכים עצמיים',/ערך עצמי|eigen/g,2);
+    return {relevant:score>=4,score,signals,domain};
+  }
+  if(domain==='probability'){
+    add('הסתברות',/הסתבר|probab|אקרא|random/g,2);
+    add('סטטיסטיקה',/ממוצע|שונות|סטיית תקן|sample|regression|מדגם/g,2);
+    return {relevant:score>=4,score,signals,domain};
+  }
+  const tokens=normalizeCourseName(courseName).split(' ').filter(w=>w.length>=3);
+  for(const token of tokens){const count=t.split(token).length-1;if(count>0) score+=Math.min(count,4)*2;}
+  return {relevant:tokens.length===0?true:score>=2,score,signals:tokens,domain};
+}
 function normalizeExamText(text){
   return text
     .replace(/\r/g,'\n')
@@ -704,7 +748,7 @@ function renderFriendlyResults(bank,fileReports){
       '</div>'+
       '<button id="openPracticeBuilderBtn" class="btn primary big-cta">בחר מה לתרגל</button>'+
       '<details class="technical-details"><summary>פרטים טכניים על הזיהוי</summary>'+
-        '<div style="margin-top:16px">'+fileReports.map(r=>'<div class="topic-row"><span>'+escapeHtml(r.name)+'</span><strong>'+r.questions+' שאלות</strong></div>').join('')+'</div>'+
+        '<div style="margin-top:16px">'+fileReports.map(r=>'<div class="topic-row"><span>'+escapeHtml(r.name)+'</span><strong>'+(r.status==='irrelevant'?'הוחרג — לא שייך לקורס':r.questions+' שאלות')+'</strong></div>').join('')+'</div>'+
       '</details>'+
     '</div>';
 
@@ -803,6 +847,49 @@ function renderPracticeQuestion(){
   document.getElementById('nextQuestionBtn').textContent=currentPracticeIndex===currentPracticeList.length-1?'סיום':'הבאה';
 }
 
+async function runAnalysis(){
+  const btn=document.getElementById('analyzeBtn');
+  const status=document.getElementById('analysisStatus');
+  if(!selectedFiles.length){status.textContent='לא נמצאו קבצים לניתוח.';return;}
+  btn.disabled=true;
+  status.innerHTML='מתחיל ניתוח יסודי… <div class="progressbar"><i id="analysisBar"></i></div>';
+  const bar=document.getElementById('analysisBar');
+  const questionRows=[];
+  const fileReports=[];
+  try{
+    for(let i=0;i<selectedFiles.length;i++){
+      const file=selectedFiles[i];
+      const report={name:file.name,pages:0,ocrPages:0,textPages:0,questions:0,status:'ok',relevant:true,relevanceScore:0};
+      try{
+        const detail=await extractFileDetailed(file,(page,total,ocr)=>{status.firstChild.textContent='מנתח '+file.name+' — עמוד '+page+' מתוך '+total+(ocr?' (OCR)':'')+'… ';});
+        report.pages=detail.pages; report.ocrPages=detail.ocrPages; report.textPages=detail.textPages;
+        if(detail.unsupported){
+          report.status='unsupported'; report.relevant=false;
+        }else if(!detail.text.trim()){
+          report.status='empty'; report.relevant=false;
+        }else{
+          const rel=documentRelevance(detail.text,courseName.value.trim());
+          report.relevant=rel.relevant; report.relevanceScore=rel.score;
+          if(!rel.relevant){
+            report.status='irrelevant';
+          }else{
+            const qs=splitQuestions(detail.text).slice(0,8);
+            report.questions=qs.length;
+            if(qs.length===0) report.status='warn';
+            qs.forEach(q=>questionRows.push({text:q,source:file.name}));
+          }
+        }
+      }catch(err){console.error('analysis failed',file.name,err);report.status='error';report.relevant=false;}
+      fileReports.push(report);
+      bar.style.width=Math.round(((i+1)/selectedFiles.length)*100)+'%';
+    }
+    analyzedQuestionBank=buildQuestionBank(questionRows);
+    renderFriendlyResults(analyzedQuestionBank,fileReports);
+    document.getElementById('filesStat').textContent=selectedFiles.length;
+    status.textContent='הניתוח הושלם. קבצים שאינם שייכים לקורס הוחרגו.';
+  }catch(err){console.error(err);status.textContent='אירעה תקלה כללית בניתוח.';}
+  finally{btn.disabled=false;}
+}
 document.addEventListener('click',e=>{
   if(e.target && e.target.id==='analyzeBtn') runAnalysis();
 });
