@@ -528,21 +528,108 @@ function splitQuestions(text){
 }
 
 const topicRules=[
-  ['הסתברות',/הסתבר|probab|אקרא|random|בינומי|נורמל/i],
-  ['סטטיסטיקה',/ממוצע|חציון|שונות|סטיית תקן|regression|רגרס|מדגם|sample/i],
-  ['אינטגרלים',/אינטגרל|integral|∫/i],
-  ['נגזרות',/נגזר|derivative|d\/dx/i],
-  ['אלגברה',/מטריצ|matrix|דטרמיננט|משווא|equation/i],
-  ['כלכלה',/ביקוש|היצע|עלות|תועלת|שוק|GDP|אינפל/i],
-  ['משפטים',/סעיף|חוק|פסיקה|בית משפט|חוזה|נזיק/i],
-  ['מדעי המחשב',/אלגורית|קוד|פונקציה|מערך|סיבוכיות|class|loop/i]
+  ['גבולות',/גבול|lim\b|limit|שאיפה ל|tends to/i],
+  ['רציפות',/רציפ|continu/i],
+  ['נגזרות',/נגזר|derivative|d\/dx|משיק|tangent|קיצון|מקסימום|מינימום/i],
+  ['אינטגרלים',/אינטגרל|integral|∫|שטח|primitive|קדומה/i],
+  ['סדרות וטורים',/סדרה|טור|series|sequence|התכנס|מתבדר|converg|diverg|טיילור|taylor|מקלו?רין|maclaurin/i],
+  ['פונקציות',/פונקציה|function|תחום הגדרה|range|domain|חד[- ]חד|על\b|הרכבה/i],
+  ['משפטי חדו״א',/משפט הערך הממוצע|רול|rolle|לגרנז|lagrange|בולצאנו|weierstrass|פרמה|fermat/i],
+  ['חקירת פונקציה',/אסימפטוט|קעירות|קמירות|נקודת פיתול|monoton|עלייה|ירידה|sketch|שרטט/i],
+  ['אחר',/.*/i]
 ];
 
 function detectTopic(q){
-  for(const [name,re] of topicRules) if(re.test(q)) return name;
-  const words=q.match(/[א-תA-Za-z]{4,}/g)||[];
-  return words[0] ? 'נושא נוסף' : 'כללי';
+  for(const [name,re] of topicRules){
+    if(name==='אחר') continue;
+    if(re.test(q)) return name;
+  }
+  return 'אחר';
 }
+
+function detectQuestionType(q){
+  const s=q.toLowerCase();
+  const optionLines=(q.match(/(?:^|\n)\s*(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[]).length;
+  if(optionLines>=3) return 'אמריקאית';
+  if(/הוכח|הראו|הראה|prove|show that|נמק/.test(s)) return 'הוכחה';
+  if(/חשב|מצאו|מצא|פתור|solve|calculate|compute|גזור|אינטגרל/.test(s)) return 'חישוב';
+  return 'פתוחה';
+}
+
+function cleanQuestionText(raw){
+  let s=String(raw||'')
+    .replace(/[\u200e\u200f\u202a-\u202e]/g,'')
+    .replace(/--- עמוד \d+ ---/g,'\n')
+    .replace(/\r/g,'\n');
+
+  const junkPatterns=[
+    /^\s*(?:ציון|סה["״']?כ|מס['׳]?\s*נבחן|מספר נבחן|ת\.ז\.?|תעודת זהות)\b.*$/gmi,
+    /^\s*(?:יום|תאריך|מועד|סמסטר|בחינה|מבחן|שם הקורס|שם המרצה)\b.*$/gmi,
+    /^\s*חלק\s+[א-תA-Z]\s*[–—-]?.*$/gmi,
+    /^\s*ענו?\s+על\s+\d+\s+מבין\s+\d+.*$/gmi,
+    /^\s*בהצלחה\s*!?\s*$/gmi,
+    /^\s*שאלה\s*\d+(?:\s+\d+){2,}.*$/gmi
+  ];
+  junkPatterns.forEach(re=>{s=s.replace(re,'');});
+
+  // Remove repeated exam navigation number rows like "שאלה 1 2 3 4 5..."
+  s=s.replace(/^\s*(?:שאלה\s*)?(?:\d+\s+){3,}\d+\s*$/gmi,'');
+
+  // Normalize whitespace but preserve meaningful line breaks.
+  s=s.split('\n').map(line=>line.replace(/[ \t]+/g,' ').trim())
+    .filter(line=>line.length>0)
+    .join('\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+
+  // Trim everything before the first credible main-question marker if there is obvious exam junk.
+  const lines=s.split('\n');
+  let startIdx=0;
+  for(let i=0;i<Math.min(lines.length,10);i++){
+    if(/^\s*(?:שאלה\s*)?\d{1,2}\s*(?:[\.\):\-]|׳)?\s+/.test(lines[i])){
+      startIdx=i;break;
+    }
+  }
+  if(startIdx>0) s=lines.slice(startIdx).join('\n');
+
+  return s.trim();
+}
+
+function splitSubparts(q){
+  const lines=cleanQuestionText(q).split('\n');
+  const stem=[];
+  const parts=[];
+  let current=null;
+
+  for(const line of lines){
+    const m=line.match(/^\s*(?:סעיף\s*)?([א-י])\s*(?:[\.\):\-]|׳)\s*(.*)$/);
+    if(m){
+      if(current) parts.push(current);
+      current={label:m[1],text:m[2]||''};
+      continue;
+    }
+    if(current) current.text += (current.text?'\n':'') + line;
+    else stem.push(line);
+  }
+  if(current) parts.push(current);
+
+  return {stem:stem.join('\n').trim(),parts};
+}
+
+function normalizeQuestion(raw){
+  const text=cleanQuestionText(raw);
+  const structure=splitSubparts(text);
+  return {
+    raw,
+    text,
+    stem:structure.stem || text,
+    subparts:structure.parts,
+    topic:detectTopic(text),
+    difficulty:difficulty(text),
+    type:detectQuestionType(text)
+  };
+}
+
 function difficulty(q){
   let score=0;
   if(q.length>220) score++;
@@ -572,16 +659,15 @@ function frequencyLabel(count){
 }
 
 function buildQuestionBank(questionRows){
+  const normalized=questionRows.map(row=>({...normalizeQuestion(row.text),source:row.source}));
   const sigCounts={};
-  questionRows.forEach(row=>{
+  normalized.forEach(row=>{
     const sig=normalizeSignature(row.text);
     row.signature=sig;
     sigCounts[sig]=(sigCounts[sig]||0)+1;
   });
-  return questionRows.map(row=>({
+  return normalized.map(row=>({
     ...row,
-    topic:detectTopic(row.text),
-    difficulty:difficulty(row.text),
     frequency:frequencyLabel(sigCounts[row.signature]||1),
     repeats:sigCounts[row.signature]||1
   }));
@@ -592,11 +678,13 @@ function renderFriendlyResults(bank,fileReports){
   const topics={};
   const diffs={קל:0,בינוני:0,קשה:0};
   const freqs={נמוכה:0,בינונית:0,גבוהה:0};
+  const types={};
 
   bank.forEach(q=>{
     topics[q.topic]=(topics[q.topic]||0)+1;
     diffs[q.difficulty]=(diffs[q.difficulty]||0)+1;
     freqs[q.frequency]=(freqs[q.frequency]||0)+1;
+    types[q.type]=(types[q.type]||0)+1;
   });
 
   const topTopics=Object.entries(topics).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -636,7 +724,8 @@ function backToResults(){
 
 function renderPracticeFilters(){
   activeFilters={topics:new Set(),difficulty:new Set(),frequency:new Set()};
-  const topics=[...new Set(analyzedQuestionBank.map(q=>q.topic))].sort();
+  const topics=[...new Set(analyzedQuestionBank.map(q=>q.topic))]
+    .sort((a,b)=>a==='אחר'?1:b==='אחר'?-1:a.localeCompare(b,'he'));
   const box=document.getElementById('topicFilterChips');
   box.innerHTML=topics.map(t=>'<button class="chip" data-filter-type="topics" data-value="'+escapeHtml(t)+'">'+escapeHtml(t)+'</button>').join('');
   document.querySelectorAll('#practiceWorkspace .chip').forEach(chip=>{
@@ -682,69 +771,36 @@ function startPractice(){
 function renderPracticeQuestion(){
   const q=currentPracticeList[currentPracticeIndex];
   if(!q) return;
-  document.getElementById('practiceQuestion').textContent=q.text;
-  document.getElementById('practiceMeta').innerHTML=
+
+  const meta=document.getElementById('practiceMeta');
+  meta.innerHTML=
     '<span>שאלה '+(currentPracticeIndex+1)+' מתוך '+currentPracticeList.length+'</span>'+
     '<span>'+escapeHtml(q.topic)+'</span>'+
     '<span>'+escapeHtml(q.difficulty)+'</span>'+
+    '<span>'+escapeHtml(q.type)+'</span>'+
     '<span>שכיחות '+escapeHtml(q.frequency)+'</span>';
+
+  let html='<div style="font-size:27px;line-height:1.8">'+escapeHtml(q.stem).replace(/\n/g,'<br>')+'</div>';
+  if(q.subparts && q.subparts.length){
+    html+='<div style="margin-top:28px;display:grid;gap:16px">';
+    q.subparts.forEach(p=>{
+      html+='<div style="background:#0f1c2c;border:1px solid var(--line);border-radius:20px;padding:20px">'+
+        '<strong style="font-size:21px">סעיף '+escapeHtml(p.label)+'</strong>'+
+        '<div style="font-size:20px;line-height:1.7;margin-top:8px">'+escapeHtml(p.text).replace(/\n/g,'<br>')+'</div>'+
+      '</div>';
+    });
+    html+='</div>';
+  }
+
+  if(q.type==='אמריקאית'){
+    html+='<div style="margin-top:26px;color:var(--muted);font-size:18px">בחר את התשובה הנכונה מתוך האפשרויות המופיעות בשאלה.</div>';
+  }else{
+    html+='<div style="margin-top:26px;color:var(--muted);font-size:18px">זו שאלה '+escapeHtml(q.type)+'. ניתן לנסות לפתור לפני הצגת הפתרון.</div>';
+  }
+
+  document.getElementById('practiceQuestion').innerHTML=html;
   document.getElementById('prevQuestionBtn').disabled=currentPracticeIndex===0;
   document.getElementById('nextQuestionBtn').textContent=currentPracticeIndex===currentPracticeList.length-1?'סיום':'הבאה';
-}
-
-async function runAnalysis(){
-  const btn=document.getElementById('analyzeBtn');
-  const status=document.getElementById('analysisStatus');
-  const results=document.getElementById('analysisResults');
-  if(!selectedFiles.length){status.textContent='לא נמצאו קבצים לניתוח.';return;}
-
-  btn.disabled=true;
-  status.innerHTML='מתחיל ניתוח יסודי… <div class="progressbar"><i id="analysisBar"></i></div>';
-  const bar=document.getElementById('analysisBar');
-  let questions=[],questionRows=[],parsedFiles=0,fileReports=[],unsupported=[];
-
-  try{
-    for(let i=0;i<selectedFiles.length;i++){
-      const file=selectedFiles[i];
-      let report={name:file.name,pages:0,ocrPages:0,textPages:0,questions:0,optionLines:0,estimatedMcq:0,status:'ok'};
-      try{
-        const detail=await extractFileDetailed(file,(page,total,ocr)=>{
-          status.firstChild.textContent='מנתח '+file.name+' — עמוד '+page+' מתוך '+total+(ocr?' (OCR)':'')+'… ';
-        });
-        report.pages=detail.pages;report.ocrPages=detail.ocrPages;report.textPages=detail.textPages;
-        if(detail.unsupported){
-          report.status='unsupported';unsupported.push(file.name+' — סוג קובץ לא נתמך בניתוח');
-        }else if(detail.text.trim()){
-          const qs=splitQuestions(detail.text).slice(0,8);
-          report.questions=qs.length;
-          const optionLines=(detail.text.match(/(?:^|\n)\s*(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[]).length;
-          report.optionLines=optionLines;
-          report.estimatedMcq=qs.length;
-          if(qs.length===0 || qs.length>8) report.status='warn';
-          parsedFiles++;
-          questions.push(...qs);
-          qs.forEach(q=>questionRows.push({text:q,source:file.name}));
-        }else{
-          report.status='empty';unsupported.push(file.name+' — לא נמצא טקסט גם לאחר OCR');
-        }
-      }catch(fileErr){
-        console.error('File analysis failed',file.name,fileErr);
-        report.status='error';unsupported.push(file.name+' — שגיאת קריאה');
-      }
-      fileReports.push(report);
-      bar.style.width=Math.round(((i+1)/selectedFiles.length)*100)+'%';
-    }
-
-    analyzedQuestionBank=buildQuestionBank(questionRows);
-    renderFriendlyResults(analyzedQuestionBank,fileReports);
-    document.getElementById('filesStat').textContent=selectedFiles.length;
-    status.textContent='הניתוח הושלם. ניתן להוסיף קבצים נוספים ולנתח שוב.';
-  }catch(err){
-    console.error(err);
-    status.textContent='אירעה תקלה כללית בניתוח. הקבצים נשמרו ברשימה וניתן לנסות שוב.';
-  }finally{
-    btn.disabled=false;
-  }
 }
 
 document.addEventListener('click',e=>{
