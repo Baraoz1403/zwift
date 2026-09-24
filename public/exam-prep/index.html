@@ -131,7 +131,7 @@ h1{font-size:clamp(48px,5vw,74px);line-height:1.02;margin:0 0 24px;letter-spacin
       <div class="stat"><span>מוכנות למבחן</span><strong>—</strong></div>
     </div>
     <div class="dash-grid">
-      <div class="panel"><h3>הקורס מוכן לניתוח</h3><p>המערכת תחלץ טקסט מהקבצים, תזהה שאלות ותבצע סיווג ראשוני לפי נושא, שכיחות ושלוש רמות קושי.</p><button id="analyzeBtn" class="btn primary" style="margin-top:18px">התחל ניתוח</button><div id="analysisStatus" style="margin-top:22px;font-size:19px;color:var(--muted)"></div></div>
+      <div class="panel"><h3>הקורס מוכן לניתוח</h3><p>המערכת תחלץ טקסט מהקבצים ותזהה רק שאלות ראשיות. סעיפי משנה ותתי־סעיפים יישמרו כחלק מהשאלה הראשית ולא ייספרו בנפרד.</p><button id="analyzeBtn" class="btn primary" style="margin-top:18px">התחל ניתוח</button><div id="analysisStatus" style="margin-top:22px;font-size:19px;color:var(--muted)"></div></div>
       <div class="panel"><h3>תוצאות הניתוח</h3><div id="analysisResults"><p>לא בוצע ניתוח עדיין.</p></div></div>
     </div>
   </div>
@@ -304,7 +304,7 @@ function cleanLine(s){
   return s.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
 }
 
-function getExplicitMainNumber(line){
+function explicitMainQuestion(line){
   const s=cleanLine(line);
   let m=s.match(/^שאלה\s+(\d{1,2})\b/i);
   if(m) return Number(m[1]);
@@ -313,7 +313,7 @@ function getExplicitMainNumber(line){
   return null;
 }
 
-function getNumericStart(line){
+function numericPrefix(line){
   const s=cleanLine(line);
   let m=s.match(/^(\d{1,2})\s*[\.\):\-]\s+/);
   if(m) return Number(m[1]);
@@ -343,49 +343,54 @@ function dedupeQuestions(arr){
       .replace(/[^א-תa-z# ]/gi,' ')
       .replace(/\s+/g,' ')
       .trim()
-      .slice(0,220);
+      .slice(0,260);
     if(sig.length<15 || seen.has(sig)) continue;
     seen.add(sig); out.push(q.trim());
   }
   return out;
 }
 
-function segmentByPositions(lines, positions){
+function segment(lines, starts){
   const out=[];
-  for(let i=0;i<positions.length;i++){
-    const from=positions[i].idx;
-    const to=i+1<positions.length?positions[i+1].idx:lines.length;
+  for(let i=0;i<starts.length;i++){
+    const from=starts[i].idx;
+    const to=i+1<starts.length?starts[i+1].idx:lines.length;
     const block=lines.slice(from,to).join('\n').trim();
-    if(block.length>30) out.push(block);
+    if(block.length>35) out.push(block);
   }
   return out;
 }
 
-function findBestMainSequence(lines){
+function bestTopLevelNumericSequence(lines){
   const candidates=[];
   lines.forEach((line,idx)=>{
-    const n=getNumericStart(line);
-    if(n!==null && n>=1 && n<=8 && !isSubPart(line) && !isAnswerOption(line)){
-      candidates.push({idx,n,line});
-    }
+    if(isSubPart(line)||isAnswerOption(line)) return;
+    const n=numericPrefix(line);
+    if(n!==null && n>=1 && n<=8) candidates.push({idx,n});
   });
 
-  // Find the cleanest 1->2->3... chain. This avoids counting nested (1),(2),(3)
-  // sequences inside each main question as separate top-level questions.
   let best=[];
-  for(let s=0;s<candidates.length;s++){
-    if(candidates[s].n!==1) continue;
-    let chain=[candidates[s]], expected=2, lastIdx=candidates[s].idx;
-    for(let j=s+1;j<candidates.length && expected<=8;j++){
-      const c=candidates[j];
-      if(c.idx<=lastIdx) continue;
-      if(c.n===expected){
-        chain.push(c); lastIdx=c.idx; expected++;
+  for(let i=0;i<candidates.length;i++){
+    if(candidates[i].n!==1) continue;
+    const seq=[candidates[i]];
+    let expected=2;
+    let lastIdx=candidates[i].idx;
+
+    for(let j=i+1;j<candidates.length && expected<=8;j++){
+      const cand=candidates[j];
+      if(cand.idx<=lastIdx) continue;
+      if(cand.n===expected){
+        seq.push(cand);
+        lastIdx=cand.idx;
+        expected++;
       }
     }
-    if(chain.length>best.length) best=chain;
+
+    if(seq.length>best.length) best=seq;
   }
-  return best;
+
+  // Only accept a believable exam-level chain.
+  return best.length>=3 && best.length<=8 ? best : [];
 }
 
 function splitQuestions(text){
@@ -394,52 +399,47 @@ function splitQuestions(text){
     .map(cleanLine)
     .filter(x=>x && !/^--- עמוד \d+ ---$/.test(x));
 
-  // Strategy 1: strongest signal — explicit "שאלה 1", "שאלה 2"...
-  const explicit=[];
+  // 1) Strongest signal: explicit "שאלה 1", "שאלה 2"...
+  const explicitRaw=[];
   lines.forEach((line,idx)=>{
-    const n=getExplicitMainNumber(line);
-    if(n!==null && n>=1 && n<=10) explicit.push({idx,n});
+    const n=explicitMainQuestion(line);
+    if(n!==null && n>=1 && n<=8) explicitRaw.push({idx,n});
   });
 
-  if(explicit.length>=2){
-    // Keep first occurrence of each increasing main number.
+  if(explicitRaw.length){
     const seq=[];
-    let expected=null;
-    for(const item of explicit){
-      if(expected===null){
-        if(item.n===1){seq.push(item);expected=2;}
-      }else if(item.n===expected){
-        seq.push(item);expected++;
+    let expected=1;
+    for(const item of explicitRaw){
+      if(item.n===expected){
+        seq.push(item);
+        expected++;
       }
     }
-    if(seq.length>=2){
-      return dedupeQuestions(segmentByPositions(lines,seq)).slice(0,10);
+    if(seq.length>=2 && seq.length<=8){
+      return dedupeQuestions(segment(lines,seq));
     }
   }
 
-  // Strategy 2: top-level numeric chain, e.g. 1. 2. 3. 4. 5.
-  const chain=findBestMainSequence(lines);
-  if(chain.length>=3){
-    return dedupeQuestions(segmentByPositions(lines,chain)).slice(0,10);
+  // 2) If the exam uses only numeric top-level markers, accept exactly one
+  // monotonic 1,2,3... chain. Any other numeric reset is treated as internal.
+  const numericSeq=bestTopLevelNumericSequence(lines);
+  if(numericSeq.length){
+    return dedupeQuestions(segment(lines,numericSeq));
   }
 
-  // Strategy 3: conservative page-level grouping.
-  // Never count lettered sub-parts or answer options as main questions.
-  const pages=cleaned.split(/--- עמוד \d+ ---/).map(x=>x.trim()).filter(Boolean);
-  const conservative=[];
-  for(const page of pages){
-    const plines=page.split('\n').map(cleanLine).filter(Boolean);
-    const explicitOnPage=plines.findIndex(l=>getExplicitMainNumber(l)!==null);
-    if(explicitOnPage>=0){
-      conservative.push(plines.slice(explicitOnPage).join('\n'));
-    }
-  }
-  if(conservative.length>=2){
-    return dedupeQuestions(conservative).slice(0,10);
+  // 3) Conservative fallback: do NOT explode subquestions.
+  // Group the whole exam into at most 5 page clusters rather than counting
+  // lettered/numeric subparts as standalone questions.
+  const pageChunks=cleaned
+    .split(/--- עמוד \d+ ---/)
+    .map(x=>x.trim())
+    .filter(x=>x.length>80);
+
+  if(pageChunks.length>=3 && pageChunks.length<=5){
+    return pageChunks;
   }
 
-  // Final fallback: one main question for the whole file rather than exploding
-  // subparts into dozens of false questions.
+  // Final fallback: one main question instead of dozens of false positives.
   return cleaned.length>120?[cleaned]:[];
 }
 
@@ -504,13 +504,13 @@ async function runAnalysis(){
         if(detail.unsupported){
           report.status='unsupported';unsupported.push(file.name+' — סוג קובץ לא נתמך בניתוח');
         }else if(detail.text.trim()){
-          const qs=splitQuestions(detail.text);
-          report.questions=Math.min(qs.length,10);
+          const qs=splitQuestions(detail.text).slice(0,8);
+          report.questions=qs.length;
           const optionLines=(detail.text.match(/(?:^|\n)\s*(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[]).length;
           report.optionLines=optionLines;
           report.estimatedMcq=qs.length;
           if(qs.length===0 || qs.length>8) report.status='warn';
-          parsedFiles++;questions.push(...qs.slice(0,10));
+          parsedFiles++;questions.push(...qs);
         }else{
           report.status='empty';unsupported.push(file.name+' — לא נמצא טקסט גם לאחר OCR');
         }
