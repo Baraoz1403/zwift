@@ -130,26 +130,24 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':
 
 async function loadPdfJs(){
   if(window.pdfjsLib) return window.pdfjsLib;
-  const script=document.createElement('script');
-  script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs';
-  script.type='module';
-  document.head.appendChild(script);
-  // Fallback to legacy UMD which exposes pdfjsLib globally.
   await new Promise((resolve,reject)=>{
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
+    s.async=true;
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('PDFJS_LOAD_FAILED'));
+    document.head.appendChild(s);
   });
-  if(window.pdfjsLib){
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
+  if(!window.pdfjsLib) throw new Error('PDFJS_NOT_AVAILABLE');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   return window.pdfjsLib;
 }
 
 async function extractPdfText(file){
   const pdfjs=await loadPdfJs();
   const buf=await file.arrayBuffer();
-  const pdf=await pdfjs.getDocument({data:buf}).promise;
+  const loadingTask=pdfjs.getDocument({data:new Uint8Array(buf)});
+  const pdf=await loadingTask.promise;
   let out='';
   for(let p=1;p<=pdf.numPages;p++){
     const page=await pdf.getPage(p);
@@ -227,13 +225,18 @@ async function runAnalysis(){
     for(let i=0;i<selectedFiles.length;i++){
       const file=selectedFiles[i];
       status.firstChild.textContent='מנתח: '+file.name+'… ';
-      const text=await extractFileText(file);
-      if(text.trim()){
-        parsedFiles++;
-        const qs=splitQuestions(text);
-        questions.push(...qs);
-      }else{
-        unsupported.push(file.name);
+      try{
+        const text=await extractFileText(file);
+        if(text.trim()){
+          parsedFiles++;
+          const qs=splitQuestions(text);
+          questions.push(...qs);
+        }else{
+          unsupported.push(file.name+' — לא נמצא טקסט');
+        }
+      }catch(fileErr){
+        console.error('File analysis failed',file.name,fileErr);
+        unsupported.push(file.name+' — שגיאת קריאה');
       }
       bar.style.width=Math.round(((i+1)/selectedFiles.length)*100)+'%';
     }
@@ -256,7 +259,7 @@ async function runAnalysis(){
     status.textContent='הניתוח הושלם.';
   }catch(err){
     console.error(err);
-    status.textContent='הניתוח נעצר. נסה שוב עם קובצי PDF או TXT.';
+    status.textContent='אירעה תקלה כללית בניתוח.';
   }finally{
     btn.disabled=false;
   }
