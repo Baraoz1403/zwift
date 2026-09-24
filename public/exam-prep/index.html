@@ -380,36 +380,65 @@ function detectCourseDomain(name){
 function documentRelevance(text,courseName){
   const domain=detectCourseDomain(courseName);
   const t=String(text||'').toLowerCase();
-  let score=0,signals=[];
-  const add=(label,re,weight=1)=>{const m=t.match(re);if(m&&m.length){score+=Math.min(m.length,4)*weight;signals.push(label);}};
+
+  const count=(re)=>(t.match(re)||[]).length;
+  const hasAny=(patterns)=>patterns.some(re=>re.test(t));
+
   if(domain==='calculus'){
-    add('גבולות',/גבול|lim\b|limit/g,2);
-    add('רציפות',/רציפ|continu/g,2);
-    add('נגזרות',/נגזר|derivative|d\/dx|משיק|קיצון/g,2);
-    add('אינטגרלים',/אינטגרל|integral|∫|פונקציה קדומה/g,2);
-    add('סדרות וטורים',/סדרה|טור|series|sequence|התכנס|מתבדר|טיילור|maclaurin/g,2);
-    add('פונקציות',/פונקציה|function|תחום הגדרה|domain/g,1);
-    add('משפטי חדו״א',/רול|rolle|לגרנז|lagrange|בולצאנו|weierstrass|ערך הממוצע/g,2);
-    add('חקירת פונקציה',/אסימפטוט|קעירות|קמירות|נקודת פיתול|עלייה|ירידה/g,1);
-    add('סימון מתמטי',/[∫Σ√]|\blim\b|→|∞/g,1);
-    const unrelated=((t.match(/גרף\s*\(|קודקוד|צלע|מסלול אוילר|euler|vertex|edge/g)||[]).length)+((t.match(/מאזן|חשבונאות|חוזה|פסיקה|שיווק|ניהול/g)||[]).length);
-    if(unrelated>=5) score-=unrelated;
-    return {relevant:score>=4,score,signals,domain};
+    const positivePatterns=[
+      /גבול|\blim\b|limit/i,
+      /רציפ|continu/i,
+      /נגזר|derivative|d\/dx|משיק|קיצון/i,
+      /אינטגרל|integral|∫|פונקציה קדומה/i,
+      /סדרה|טור|series|sequence|התכנס|מתבדר|טיילור|taylor|maclaurin/i,
+      /פונקציה|function|תחום הגדרה|domain/i,
+      /רול|rolle|לגרנז|lagrange|בולצאנו|weierstrass|ערך הממוצע/i,
+      /אסימפטוט|קעירות|קמירות|נקודת פיתול|עלייה|ירידה/i,
+      /[∫Σ√∞]|→/
+    ];
+
+    const strongNegativePatterns=[
+      /מסלול אוילר|מעגל אוילר|euler/i,
+      /קודקוד|vertex/i,
+      /צלע|edge/i,
+      /גרף\s*\(\s*v\s*,\s*e\s*\)/i,
+      /מסלול המילטון|hamilton/i,
+      /מאזן|חשבונאות|חוזה|פסיקה|שיווק|ניהול/i
+    ];
+
+    const positiveHits=positivePatterns.reduce((n,re)=>n+(re.test(t)?1:0),0);
+    const negativeHits=strongNegativePatterns.reduce((n,re)=>n+(re.test(t)?1:0),0);
+
+    // Conservative rule: include uncertain math material.
+    // Exclude only when there is a strong, coherent signal that the document belongs to another field.
+    if(positiveHits>=1){
+      return {relevant:true,confidence:'high',score:positiveHits,reason:'נמצאו סימנים ברורים של חדו״א',domain};
+    }
+    if(negativeHits>=3){
+      return {relevant:false,confidence:'high',score:-negativeHits,reason:'המסמך נראה שייך לתחום אחר',domain};
+    }
+    return {relevant:true,confidence:'uncertain',score:0,reason:'לא נמצאה הוכחה מספקת שהמסמך זר לקורס — נכלל בניתוח',domain};
   }
+
   if(domain==='linear-algebra'){
-    add('מטריצות',/מטריצ|matrix|דטרמיננט|determinant/g,2);
-    add('מרחבים וקטוריים',/מרחב וקטורי|vector space|בסיס|span|תלות לינארית/g,2);
-    add('ערכים עצמיים',/ערך עצמי|eigen/g,2);
-    return {relevant:score>=4,score,signals,domain};
+    const pos=hasAny([/מטריצ|matrix|דטרמיננט|determinant/i,/מרחב וקטורי|vector space|בסיס|span|תלות לינארית/i,/ערך עצמי|eigen/i]);
+    return {relevant:pos||true,confidence:pos?'high':'uncertain',score:pos?1:0,reason:pos?'תואם לאלגברה לינארית':'לא נמצאה הוכחה שהוא זר לקורס — נכלל בניתוח',domain};
   }
+
   if(domain==='probability'){
-    add('הסתברות',/הסתבר|probab|אקרא|random/g,2);
-    add('סטטיסטיקה',/ממוצע|שונות|סטיית תקן|sample|regression|מדגם/g,2);
-    return {relevant:score>=4,score,signals,domain};
+    const pos=hasAny([/הסתבר|probab|אקרא|random/i,/ממוצע|שונות|סטיית תקן|sample|regression|מדגם/i]);
+    return {relevant:pos||true,confidence:pos?'high':'uncertain',score:pos?1:0,reason:pos?'תואם להסתברות/סטטיסטיקה':'לא נמצאה הוכחה שהוא זר לקורס — נכלל בניתוח',domain};
   }
+
   const tokens=normalizeCourseName(courseName).split(' ').filter(w=>w.length>=3);
-  for(const token of tokens){const count=t.split(token).length-1;if(count>0) score+=Math.min(count,4)*2;}
-  return {relevant:tokens.length===0?true:score>=2,score,signals:tokens,domain};
+  const hits=tokens.filter(token=>t.includes(token)).length;
+  return {
+    relevant:true,
+    confidence:hits>0?'high':'uncertain',
+    score:hits,
+    reason:hits>0?'תואם לשם הקורס':'לא נמצאה הוכחה שהוא זר לקורס — נכלל בניתוח',
+    domain
+  };
 }
 function normalizeExamText(text){
   return text
