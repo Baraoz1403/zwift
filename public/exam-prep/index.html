@@ -304,12 +304,22 @@ function cleanLine(s){
   return s.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
 }
 
-function isMainQuestionMarker(line){
+function getExplicitMainNumber(line){
   const s=cleanLine(line);
-  return /^(?:שאלה\s*)?\d{1,2}\s*(?:[\.\):\-]|׳)\s*/i.test(s) ||
-         /^question\s*\d{1,2}\b/i.test(s) ||
-         /^\(\s*\d{1,2}\s*\)\s*/.test(s) ||
-         /^שאלה\s+\d{1,2}\b/i.test(s);
+  let m=s.match(/^שאלה\s+(\d{1,2})\b/i);
+  if(m) return Number(m[1]);
+  m=s.match(/^question\s+(\d{1,2})\b/i);
+  if(m) return Number(m[1]);
+  return null;
+}
+
+function getNumericStart(line){
+  const s=cleanLine(line);
+  let m=s.match(/^(\d{1,2})\s*[\.\):\-]\s+/);
+  if(m) return Number(m[1]);
+  m=s.match(/^\(\s*(\d{1,2})\s*\)\s+/);
+  if(m) return Number(m[1]);
+  return null;
 }
 
 function isSubPart(line){
@@ -340,74 +350,96 @@ function dedupeQuestions(arr){
   return out;
 }
 
+function segmentByPositions(lines, positions){
+  const out=[];
+  for(let i=0;i<positions.length;i++){
+    const from=positions[i].idx;
+    const to=i+1<positions.length?positions[i+1].idx:lines.length;
+    const block=lines.slice(from,to).join('\n').trim();
+    if(block.length>30) out.push(block);
+  }
+  return out;
+}
+
+function findBestMainSequence(lines){
+  const candidates=[];
+  lines.forEach((line,idx)=>{
+    const n=getNumericStart(line);
+    if(n!==null && n>=1 && n<=8 && !isSubPart(line) && !isAnswerOption(line)){
+      candidates.push({idx,n,line});
+    }
+  });
+
+  // Find the cleanest 1->2->3... chain. This avoids counting nested (1),(2),(3)
+  // sequences inside each main question as separate top-level questions.
+  let best=[];
+  for(let s=0;s<candidates.length;s++){
+    if(candidates[s].n!==1) continue;
+    let chain=[candidates[s]], expected=2, lastIdx=candidates[s].idx;
+    for(let j=s+1;j<candidates.length && expected<=8;j++){
+      const c=candidates[j];
+      if(c.idx<=lastIdx) continue;
+      if(c.n===expected){
+        chain.push(c); lastIdx=c.idx; expected++;
+      }
+    }
+    if(chain.length>best.length) best=chain;
+  }
+  return best;
+}
+
 function splitQuestions(text){
   const cleaned=normalizeExamText(text);
-  const lines=cleaned.split('\n').map(cleanLine).filter(Boolean);
+  const lines=cleaned.split('\n')
+    .map(cleanLine)
+    .filter(x=>x && !/^--- עמוד \d+ ---$/.test(x));
 
-  // Primary strategy: only explicit main numeric question markers open a new question.
-  // Hebrew lettered sub-parts and A-D answer options remain inside the current main question.
-  const mains=[];
-  let current=[];
+  // Strategy 1: strongest signal — explicit "שאלה 1", "שאלה 2"...
+  const explicit=[];
+  lines.forEach((line,idx)=>{
+    const n=getExplicitMainNumber(line);
+    if(n!==null && n>=1 && n<=10) explicit.push({idx,n});
+  });
 
-  const flush=()=>{
-    const txt=current.join('\n').trim();
-    if(txt.length>30) mains.push(txt);
-    current=[];
-  };
-
-  for(const raw of lines){
-    const line=cleanLine(raw);
-    if(!line || /^--- עמוד \d+ ---$/.test(line)) continue;
-
-    if(isMainQuestionMarker(line)){
-      if(current.length) flush();
-      current=[line];
-      continue;
+  if(explicit.length>=2){
+    // Keep first occurrence of each increasing main number.
+    const seq=[];
+    let expected=null;
+    for(const item of explicit){
+      if(expected===null){
+        if(item.n===1){seq.push(item);expected=2;}
+      }else if(item.n===expected){
+        seq.push(item);expected++;
+      }
     }
-
-    if(current.length){
-      current.push(line);
-    }
-  }
-  if(current.length) flush();
-
-  if(mains.length>=2) return dedupeQuestions(mains).slice(0,200);
-
-  // Fallback for PDFs where line breaks were lost: split only on numeric main-question markers.
-  const marker=/(?=(?:^|\s)(?:שאלה\s*)?\d{1,2}\s*(?:[\.\):\-]|׳)\s*(?=[א-תA-Za-z]))/gim;
-  let numbered=cleaned.split(marker).map(x=>x.trim()).filter(x=>x.length>40);
-  numbered=dedupeQuestions(numbered);
-  if(numbered.length>=2) return numbered.slice(0,200);
-
-  // Conservative fallback: estimate main questions from groups of subparts/options,
-  // but do not count each subpart/answer as a separate question.
-  const groups=[];
-  let group=[];
-  let subCount=0;
-  for(const raw of lines){
-    const line=cleanLine(raw);
-    if(!line || /^--- עמוד \d+ ---$/.test(line)) continue;
-
-    if(isSubPart(line) && subCount>=2 && group.length){
-      groups.push(group.join('\n'));
-      group=[line];
-      subCount=1;
-      continue;
-    }
-
-    if(!group.length && (line.length>35 || /[?؟]$/.test(line))) group=[line];
-    else if(group.length) group.push(line);
-
-    if(isSubPart(line)) subCount++;
-    if(isAnswerOption(line) && group.length && group.length>8){
-      // keep option inside the same question; never create a new question
+    if(seq.length>=2){
+      return dedupeQuestions(segmentByPositions(lines,seq)).slice(0,10);
     }
   }
-  if(group.length) groups.push(group.join('\n'));
 
-  const conservative=dedupeQuestions(groups).filter(q=>q.length>60);
-  if(conservative.length) return conservative.slice(0,50);
+  // Strategy 2: top-level numeric chain, e.g. 1. 2. 3. 4. 5.
+  const chain=findBestMainSequence(lines);
+  if(chain.length>=3){
+    return dedupeQuestions(segmentByPositions(lines,chain)).slice(0,10);
+  }
 
+  // Strategy 3: conservative page-level grouping.
+  // Never count lettered sub-parts or answer options as main questions.
+  const pages=cleaned.split(/--- עמוד \d+ ---/).map(x=>x.trim()).filter(Boolean);
+  const conservative=[];
+  for(const page of pages){
+    const plines=page.split('\n').map(cleanLine).filter(Boolean);
+    const explicitOnPage=plines.findIndex(l=>getExplicitMainNumber(l)!==null);
+    if(explicitOnPage>=0){
+      conservative.push(plines.slice(explicitOnPage).join('\n'));
+    }
+  }
+  if(conservative.length>=2){
+    return dedupeQuestions(conservative).slice(0,10);
+  }
+
+  // Final fallback: one main question for the whole file rather than exploding
+  // subparts into dozens of false questions.
   return cleaned.length>120?[cleaned]:[];
 }
 
@@ -473,12 +505,12 @@ async function runAnalysis(){
           report.status='unsupported';unsupported.push(file.name+' — סוג קובץ לא נתמך בניתוח');
         }else if(detail.text.trim()){
           const qs=splitQuestions(detail.text);
-          report.questions=qs.length;
+          report.questions=Math.min(qs.length,10);
           const optionLines=(detail.text.match(/(?:^|\n)\s*(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[]).length;
           report.optionLines=optionLines;
           report.estimatedMcq=qs.length;
-          if(qs.length===0) report.status='warn';
-          parsedFiles++;questions.push(...qs);
+          if(qs.length===0 || qs.length>8) report.status='warn';
+          parsedFiles++;questions.push(...qs.slice(0,10));
         }else{
           report.status='empty';unsupported.push(file.name+' — לא נמצא טקסט גם לאחר OCR');
         }
