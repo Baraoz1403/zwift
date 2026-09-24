@@ -49,6 +49,16 @@ h1{font-size:clamp(48px,5vw,74px);line-height:1.02;margin:0 0 24px;letter-spacin
 .panel h3{font-size:30px;margin:0 0 14px}.panel p{font-size:20px;color:var(--muted);line-height:1.65}
 @media(max-width:900px){.wrap{padding:34px 22px}.card{padding:42px 34px}.lead{font-size:23px}.input{height:86px;font-size:28px}.stats{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.wrap{padding:20px 14px}.brand{margin-bottom:24px}.logo{width:58px;height:58px}.brand strong{font-size:24px}.brand span{font-size:16px}.progress{grid-template-columns:1fr;gap:12px}.step-indicator{min-height:92px;padding:18px}.card{padding:30px 20px;border-radius:28px}h1{font-size:44px}.lead{font-size:20px}.field-label{font-size:20px}.input{height:76px;font-size:24px}.actions{display:grid;grid-template-columns:1fr}.btn{width:100%;min-height:72px;font-size:22px}.upload-panel{padding:20px}.upload-info{min-height:220px;padding:26px 18px}.upload-info h2{font-size:28px}.upload-info p{font-size:18px}.file-picker{width:100%;min-width:0;min-height:76px;font-size:22px}.stats{grid-template-columns:1fr 1fr}.dash-top{align-items:flex-start;flex-direction:column}}
+
+.analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+.analysis-box{background:#0f1c2c;border:1px solid var(--line);border-radius:20px;padding:18px}
+.analysis-box span{display:block;color:var(--muted);font-size:16px}
+.analysis-box strong{display:block;font-size:32px;margin-top:8px}
+.topic-row{display:flex;justify-content:space-between;gap:18px;padding:12px 0;border-bottom:1px solid var(--line);font-size:18px}
+.topic-row:last-child{border-bottom:0}
+.progressbar{height:10px;background:#22344a;border-radius:999px;overflow:hidden;margin-top:12px}
+.progressbar i{display:block;height:100%;background:#2563eb;width:0%}
+@media(max-width:700px){.analysis-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -101,8 +111,8 @@ h1{font-size:clamp(48px,5vw,74px);line-height:1.02;margin:0 0 24px;letter-spacin
       <div class="stat"><span>מוכנות למבחן</span><strong>—</strong></div>
     </div>
     <div class="dash-grid">
-      <div class="panel"><h3>הקורס מוכן לניתוח</h3><p>בשלב הבא המערכת תנתח את הקבצים ותסווג שאלות לפי נושא, שכיחות ושלוש רמות קושי.</p><button class="btn primary" style="margin-top:18px">התחל ניתוח</button></div>
-      <div class="panel"><h3>לאחר הניתוח</h3><p>תוכל לבחור נושא אחד או כמה נושאים, רמת קושי ושכיחות, ולבנות תרגול מותאם.</p></div>
+      <div class="panel"><h3>הקורס מוכן לניתוח</h3><p>המערכת תחלץ טקסט מהקבצים, תזהה שאלות ותבצע סיווג ראשוני לפי נושא, שכיחות ושלוש רמות קושי.</p><button id="analyzeBtn" class="btn primary" style="margin-top:18px">התחל ניתוח</button><div id="analysisStatus" style="margin-top:22px;font-size:19px;color:var(--muted)"></div></div>
+      <div class="panel"><h3>תוצאות הניתוח</h3><div id="analysisResults"><p>לא בוצע ניתוח עדיין.</p></div></div>
     </div>
   </div>
 </div>
@@ -115,6 +125,146 @@ function renderFiles(files){selectedFiles=Array.from(files||[]);fileList.innerHT
 fileInput.addEventListener('change',function(){renderFiles(this.files);});
 finishBtn.addEventListener('click',()=>{if(!selectedFiles.length)return;document.getElementById('onboarding').style.display='none';document.getElementById('dashboard').classList.add('active');document.getElementById('courseChip').textContent=courseName.value.trim();document.getElementById('filesStat').textContent=selectedFiles.length;});
 courseName.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('toStep2').click();});
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+async function loadPdfJs(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  const script=document.createElement('script');
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.mjs';
+  script.type='module';
+  document.head.appendChild(script);
+  // Fallback to legacy UMD which exposes pdfjsLib globally.
+  await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
+  });
+  if(window.pdfjsLib){
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  return window.pdfjsLib;
+}
+
+async function extractPdfText(file){
+  const pdfjs=await loadPdfJs();
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjs.getDocument({data:buf}).promise;
+  let out='';
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const tc=await page.getTextContent();
+    out += '\n' + tc.items.map(x=>x.str).join(' ');
+  }
+  return out;
+}
+
+async function extractFileText(file){
+  const name=file.name.toLowerCase();
+  if(name.endsWith('.pdf')) return await extractPdfText(file);
+  if(name.endsWith('.txt')) return await file.text();
+  return '';
+}
+
+function splitQuestions(text){
+  const cleaned=text.replace(/\r/g,' ').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n');
+  let parts=cleaned.split(/(?=(?:^|\n|\s)(?:שאלה\s*)?\d{1,3}[\.\):\-]\s+)/g)
+    .map(x=>x.trim()).filter(x=>x.length>25);
+  if(parts.length<2){
+    parts=cleaned.split(/\n(?=[א-תA-Za-z0-9].{15,}[?؟])/g).map(x=>x.trim()).filter(x=>x.length>25);
+  }
+  return parts.slice(0,500);
+}
+
+const topicRules=[
+  ['הסתברות',/הסתבר|probab|אקרא|random|בינומי|נורמל/i],
+  ['סטטיסטיקה',/ממוצע|חציון|שונות|סטיית תקן|regression|רגרס|מדגם|sample/i],
+  ['אינטגרלים',/אינטגרל|integral|∫/i],
+  ['נגזרות',/נגזר|derivative|d\/dx/i],
+  ['אלגברה',/מטריצ|matrix|דטרמיננט|משווא|equation/i],
+  ['כלכלה',/ביקוש|היצע|עלות|תועלת|שוק|GDP|אינפל/i],
+  ['משפטים',/סעיף|חוק|פסיקה|בית משפט|חוזה|נזיק/i],
+  ['מדעי המחשב',/אלגורית|קוד|פונקציה|מערך|סיבוכיות|class|loop/i]
+];
+
+function detectTopic(q){
+  for(const [name,re] of topicRules) if(re.test(q)) return name;
+  const words=q.match(/[א-תA-Za-z]{4,}/g)||[];
+  return words[0] ? 'נושא נוסף' : 'כללי';
+}
+function difficulty(q){
+  let score=0;
+  if(q.length>220) score++;
+  if(q.length>420) score++;
+  if(/הוכח|נמק|חשב.*לאחר|השווה|נתח|derive|prove|explain/i.test(q)) score++;
+  if(/[∫Σ√]|\^|log|sin|cos|matrix/i.test(q)) score++;
+  return score>=3?'קשה':score>=1?'בינוני':'קל';
+}
+function normalizeSignature(q){
+  return q.toLowerCase().replace(/\d+/g,'#').replace(/[^א-תa-z# ]/gi,' ').split(/\s+/).filter(w=>w.length>3).slice(0,10).sort().join(' ');
+}
+function analyzeQuestions(questions){
+  const topics={}, diffs={קל:0,בינוני:0,קשה:0}, sigs={};
+  questions.forEach(q=>{
+    const t=detectTopic(q); topics[t]=(topics[t]||0)+1;
+    const d=difficulty(q); diffs[d]=(diffs[d]||0)+1;
+    const s=normalizeSignature(q); if(s) sigs[s]=(sigs[s]||0)+1;
+  });
+  const repeated=Object.values(sigs).filter(n=>n>1).reduce((a,b)=>a+b,0);
+  return {topics,diffs,repeated};
+}
+
+async function runAnalysis(){
+  const btn=document.getElementById('analyzeBtn');
+  const status=document.getElementById('analysisStatus');
+  const results=document.getElementById('analysisResults');
+  if(!selectedFiles.length){status.textContent='לא נמצאו קבצים לניתוח.';return;}
+  btn.disabled=true;
+  status.innerHTML='מתחיל ניתוח… <div class="progressbar"><i id="analysisBar"></i></div>';
+  const bar=document.getElementById('analysisBar');
+  let questions=[], parsedFiles=0, unsupported=[];
+  try{
+    for(let i=0;i<selectedFiles.length;i++){
+      const file=selectedFiles[i];
+      status.firstChild.textContent='מנתח: '+file.name+'… ';
+      const text=await extractFileText(file);
+      if(text.trim()){
+        parsedFiles++;
+        const qs=splitQuestions(text);
+        questions.push(...qs);
+      }else{
+        unsupported.push(file.name);
+      }
+      bar.style.width=Math.round(((i+1)/selectedFiles.length)*100)+'%';
+    }
+    const a=analyzeQuestions(questions);
+    const topicEntries=Object.entries(a.topics).sort((x,y)=>y[1]-x[1]).slice(0,8);
+    results.innerHTML=
+      '<div class="analysis-grid">'+
+        '<div class="analysis-box"><span>קבצים נותחו</span><strong>'+parsedFiles+'</strong></div>'+
+        '<div class="analysis-box"><span>שאלות שזוהו</span><strong>'+questions.length+'</strong></div>'+
+        '<div class="analysis-box"><span>קבוצות חוזרות</span><strong>'+a.repeated+'</strong></div>'+
+      '</div>'+
+      '<h3 style="margin-top:24px">נושאים שזוהו</h3>'+
+      (topicEntries.length?topicEntries.map(([t,n])=>'<div class="topic-row"><span>'+escapeHtml(t)+'</span><strong>'+n+'</strong></div>').join(''):'<p>לא זוהו מספיק שאלות לסיווג.</p>')+
+      '<h3 style="margin-top:24px">רמות קושי</h3>'+
+      '<div class="topic-row"><span>קל</span><strong>'+a.diffs['קל']+'</strong></div>'+
+      '<div class="topic-row"><span>בינוני</span><strong>'+a.diffs['בינוני']+'</strong></div>'+
+      '<div class="topic-row"><span>קשה</span><strong>'+a.diffs['קשה']+'</strong></div>'+
+      (unsupported.length?'<p style="margin-top:18px;color:var(--muted)">קבצים שלא ניתן עדיין לחלץ מהם תוכן בדפדפן: '+unsupported.map(escapeHtml).join(', ')+'</p>':'');
+    document.getElementById('filesStat').textContent=selectedFiles.length;
+    status.textContent='הניתוח הושלם.';
+  }catch(err){
+    console.error(err);
+    status.textContent='הניתוח נעצר. נסה שוב עם קובצי PDF או TXT.';
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+document.addEventListener('click',e=>{
+  if(e.target && e.target.id==='analyzeBtn') runAnalysis();
+});
 </script>
 </body>
 </html>
