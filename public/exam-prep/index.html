@@ -219,14 +219,23 @@ async function loadTesseract(){
 }
 
 function textItemsToLines(items){
-  let lines=[], current=[];
+  const rows=[];
   for(const item of items){
     const str=(item.str||'').trim();
-    if(str) current.push(str);
-    if(item.hasEOL && current.length){lines.push(current.join(' '));current=[];}
+    if(!str) continue;
+    const y=item.transform && typeof item.transform[5]==='number' ? item.transform[5] : 0;
+    const x=item.transform && typeof item.transform[4]==='number' ? item.transform[4] : 0;
+    let row=rows.find(r=>Math.abs(r.y-y)<3.5);
+    if(!row){row={y,parts:[]};rows.push(row);}
+    row.parts.push({x,str});
   }
-  if(current.length) lines.push(current.join(' '));
-  return lines.join('\n');
+  rows.sort((a,b)=>b.y-a.y);
+  return rows.map(row=>{
+    const heb=row.parts.reduce((n,p)=>n+((p.str.match(/[א-ת]/g)||[]).length),0);
+    const lat=row.parts.reduce((n,p)=>n+((p.str.match(/[A-Za-z]/g)||[]).length),0);
+    row.parts.sort((a,b)=> heb>=lat ? b.x-a.x : a.x-b.x);
+    return row.parts.map(p=>p.str).join(' ').replace(/\s+/g,' ').trim();
+  }).filter(Boolean).join('\n');
 }
 
 async function ocrPdfPage(page){
@@ -291,39 +300,125 @@ function isQuestionStart(line){
          /^שאלה\s+\d{1,3}\b/i.test(s);
 }
 
-function splitQuestions(text){
-  const cleaned=normalizeExamText(text);
-  const rawLines=cleaned.split('\n').map(x=>x.trim()).filter(Boolean);
-  const blocks=[]; let current=[];
+function cleanLine(s){
+  return s.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
+}
 
-  for(const line of rawLines){
-    if(/^--- עמוד \d+ ---$/.test(line)) continue;
-    if(isQuestionStart(line)){
-      if(current.join(' ').length>25) blocks.push(current.join('\n').trim());
+function looksLikeOption(line){
+  const s=cleanLine(line);
+  return /^(?:[א-ד]|[A-D])\s*(?:[\.\):\-]|׳|\))\s+/i.test(s) ||
+         /^\(?\s*(?:[א-ד]|[A-D])\s*\)\s+/i.test(s) ||
+         /^(?:תשובה|answer)\s*(?:[א-דA-D])\b/i.test(s);
+}
+
+function looksLikeQuestionMarker(line){
+  const s=cleanLine(line);
+  return /^(?:שאלה\s*)?\d{1,3}\s*(?:[\.\):\-]|׳)\s*/i.test(s) ||
+         /^question\s*\d{1,3}\b/i.test(s) ||
+         /^\(\s*\d{1,3}\s*\)\s*/.test(s) ||
+         /^שאלה\s+\d{1,3}\b/i.test(s);
+}
+
+function buildQuestionBlocksFromLines(lines){
+  const blocks=[];
+  let current=[];
+  let optionCount=0;
+
+  const flush=()=>{
+    const txt=current.join('\n').trim();
+    if(txt.length>25 && (optionCount>=2 || /[?؟]/.test(txt) || looksLikeQuestionMarker(current[0]||''))){
+      blocks.push(txt);
+    }
+    current=[]; optionCount=0;
+  };
+
+  for(let i=0;i<lines.length;i++){
+    const line=cleanLine(lines[i]);
+    if(!line || /^--- עמוד \d+ ---$/.test(line)) continue;
+
+    if(looksLikeQuestionMarker(line)){
+      if(current.length) flush();
       current=[line];
-    }else if(current.length){
+      continue;
+    }
+
+    if(looksLikeOption(line)){
+      if(!current.length){
+        // Recover a question stem from up to three previous substantial lines.
+        const prev=[];
+        for(let j=Math.max(0,i-3);j<i;j++){
+          const p=cleanLine(lines[j]);
+          if(p && !looksLikeOption(p) && !/^--- עמוד/.test(p)) prev.push(p);
+        }
+        if(prev.length) current=prev;
+      }
       current.push(line);
+      optionCount++;
+
+      // Four answer choices is a strong MCQ boundary.
+      if(optionCount>=4){
+        flush();
+      }
+      continue;
+    }
+
+    if(current.length){
+      current.push(line);
+      // If we already saw answers and a new likely stem starts, close previous block.
+      if(optionCount>=2 && /[?؟]$/.test(line)) flush();
+    }else if(/[?؟]$/.test(line) || line.length>40){
+      current=[line];
     }
   }
-  if(current.join(' ').length>25) blocks.push(current.join('\n').trim());
+  if(current.length) flush();
+  return blocks;
+}
 
-  if(blocks.length>=2) return blocks.slice(0,1000);
+function dedupeQuestions(arr){
+  const out=[],seen=new Set();
+  for(const q of arr){
+    const sig=q.toLowerCase()
+      .replace(/\d+/g,'#')
+      .replace(/[^א-תa-z# ]/gi,' ')
+      .replace(/\s+/g,' ')
+      .trim()
+      .slice(0,220);
+    if(sig.length<15 || seen.has(sig)) continue;
+    seen.add(sig);out.push(q.trim());
+  }
+  return out;
+}
 
-  // Fallback 1: split on numbered question markers even when PDF lost line breaks.
-  const marker=/(?=(?:שאלה\s*)?\d{1,3}\s*[\.\):\-]\s+(?=[א-תA-Za-z]))/gi;
-  let fallback=cleaned.split(marker).map(x=>x.trim()).filter(x=>x.length>35);
-  if(fallback.length>=2) return fallback.slice(0,1000);
+function splitQuestions(text){
+  const cleaned=normalizeExamText(text);
+  const lines=cleaned.split('\n').map(cleanLine).filter(Boolean);
 
-  // Fallback 2: question-sentence groups ending in ? / Hebrew ? followed by answer choices.
-  fallback=cleaned.split(/(?<=[?؟])\s+(?=(?:[א-דA-D][\.\):\-]|\(?[א-דA-D]\)?\s))/g)
-    .map(x=>x.trim()).filter(x=>x.length>35);
-  if(fallback.length>=2) return fallback.slice(0,1000);
+  // Strategy 1: page/line-aware American-question parser.
+  let blocks=buildQuestionBlocksFromLines(lines);
 
-  // Last resort: count substantial question-mark sentences as distinct questions.
-  const qs=cleaned.match(/[^?؟\n]{20,}[?؟](?:[^?؟\n]{0,400})/g)||[];
-  if(qs.length) return qs.map(x=>x.trim()).slice(0,1000);
+  // Strategy 2: explicit numbered markers, including flattened PDF text.
+  const marker=/(?=(?:^|\s)(?:שאלה\s*)?\d{1,3}\s*(?:[\.\):\-]|׳)\s*(?=[א-תA-Za-z]))/gim;
+  const numbered=cleaned.split(marker).map(x=>x.trim()).filter(x=>x.length>30);
+  if(numbered.length>1) blocks.push(...numbered);
 
-  return cleaned.length>80?[cleaned]:[];
+  // Strategy 3: find groups containing 3–5 answer options even with no question number.
+  const optionToken='(?:[א-ד]|[A-D])\\s*(?:[\\.\\):\\-]|׳|\\))\\s+';
+  const mcqRe=new RegExp('(.{20,500}?[?؟]?[\\s\\S]{0,500}?'+optionToken+'[\\s\\S]{1,300}?'+optionToken+'[\\s\\S]{1,300}?'+optionToken+'(?:[\\s\\S]{1,300}?'+optionToken+')?)','gi');
+  const matches=cleaned.match(mcqRe)||[];
+  blocks.push(...matches);
+
+  // Strategy 4: substantial question-mark sentences as last fallback.
+  if(blocks.length<5){
+    const qs=cleaned.match(/[^?؟\n]{25,}[?؟](?:[^?؟\n]{0,650})/g)||[];
+    blocks.push(...qs);
+  }
+
+  blocks=dedupeQuestions(blocks).filter(q=>{
+    const optionMatches=q.match(/(?:^|\n|\s)(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[];
+    return q.length>=30 && (optionMatches.length>=2 || /[?؟]/.test(q) || looksLikeQuestionMarker(q.split('\n')[0]||''));
+  });
+
+  return blocks.slice(0,1500);
 }
 
 const topicRules=[
@@ -378,7 +473,7 @@ async function runAnalysis(){
   try{
     for(let i=0;i<selectedFiles.length;i++){
       const file=selectedFiles[i];
-      let report={name:file.name,pages:0,ocrPages:0,textPages:0,questions:0,status:'ok'};
+      let report={name:file.name,pages:0,ocrPages:0,textPages:0,questions:0,optionLines:0,estimatedMcq:0,status:'ok'};
       try{
         const detail=await extractFileDetailed(file,(page,total,ocr)=>{
           status.firstChild.textContent='מנתח '+file.name+' — עמוד '+page+' מתוך '+total+(ocr?' (OCR)':'')+'… ';
@@ -389,7 +484,10 @@ async function runAnalysis(){
         }else if(detail.text.trim()){
           const qs=splitQuestions(detail.text);
           report.questions=qs.length;
-          if(qs.length===0) report.status='warn';
+          const optionLines=(detail.text.match(/(?:^|\n)\s*(?:[א-דA-D])\s*(?:[\.\):\-]|׳|\))/g)||[]).length;
+          report.optionLines=optionLines;
+          report.estimatedMcq=Math.max(qs.length,Math.floor(optionLines/4));
+          if(qs.length===0 || (report.estimatedMcq>=5 && qs.length<report.estimatedMcq*0.6)) report.status='warn';
           parsedFiles++;questions.push(...qs);
         }else{
           report.status='empty';unsupported.push(file.name+' — לא נמצא טקסט גם לאחר OCR');
@@ -413,6 +511,7 @@ async function runAnalysis(){
         '<div><span>טקסט</span><strong>'+r.textPages+'</strong></div>'+
         '<div><span>OCR</span><strong>'+r.ocrPages+'</strong></div>'+
         '<div><span>שאלות</span><strong>'+r.questions+'</strong></div>'+
+        (r.estimatedMcq>r.questions?'<div style="grid-column:1/-1;color:#fbbf24">נמצאו '+r.optionLines+' שורות תשובה; ההערכה היא שלפחות '+r.estimatedMcq+' שאלות אמריקאיות קיימות בקובץ.</div>':'')+
       '</div></div>';
     }).join('');
 
